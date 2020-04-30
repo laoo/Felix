@@ -6,6 +6,10 @@
     <OutDir>$(SolutionDir)out\$(Platform)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)tmp\$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/await %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
