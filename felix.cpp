@@ -66,17 +66,87 @@ struct Dispatcher
 
 
 
-Sus test( Dispatcher & d )
+Sus sus( Dispatcher & d )
 {
   int v = co_await d;
   std::cout << v << std::endl;
 }
 
+
+
+struct Test
+{
+  struct promise_type;
+  using handle = std::experimental::coroutine_handle<promise_type>;
+
+  struct promise_type
+  {
+    int value;
+    auto get_return_object() { return Test{ handle::from_promise( *this ) }; }
+    auto initial_suspend() { return std::experimental::suspend_never{}; }
+    auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
+    void return_void() {}
+    auto & yield_value( int v )
+    {
+      value = v;
+      return *this;
+    }
+    int await_resume()
+    {
+      return value;
+    }
+
+    bool await_ready() { return false; }
+    void await_suspend( std::experimental::coroutine_handle<> ) {}
+
+
+  };
+
+  Test( handle c ) : coro{ c }
+  {
+  }
+
+  ~Test()
+  {
+    if ( coro )
+      coro.destroy();
+  }
+
+  int set( int value )
+  {
+    auto & promise = coro.promise();
+    auto result = promise.value;
+    promise.value = value;
+    coro.resume();
+    return result;
+  }
+
+  handle coro;
+};
+
+Test ytest( int v )
+{
+  int w = co_yield v * 2;
+  std::cout << "IN " << w << std::endl;
+}
+
+
 int main()
 {
-  Dispatcher d{};
+  {
+    Dispatcher d{};
+    Sus s = sus( d );
+    d.setValue( 42 );
+  }
 
-  Sus s = test( d );
-  d.setValue( 42 );
+  {
+    int w;
+    {
+      auto cr = ytest( 21 );
+      w = cr.set( 10 );
+    }
+    std::cout << "OUT " << w << std::endl;
+
+  }
   return 0;
 }
