@@ -162,6 +162,7 @@
   <ItemGroup>
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="CPU.hpp" />
+    <ClInclude Include="Opcodes.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

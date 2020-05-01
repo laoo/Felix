@@ -24,5 +24,8 @@
     <ClInclude Include="BusMaster.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Opcodes.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
