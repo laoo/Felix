@@ -155,7 +155,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BusMaster.cpp" />
+    <ClCompile Include="CPU.cpp" />
     <ClCompile Include="felix.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BusMaster.hpp" />
+    <ClInclude Include="CPU.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
