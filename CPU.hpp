@@ -29,6 +29,12 @@ struct RegBit
 
 enum class Opcode : uint8_t;
 
+struct OpInt
+{
+  Opcode op;
+  int interrupt;
+};
+
 struct CPU
 {
   uint8_t a;
@@ -62,14 +68,13 @@ struct CPU
       uint8_t pch;
     };
   };
-  int interrupt;
 
   static const int I_NONE  = 0;
   static const int I_IRQ = 1;
   static const int I_NMI = 2;
   static const int I_RESET = 4;
 
-  CPU() : a{}, x{}, y{}, s{ 0x1ff }, pc{}, interrupt{ I_RESET }, P{}
+  CPU() : a{}, x{}, y{}, s{ 0x1ff }, pc{}, P{}
   {
   }
 
@@ -105,12 +110,20 @@ private:
 
 };
 
+struct ReadOpcode
+{
+  uint16_t address;
+
+  ReadOpcode( uint16_t a, Opcode o ) : address{ a } {}
+};
+
 struct Read
 {
   uint16_t address;
 
   Read( uint16_t a ) : address{ a } {}
 };
+
 
 struct Write
 {
@@ -126,16 +139,19 @@ struct CPURequest
   enum class Type
   {
     NONE,
+    READ_OPCODE,
     READ,
-    WRITE,
+    WRITE, 
   } mType;
 
   uint16_t address;
   uint8_t value;
+  uint8_t interrupt;
 
-  CPURequest() : mType{ Type::NONE }, address{}, value{} {}
-  CPURequest( Read r ) : mType{ Type::READ }, address{ r.address }, value{} {}
-  CPURequest( Write w ) : mType{ Type::WRITE }, address{ w.address }, value{ w.value } {}
+  CPURequest() : mType{ Type::NONE }, address{}, value{}, interrupt{} {}
+  CPURequest( Read r ) : mType{ Type::READ }, address{ r.address }, value{}, interrupt{} {}
+  CPURequest( ReadOpcode r ) : mType{ Type::READ_OPCODE }, address{ r.address }, value{}, interrupt{} {}
+  CPURequest( Write w ) : mType{ Type::WRITE }, address{ w.address }, value{ w.value }, interrupt{} {}
 
   void resume()
   {
@@ -158,6 +174,26 @@ struct AwaitRead
   int await_resume()
   {
     return req->value;
+  }
+
+  void await_suspend( std::experimental::coroutine_handle<> c )
+  {
+    req->coro = c;
+  }
+};
+
+struct AwaitReadOpcode
+{
+  CPURequest * req;
+
+  bool await_ready()
+  {
+    return false;
+  }
+
+  OpInt await_resume()
+  {
+    return { (Opcode)req->value, (int)req->interrupt };
   }
 
   void await_suspend( std::experimental::coroutine_handle<> c )
@@ -198,6 +234,7 @@ struct CpuLoop
     void return_void() {}
     void unhandled_exception() { std::terminate(); }
     AwaitRead yield_value( Read r );
+    AwaitReadOpcode yield_value( ReadOpcode r );
     AwaitWrite yield_value( Write r );
 
     BusMaster * mBus;

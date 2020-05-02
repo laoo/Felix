@@ -13,6 +13,7 @@ public:
   BusMaster();
 
   CPURequest * request( Read r );
+  CPURequest * request( ReadOpcode r );
   CPURequest * request( Write w );
   void process();
 

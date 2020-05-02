@@ -11,6 +11,12 @@ CPURequest * BusMaster::request( Read r )
   return &mReq;
 }
 
+CPURequest * BusMaster::request( ReadOpcode r )
+{
+  mReq = CPURequest{ r };
+  return &mReq;
+}
+
 CPURequest * BusMaster::request( Write w )
 {
   mReq = CPURequest{ w };
@@ -25,6 +31,11 @@ void BusMaster::process()
     {
     case CPURequest::Type::READ:
       mReq.value = mMemory[mReq.address];
+      mReq.resume();
+      break;
+    case CPURequest::Type::READ_OPCODE:
+      mReq.value = mMemory[mReq.address];
+      mReq.interrupt = CPU::I_RESET;
       mReq.resume();
       break;
     case CPURequest::Type::WRITE:

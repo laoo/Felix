@@ -46,7 +46,7 @@ bool isHiccup( Opcode opcode )
 
 CpuLoop cpuLoop( CPU & cpu )
 {
-  Opcode opcode{};
+  OpInt opint{ Opcode{}, CPU::I_RESET };
   for ( ;; )
   {
     union
@@ -71,14 +71,14 @@ CpuLoop cpuLoop( CPU & cpu )
 
     uint8_t d;
 
-    if ( cpu.interrupt && ( !cpu.I || ( cpu.interrupt & ~CPU::I_IRQ ) != 0 ) )
+    if ( opint.interrupt && ( !cpu.I || ( opint.interrupt & ~CPU::I_IRQ ) != 0 ) )
     {
-      opcode = Opcode::BRK_BRK;
+      opint.op = Opcode::BRK_BRK;
     }
 
     eal = co_yield{ cpu.pc++ };
 
-    switch ( opcode )
+    switch ( opint.op )
     {
     case Opcode::RZP_AND:
     case Opcode::RZP_BIT:
@@ -91,12 +91,12 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::RZP_LDY:
     case Opcode::RZP_ORA:
       d = co_yield{ ea };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
     case Opcode::RZP_ADC:
     case Opcode::RZP_SBC:
       d = co_yield{ ea };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ ea };
       }
@@ -242,14 +242,14 @@ CpuLoop cpuLoop( CPU & cpu )
       co_yield{ cpu.pc };
       eal += cpu.x;
       d = co_yield{ ea };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
     case Opcode::RZX_ADC:
     case Opcode::RZX_SBC:
       co_yield{ cpu.pc };
       eal += cpu.x;
       d = co_yield{ ea };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ ea };
       }
@@ -329,14 +329,14 @@ CpuLoop cpuLoop( CPU & cpu )
       tl = co_yield{ ea++ };
       th = co_yield{ ea };
       d = co_yield{ t };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
     case Opcode::RIN_ADC:
     case Opcode::RIN_SBC:
       tl = co_yield{ ea++ };
       th = co_yield{ ea };
       d = co_yield{ t };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ t };
       }
@@ -356,7 +356,7 @@ CpuLoop cpuLoop( CPU & cpu )
       tl = co_yield{ ea++ };
       th = co_yield{ ea };
       d = co_yield{ t };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
     case Opcode::RIX_ADC:
     case Opcode::RIX_SBC:
@@ -365,7 +365,7 @@ CpuLoop cpuLoop( CPU & cpu )
       tl = co_yield{ ea++ };
       th = co_yield{ ea };
       d = co_yield{ t };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ t };
       }
@@ -392,7 +392,7 @@ CpuLoop cpuLoop( CPU & cpu )
         co_yield{ ea };
       }
       d = co_yield{ t };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
     case Opcode::RIY_ADC:
     case Opcode::RIY_SBC:
@@ -406,7 +406,7 @@ CpuLoop cpuLoop( CPU & cpu )
         co_yield{ ea };
       }
       d = co_yield{ t };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ t };
       }
@@ -432,13 +432,13 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::RAB_ORA:
       eah = co_yield( cpu.pc++ );
       d = co_yield{ ea };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       eah = co_yield( cpu.pc++ );
       d = co_yield{ ea };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ ea };
       }
@@ -523,7 +523,7 @@ CpuLoop cpuLoop( CPU & cpu )
         ++th;
       }
       d = co_yield{ t };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
@@ -536,7 +536,7 @@ CpuLoop cpuLoop( CPU & cpu )
         ++th;
       }
       d = co_yield{ t };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ t };
       }
@@ -556,7 +556,7 @@ CpuLoop cpuLoop( CPU & cpu )
         ++th;
       }
       d = co_yield{ t };
-      cpu.executeR( opcode, d );
+      cpu.executeR( opint.op, d );
       break;
       break;
     case Opcode::RAY_ADC:
@@ -570,7 +570,7 @@ CpuLoop cpuLoop( CPU & cpu )
         ++th;
       }
       d = co_yield{ t };
-      if ( cpu.executeR( opcode, d ) )
+      if ( cpu.executeR( opint.op, d ) )
       {
         co_yield{ t };
       }
@@ -771,11 +771,11 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::IMM_LDX:
     case Opcode::IMM_LDY:
     case Opcode::IMM_ORA:
-      cpu.executeR( opcode, eal );
+      cpu.executeR( opint.op, eal );
       break;
     case Opcode::IMM_ADC:
     case Opcode::IMM_SBC:
-      if ( cpu.executeR( opcode, eal ) )
+      if ( cpu.executeR( opint.op, eal ) )
       {
         co_yield{ cpu.pc };
       }
@@ -1094,20 +1094,20 @@ CpuLoop cpuLoop( CPU & cpu )
       }
       break;
     case Opcode::BRK_BRK:
-      if ( cpu.interrupt & CPU::I_RESET )
+      if ( opint.interrupt & CPU::I_RESET )
       {
         co_yield{ cpu.s-- };
         co_yield{ cpu.s-- };
         co_yield{ cpu.s-- };
         eal = co_yield{ 0xfffc };
         eah = co_yield{ 0xfffd };
-        cpu.interrupt &= ~CPU::I_RESET;
+        opint.interrupt &= ~CPU::I_RESET;
       }
       else
       {
         co_yield{ cpu.s--, cpu.pch };
         co_yield{ cpu.s--, cpu.pcl };
-        if ( cpu.interrupt == CPU::I_NONE )
+        if ( opint.interrupt == CPU::I_NONE )
         {
           co_yield{ cpu.s--, cpu.pbrk() };
         }
@@ -1115,19 +1115,19 @@ CpuLoop cpuLoop( CPU & cpu )
         {
           co_yield{ cpu.s--, cpu.p() };
         }
-        if ( cpu.interrupt & CPU::I_NMI )
+        if ( opint.interrupt & CPU::I_NMI )
         {
           eal = co_yield{ 0xfffa };
           eah = co_yield{ 0xfffb };
-          cpu.interrupt &= ~CPU::I_NMI;
+          opint.interrupt &= ~CPU::I_NMI;
         }
         else
         {
           eal = co_yield{ 0xfffe };
           eah = co_yield{ 0xffff };
-          if ( cpu.interrupt == CPU::I_IRQ )
+          if ( opint.interrupt == CPU::I_IRQ )
           {
-            cpu.interrupt &= ~CPU::I_IRQ;
+            opint.interrupt &= ~CPU::I_IRQ;
           }
         }
       }
@@ -1211,9 +1211,8 @@ CpuLoop cpuLoop( CPU & cpu )
 
     for ( ;; )
     {
-      uint8_t op = co_yield{ cpu.pc };
-      opcode = (Opcode)op;
-      if ( isHiccup( opcode ) )
+      opint = co_yield{ cpu.pc, Opcode{} };
+      if ( isHiccup( opint.op ) )
         continue;
       else
         break;
@@ -1226,6 +1225,11 @@ CpuLoop cpuLoop( CPU & cpu )
 AwaitRead CpuLoop::promise_type::yield_value( Read r )
 {
   return AwaitRead{ mBus->request( r ) };
+}
+
+AwaitReadOpcode CpuLoop::promise_type::yield_value( ReadOpcode r )
+{
+  return AwaitReadOpcode{ mBus->request( r ) };
 }
 
 AwaitWrite CpuLoop::promise_type::yield_value( Write w )
