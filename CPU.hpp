@@ -27,6 +27,8 @@ struct RegBit
 
 };
 
+enum class Opcode : uint8_t;
+
 struct CPU
 {
   uint8_t a;
@@ -80,6 +82,24 @@ struct CPU
   {
     return P | 0x30;
   }
+
+  void setnz( uint8_t v )
+  {
+    Z = v == 0 ? 1 : 0;
+    N = v >= 80 ? 1 : 0;
+  }
+
+  void setz( uint8_t v )
+  {
+    Z = v == 0 ? 1 : 0;
+  }
+
+  void asl( uint8_t & val );
+  void lsr( uint8_t & val );
+  void rol( uint8_t & val );
+  void ror( uint8_t & val );
+  bool executeR( Opcode opcode, uint8_t value );
+
 
 private:
 
