@@ -10,11 +10,23 @@ struct OpInt
   int interrupt;
 };
 
-struct CPUReadOpcode
+
+struct CPUFetchOpcode
 {
   uint16_t address;
 
-  CPUReadOpcode( uint16_t a, Opcode o ) : address{ a } {}
+  struct Tag {};
+
+  CPUFetchOpcode( uint16_t a, Tag t ) : address{ a } {}
+};
+
+struct CPUFetchOperand
+{
+  uint16_t address;
+
+  struct Tag {};
+
+  CPUFetchOperand( uint16_t a, Tag t ) : address{ a } {}
 };
 
 struct CPURead
@@ -39,7 +51,8 @@ struct CPURequest
   enum class Type
   {
     NONE,
-    READ_OPCODE,
+    FETCH_OPCODE,
+    FETCH_OPERAND,
     READ,
     WRITE,
   } mType;
@@ -50,7 +63,8 @@ struct CPURequest
 
   CPURequest() : mType{ Type::NONE }, address{}, value{}, interrupt{} {}
   CPURequest( CPURead r ) : mType{ Type::READ }, address{ r.address }, value{}, interrupt{} {}
-  CPURequest( CPUReadOpcode r ) : mType{ Type::READ_OPCODE }, address{ r.address }, value{}, interrupt{} {}
+  CPURequest( CPUFetchOpcode r ) : mType{ Type::FETCH_OPCODE }, address{ r.address }, value{}, interrupt{} {}
+  CPURequest( CPUFetchOperand r ) : mType{ Type::FETCH_OPERAND }, address{ r.address }, value{}, interrupt{} {}
   CPURequest( CPUWrite w ) : mType{ Type::WRITE }, address{ w.address }, value{ w.value }, interrupt{} {}
 
   void resume()
@@ -71,7 +85,7 @@ struct AwaitCPURead
     return false;
   }
 
-  int await_resume()
+  uint8_t await_resume()
   {
     return req->value;
   }
@@ -82,7 +96,7 @@ struct AwaitCPURead
   }
 };
 
-struct AwaitCPUReadOpcode
+struct AwaitCPUFetchOpcode
 {
   CPURequest * req;
 
@@ -94,6 +108,26 @@ struct AwaitCPUReadOpcode
   OpInt await_resume()
   {
     return { (Opcode)req->value, (int)req->interrupt };
+  }
+
+  void await_suspend( std::experimental::coroutine_handle<> c )
+  {
+    req->coro = c;
+  }
+};
+
+struct AwaitCPUFetchOperand
+{
+  CPURequest * req;
+
+  bool await_ready()
+  {
+    return false;
+  }
+
+  uint8_t await_resume()
+  {
+    return req->value;
   }
 
   void await_suspend( std::experimental::coroutine_handle<> c )
@@ -134,7 +168,8 @@ struct CpuLoop
     void return_void() {}
     void unhandled_exception() { std::terminate(); }
     AwaitCPURead yield_value( CPURead r );
-    AwaitCPUReadOpcode yield_value( CPUReadOpcode r );
+    AwaitCPUFetchOpcode yield_value( CPUFetchOpcode r );
+    AwaitCPUFetchOperand yield_value( CPUFetchOperand r );
     AwaitCPUWrite yield_value( CPUWrite r );
 
     BusMaster * mBus;

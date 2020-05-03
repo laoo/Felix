@@ -7,7 +7,7 @@ Mikey::Mikey() : mRegs{}
 
 uint64_t Mikey::requestAccess( uint64_t tick, uint16_t address )
 {
-  return uint64_t();
+  return tick + 5;
 }
 
 uint8_t Mikey::read( uint16_t address )

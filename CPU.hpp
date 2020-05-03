@@ -47,6 +47,7 @@ struct CPU
     RegBit<1> Z;
     RegBit<2> I;
     RegBit<3> D;
+    RegBit<4> B;
     RegBit<6> V;
     RegBit<7> N;
   };

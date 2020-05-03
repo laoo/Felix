@@ -7,7 +7,7 @@ Suzy::Suzy()
 
 uint64_t Suzy::requestAccess( uint64_t tick, uint16_t address )
 {
-  return uint64_t();
+  return tick + 5;
 }
 
 uint8_t Suzy::read( uint16_t address )

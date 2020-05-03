@@ -77,7 +77,7 @@ CpuLoop cpuLoop( CPU & cpu )
       opint.op = Opcode::BRK_BRK;
     }
 
-    eal = co_yield{ cpu.pc };
+    eal = co_yield{ cpu.pc, CPUFetchOperand::Tag{} };
 
     switch ( opint.op )
     {
@@ -465,14 +465,14 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::RAB_LDY:
     case Opcode::RAB_ORA:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.executeR( opint.op, d );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       if ( cpu.executeR( opint.op, d ) )
       {
@@ -481,77 +481,77 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::WAB_STA:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       co_yield{ ea, cpu.a };
       break;
     case Opcode::WAB_STX:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       co_yield{ ea, cpu.x };
       break;
     case Opcode::WAB_STY:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       co_yield{ ea, cpu.y };
       break;
     case Opcode::WAB_STZ:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       co_yield{ ea, 0x00 };
       break;
       break;
     case Opcode::MAB_ASL:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.asl( d );
       co_yield{ ea, d };
       break;
     case Opcode::MAB_DEC:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.setnz( --d );
       co_yield{ ea, d };
       break;
     case Opcode::MAB_INC:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.setnz( ++d );
       co_yield{ ea, d };
       break;
     case Opcode::MAB_LSR:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.lsr( d );
       co_yield{ ea, d };
       break;
     case Opcode::MAB_ROL:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.rol( d );
       co_yield{ ea, d };
       break;
     case Opcode::MAB_ROR:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.ror( --d );
       co_yield{ ea, d };
       break;
     case Opcode::MAB_TRB:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.setz( d &= ~cpu.a );
       co_yield{ ea, d };
       break;
     case Opcode::MAB_TSB:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       d = co_yield{ ea };
       cpu.setz( d |= cpu.a );
       co_yield{ ea, d };
@@ -563,7 +563,7 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::RAX_LDY:
     case Opcode::RAX_ORA:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       tl += cpu.x;
       if ( th != eah )
@@ -577,7 +577,7 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       tl += cpu.x;
       if ( th != eah )
@@ -598,7 +598,7 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::RAY_LDX:
     case Opcode::RAY_ORA:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       tl += cpu.y;
       if ( th != eah )
@@ -613,7 +613,7 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::RAY_ADC:
     case Opcode::RAY_SBC:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       tl += cpu.y;
       if ( th != eah )
@@ -629,7 +629,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::WAX_STA:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -638,7 +638,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::WAX_STZ:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -647,7 +647,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::WAY_STA:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.y;
       tl += cpu.y;
@@ -656,7 +656,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::MAX_ASL:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -667,7 +667,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::MAX_DEC:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -678,7 +678,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::MAX_INC:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -689,7 +689,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::MAX_LSR:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -700,7 +700,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::MAX_ROL:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -711,7 +711,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::MAX_ROR:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = ea;
       ea += cpu.x;
       tl += cpu.x;
@@ -722,7 +722,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::JMA_JMP:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       cpu.pc = ea;
       break;
     case Opcode::JSA_JSR:
@@ -731,12 +731,12 @@ CpuLoop cpuLoop( CPU & cpu )
       cpu.sl--;
       co_yield{ cpu.s, cpu.pcl };
       cpu.sl--;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       cpu.pc = ea;
       break;
     case Opcode::JMX_JMP:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       co_yield{ cpu.pc };
       t = ea;
       eal += cpu.x;
@@ -748,7 +748,7 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::JMI_JMP:
       ++cpu.pc;
-      eah = co_yield( cpu.pc++ );
+      eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       tl = co_yield{ ea };
       eal++;
       co_yield{ ea };
@@ -963,225 +963,193 @@ CpuLoop cpuLoop( CPU & cpu )
       break;
     case Opcode::BZR_BBR0:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x01 ) == 0 )
+      if ( ( eal & 0x01 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR1:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x02 ) == 0 )
+      if ( ( eal & 0x02 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR2:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x04 ) == 0 )
+      if ( ( eal & 0x04 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR3:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x08 ) == 0 )
+      if ( ( eal & 0x08 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR4:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x10 ) == 0 )
+      if ( ( eal & 0x10 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR5:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x20 ) == 0 )
+      if ( ( eal & 0x20 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR6:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x40 ) == 0 )
+      if ( ( eal & 0x40 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR7:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x80 ) == 0 )
+      if ( ( eal & 0x80 ) == 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS0:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x01 ) == 1 )
+      if ( ( eal & 0x01 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS1:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x02 ) == 1 )
+      if ( ( eal & 0x02 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS2:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x04 ) == 1 )
+      if ( ( eal & 0x04 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS3:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x08 ) == 1 )
+      if ( ( eal & 0x08 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS4:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x10 ) == 1 )
+      if ( ( eal & 0x10 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS5:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x20 ) == 1 )
+      if ( ( eal & 0x20 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS6:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x40 ) == 1 )
+      if ( ( eal & 0x40 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBS7:
       ++cpu.pc;
+      eal = co_yield{ ea };
+      tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
       t = co_yield{ ea };
-      if ( ( t & 0x80 ) == 1 )
+      if ( ( eal & 0x80 ) != 0 )
       {
         co_yield{ cpu.pc };
-        t = cpu.pc + (int8_t)eal;
-        if ( th != cpu.pch )
-        {
-          co_yield{ cpu.pc };
-        }
+        t = cpu.pc + (int8_t)tl;
         cpu.pc = t;
       }
       break;
@@ -1271,7 +1239,7 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::PLR_PLA:
       co_yield{ cpu.pc };
       ++cpu.sl;
-      cpu.a = co_yield{ cpu.s };
+      cpu.setnz( cpu.a = co_yield{ cpu.s } );
       break;
     case Opcode::PLR_PLP:
       co_yield{ cpu.pc };
@@ -1281,12 +1249,12 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::PLR_PLX:
       co_yield{ cpu.pc };
       ++cpu.sl;
-      cpu.x = co_yield{ cpu.s };
+      cpu.setnz( cpu.x = co_yield{ cpu.s } );
       break;
     case Opcode::PLR_PLY:
       co_yield{ cpu.pc };
       ++cpu.sl;
-      cpu.y = co_yield{ cpu.s };
+      cpu.setnz( cpu.y = co_yield{ cpu.s } );
       break;
     case Opcode::UND_2_02:
     case Opcode::UND_2_22:
@@ -1303,12 +1271,16 @@ CpuLoop cpuLoop( CPU & cpu )
     case Opcode::UND_4_54:
     case Opcode::UND_4_d4:
     case Opcode::UND_4_f4:
-    case Opcode::UND_4_dc:
-    case Opcode::UND_4_fc:
       ++cpu.pc;
       co_yield{ cpu.pc };
       eal += cpu.x;
       eal = co_yield{ ea };
+      break;
+    case Opcode::UND_4_dc:
+    case Opcode::UND_4_fc:
+      ++cpu.pc;
+      eah = co_yield{ cpu.pc++ };
+      co_yield{ ea };
       break;
     case Opcode::UND_8_5c:
       //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opcode_mapping.html
@@ -1327,7 +1299,7 @@ CpuLoop cpuLoop( CPU & cpu )
 
     for ( ;; )
     {
-      opint = co_yield{ cpu.pc++, Opcode{} };
+      opint = co_yield { cpu.pc++, CPUFetchOpcode::Tag{} };
       if ( isHiccup( opint.op ) )
         continue;
       else
@@ -1343,9 +1315,14 @@ AwaitCPURead CpuLoop::promise_type::yield_value( CPURead r )
   return AwaitCPURead{ mBus->request( r ) };
 }
 
-AwaitCPUReadOpcode CpuLoop::promise_type::yield_value( CPUReadOpcode r )
+AwaitCPUFetchOpcode CpuLoop::promise_type::yield_value( CPUFetchOpcode r )
 {
-  return AwaitCPUReadOpcode{ mBus->request( r ) };
+  return AwaitCPUFetchOpcode{ mBus->request( r ) };
+}
+
+AwaitCPUFetchOperand CpuLoop::promise_type::yield_value( CPUFetchOperand r )
+{
+  return AwaitCPUFetchOperand{ mBus->request( r ) };
 }
 
 AwaitCPUWrite CpuLoop::promise_type::yield_value( CPUWrite w )

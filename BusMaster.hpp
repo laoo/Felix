@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "CPUExecute.hpp"
+#include "CPUTrace.hpp"
 
 class Mikey;
 class Suzy;
@@ -16,10 +17,12 @@ public:
   ~BusMaster();
 
   CPURequest * request( CPURead r );
-  CPURequest * request( CPUReadOpcode r );
+  CPURequest * request( CPUFetchOpcode r );
+  CPURequest * request( CPUFetchOperand r );
   CPURequest * request( CPUWrite w );
   void process( uint64_t ticks );
 
+  TraceRequest & getTraceRequest();
 private:
 
   void request( CPURequest const& request );
@@ -31,19 +34,23 @@ private:
   enum class Action
   {
     NONE,
-    CPU_READ_OPCODE_RAM,
+    CPU_FETCH_OPCODE_RAM,
+    CPU_FETCH_OPERAND_RAM,
     CPU_READ_RAM,
     CPU_WRITE_RAM,
     NONE_ROM,
-    CPU_READ_OPCODE_ROM,
+    CPU_FETCH_OPCODE_ROM,
+    CPU_FETCH_OPERAND_ROM,
     CPU_READ_ROM,
     CPU_WRITE_ROM,
     NONE_SUZY,
-    CPU_READ_OPCODE_SUZY,
+    CPU_FETCH_OPCODE_SUZY,
+    CPU_FETCH_OPERAND_SUZY,
     CPU_READ_SUZY,
     CPU_WRITE_SUZY,
     NONE_MIKEY,
-    CPU_READ_OPCODE_MIKEY,
+    CPU_FETCH_OPCODE_MIKEY,
+    CPU_FETCH_OPERAND_MIKEY,
     CPU_READ_MIKEY,
     CPU_WRITE_MIKEY,
     END_FRAME,
@@ -98,6 +105,7 @@ private:
   std::shared_ptr<Suzy> mSuzy;
   ActionQueue mActionQueue;
   CPURequest mReq;
+  TraceRequest mDReq;
   uint32_t mSequencedAccessAddress;
 
 };

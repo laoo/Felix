@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClCompile Include="BusMaster.cpp" />
     <ClCompile Include="CPUExecute.cpp" />
+    <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="felix.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
@@ -164,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="CPU.hpp" />
+    <ClInclude Include="CPUTrace.hpp" />
     <ClInclude Include="CPUExecute.hpp" />
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
