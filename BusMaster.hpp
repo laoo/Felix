@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "CPU.hpp"
+#include "CPUExecute.hpp"
 
 class Mikey;
 class Suzy;
