@@ -1222,19 +1222,19 @@ CpuLoop cpuLoop( CPU & cpu )
 }
 
 
-AwaitRead CpuLoop::promise_type::yield_value( Read r )
+AwaitCPURead CpuLoop::promise_type::yield_value( CPURead r )
 {
-  return AwaitRead{ mBus->request( r ) };
+  return AwaitCPURead{ mBus->request( r ) };
 }
 
-AwaitReadOpcode CpuLoop::promise_type::yield_value( ReadOpcode r )
+AwaitCPUReadOpcode CpuLoop::promise_type::yield_value( CPUReadOpcode r )
 {
-  return AwaitReadOpcode{ mBus->request( r ) };
+  return AwaitCPUReadOpcode{ mBus->request( r ) };
 }
 
-AwaitWrite CpuLoop::promise_type::yield_value( Write w )
+AwaitCPUWrite CpuLoop::promise_type::yield_value( CPUWrite w )
 {
-  return AwaitWrite{ mBus->request( w ) };
+  return AwaitCPUWrite{ mBus->request( w ) };
 }
 
 void CPU::asl( uint8_t & val )

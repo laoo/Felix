@@ -110,27 +110,27 @@ private:
 
 };
 
-struct ReadOpcode
+struct CPUReadOpcode
 {
   uint16_t address;
 
-  ReadOpcode( uint16_t a, Opcode o ) : address{ a } {}
+  CPUReadOpcode( uint16_t a, Opcode o ) : address{ a } {}
 };
 
-struct Read
+struct CPURead
 {
   uint16_t address;
 
-  Read( uint16_t a ) : address{ a } {}
+  CPURead( uint16_t a ) : address{ a } {}
 };
 
 
-struct Write
+struct CPUWrite
 {
   uint16_t address;
   uint8_t value;
 
-  Write( uint16_t a, uint8_t v ) : address{ a }, value{ v } {}
+  CPUWrite( uint16_t a, uint8_t v ) : address{ a }, value{ v } {}
 };
 
 
@@ -149,9 +149,9 @@ struct CPURequest
   uint8_t interrupt;
 
   CPURequest() : mType{ Type::NONE }, address{}, value{}, interrupt{} {}
-  CPURequest( Read r ) : mType{ Type::READ }, address{ r.address }, value{}, interrupt{} {}
-  CPURequest( ReadOpcode r ) : mType{ Type::READ_OPCODE }, address{ r.address }, value{}, interrupt{} {}
-  CPURequest( Write w ) : mType{ Type::WRITE }, address{ w.address }, value{ w.value }, interrupt{} {}
+  CPURequest( CPURead r ) : mType{ Type::READ }, address{ r.address }, value{}, interrupt{} {}
+  CPURequest( CPUReadOpcode r ) : mType{ Type::READ_OPCODE }, address{ r.address }, value{}, interrupt{} {}
+  CPURequest( CPUWrite w ) : mType{ Type::WRITE }, address{ w.address }, value{ w.value }, interrupt{} {}
 
   void resume()
   {
@@ -162,7 +162,7 @@ struct CPURequest
   std::experimental::coroutine_handle<> coro;
 };
 
-struct AwaitRead
+struct AwaitCPURead
 {
   CPURequest * req;
 
@@ -182,7 +182,7 @@ struct AwaitRead
   }
 };
 
-struct AwaitReadOpcode
+struct AwaitCPUReadOpcode
 {
   CPURequest * req;
 
@@ -202,7 +202,7 @@ struct AwaitReadOpcode
   }
 };
 
-struct AwaitWrite
+struct AwaitCPUWrite
 {
   CPURequest * req;
 
@@ -233,9 +233,9 @@ struct CpuLoop
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void() {}
     void unhandled_exception() { std::terminate(); }
-    AwaitRead yield_value( Read r );
-    AwaitReadOpcode yield_value( ReadOpcode r );
-    AwaitWrite yield_value( Write r );
+    AwaitCPURead yield_value( CPURead r );
+    AwaitCPUReadOpcode yield_value( CPUReadOpcode r );
+    AwaitCPUWrite yield_value( CPUWrite r );
 
     BusMaster * mBus;
   };

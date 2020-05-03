@@ -16,6 +16,12 @@
     <ClCompile Include="BusMaster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Mikey.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Suzy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -25,6 +31,15 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Opcodes.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mikey.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ActionQueue.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Suzy.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

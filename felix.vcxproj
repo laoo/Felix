@@ -158,11 +158,16 @@
     <ClCompile Include="BusMaster.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="felix.cpp" />
+    <ClCompile Include="Mikey.cpp" />
+    <ClCompile Include="Suzy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="CPU.hpp" />
+    <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
+    <ClInclude Include="Suzy.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

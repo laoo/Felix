@@ -9,6 +9,6 @@ int main()
   CPU cpu;
   CpuLoop loop = cpuLoop( cpu );
   loop.setBusMaster( &bus );
-  bus.process();
+  bus.process( 100 );
   return 0;
 }
