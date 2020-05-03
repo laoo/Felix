@@ -36,9 +36,6 @@
     <ClInclude Include="Mikey.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ActionQueue.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Suzy.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>

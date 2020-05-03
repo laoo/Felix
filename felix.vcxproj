@@ -162,7 +162,6 @@
     <ClCompile Include="Suzy.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="Mikey.hpp" />

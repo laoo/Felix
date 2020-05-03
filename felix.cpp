@@ -9,6 +9,6 @@ int main()
   CPU cpu;
   CpuLoop loop = cpuLoop( cpu );
   loop.setBusMaster( &bus );
-  bus.process( 100 );
+  bus.process( 16000000 / 60 );
   return 0;
 }

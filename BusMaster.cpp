@@ -2,9 +2,15 @@
 #include "CPU.hpp"
 #include "Suzy.hpp"
 #include "Mikey.hpp"
+#include <fstream>
 
-BusMaster::BusMaster() : mRAM{}, mBusReservationTick{}, mCurrentTick{}, mMikey{ std::make_shared<Mikey>() }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{~0u}
+BusMaster::BusMaster() : mRAM{}, mROM{}, mBusReservationTick{}, mCurrentTick{}, mMikey{ std::make_shared<Mikey>() }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }
 {
+  std::ifstream fin{ "lynxboot.img", std::ios::binary };
+  if ( fin.bad() )
+    throw std::exception{};
+
+  fin.read( (char*)mROM.data(), mROM.size() );
 }
 
 BusMaster::~BusMaster()
@@ -43,19 +49,35 @@ void BusMaster::process( uint64_t ticks )
 
     switch ( action.getAction() )
     {
-    case Action::CPU_READ_OPCODE:
+    case Action::CPU_READ_OPCODE_RAM:
       mReq.value = mRAM[mReq.address];
       mSequencedAccessAddress = mReq.address + 1;
       //mReq.interrupt = CPU::I_RESET;
       mReq.resume();
       break;
-    case Action::CPU_READ:
+    case Action::CPU_READ_RAM:
       mReq.value = mRAM[mReq.address];
       mSequencedAccessAddress = mReq.address + 1;
       mReq.resume();
       break;
-    case Action::CPU_WRITE:
+    case Action::CPU_WRITE_RAM:
       mRAM[mReq.address] = mReq.value;
+      mSequencedAccessAddress = ~0;
+      mReq.resume();
+      break;
+    case Action::CPU_READ_OPCODE_ROM:
+      mReq.value = mROM[mReq.address & 0x1ff];
+      mSequencedAccessAddress = mReq.address + 1;
+      //mReq.interrupt = CPU::I_RESET;
+      mReq.resume();
+      break;
+    case Action::CPU_READ_ROM:
+      mReq.value = mROM[mReq.address & 0x1ff];
+      mSequencedAccessAddress = mReq.address + 1;
+      mReq.resume();
+      break;
+    case Action::CPU_WRITE_ROM:
+      mROM[mReq.address & 0x1ff] = mReq.value;
       mSequencedAccessAddress = ~0;
       mReq.resume();
       break;
@@ -89,11 +111,15 @@ void BusMaster::process( uint64_t ticks )
 
 void BusMaster::request( CPURequest const & request )
 {
-  static constexpr std::array<Action, 12> requestToAction = {
+  static constexpr std::array<Action, 16> requestToAction = {
     Action::NONE,
-    Action::CPU_READ_OPCODE,
-    Action::CPU_READ,
-    Action::CPU_WRITE,
+    Action::CPU_READ_OPCODE_RAM,
+    Action::CPU_READ_RAM,
+    Action::CPU_WRITE_RAM,
+    Action::NONE_ROM,
+    Action::CPU_READ_OPCODE_ROM,
+    Action::CPU_READ_ROM,
+    Action::CPU_WRITE_ROM,
     Action::NONE_SUZY,
     Action::CPU_READ_OPCODE_SUZY,
     Action::CPU_READ_SUZY,
@@ -108,12 +134,17 @@ void BusMaster::request( CPURequest const & request )
   size_t tableOffset{};
   switch ( request.address >> 8 )
   {
-  case 0xfc:
-    tick = mSuzy->requestAccess( mCurrentTick, request.address );
+  case 0xff:
+  case 0xfe:
+    tick = mCurrentTick + ( ( request.address == mSequencedAccessAddress ) ? 4 : 5 );
     tableOffset = 4;
     break;
   case 0xfd:
     tick = mMikey->requestAccess( mCurrentTick, request.address );
+    tableOffset = 12;
+    break;
+  case 0xfc:
+    tick = mSuzy->requestAccess( mCurrentTick, request.address );
     tableOffset = 8;
     break;
   default:

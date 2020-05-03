@@ -31,9 +31,13 @@ private:
   enum class Action
   {
     NONE,
-    CPU_READ_OPCODE,
-    CPU_READ,
-    CPU_WRITE,
+    CPU_READ_OPCODE_RAM,
+    CPU_READ_RAM,
+    CPU_WRITE_RAM,
+    NONE_ROM,
+    CPU_READ_OPCODE_ROM,
+    CPU_READ_ROM,
+    CPU_WRITE_ROM,
     NONE_SUZY,
     CPU_READ_OPCODE_SUZY,
     CPU_READ_SUZY,
@@ -87,6 +91,7 @@ private:
 private:
 
   std::array<uint8_t,65536> mRAM;
+  std::array<uint8_t, 512> mROM;
   uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
   std::shared_ptr<Mikey> mMikey;
