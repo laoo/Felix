@@ -37,6 +37,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::RZP_BIT:
     case Opcode::RZX_BIT:
     case Opcode::RAB_BIT:
+    case Opcode::RAX_BIT:
     case Opcode::IMM_BIT:
       off += sprintf( buf + off, "bit " );
       break;
@@ -160,43 +161,55 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::MZX_ASL:
     case Opcode::MAB_ASL:
     case Opcode::MAX_ASL:
-    case Opcode::IMP_ASL:
       off += sprintf( buf + off, "asl " );
+      break;
+    case Opcode::IMP_ASL:
+      off += sprintf( buf + off, "asl\n" );
       break;
     case Opcode::MZP_DEC:
     case Opcode::MZX_DEC:
     case Opcode::MAB_DEC:
     case Opcode::MAX_DEC:
-    case Opcode::IMP_DEC:
       off += sprintf( buf + off, "dec " );
+      break;
+    case Opcode::IMP_DEC:
+      off += sprintf( buf + off, "dec\n" );
       break;
     case Opcode::MZP_INC:
     case Opcode::MZX_INC:
     case Opcode::MAB_INC:
     case Opcode::MAX_INC:
-    case Opcode::IMP_INC:
       off += sprintf( buf + off, "inc " );
+      break;
+    case Opcode::IMP_INC:
+      off += sprintf( buf + off, "inc\n" );
       break;
     case Opcode::MZP_LSR:
     case Opcode::MZX_LSR:
     case Opcode::MAB_LSR:
     case Opcode::MAX_LSR:
-    case Opcode::IMP_LSR:
       off += sprintf( buf + off, "lsr " );
+      break;
+    case Opcode::IMP_LSR:
+      off += sprintf( buf + off, "lsr\n" );
       break;
     case Opcode::MZP_ROL:
     case Opcode::MZX_ROL:
     case Opcode::MAB_ROL:
     case Opcode::MAX_ROL:
-    case Opcode::IMP_ROL:
       off += sprintf( buf + off, "rol " );
+      break;
+    case Opcode::IMP_ROL:
+      off += sprintf( buf + off, "rol\n" );
       break;
     case Opcode::MZP_ROR:
     case Opcode::MZX_ROR:
     case Opcode::MAB_ROR:
     case Opcode::MAX_ROR:
-    case Opcode::IMP_ROR:
       off += sprintf( buf + off, "ror " );
+      break;
+    case Opcode::IMP_ROR:
+      off += sprintf( buf + off, "ror\n" );
       break;
     case Opcode::MZP_TRB:
     case Opcode::MAB_TRB:
@@ -216,10 +229,10 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       off += sprintf( buf + off, "rmb2 " );
       break;
     case Opcode::MZP_RMB3:
-      off += sprintf( buf + off, "rmb2 " );
+      off += sprintf( buf + off, "rmb3 " );
       break;
     case Opcode::MZP_RMB4:
-      off += sprintf( buf + off, "rmb3 " );
+      off += sprintf( buf + off, "rmb4 " );
       break;
     case Opcode::MZP_RMB5:
       off += sprintf( buf + off, "rmb5 " );
@@ -287,6 +300,8 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       off += sprintf( buf + off, "iny\n" );
       break;
     case Opcode::IMP_NOP:
+      off += sprintf( buf + off, "nop\n" );
+      break;
     case Opcode::UND_2_02:
     case Opcode::UND_2_22:
     case Opcode::UND_2_42:
@@ -294,7 +309,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::UND_2_82:
     case Opcode::UND_2_C2:
     case Opcode::UND_2_E2:
-      off += sprintf( buf + off, "nop\n" );
+      off += sprintf( buf + off, "nop " );
       break;
     case Opcode::IMP_SEC:
       off += sprintf( buf + off, "sec\n" );
@@ -312,7 +327,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       off += sprintf( buf + off, "tay\n" );
       break;
     case Opcode::IMP_TSX:
-      off += sprintf( buf + off, "rsx\n" );
+      off += sprintf( buf + off, "tsx\n" );
       break;
     case Opcode::IMP_TXA:
       off += sprintf( buf + off, "txa\n" );
@@ -487,7 +502,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::UND_4_dc:
     case Opcode::UND_4_fc:
     case Opcode::UND_8_5c:
-      off += sprintf( buf + off, "nop" );
+      off += sprintf( buf + off, "nop " );
       break;
     }
 
@@ -580,11 +595,9 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::RZX_ORA:
     case Opcode::RZX_ADC:
     case Opcode::RZX_SBC:
-    case Opcode::RZY_LDX:
     case Opcode::WZX_STA:
     case Opcode::WZX_STY:
     case Opcode::WZX_STZ:
-    case Opcode::WZY_STX:
     case Opcode::MZX_ASL:
     case Opcode::MZX_DEC:
     case Opcode::MZX_INC:
@@ -596,6 +609,11 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::UND_4_f4:
       lo = co_await opr;
       sprintf( buf + off, "$%02x,x\n", lo );
+      break;
+    case Opcode::RZY_LDX:
+    case Opcode::WZY_STX:
+      lo = co_await opr;
+      sprintf( buf + off, "$%02x,y\n", lo );
       break;
     case Opcode::RIN_AND:
     case Opcode::RIN_CMP:
@@ -664,6 +682,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       sprintf( buf + off, "$%02x%02x\n", hi, lo );
       break;
     case Opcode::RAX_AND:
+    case Opcode::RAX_BIT:
     case Opcode::RAX_CMP:
     case Opcode::RAX_EOR:
     case Opcode::RAX_LDA:

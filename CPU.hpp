@@ -72,18 +72,18 @@ struct CPU
 
   uint8_t p() const
   {
-    return P | 0x20;
+    return P | 0x30;
   }
 
-  uint8_t pbrk() const
+  uint8_t pirq() const
   {
-    return P | 0x30;
+    return P | 0x20;
   }
 
   void setnz( uint8_t v )
   {
     Z = v == 0 ? 1 : 0;
-    N = v >= 80 ? 1 : 0;
+    N = v >= 0x80 ? 1 : 0;
   }
 
   void setz( uint8_t v )

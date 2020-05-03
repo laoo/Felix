@@ -129,6 +129,7 @@ enum class Opcode : uint8_t
 
   RAX_ADC = 0x7d,
   RAX_AND = 0x3d,
+  RAX_BIT = 0x3c,
   RAX_CMP = 0xdd,
   RAX_EOR = 0x5d,
   RAX_LDA = 0xbd,
