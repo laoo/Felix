@@ -1190,8 +1190,8 @@ CpuLoop cpuLoop( CPU & cpu )
             opint.interrupt &= ~CPU::I_IRQ;
           }
         }
+        cpu.I = 1;
       }
-      cpu.I = 1;
       cpu.D = 0;
       cpu.pc = ea;
      break;
