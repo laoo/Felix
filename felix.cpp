@@ -11,6 +11,9 @@ int main()
   CpuLoop loop = cpuLoop( cpu );
   CpuTrace disasm = cpuTrace( cpu, bus.getTraceRequest() );
   loop.setBusMaster( &bus );
-  bus.process( 16000000 / 60 );
+  for ( ;; )
+  {
+    bus.process( 16000000 / 60 );
+  }
   return 0;
 }

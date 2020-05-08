@@ -60,6 +60,27 @@ SequencedAction TimerCore::fireAction( uint64_t tick )
 
 void TimerCore::borrowIn( uint64_t tick )
 {
+  if ( !( mEnableCount && mLinking ) || ( mTimerDone && !mEnableReload ) )
+    return;
+
+  if ( mValue > 0 )
+  {
+    mLastClock = --mValue == 0;
+  }
+  else
+  {
+    if ( mLastClock )
+    {
+      mLastClock = false;
+      mTimerDone = true;
+      mTrigger( tick, mEnableInt );
+    }
+    if ( mEnableReload )
+    {
+      mValue = mBackup;
+    }
+  }
+
 }
 
 SequencedAction TimerCore::computeAction( uint64_t tick )
