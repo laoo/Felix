@@ -3,15 +3,29 @@
 #include "Suzy.hpp"
 #include "Mikey.hpp"
 #include <fstream>
+#include <filesystem>
 #include <cassert>
 
 BusMaster::BusMaster() : mRAM{}, mROM{}, mBusReservationTick{}, mCurrentTick{}, mMikey{ std::make_shared<Mikey>() }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }
 {
-  std::ifstream fin{ "lynxboot.img", std::ios::binary };
-  if ( fin.bad() )
-    throw std::exception{};
+  {
+    std::ifstream fin{ "lynxboot.img", std::ios::binary };
+    if ( fin.bad() )
+      throw std::exception{};
 
-  fin.read( (char*)mROM.data(), mROM.size() );
+    fin.read( ( char* )mROM.data(), mROM.size() );
+  }
+  if ( size_t size = (size_t)std::filesystem::file_size( "felix1.bin" ) )
+  {
+    std::ifstream fin{ "felix1.bin", std::ios::binary };
+    if ( fin.bad() )
+      throw std::exception{};
+
+    fin.read( ( char* )mRAM.data() + 0x200, size );
+
+    mROM[0x1fc] = 0x00;
+    mROM[0x1fd] = 0x02;
+  }
 }
 
 BusMaster::~BusMaster()
@@ -57,11 +71,18 @@ void BusMaster::process( uint64_t ticks )
 
   for ( ;; )
   {
-    auto action = mActionQueue.pop();
-    mCurrentTick = action.getTick();
+    auto seqAction = mActionQueue.pop();
+    mCurrentTick = seqAction.getTick();
+    auto action = seqAction.getAction();
 
-    switch ( action.getAction() )
+    switch ( action )
     {
+    case Action::FIRE_TIMER0:
+      if ( auto newAction = mMikey->fireTimer( mCurrentTick, ( int )action - 1 ) )
+      {
+        mActionQueue.push( newAction );
+      }
+      break;
     case Action::CPU_FETCH_OPCODE_RAM:
       mDReq.value = mReq.value = mRAM[mReq.address];
       mSequencedAccessAddress = mReq.address + 1;
@@ -117,9 +138,9 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_WRITE_SUZY:
-      if ( auto action = mSuzy->write( mReq.address, mReq.value ) )
+      if ( auto newAction = mSuzy->write( mReq.address, mReq.value ) )
       {
-        mActionQueue.push( action );
+        mActionQueue.push( newAction );
       }
       mReq.resume();
       break;
@@ -128,9 +149,9 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_WRITE_MIKEY:
-      if ( auto action = mMikey->write( mReq.address, mReq.value ) )
+      if ( auto newAction = mMikey->write( mReq.address, mReq.value ) )
       {
-        mActionQueue.push( action );
+        mActionQueue.push( newAction );
       }
       mReq.resume();
       break;

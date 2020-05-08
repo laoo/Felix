@@ -16,6 +16,7 @@ public:
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
   SequencedAction write( uint16_t address, uint8_t value );
+  SequencedAction fireTimer( uint64_t tick, uint32_t timer );
 
   struct Reg
   {
@@ -41,7 +42,10 @@ public:
         static constexpr uint8_t OTHER      = 0x7;
       };
 
-      static constexpr uint8_t DISPCTL = 0x92;
+      static constexpr uint8_t DISPCTL      = 0x92;
+      static constexpr uint8_t PBKUP        = 0x93;
+      static constexpr uint8_t GREEN        = 0xa0;
+      static constexpr uint8_t BLUERED      = 0xb0;
     };
 
     struct DISPCTL
@@ -65,6 +69,7 @@ private:
       bool dispFourBit;
       bool dispFlip;
       bool DMAEnable;
+      bool pbkup;
     } mDisplayRegs;
 
 };

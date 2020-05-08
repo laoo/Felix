@@ -3,12 +3,25 @@
 #include <cstdint>
 #include <vector>
 
-static constexpr uint64_t TICK_PERIOD_LOG = 5;
+static constexpr uint64_t TICK_PERIOD_LOG = 6;
 static constexpr uint64_t TICK_PERIOD = 1 << TICK_PERIOD_LOG;
 
 enum class Action
 {
   NONE,
+  FIRE_TIMER0,
+  FIRE_TIMER1,
+  FIRE_TIMER2,
+  FIRE_TIMER3,
+  FIRE_TIMER4,
+  FIRE_TIMER5,
+  FIRE_TIMER6,
+  FIRE_TIMER7,
+  FIRE_TIMER8,
+  FIRE_TIMER9,
+  FIRE_TIMERA,
+  FIRE_TIMERB,
+  FIRE_TIMERC,
   CPU_FETCH_OPCODE_RAM,
   CPU_FETCH_OPERAND_RAM,
   CPU_READ_RAM,
