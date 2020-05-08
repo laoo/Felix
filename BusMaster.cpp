@@ -117,7 +117,10 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_WRITE_SUZY:
-      mSuzy->write( mReq.address, mReq.value );
+      if ( auto action = mSuzy->write( mReq.address, mReq.value ) )
+      {
+        mActionQueue.push( action );
+      }
       mReq.resume();
       break;
     case Action::CPU_READ_MIKEY:
@@ -125,7 +128,10 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_WRITE_MIKEY:
-      mMikey->write( mReq.address, mReq.value );
+      if ( auto action = mMikey->write( mReq.address, mReq.value ) )
+      {
+        mActionQueue.push( action );
+      }
       mReq.resume();
       break;
     case Action::END_FRAME:

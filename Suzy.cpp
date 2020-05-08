@@ -22,11 +22,14 @@ uint8_t Suzy::read( uint16_t address )
   return uint8_t();
 }
 
-void Suzy::write( uint16_t address, uint8_t value )
+SequencedAction Suzy::write( uint16_t address, uint8_t value )
 {
   switch ( address )
   {
   default:
     assert( false );
+    break;
   }
+
+  return {};
 }

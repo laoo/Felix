@@ -1292,6 +1292,8 @@ CpuLoop cpuLoop( CPU & cpu )
       co_yield{ 0xffff };
       co_yield{ 0xffff };
       break;
+    default:  //for UND_1_xx
+      break;
     }
 
     for ( ;; )

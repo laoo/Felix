@@ -162,10 +162,12 @@
     <ClCompile Include="felix.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
+    <ClCompile Include="TimerCore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="BusMaster.hpp" />
+    <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUTrace.hpp" />
     <ClInclude Include="CPUExecute.hpp" />
