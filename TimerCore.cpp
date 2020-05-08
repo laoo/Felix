@@ -83,6 +83,11 @@ void TimerCore::borrowIn( uint64_t tick )
 
 }
 
+uint8_t TimerCore::value() const
+{
+  return mValue;
+}
+
 SequencedAction TimerCore::computeAction( uint64_t tick )
 {
   if ( !mEnableCount || mLinking || ( mTimerDone && !mEnableReload ) )

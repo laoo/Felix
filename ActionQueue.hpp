@@ -9,6 +9,7 @@ static constexpr uint64_t TICK_PERIOD = 1 << TICK_PERIOD_LOG;
 enum class Action
 {
   NONE,
+  DISPLAY_DMA,
   FIRE_TIMER0,
   FIRE_TIMER1,
   FIRE_TIMER2,

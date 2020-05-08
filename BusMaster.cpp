@@ -60,6 +60,11 @@ CPURequest * BusMaster::request( CPUWrite w )
   return &mReq;
 }
 
+void BusMaster::requestDisplayDMA( uint64_t tick )
+{
+  mActionQueue.push( { Action::DISPLAY_DMA, tick } );
+}
+
 TraceRequest & BusMaster::getTraceRequest()
 {
   return mDReq;
@@ -77,7 +82,11 @@ void BusMaster::process( uint64_t ticks )
 
     switch ( action )
     {
-    case Action::FIRE_TIMER0:
+      case Action::DISPLAY_DMA:
+        mMikey->setDMAData( &mRAM[ mMikey->getDMAAddress() ] );
+        mBusReservationTick += 7 * 4 + 5;
+        break;
+      case Action::FIRE_TIMER0:
       if ( auto newAction = mMikey->fireTimer( mCurrentTick, ( int )action - 1 ) )
       {
         mActionQueue.push( newAction );
@@ -194,25 +203,25 @@ void BusMaster::request( CPURequest const & request )
     Action::CPU_WRITE_MIKEY,
   };
 
-  uint64_t tick;
+  auto tick = mBusReservationTick;
   size_t tableOffset{};
   switch ( request.address >> 8 )
   {
   case 0xff:
   case 0xfe:
-    tick = mCurrentTick + ( ( request.address == mSequencedAccessAddress ) ? 4 : 5 );
+    mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? 4 : 5;
     tableOffset = 5;
     break;
   case 0xfc:
-    tick = mSuzy->requestAccess( mCurrentTick, request.address );
+    mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, request.address );
     tableOffset = 10;
     break;
   case 0xfd:
-    tick = mMikey->requestAccess( mCurrentTick, request.address );
+    mBusReservationTick = mMikey->requestAccess( mBusReservationTick, request.address );
     tableOffset = 15;
     break;
   default:
-    tick = mCurrentTick + ( ( request.address == mSequencedAccessAddress ) ? 4 : 5 );
+    mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? 4 : 5;
     break;
   }
 

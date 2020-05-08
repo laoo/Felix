@@ -1,12 +1,14 @@
 #include "Mikey.hpp"
 #include <cassert>
 #include "TimerCore.hpp"
+#include "DisplayGenerator.hpp"
 
-Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayRegs{}
+Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() }, mDisplayRegs{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x2]->borrowIn( tick );
+    mDisplayGenerator->hblank( tick, mTimers[0x02]->value() );
   } );  //timer 0 -> timer 2
   mTimers[0x1] = std::make_unique<TimerCore>( 0x1, [this]( uint64_t tick, bool interrupt )
   {
@@ -15,6 +17,7 @@ Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayRegs{}
   mTimers[0x2] = std::make_unique<TimerCore>( 0x2, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x4]->borrowIn( tick );
+    mDisplayGenerator->vblank( mDisplayRegs.dispAdr );
   } );  //timer 2 -> timer 4
   mTimers[0x3] = std::make_unique<TimerCore>( 0x4, [this]( uint64_t tick, bool interrupt )
   {
@@ -223,4 +226,13 @@ SequencedAction Mikey::fireTimer( uint64_t tick, uint32_t timer )
 {
   assert( timer < 12 );
   return mTimers[timer]->fireAction( tick );
+}
+
+uint16_t Mikey::getDMAAddress()
+{
+  return uint16_t();
+}
+
+void Mikey::setDMAData( uint8_t const * data )
+{
 }

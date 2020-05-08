@@ -6,6 +6,7 @@
 #include "ActionQueue.hpp"
 
 class TimerCore;
+class DisplayGenerator;
 
 class Mikey
 {
@@ -17,6 +18,8 @@ public:
   uint8_t read( uint16_t address );
   SequencedAction write( uint16_t address, uint8_t value );
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
+  uint16_t getDMAAddress();
+  void setDMAData( uint8_t const* data );
 
   struct Reg
   {
@@ -62,14 +65,16 @@ private:
     uint64_t mAccessTick;
 
     std::array<std::unique_ptr<TimerCore>, 12> mTimers;
+    std::unique_ptr<DisplayGenerator> mDisplayGenerator;
 
     struct DisplayRegs
     {
+      uint16_t dispAdr;
       bool dispColor;
       bool dispFourBit;
       bool dispFlip;
       bool DMAEnable;
-      bool pbkup;
+      uint8_t pbkup;
     } mDisplayRegs;
 
 };

@@ -22,6 +22,8 @@ public:
   CPURequest * request( CPUFetchOpcode r );
   CPURequest * request( CPUFetchOperand r );
   CPURequest * request( CPUWrite w );
+  void requestDisplayDMA( uint64_t tick );
+
   void process( uint64_t ticks );
 
   TraceRequest & getTraceRequest();

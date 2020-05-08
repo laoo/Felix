@@ -31,6 +31,9 @@
     <ClCompile Include="TimerCore.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DisplayGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -58,6 +61,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="TimerCore.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayGenerator.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

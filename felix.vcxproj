@@ -160,6 +160,7 @@
     <ClCompile Include="BusMaster.cpp" />
     <ClCompile Include="CPUExecute.cpp" />
     <ClCompile Include="CPUTrace.cpp" />
+    <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="felix.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
@@ -168,6 +169,7 @@
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="BusMaster.hpp" />
+    <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUTrace.hpp" />

@@ -16,6 +16,7 @@ public:
 
   SequencedAction fireAction( uint64_t tick );
   void borrowIn( uint64_t tick );
+  uint8_t value() const;
 
 private:
   SequencedAction computeAction( uint64_t tick );
