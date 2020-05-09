@@ -100,13 +100,18 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
     mImmediateContext->RSSetViewports( 1, &vp );
   }
 
-  CBPosSize cbPosSize{ 0, 0, 160, 102 };
+  int sx = (std::max)( 1, theWinWidth / 160 );
+  int sy = (std::max)( 1, theWinHeight / 102 );
+  int s = (std::min)( sx, sy );
+
+  CBPosSize cbPosSize{ ( theWinWidth - 160 * s ) / 2, ( theWinHeight - 102 * s ) / 2, s, s };
   mImmediateContext->UpdateSubresource( mPosSizeCB, 0, NULL, &cbPosSize, 0, 0 );
+  mImmediateContext->CSSetConstantBuffers( 0, 1, &mPosSizeCB.p );
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &mBackBufferUAV.p, nullptr );
   mImmediateContext->CSSetShader( mRendererCS, nullptr, 0 );
-  UINT v[4] ={};
+  UINT v[4]={};
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV, v );
   mImmediateContext->Dispatch( 10, 102, 1 );
-  mSwapChain->Present( 0, 0 );
+  mSwapChain->Present( 1, 0 );
 }
 

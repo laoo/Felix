@@ -11,5 +11,13 @@ cbuffer cb : register( b0 )
 [numthreads( 16, 1, 1 )]
 void main( uint3 DT : SV_DispatchThreadID )
 {
-  dst[DT.xy] = float4( 1, 0, 0, 1 );
+  
+  for ( int y = 0; y < posSize.w; ++y )
+  {
+    for ( int x = 0; x < posSize.z; ++x )
+    {
+      dst[posSize.xy + DT.xy * posSize.zw + int2(x,y) ]  = float4( 1, 0, 0, 1 );
+    }
+  }
+
 }
