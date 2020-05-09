@@ -69,6 +69,25 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
 
 void WinRenderer::render( DisplayGenerator::Pixel const * surface )
 {
+  D3D11_TEXTURE2D_DESC desc{};
+  desc.Format = DXGI_FORMAT_B8G8R8X8_UNORM;
+  desc.Width = 160;
+  desc.Height = 102;
+  desc.MipLevels = 1;
+  desc.ArraySize = 1;
+  desc.SampleDesc.Count = 1;
+  desc.SampleDesc.Quality = 0;
+  desc.Usage = D3D11_USAGE_IMMUTABLE;
+  desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+  desc.CPUAccessFlags = 0;
+  desc.MiscFlags = 0;
+  D3D11_SUBRESOURCE_DATA sda{ surface, 160 * 4, 0 };
+  ATL::CComPtr<ID3D11Texture2D> tex;
+  mD3DDevice->CreateTexture2D( &desc, &sda, &tex );
+  ATL::CComPtr<ID3D11ShaderResourceView> texSRV;
+  V_THROW( mD3DDevice->CreateShaderResourceView( tex, NULL, &texSRV.p ) );
+
+  
   RECT r;
   ::GetClientRect( mHWnd, &r );
 
@@ -107,6 +126,7 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   CBPosSize cbPosSize{ ( theWinWidth - 160 * s ) / 2, ( theWinHeight - 102 * s ) / 2, s, s };
   mImmediateContext->UpdateSubresource( mPosSizeCB, 0, NULL, &cbPosSize, 0, 0 );
   mImmediateContext->CSSetConstantBuffers( 0, 1, &mPosSizeCB.p );
+  mImmediateContext->CSSetShaderResources( 0, 1, &texSRV.p );
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &mBackBufferUAV.p, nullptr );
   mImmediateContext->CSSetShader( mRendererCS, nullptr, 0 );
   UINT v[4]={};
