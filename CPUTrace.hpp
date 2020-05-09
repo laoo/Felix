@@ -29,7 +29,8 @@ struct TraceRequest
   void resume()
   {
     mType = Type::NONE;
-    coro.resume();
+    if ( coro )
+      coro.resume();
   }
 
   std::experimental::coroutine_handle<> coro;

@@ -2,7 +2,13 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <experimental/coroutine>
 #include "WinRenderer.hpp"
+#include "BusMaster.hpp"
+#include "CPUExecute.hpp"
+#include "CPUTrace.hpp"
+#include "Mikey.hpp"
 
 
 std::vector<std::wstring> gDroppedFiles;
@@ -89,7 +95,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     DragAcceptFiles( hwnd, TRUE );
 
-    for ( ;;)
+
+    CPU cpu;
+    Mikey mikey;
+    BusMaster bus{ mikey };
+    CpuLoop loop = cpuLoop( cpu );
+    //CpuTrace trace = cpuTrace( cpu, bus.getTraceRequest() );
+    loop.setBusMaster( &bus );
+
+    for ( ;; )
     {
       while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
       {
@@ -103,7 +117,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       if ( msg.message == WM_QUIT )
         break;
 
-      renderer.render( nullptr );
+      //auto t1 = std::chrono::high_resolution_clock::now();
+      bus.process( 16000000 / 60 );
+      //auto t2 = std::chrono::high_resolution_clock::now();
+      //auto diff = t2 - t1;
+      //char buf[100];
+      //sprintf( buf, "%llu\n", std::chrono::duration_cast< std::chrono::milliseconds >( diff ).count() );
+      //OutputDebugStringA( buf );
+
+      renderer.render( mikey.getSrface() );
     }
   }
   catch ( std::runtime_error const& )

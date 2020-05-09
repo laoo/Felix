@@ -1,7 +1,6 @@
 #include "Mikey.hpp"
 #include <cassert>
 #include "TimerCore.hpp"
-#include "DisplayGenerator.hpp"
 
 Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() }, mDisplayRegs{}
 {
@@ -235,4 +234,9 @@ uint16_t Mikey::getDMAAddress()
 
 void Mikey::setDMAData( uint8_t const * data )
 {
+}
+
+DisplayGenerator::Pixel const * Mikey::getSrface() const
+{
+  return mDisplayGenerator->getSrface();
 }

@@ -15,7 +15,7 @@ class Suzy;
 class BusMaster
 {
 public:
-  BusMaster();
+  BusMaster( Mikey & mikey );
   ~BusMaster();
 
   CPURequest * request( CPURead r );
@@ -32,12 +32,12 @@ private:
   void request( CPURequest const& request );
 
 private:
+  Mikey & mMikey;
 
   std::array<uint8_t,65536> mRAM;
   std::array<uint8_t, 512> mROM;
   uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
-  std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
   ActionQueue mActionQueue;
   CPURequest mReq;

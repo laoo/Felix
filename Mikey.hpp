@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include "ActionQueue.hpp"
+#include "DisplayGenerator.hpp"
 
 class TimerCore;
 class DisplayGenerator;
@@ -20,6 +21,7 @@ public:
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
   uint16_t getDMAAddress();
   void setDMAData( uint8_t const* data );
+  DisplayGenerator::Pixel const* getSrface() const;
 
   struct Reg
   {

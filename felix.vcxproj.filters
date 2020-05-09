@@ -7,9 +7,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="felix.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BusMaster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

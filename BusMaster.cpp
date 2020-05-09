@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <cassert>
 
-BusMaster::BusMaster() : mRAM{}, mROM{}, mBusReservationTick{}, mCurrentTick{}, mMikey{ std::make_shared<Mikey>() }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }
+BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mBusReservationTick{}, mCurrentTick{}, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }
 {
   {
     std::ifstream fin{ "lynxboot.img", std::ios::binary };
@@ -83,11 +83,11 @@ void BusMaster::process( uint64_t ticks )
     switch ( action )
     {
       case Action::DISPLAY_DMA:
-        mMikey->setDMAData( &mRAM[ mMikey->getDMAAddress() ] );
+        mMikey.setDMAData( &mRAM[ mMikey.getDMAAddress() ] );
         mBusReservationTick += 7 * 4 + 5;
         break;
       case Action::FIRE_TIMER0:
-      if ( auto newAction = mMikey->fireTimer( mCurrentTick, ( int )action - 1 ) )
+      if ( auto newAction = mMikey.fireTimer( mCurrentTick, ( int )action - 1 ) )
       {
         mActionQueue.push( newAction );
       }
@@ -154,11 +154,11 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_READ_MIKEY:
-      mReq.value = mMikey->read( mReq.address );
+      mReq.value = mMikey.read( mReq.address );
       mReq.resume();
       break;
     case Action::CPU_WRITE_MIKEY:
-      if ( auto newAction = mMikey->write( mReq.address, mReq.value ) )
+      if ( auto newAction = mMikey.write( mReq.address, mReq.value ) )
       {
         mActionQueue.push( newAction );
       }
@@ -217,7 +217,7 @@ void BusMaster::request( CPURequest const & request )
     tableOffset = 10;
     break;
   case 0xfd:
-    mBusReservationTick = mMikey->requestAccess( mBusReservationTick, request.address );
+    mBusReservationTick = mMikey.requestAccess( mBusReservationTick, request.address );
     tableOffset = 15;
     break;
   default:
