@@ -21,26 +21,43 @@ public:
   {
     uint64_t tick;
     uint16_t address;
+
+    explicit operator bool() const
+    {
+      return tick != 0;
+    }
   };
 
   DisplayGenerator();
   void dispCtl( bool dispColor, bool dispFlip, bool dmaEnable );
 
   DMARequest hblank( uint64_t tick, int row );
-  DMARequest pushData( uint64_t tick, uint8_t const* data );
+  DMARequest pushData( uint64_t tick, uint64_t data );
   void updatePalette( uint64_t tick, uint8_t reg, uint8_t value );
 
-  void vblank( uint16_t dispAdr );
+  void vblank( uint64_t tick, uint16_t dispAdr );
   Pixel const* getSrface() const;
 
+private:
+  void flushDisplay( uint64_t tick );
 
 private:
-  std::array<uint8_t, 8> mDMAData;
+  std::array<uint64_t,10> mDMAData;
+  uint64_t mRowStartTick;
+  uint32_t mDMAIteration;
+  int32_t mDisplayRow;
+  uint32_t mDisplayedPixels;
   std::array<Pixel, 160 * 102> mSurface;
-  uint16_t mRowAddr;
+  std::array<Pixel, 256> mLeftNibblePalette;
+  std::array<Pixel, 256> mRightNibblePalette;
   uint16_t mDispAdr;
   bool mDispColor;
   bool mDispFlip;
   bool mDMAEnable;
- 
+
+  static constexpr uint64_t DMA_ITERATIONS = 10;
+  static constexpr uint64_t TICKS_PER_PIXEL = 12;
+  static constexpr uint64_t ROW_TICKS = TICKS_PER_PIXEL * 160;
+
+
 };

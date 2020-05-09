@@ -1,19 +1,46 @@
 #include "DisplayGenerator.hpp"
 
-DisplayGenerator::DisplayGenerator() : mDMAData{}, mRowAddr{}, mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
+DisplayGenerator::DisplayGenerator() : mDMAData{}, mRowStartTick{}, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
+  mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
 {
+  for ( uint32_t i = 0; i < 256; ++i )
+  {
+    mLeftNibblePalette[i] = Pixel{ 0, 0, 0, 255 };
+    mRightNibblePalette[i] = Pixel{ 0, 0, 0, 255 };
+  }
 }
 
 void DisplayGenerator::dispCtl( bool dispColor, bool dispFlip, bool dmaEnable )
 {
+  mDispColor = dispColor;
+  mDispFlip = dispFlip;
+  mDMAEnable = dmaEnable;
 }
 
 DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
 {
-  if ( row < 102 )
+  mDisplayRow = 101 - row;
+  if ( mDisplayRow >= 0 && mDMAEnable )
   {
-    mRowAddr = ( uint16_t )( mDispAdr + ( ( 101 - row ) * 80 ) );
-    return { tick, mRowAddr };
+    mRowStartTick = tick;
+    mDMAIteration = 0;
+    mDisplayedPixels = 0;
+    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), (uint16_t)( mDispAdr + mDisplayRow * 80 + mDMAIteration * ( 80 / DMA_ITERATIONS ) ) };
+  }
+  else
+  {
+    mRowStartTick = 0;
+    return {};
+  }
+}
+
+DisplayGenerator::DMARequest DisplayGenerator::pushData( uint64_t tick, uint64_t data )
+{
+  mDMAData[mDMAIteration] = data;
+  flushDisplay( tick );
+  if ( ++mDMAIteration < 10 )
+  {
+    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), ( uint16_t )( mDispAdr + mDisplayRow * 80 + mDMAIteration * ( 80 / DMA_ITERATIONS ) ) };
   }
   else
   {
@@ -21,22 +48,81 @@ DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
   }
 }
 
-DisplayGenerator::DMARequest DisplayGenerator::pushData( uint64_t tick, uint8_t const * data )
-{
-  mRowAddr += 8;
-  return { tick + 100, mRowAddr };
-}
-
 void DisplayGenerator::updatePalette( uint64_t tick, uint8_t reg, uint8_t value )
 {
+  flushDisplay( tick );
+
+  if ( reg < 16 )
+  {
+    uint32_t regLo = reg;
+    uint32_t regHi = reg << 4;
+
+    //green
+    uint8_t g = ( value << 4 ) | ( value & 0x0f );
+
+    for ( uint32_t i = 0; i < 256; ++i )
+    {
+      if ( ( i & 0xf0 ) == regHi )
+      {
+        mLeftNibblePalette[i].g = g;
+      }
+      if ( ( i & 0x0f ) == regLo )
+      {
+        mRightNibblePalette[i].g = g;
+      }
+    }
+  }
+  else
+  {
+    uint32_t regLo = reg & 0x0f;
+    uint32_t regHi = regLo << 4;
+
+    //blue
+    uint8_t b = ( value >> 4 ) | ( value & 0xf0 );
+    //red
+    uint8_t r = ( value << 4 ) | ( value & 0x0f );
+
+    for ( uint32_t i = 0; i < 256; ++i )
+    {
+      if ( ( i & 0xf0 ) == regHi )
+      {
+        mLeftNibblePalette[i].b = b;
+        mLeftNibblePalette[i].r = r;
+      }
+      if ( ( i & 0x0f ) == regLo )
+      {
+        mRightNibblePalette[i].b = b;
+        mRightNibblePalette[i].r = r;
+      }
+    }
+  }
 }
 
-void DisplayGenerator::vblank( uint16_t dispAdr )
+void DisplayGenerator::vblank( uint64_t tick, uint16_t dispAdr )
 {
+  flushDisplay( tick );
   mDispAdr = dispAdr;
+}
+
+void DisplayGenerator::flushDisplay( uint64_t tick )
+{
+  if ( mRowStartTick == 0 )
+    return;
+
+  uint32_t limit = (std::min)( 160u, ( uint32_t )( tick - mRowStartTick ) / ( uint32_t )TICKS_PER_PIXEL );
+
+  uint8_t const* lineData = reinterpret_cast<uint8_t const*>( mDMAData.data() );
+
+  while ( mDisplayedPixels < limit )
+  {
+    uint8_t b = lineData[mDisplayedPixels >> 1];
+    mSurface[( uint32_t )( mDisplayRow * 160 + mDisplayedPixels )] = mDisplayedPixels & 1 ? mRightNibblePalette[b] : mLeftNibblePalette[b];
+    mDisplayedPixels += 1;
+  }
 }
 
 DisplayGenerator::Pixel const * DisplayGenerator::getSrface() const
 {
   return mSurface.data();
 }
+

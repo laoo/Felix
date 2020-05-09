@@ -7,7 +7,10 @@ Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayGenerator{ std::make_unique<D
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x2]->borrowIn( tick );
-    mDisplayGenerator->hblank( tick, mTimers[0x02]->value() );
+    if ( auto dma = mDisplayGenerator->hblank( tick, mTimers[0x02]->value() ) )
+    {
+      mRequestDisplayDMA( dma.tick, dma.address );
+    }
   } );  //timer 0 -> timer 2
   mTimers[0x1] = std::make_unique<TimerCore>( 0x1, [this]( uint64_t tick, bool interrupt )
   {
@@ -16,7 +19,7 @@ Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayGenerator{ std::make_unique<D
   mTimers[0x2] = std::make_unique<TimerCore>( 0x2, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x4]->borrowIn( tick );
-    mDisplayGenerator->vblank( mDisplayRegs.dispAdr );
+    mDisplayGenerator->vblank( tick, mDisplayRegs.dispAdr );
   } );  //timer 2 -> timer 4
   mTimers[0x3] = std::make_unique<TimerCore>( 0x4, [this]( uint64_t tick, bool interrupt )
   {
@@ -145,73 +148,54 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     mDisplayRegs.dispFourBit = ( value & Reg::DISPCTL::DISP_FOURBIT ) != 0;
     mDisplayRegs.dispFlip = ( value & Reg::DISPCTL::DISP_FLIP ) != 0;
     mDisplayRegs.DMAEnable = ( value & Reg::DISPCTL::DMA_ENABLE ) != 0;
+    mDisplayGenerator->dispCtl( mDisplayRegs.dispColor, mDisplayRegs.dispFlip, mDisplayRegs.DMAEnable );
     break;
   case Reg::Offset::PBKUP:
     mDisplayRegs.pbkup = value;
     break;
+  case Reg::Offset::DISPADR:
+    mDisplayRegs.dispAdr &= 0xff00;
+    mDisplayRegs.dispAdr |= value;
+    mDisplayRegs.dispAdr &= 0xfffc;
+    break;
+  case Reg::Offset::DISPADR+1:
+    mDisplayRegs.dispAdr &= 0x00ff;
+    mDisplayRegs.dispAdr |= value << 8;
+    break;
   case Reg::Offset::GREEN + 0x00:
-    break;
   case Reg::Offset::GREEN + 0x01:
-    break;
   case Reg::Offset::GREEN + 0x02:
-    break;
   case Reg::Offset::GREEN + 0x03:
-    break;
   case Reg::Offset::GREEN + 0x04:
-    break;
   case Reg::Offset::GREEN + 0x05:
-    break;
   case Reg::Offset::GREEN + 0x06:
-    break;
   case Reg::Offset::GREEN + 0x07:
-    break;
   case Reg::Offset::GREEN + 0x08:
-    break;
   case Reg::Offset::GREEN + 0x09:
-    break;
   case Reg::Offset::GREEN + 0x0a:
-    break;
   case Reg::Offset::GREEN + 0x0b:
-    break;
   case Reg::Offset::GREEN + 0x0c:
-    break;
   case Reg::Offset::GREEN + 0x0d:
-    break;
   case Reg::Offset::GREEN + 0x0e:
-    break;
   case Reg::Offset::GREEN + 0x0f:
-    break;
   case Reg::Offset::BLUERED + 0x00:
-    break;
   case Reg::Offset::BLUERED + 0x01:
-    break;
   case Reg::Offset::BLUERED + 0x02:
-    break;
   case Reg::Offset::BLUERED + 0x03:
-    break;
   case Reg::Offset::BLUERED + 0x04:
-    break;
   case Reg::Offset::BLUERED + 0x05:
-    break;
   case Reg::Offset::BLUERED + 0x06:
-    break;
   case Reg::Offset::BLUERED + 0x07:
-    break;
   case Reg::Offset::BLUERED + 0x08:
-    break;
   case Reg::Offset::BLUERED + 0x09:
-    break;
   case Reg::Offset::BLUERED + 0x0a:
-    break;
   case Reg::Offset::BLUERED + 0x0b:
-    break;
   case Reg::Offset::BLUERED + 0x0c:
-    break;
   case Reg::Offset::BLUERED + 0x0d:
-    break;
   case Reg::Offset::BLUERED + 0x0e:
-    break;
   case Reg::Offset::BLUERED + 0x0f:
+    mPalette[address - Reg::Offset::GREEN] = value;
+    mDisplayGenerator->updatePalette( mAccessTick, address - Reg::Offset::GREEN, value );
     break;
   default:
     assert( false );
@@ -227,13 +211,17 @@ SequencedAction Mikey::fireTimer( uint64_t tick, uint32_t timer )
   return mTimers[timer]->fireAction( tick );
 }
 
-uint16_t Mikey::getDMAAddress()
+void Mikey::setDMAData( uint64_t tick, uint64_t data )
 {
-  return uint16_t();
+  if ( auto dma = mDisplayGenerator->pushData( tick, data ) )
+  {
+    mRequestDisplayDMA( dma.tick, dma.address );
+  }
 }
 
-void Mikey::setDMAData( uint8_t const * data )
+void Mikey::setDMARequestCallback( std::function<void( uint64_t tick, uint16_t address )> requestDisplayDMA )
 {
+  mRequestDisplayDMA = std::move( requestDisplayDMA );
 }
 
 DisplayGenerator::Pixel const * Mikey::getSrface() const

@@ -6,8 +6,15 @@
 #include <filesystem>
 #include <cassert>
 
-BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mBusReservationTick{}, mCurrentTick{}, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }
+BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mBusReservationTick{}, mCurrentTick{},
+  mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}
 {
+  mMikey.setDMARequestCallback( [this]( uint64_t tick, uint16_t address )
+  {
+    mDMAAddress = address;
+    mActionQueue.push( { Action::DISPLAY_DMA, tick } );
+  } );
+
   {
     std::ifstream fin{ "lynxboot.img", std::ios::binary };
     if ( fin.bad() )
@@ -60,11 +67,6 @@ CPURequest * BusMaster::request( CPUWrite w )
   return &mReq;
 }
 
-void BusMaster::requestDisplayDMA( uint64_t tick )
-{
-  mActionQueue.push( { Action::DISPLAY_DMA, tick } );
-}
-
 TraceRequest & BusMaster::getTraceRequest()
 {
   return mDReq;
@@ -83,11 +85,11 @@ void BusMaster::process( uint64_t ticks )
     switch ( action )
     {
       case Action::DISPLAY_DMA:
-        mMikey.setDMAData( &mRAM[ mMikey.getDMAAddress() ] );
-        mBusReservationTick += 7 * 4 + 5;
+        mMikey.setDMAData( mCurrentTick, *(uint64_t*)( mRAM.data() + mDMAAddress ) );
+        mBusReservationTick += 6 * 4 + 2 * 5;
         break;
       case Action::FIRE_TIMER0:
-      if ( auto newAction = mMikey.fireTimer( mCurrentTick, ( int )action - 1 ) )
+      if ( auto newAction = mMikey.fireTimer( mCurrentTick, ( int )action - ( int )Action::FIRE_TIMER0 ) )
       {
         mActionQueue.push( newAction );
       }
