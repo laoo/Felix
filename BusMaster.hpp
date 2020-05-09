@@ -28,13 +28,27 @@ public:
   TraceRequest & getTraceRequest();
 private:
 
+  enum class PageType
+  {
+    RAM = 0,
+    FE = 5,
+    FF = 10,
+    MIKEY = 15,
+    SUZY = 20
+  };
+
   void request( CPURequest const& request );
+  uint8_t readFF( uint16_t address );
+  void writeFF( uint16_t address, uint8_t value );
+
+
 
 private:
   Mikey & mMikey;
 
   std::array<uint8_t,65536> mRAM;
   std::array<uint8_t, 512> mROM;
+  std::array<PageType, 256> mPageTypes;
   uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
   std::shared_ptr<Suzy> mSuzy;

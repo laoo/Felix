@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <cassert>
 
-BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mBusReservationTick{}, mCurrentTick{},
+BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
   mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}
 {
   mMikey.setDMARequestCallback( [this]( uint64_t tick, uint16_t address )
@@ -32,6 +32,28 @@ BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mBusRes
 
     mROM[0x1fc] = 0x00;
     mROM[0x1fd] = 0x02;
+  }
+
+  for ( size_t i = 0; i < mPageTypes.size(); ++i )
+  {
+    switch ( i )
+    {
+      case 0xff:
+        mPageTypes[i] = PageType::FF;
+        break;
+      case 0xfe:
+        mPageTypes[i] = PageType::FE;
+        break;
+      case 0xfd:
+        mPageTypes[i] = PageType::MIKEY;
+        break;
+      case 0xfc:
+        mPageTypes[i] = PageType::SUZY;
+        break;
+      default:
+        mPageTypes[i] = PageType::RAM;
+        break;
+    }
   }
 }
 
@@ -119,7 +141,7 @@ void BusMaster::process( uint64_t ticks )
       mSequencedAccessAddress = ~0;
       mReq.resume();
       break;
-    case Action::CPU_FETCH_OPCODE_ROM:
+    case Action::CPU_FETCH_OPCODE_FE:
       mDReq.value = mReq.value = mROM[mReq.address & 0x1ff];
       mSequencedAccessAddress = mReq.address + 1;
       mDReq.cycle = mCurrentTick;
@@ -128,19 +150,43 @@ void BusMaster::process( uint64_t ticks )
       mDReq.resume();
       mReq.resume();
       break;
-    case Action::CPU_FETCH_OPERAND_ROM:
+    case Action::CPU_FETCH_OPERAND_FE:
       mDReq.value = mReq.value = mROM[mReq.address & 0x1ff];
       mSequencedAccessAddress = mReq.address + 1;
       mDReq.resume();
       mReq.resume();
       break;
-    case Action::CPU_READ_ROM:
+    case Action::CPU_READ_FE:
       mReq.value = mROM[mReq.address & 0x1ff];
       mSequencedAccessAddress = mReq.address + 1;
       mReq.resume();
       break;
-    case Action::CPU_WRITE_ROM:
-      mROM[mReq.address & 0x1ff] = mReq.value;
+    case Action::CPU_WRITE_FE:
+      mSequencedAccessAddress = ~0;
+      mReq.resume();
+      break;
+    case Action::CPU_FETCH_OPCODE_FF:
+      mDReq.value = mReq.value = readFF( mReq.address & 0xff );
+      mSequencedAccessAddress = mReq.address + 1;
+      mDReq.cycle = mCurrentTick;
+      //mDReq.interrupt = CPU::I_RESET;
+      //mReq.interrupt = CPU::I_RESET;
+      mDReq.resume();
+      mReq.resume();
+      break;
+    case Action::CPU_FETCH_OPERAND_FF:
+      mDReq.value = mReq.value = readFF( mReq.address & 0xff );
+      mSequencedAccessAddress = mReq.address + 1;
+      mDReq.resume();
+      mReq.resume();
+      break;
+    case Action::CPU_READ_FF:
+      mReq.value = readFF( mReq.address & 0xff );
+      mSequencedAccessAddress = mReq.address + 1;
+      mReq.resume();
+      break;
+    case Action::CPU_WRITE_FF:
+      writeFF( mReq.address & 0xff, mReq.value );
       mSequencedAccessAddress = ~0;
       mReq.resume();
       break;
@@ -182,51 +228,60 @@ void BusMaster::process( uint64_t ticks )
 
 void BusMaster::request( CPURequest const & request )
 {
-  static constexpr std::array<Action, 20> requestToAction = {
+  static constexpr std::array<Action, 25> requestToAction = {
     Action::NONE,
     Action::CPU_FETCH_OPCODE_RAM,
     Action::CPU_FETCH_OPERAND_RAM,
     Action::CPU_READ_RAM,
     Action::CPU_WRITE_RAM,
-    Action::NONE_ROM,
-    Action::CPU_FETCH_OPCODE_ROM,
-    Action::CPU_FETCH_OPERAND_ROM,
-    Action::CPU_READ_ROM,
-    Action::CPU_WRITE_ROM,
-    Action::NONE_SUZY,
-    Action::CPU_FETCH_OPCODE_SUZY,
-    Action::CPU_FETCH_OPERAND_SUZY,
-    Action::CPU_READ_SUZY,
-    Action::CPU_WRITE_SUZY,
+    Action::NONE_FE,
+    Action::CPU_FETCH_OPCODE_FE,
+    Action::CPU_FETCH_OPERAND_FE,
+    Action::CPU_READ_FE,
+    Action::CPU_WRITE_FE,
+    Action::NONE_FF,
+    Action::CPU_FETCH_OPCODE_FF,
+    Action::CPU_FETCH_OPERAND_FF,
+    Action::CPU_READ_FF,
+    Action::CPU_WRITE_FF,
     Action::NONE_MIKEY,
     Action::CPU_FETCH_OPCODE_MIKEY,
     Action::CPU_FETCH_OPERAND_MIKEY,
     Action::CPU_READ_MIKEY,
     Action::CPU_WRITE_MIKEY,
+    Action::NONE_SUZY,
+    Action::CPU_FETCH_OPCODE_SUZY,
+    Action::CPU_FETCH_OPERAND_SUZY,
+    Action::CPU_READ_SUZY,
+    Action::CPU_WRITE_SUZY
   };
 
   auto tick = mBusReservationTick;
-  size_t tableOffset{};
-  switch ( request.address >> 8 )
+  auto pageType = mPageTypes[request.address >> 8];
+  mActionQueue.push( { requestToAction[( size_t )request.mType + ( int )pageType], mBusReservationTick } );
+  switch ( pageType )
   {
-  case 0xff:
-  case 0xfe:
-    mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? 4 : 5;
-    tableOffset = 5;
-    break;
-  case 0xfc:
-    mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, request.address );
-    tableOffset = 10;
-    break;
-  case 0xfd:
-    mBusReservationTick = mMikey.requestAccess( mBusReservationTick, request.address );
-    tableOffset = 15;
-    break;
-  default:
-    mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? 4 : 5;
-    break;
+    case PageType::RAM:
+    case PageType::FE:
+    case PageType::FF:
+      mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? 4 : 5;
+      break;
+    case PageType::MIKEY:
+      mBusReservationTick = mMikey.requestAccess( mBusReservationTick, request.address );
+      break;
+    case PageType::SUZY:
+      mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, request.address );
+      break;
   }
+}
 
-  mActionQueue.push( { requestToAction[(size_t)request.mType + tableOffset], tick } );
+uint8_t BusMaster::readFF( uint16_t address )
+{
+  return *( mROM.data() + 0x100 + address );
+}
+
+void BusMaster::writeFF( uint16_t address, uint8_t value )
+{
+  *( mROM.data() + 0x100 + address ) = value;
 }
 
