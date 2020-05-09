@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "WinRenderer.hpp"
 
 
 std::vector<std::wstring> gDroppedFiles;
@@ -78,26 +79,36 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return 0;
   }
 
-  ShowWindow( hwnd, nCmdShow );
-  UpdateWindow( hwnd );
-
-  DragAcceptFiles( hwnd, TRUE );
-  
   MSG msg;
-  for (;;)
+  try
   {
-    while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
+    WinRenderer renderer{ hwnd };
+
+    ShowWindow( hwnd, nCmdShow );
+    UpdateWindow( hwnd );
+
+    DragAcceptFiles( hwnd, TRUE );
+
+    for ( ;;)
     {
-      TranslateMessage( &msg );
-      DispatchMessage( &msg );
+      while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
+      {
+        TranslateMessage( &msg );
+        DispatchMessage( &msg );
+
+        if ( msg.message == WM_QUIT )
+          break;
+      }
 
       if ( msg.message == WM_QUIT )
         break;
+
+      renderer.render( nullptr );
     }
-
-    if ( msg.message == WM_QUIT )
-      break;
-
+  }
+  catch ( std::runtime_error const& )
+  {
+    return -1;
   }
 
   return (int)msg.wParam;

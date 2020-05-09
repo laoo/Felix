@@ -35,3 +35,8 @@ void DisplayGenerator::vblank( uint16_t dispAdr )
 {
   mDispAdr = dispAdr;
 }
+
+DisplayGenerator::Pixel const * DisplayGenerator::getSrface() const
+{
+  return mSurface.data();
+}

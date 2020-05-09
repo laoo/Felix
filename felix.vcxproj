@@ -166,11 +166,13 @@
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
     <ClCompile Include="TimerCore.cpp" />
+    <ClCompile Include="WinRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
+    <ClInclude Include="renderer.hxx" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUTrace.hpp" />
@@ -178,6 +180,17 @@
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="Suzy.hpp" />
+    <ClInclude Include="WinRenderer.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="render.csh">
+      <ShaderModel>5.0</ShaderModel>
+      <ShaderType>Compute</ShaderType>
+      <VariableName>g_Renderer</VariableName>
+      <HeaderFileOutput>renderer.hxx</HeaderFileOutput>
+      <DisableOptimizations>false</DisableOptimizations>
+      <EnableDebuggingInformation>false</EnableDebuggingInformation>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
