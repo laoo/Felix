@@ -117,18 +117,19 @@ void BusMaster::process( uint64_t ticks )
       }
       break;
     case Action::CPU_FETCH_OPCODE_RAM:
-      mDReq.value = mReq.value = mRAM[mReq.address];
+      mReq.value = mRAM[mReq.address];
       mSequencedAccessAddress = mReq.address + 1;
-      mDReq.cycle = mCurrentTick;
-      mReq.interrupt = mDReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mDReq.resume();
+      mCurrentTick;
+      mReq.tick = mCurrentTick;
+      mReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
       mReq.resume();
+      mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_RAM:
-      mDReq.value = mReq.value = mRAM[mReq.address];
+      mReq.value = mRAM[mReq.address];
       mSequencedAccessAddress = mReq.address + 1;
-      mDReq.resume();
       mReq.resume();
+      mDReq.resume();
       break;
     case Action::CPU_READ_RAM:
       mReq.value = mRAM[mReq.address];
@@ -141,18 +142,19 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_FETCH_OPCODE_FE:
-      mDReq.value = mReq.value = mROM[mReq.address & 0x1ff];
+      mReq.value = mROM[mReq.address & 0x1ff];
       mSequencedAccessAddress = mReq.address + 1;
-      mDReq.cycle = mCurrentTick;
-      mReq.interrupt = mDReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mDReq.resume();
+      mCurrentTick;
+      mReq.tick = mCurrentTick;
+      mReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
       mReq.resume();
+      mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FE:
-      mDReq.value = mReq.value = mROM[mReq.address & 0x1ff];
+      mReq.value = mROM[mReq.address & 0x1ff];
       mSequencedAccessAddress = mReq.address + 1;
-      mDReq.resume();
       mReq.resume();
+      mDReq.resume();
       break;
     case Action::CPU_READ_FE:
       mReq.value = mROM[mReq.address & 0x1ff];
@@ -164,18 +166,19 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_FETCH_OPCODE_FF:
-      mDReq.value = mReq.value = readFF( mReq.address & 0xff );
+      mReq.value = readFF( mReq.address & 0xff );
       mSequencedAccessAddress = mReq.address + 1;
-      mDReq.cycle = mCurrentTick;
-      mReq.interrupt = mDReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mDReq.resume();
+      mCurrentTick;
+      mReq.tick = mCurrentTick;
+      mReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
       mReq.resume();
+      mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FF:
-      mDReq.value = mReq.value = readFF( mReq.address & 0xff );
+      mReq.value = readFF( mReq.address & 0xff );
       mSequencedAccessAddress = mReq.address + 1;
-      mDReq.resume();
       mReq.resume();
+      mDReq.resume();
       break;
     case Action::CPU_READ_FF:
       mReq.value = readFF( mReq.address & 0xff );

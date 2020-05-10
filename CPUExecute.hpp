@@ -6,8 +6,9 @@ class BusMaster;
 
 struct OpInt
 {
-  Opcode op;
+  uint64_t tick;
   int interrupt;
+  Opcode op;
 };
 
 
@@ -57,6 +58,7 @@ struct CPURequest
     WRITE,
   } mType;
 
+  uint64_t tick;
   uint16_t address;
   uint8_t value;
   uint8_t interrupt;
@@ -107,7 +109,7 @@ struct AwaitCPUFetchOpcode
 
   OpInt await_resume()
   {
-    return { (Opcode)req->value, (int)req->interrupt };
+    return { req->tick, ( int )req->interrupt, ( Opcode )req->value };
   }
 
   void await_suspend( std::experimental::coroutine_handle<> c )
