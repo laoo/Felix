@@ -100,8 +100,21 @@ uint8_t Mikey::read( uint16_t address )
   case Reg::Offset::INTRST:
   case Reg::Offset::INTSET:
     return mIRQ;
+  case Reg::Offset::MIKEYHREV:
+    return 0x01;
+  case Reg::Offset::SERCTL:
+    return
+      ( mSerCtl.txrdy ? 0x80 : 0x00 ) |
+      ( mSerCtl.rxrdy ? 0x40 : 0x00 ) |
+      ( mSerCtl.txempty ? 0x20 : 0x00 ) |
+      ( mSerCtl.parerr ? 0x10 : 0x00 ) |
+      ( mSerCtl.overrun ? 0x08 : 0x00 ) |
+      ( mSerCtl.framerr ? 0x04 : 0x00 ) |
+      ( mSerCtl.rxbrk ? 0x02 : 0x00 ) |
+      ( mSerCtl.parbit ? 0x01 : 0x00 );
   default:
     assert( false );
+    break;
   }
 
   return uint8_t();
@@ -158,6 +171,16 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     break;
   case Reg::Offset::INTSET:
     mIRQ |= ~value;
+    break;
+  case Reg::Offset::SERCTL:
+    mSerCtl.txinten = ( value & 0x80 ) != 0;
+    mSerCtl.rxinten = ( value & 0x40 ) != 0;
+    mSerCtl.paren = ( value & 0x10 ) != 0;
+    mSerCtl.txopen = ( value & 0x04 ) != 0;
+    mSerCtl.txbrk = ( value & 0x02 ) != 0;
+    mSerCtl.pareven = ( value & 0x01 ) != 0;
+    if ( ( value & 0x08 ) != 0 )
+      mSerCtl.parerr = mSerCtl.overrun = mSerCtl.framerr = false;
     break;
   case Reg::Offset::DISPCTL:
     mDisplayRegs.dispColor = ( value & Reg::DISPCTL::DISP_COLOR ) != 0;

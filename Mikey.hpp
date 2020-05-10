@@ -52,6 +52,8 @@ public:
 
       static constexpr uint8_t INTRST       = 0x80;
       static constexpr uint8_t INTSET       = 0x81;
+      static constexpr uint8_t MIKEYHREV    = 0x89;
+      static constexpr uint8_t SERCTL       = 0x8c;
       static constexpr uint8_t DISPCTL      = 0x92;
       static constexpr uint8_t PBKUP        = 0x93;
       static constexpr uint8_t DISPADR      = 0x94;
@@ -65,6 +67,28 @@ public:
       static constexpr uint8_t DISP_FOURBIT = 0b00000100; //fourbit: 1 = 4 bit mode, 0 = 2 bit mode.must be set to 1 ( set by kernel )
       static constexpr uint8_t DISP_FLIP    = 0b00000010; //1 = flip, 0 normal
       static constexpr uint8_t DMA_ENABLE   = 0b00000001; //1 = enable video DMA, 0 = disable.must be set to 1 ( set by kernel )
+    };
+
+    struct SERCTL
+    {
+      //write
+      static constexpr uint8_t TXINTEN  = 0x80;   //transmitter interrupt enable
+      static constexpr uint8_t RXINTEN  = 0x40;   //receive interrupt enable
+      static constexpr uint8_t PAREN    = 0x10;   //xmit parity enable( if 0, PAREVEN is the bit sent )
+      static constexpr uint8_t RESETERR = 0x08;   //reset all errors
+      static constexpr uint8_t TXOPEN   = 0x04;   //1 open collector driver, 0 = TTL driver
+      static constexpr uint8_t TXBRK    = 0x02;   //send a break ( for as long as the bit is set )
+      static constexpr uint8_t PAREVEN  = 0x01;   //send / rcv even parity
+
+      //read
+      static constexpr uint8_t TXRDY    = 0x80; //transmitter buffer empty
+      static constexpr uint8_t RXRDY    = 0x80; //receive character ready
+      static constexpr uint8_t TXEMPTY  = 0x80; //transmitter totaiy done
+      static constexpr uint8_t PARERR   = 0x80; //received parity error
+      static constexpr uint8_t OVERRUN  = 0x80; //received overrun error
+      static constexpr uint8_t FRAMERR  = 0x80; //received framing error
+      static constexpr uint8_t RXBRK    = 0x80; //break recieved( 24 bit periods )
+      static constexpr uint8_t PARBIT   = 0x80; //9th bit
     };
   };
 
@@ -88,5 +112,24 @@ private:
       uint8_t pbkup;
     } mDisplayRegs;
 
+    struct SerCtl
+    {
+      bool txinten;
+      bool rxinten;
+      bool paren;
+      bool txopen;
+      bool txbrk;
+      bool pareven;
+      bool txrdy;
+      bool rxrdy;
+      bool txempty;
+      bool parerr;
+      bool overrun;
+      bool framerr;
+      bool rxbrk;
+      bool parbit;
+    } mSerCtl;
+
+    uint8_t mSerDat;
     uint8_t mIRQ;
 };
