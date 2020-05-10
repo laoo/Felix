@@ -37,11 +37,18 @@ private:
     SUZY = 20
   };
 
+  struct MAPCTL
+  {
+    bool sequentialDisable;
+    bool vectorSpaceDisable;
+    bool kernelDisable;
+    bool mikeyDisable;
+    bool suzyDisable;
+  };
+
   void request( CPURequest const& request );
   uint8_t readFF( uint16_t address );
   void writeFF( uint16_t address, uint8_t value );
-
-
 
 private:
   Mikey & mMikey;
@@ -55,7 +62,9 @@ private:
   ActionQueue mActionQueue;
   CPURequest mReq;
   TraceRequest mDReq;
+  MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;
+  uint64_t mFastCycleTick;
 
 };

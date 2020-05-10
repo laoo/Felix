@@ -7,7 +7,7 @@
 #include <cassert>
 
 BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
-  mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}
+mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{4}
 {
   mMikey.setDMARequestCallback( [this]( uint64_t tick, uint16_t address )
   {
@@ -108,7 +108,7 @@ void BusMaster::process( uint64_t ticks )
     {
       case Action::DISPLAY_DMA:
         mMikey.setDMAData( mCurrentTick, *(uint64_t*)( mRAM.data() + mDMAAddress ) );
-        mBusReservationTick += 6 * 4 + 2 * 5;
+        mBusReservationTick += 6 * mFastCycleTick + 2 * 5;
         break;
       case Action::FIRE_TIMER0:
       if ( auto newAction = mMikey.fireTimer( mCurrentTick, ( int )action - ( int )Action::FIRE_TIMER0 ) )
@@ -256,7 +256,6 @@ void BusMaster::request( CPURequest const & request )
     Action::CPU_WRITE_SUZY
   };
 
-  auto tick = mBusReservationTick;
   auto pageType = mPageTypes[request.address >> 8];
   mActionQueue.push( { requestToAction[( size_t )request.mType + ( int )pageType], mBusReservationTick } );
   switch ( pageType )
@@ -264,7 +263,7 @@ void BusMaster::request( CPURequest const & request )
     case PageType::RAM:
     case PageType::FE:
     case PageType::FF:
-      mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? 4 : 5;
+      mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
       break;
     case PageType::MIKEY:
       mBusReservationTick = mMikey.requestAccess( mBusReservationTick, request.address );
@@ -277,11 +276,48 @@ void BusMaster::request( CPURequest const & request )
 
 uint8_t BusMaster::readFF( uint16_t address )
 {
-  return *( mROM.data() + 0x100 + address );
+  if ( address >= 0xfffa )
+  {
+    uint8_t * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xff00 ) : ( mROM.data() + 0x100 );
+    return ptr[address];
+  }
+  else if ( address < 0xfff8 )
+  {
+    uint8_t * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xff00 ) : ( mROM.data() + 0x100 );
+    return ptr[address];
+  }
+  else if ( address == 0xfff9 )
+  {
+    return 0xf0 | //high nibble of MAPCTL is set
+      ( mMapCtl.vectorSpaceDisable ? 0x08 : 0x00 ) |
+      ( mMapCtl.kernelDisable ? 0x04 : 0x00 ) |
+      ( mMapCtl.mikeyDisable ? 0x02 : 0x00 ) |
+      ( mMapCtl.suzyDisable ? 0x01 : 0x00 );
+  }
+  else
+  {
+    //there is always RAM at 0xfff8
+    return mRAM[0xff00 + address];
+  }
 }
 
 void BusMaster::writeFF( uint16_t address, uint8_t value )
 {
-  *( mROM.data() + 0x100 + address ) = value;
-}
+  if ( address >= 0xfffa && mMapCtl.vectorSpaceDisable || address < 0xfff8 && mMapCtl.kernelDisable || address == 0xfff8 )
+  {
+    mRAM[0xff00 + address] = value;
+  }
+  else
+  {
+    mMapCtl.sequentialDisable = ( value & 0x80 ) != 0;
+    mMapCtl.vectorSpaceDisable = ( value & 0x08 ) != 0;
+    mMapCtl.kernelDisable = ( value & 0x04 ) != 0;
+    mMapCtl.mikeyDisable = ( value & 0x02 ) != 0;
+    mMapCtl.suzyDisable = ( value & 0x01 ) != 0;
 
+    mFastCycleTick = mMapCtl.sequentialDisable ? 5 : 4;
+    mPageTypes[0xfe] = mMapCtl.kernelDisable ? PageType::RAM : PageType::FE;
+    mPageTypes[0xfd] = mMapCtl.mikeyDisable ? PageType::RAM : PageType::MIKEY;
+    mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
+  }
+}
