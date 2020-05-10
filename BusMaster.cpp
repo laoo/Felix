@@ -22,13 +22,13 @@ mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mMapCtl{}, mSequenced
 
     fin.read( ( char* )mROM.data(), mROM.size() );
   }
-  if ( size_t size = (size_t)std::filesystem::file_size( "felix1.bin" ) )
+  if ( size_t size = (size_t)std::filesystem::file_size( "d:/tests/5.o" ) )
   {
-    std::ifstream fin{ "felix1.bin", std::ios::binary };
+    std::ifstream fin{ "d:/tests/5.o", std::ios::binary };
     if ( fin.bad() )
       throw std::exception{};
 
-    fin.read( ( char* )mRAM.data() + 0x200, size );
+    fin.read( ( char* )mRAM.data() + 0x1f6, size );
 
     mROM[0x1fc] = 0x00;
     mROM[0x1fd] = 0x02;
