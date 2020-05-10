@@ -22,6 +22,7 @@ public:
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
   void setDMAData( uint64_t tick, uint64_t data );
   void setDMARequestCallback( std::function<void( uint64_t tick, uint16_t address )> requestDisplayDMA );
+  uint8_t getIRQ() const;
 
   DisplayGenerator::Pixel const* getSrface() const;
 
@@ -49,6 +50,8 @@ public:
         static constexpr uint8_t OTHER      = 0x7;
       };
 
+      static constexpr uint8_t INTRST       = 0x80;
+      static constexpr uint8_t INTSET       = 0x81;
       static constexpr uint8_t DISPCTL      = 0x92;
       static constexpr uint8_t PBKUP        = 0x93;
       static constexpr uint8_t DISPADR      = 0x94;
@@ -85,4 +88,5 @@ private:
       uint8_t pbkup;
     } mDisplayRegs;
 
+    uint8_t mIRQ;
 };

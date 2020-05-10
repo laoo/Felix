@@ -120,8 +120,7 @@ void BusMaster::process( uint64_t ticks )
       mDReq.value = mReq.value = mRAM[mReq.address];
       mSequencedAccessAddress = mReq.address + 1;
       mDReq.cycle = mCurrentTick;
-      //mDReq.interrupt = CPU::I_RESET;
-      //mReq.interrupt = CPU::I_RESET;
+      mReq.interrupt = mDReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
       mDReq.resume();
       mReq.resume();
       break;
@@ -145,8 +144,7 @@ void BusMaster::process( uint64_t ticks )
       mDReq.value = mReq.value = mROM[mReq.address & 0x1ff];
       mSequencedAccessAddress = mReq.address + 1;
       mDReq.cycle = mCurrentTick;
-      //mDReq.interrupt = CPU::I_RESET;
-      //mReq.interrupt = CPU::I_RESET;
+      mReq.interrupt = mDReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
       mDReq.resume();
       mReq.resume();
       break;
@@ -169,8 +167,7 @@ void BusMaster::process( uint64_t ticks )
       mDReq.value = mReq.value = readFF( mReq.address & 0xff );
       mSequencedAccessAddress = mReq.address + 1;
       mDReq.cycle = mCurrentTick;
-      //mDReq.interrupt = CPU::I_RESET;
-      //mReq.interrupt = CPU::I_RESET;
+      mReq.interrupt = mDReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
       mDReq.resume();
       mReq.resume();
       break;
