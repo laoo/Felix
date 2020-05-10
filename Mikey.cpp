@@ -7,7 +7,7 @@ Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayGenerator{ std::make_unique<D
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x2]->borrowIn( tick );
-    if ( auto dma = mDisplayGenerator->hblank( tick, mTimers[0x02]->value() ) )
+    if ( auto dma = mDisplayGenerator->hblank( tick, mTimers[0x02]->getCount( tick ) ) )
     {
       mRequestDisplayDMA( dma.tick, dma.address );
     }
@@ -95,14 +95,56 @@ uint64_t Mikey::requestAccess( uint64_t tick, uint16_t address )
 
 uint8_t Mikey::read( uint16_t address )
 {
-  switch ( address )
+  address &= 0xff;
+
+  if ( address < 0x20 )
   {
-  case Reg::Offset::INTRST:
-  case Reg::Offset::INTSET:
+    switch ( address & 0x3 )
+    {
+    case TIMER::BACKUP:
+      return mTimers[( address >> 2 ) & 7]->getBackup( mAccessTick );
+      break;
+    case TIMER::CONTROLA:
+      return mTimers[( address >> 2 ) & 7]->getControlA( mAccessTick );
+      break;
+    case TIMER::COUNT:
+      return mTimers[( address >> 2 ) & 7]->getCount( mAccessTick );
+      break;
+    case TIMER::CONTROLB:
+      return mTimers[( address >> 2 ) & 7]->getControlB( mAccessTick );
+      break;
+    }
+  }
+  else if ( address < 0x40 )
+  {
+    switch ( address & 0x7 )
+    {
+    case AUDIO::VOLCNTRL:
+      break;
+    case AUDIO::FEEDBACK:
+      break;
+    case AUDIO::OUTPUT:
+      break;
+    case AUDIO::SHIFT:
+      break;
+    case AUDIO::BACKUP:
+      break;
+    case AUDIO::CONTROL:
+      break;
+    case AUDIO::COUNTER:
+      break;
+    case AUDIO::OTHER:
+      break;
+    }
+  }
+  else switch ( address )
+  {
+  case INTRST:
+  case INTSET:
     return mIRQ;
-  case Reg::Offset::MIKEYHREV:
+  case MIKEYHREV:
     return 0x01;
-  case Reg::Offset::SERCTL:
+  case SERCTL:
     return
       ( mSerCtl.txrdy ? 0x80 : 0x00 ) |
       ( mSerCtl.rxrdy ? 0x40 : 0x00 ) |
@@ -128,16 +170,16 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   {
     switch ( address & 0x3 )
     {
-    case Reg::Offset::TIMER::BACKUP:
+    case TIMER::BACKUP:
       return mTimers[(address >> 2) & 7]->setBackup( mAccessTick, value );
       break;
-    case Reg::Offset::TIMER::CONTROLA:
+    case TIMER::CONTROLA:
       return mTimers[( address >> 2 ) & 7]->setControlA( mAccessTick, value );
       break;
-    case Reg::Offset::TIMER::COUNT:
+    case TIMER::COUNT:
       return mTimers[( address >> 2 ) & 7]->setCount( mAccessTick, value );
       break;
-    case Reg::Offset::TIMER::CONTROLB:
+    case TIMER::CONTROLB:
       return mTimers[( address >> 2 ) & 7]->setControlB( mAccessTick, value );
       break;
     }
@@ -146,33 +188,39 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   {
     switch ( address & 0x7 )
     {
-    case Reg::Offset::AUDIO::VOLCNTRL:
+    case AUDIO::VOLCNTRL:
       break;
-    case Reg::Offset::AUDIO::FEEDBACK:
+    case AUDIO::FEEDBACK:
       break;
-    case Reg::Offset::AUDIO::OUTPUT:
+    case AUDIO::OUTPUT:
       break;
-    case Reg::Offset::AUDIO::SHIFT:
+    case AUDIO::SHIFT:
       break;
-    case Reg::Offset::AUDIO::BACKUP:
+    case AUDIO::BACKUP:
       break;
-    case Reg::Offset::AUDIO::CONTROL:
+    case AUDIO::CONTROL:
       break;
-    case Reg::Offset::AUDIO::COUNTER:
+    case AUDIO::COUNTER:
       break;
-    case Reg::Offset::AUDIO::OTHER:
+    case AUDIO::OTHER:
       break;
     }
   }
   else switch ( address )
   {
-  case Reg::Offset::INTRST:
+  case MPAN:
+  case MSTEREO:
+    break;
+  case INTRST:
     mIRQ &= ~value;
     break;
-  case Reg::Offset::INTSET:
+  case INTSET:
     mIRQ |= ~value;
     break;
-  case Reg::Offset::SERCTL:
+  case IODIR:
+  case IODAT:
+    break;
+  case SERCTL:
     mSerCtl.txinten = ( value & 0x80 ) != 0;
     mSerCtl.rxinten = ( value & 0x40 ) != 0;
     mSerCtl.paren = ( value & 0x10 ) != 0;
@@ -182,59 +230,61 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     if ( ( value & 0x08 ) != 0 )
       mSerCtl.parerr = mSerCtl.overrun = mSerCtl.framerr = false;
     break;
-  case Reg::Offset::DISPCTL:
-    mDisplayRegs.dispColor = ( value & Reg::DISPCTL::DISP_COLOR ) != 0;
-    mDisplayRegs.dispFourBit = ( value & Reg::DISPCTL::DISP_FOURBIT ) != 0;
-    mDisplayRegs.dispFlip = ( value & Reg::DISPCTL::DISP_FLIP ) != 0;
-    mDisplayRegs.DMAEnable = ( value & Reg::DISPCTL::DMA_ENABLE ) != 0;
+  case SDONEACK:
+    break;
+  case DISPCTL:
+    mDisplayRegs.dispColor = ( value & DISPCTL::DISP_COLOR ) != 0;
+    mDisplayRegs.dispFourBit = ( value & DISPCTL::DISP_FOURBIT ) != 0;
+    mDisplayRegs.dispFlip = ( value & DISPCTL::DISP_FLIP ) != 0;
+    mDisplayRegs.DMAEnable = ( value & DISPCTL::DMA_ENABLE ) != 0;
     mDisplayGenerator->dispCtl( mDisplayRegs.dispColor, mDisplayRegs.dispFlip, mDisplayRegs.DMAEnable );
     break;
-  case Reg::Offset::PBKUP:
+  case PBKUP:
     mDisplayRegs.pbkup = value;
     break;
-  case Reg::Offset::DISPADR:
+  case DISPADR:
     mDisplayRegs.dispAdr &= 0xff00;
     mDisplayRegs.dispAdr |= value;
     mDisplayRegs.dispAdr &= 0xfffc;
     break;
-  case Reg::Offset::DISPADR+1:
+  case DISPADR+1:
     mDisplayRegs.dispAdr &= 0x00ff;
     mDisplayRegs.dispAdr |= value << 8;
     break;
-  case Reg::Offset::GREEN + 0x00:
-  case Reg::Offset::GREEN + 0x01:
-  case Reg::Offset::GREEN + 0x02:
-  case Reg::Offset::GREEN + 0x03:
-  case Reg::Offset::GREEN + 0x04:
-  case Reg::Offset::GREEN + 0x05:
-  case Reg::Offset::GREEN + 0x06:
-  case Reg::Offset::GREEN + 0x07:
-  case Reg::Offset::GREEN + 0x08:
-  case Reg::Offset::GREEN + 0x09:
-  case Reg::Offset::GREEN + 0x0a:
-  case Reg::Offset::GREEN + 0x0b:
-  case Reg::Offset::GREEN + 0x0c:
-  case Reg::Offset::GREEN + 0x0d:
-  case Reg::Offset::GREEN + 0x0e:
-  case Reg::Offset::GREEN + 0x0f:
-  case Reg::Offset::BLUERED + 0x00:
-  case Reg::Offset::BLUERED + 0x01:
-  case Reg::Offset::BLUERED + 0x02:
-  case Reg::Offset::BLUERED + 0x03:
-  case Reg::Offset::BLUERED + 0x04:
-  case Reg::Offset::BLUERED + 0x05:
-  case Reg::Offset::BLUERED + 0x06:
-  case Reg::Offset::BLUERED + 0x07:
-  case Reg::Offset::BLUERED + 0x08:
-  case Reg::Offset::BLUERED + 0x09:
-  case Reg::Offset::BLUERED + 0x0a:
-  case Reg::Offset::BLUERED + 0x0b:
-  case Reg::Offset::BLUERED + 0x0c:
-  case Reg::Offset::BLUERED + 0x0d:
-  case Reg::Offset::BLUERED + 0x0e:
-  case Reg::Offset::BLUERED + 0x0f:
-    mPalette[address - Reg::Offset::GREEN] = value;
-    mDisplayGenerator->updatePalette( mAccessTick, address - Reg::Offset::GREEN, value );
+  case GREEN + 0x00:
+  case GREEN + 0x01:
+  case GREEN + 0x02:
+  case GREEN + 0x03:
+  case GREEN + 0x04:
+  case GREEN + 0x05:
+  case GREEN + 0x06:
+  case GREEN + 0x07:
+  case GREEN + 0x08:
+  case GREEN + 0x09:
+  case GREEN + 0x0a:
+  case GREEN + 0x0b:
+  case GREEN + 0x0c:
+  case GREEN + 0x0d:
+  case GREEN + 0x0e:
+  case GREEN + 0x0f:
+  case BLUERED + 0x00:
+  case BLUERED + 0x01:
+  case BLUERED + 0x02:
+  case BLUERED + 0x03:
+  case BLUERED + 0x04:
+  case BLUERED + 0x05:
+  case BLUERED + 0x06:
+  case BLUERED + 0x07:
+  case BLUERED + 0x08:
+  case BLUERED + 0x09:
+  case BLUERED + 0x0a:
+  case BLUERED + 0x0b:
+  case BLUERED + 0x0c:
+  case BLUERED + 0x0d:
+  case BLUERED + 0x0e:
+  case BLUERED + 0x0f:
+    mPalette[address - GREEN] = value;
+    mDisplayGenerator->updatePalette( mAccessTick, address - GREEN, value );
     break;
   default:
     assert( false );
