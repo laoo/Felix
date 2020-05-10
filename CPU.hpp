@@ -66,7 +66,7 @@ struct CPU
   static const int I_NMI = 2;
   static const int I_RESET = 4;
 
-  CPU() : a{}, x{}, y{}, s{ 0x1ff }, pc{}, P{}
+  CPU() : a{}, x{}, y{}, s{ 0x1ff }, pc{}, P{}, interrupt{ I_RESET }, opcode{}, operand{}
   {
   }
 
@@ -97,8 +97,9 @@ struct CPU
   void ror( uint8_t & val );
   bool executeR( Opcode opcode, uint8_t value );
 
-
-private:
+  int interrupt;
+  Opcode opcode;
+  uint8_t operand;
 
 };
 
