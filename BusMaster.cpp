@@ -276,17 +276,17 @@ void BusMaster::request( CPURequest const & request )
 
 uint8_t BusMaster::readFF( uint16_t address )
 {
-  if ( address >= 0xfffa )
+  if ( address >= 0xfa )
   {
     uint8_t * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xff00 ) : ( mROM.data() + 0x100 );
     return ptr[address];
   }
-  else if ( address < 0xfff8 )
+  else if ( address < 0xf8 )
   {
     uint8_t * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xff00 ) : ( mROM.data() + 0x100 );
     return ptr[address];
   }
-  else if ( address == 0xfff9 )
+  else if ( address == 0xf9 )
   {
     return 0xf0 | //high nibble of MAPCTL is set
       ( mMapCtl.vectorSpaceDisable ? 0x08 : 0x00 ) |
@@ -303,7 +303,7 @@ uint8_t BusMaster::readFF( uint16_t address )
 
 void BusMaster::writeFF( uint16_t address, uint8_t value )
 {
-  if ( address >= 0xfffa && mMapCtl.vectorSpaceDisable || address < 0xfff8 && mMapCtl.kernelDisable || address == 0xfff8 )
+  if ( address >= 0xfa && mMapCtl.vectorSpaceDisable || address < 0xf8 && mMapCtl.kernelDisable || address == 0xf8 )
   {
     mRAM[0xff00 + address] = value;
   }
