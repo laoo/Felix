@@ -7,6 +7,7 @@
 #include "CPUExecute.hpp"
 #include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
+#include "DisplayGenerator.hpp"
 
 
 class Mikey;
@@ -15,15 +16,16 @@ class Suzy;
 class BusMaster
 {
 public:
-  BusMaster( Mikey & mikey );
+  BusMaster();
   ~BusMaster();
 
   CPURequest * request( CPURead r );
   CPURequest * request( CPUFetchOpcode r );
   CPURequest * request( CPUFetchOperand r );
   CPURequest * request( CPUWrite w );
+  void requestDisplayDMA( uint64_t tick, uint16_t address );
 
-  void process( uint64_t ticks );
+  DisplayGenerator::Pixel const* process( uint64_t ticks );
 
   TraceRequest & getTraceRequest();
 private:
@@ -51,13 +53,12 @@ private:
   void writeFF( uint16_t address, uint8_t value );
 
 private:
-  Mikey & mMikey;
-
   std::array<uint8_t,65536> mRAM;
   std::array<uint8_t, 512> mROM;
   std::array<PageType, 256> mPageTypes;
   uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
+  std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
   ActionQueue mActionQueue;
   CPURequest mReq;

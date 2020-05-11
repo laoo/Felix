@@ -7,13 +7,14 @@
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
 
+class BusMaster;
 class TimerCore;
 class DisplayGenerator;
 
 class Mikey
 {
 public:
-  Mikey();
+  Mikey( BusMaster & busMaster );
   ~Mikey();
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
@@ -21,7 +22,6 @@ public:
   SequencedAction write( uint16_t address, uint8_t value );
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
   void setDMAData( uint64_t tick, uint64_t data );
-  void setDMARequestCallback( std::function<void( uint64_t tick, uint16_t address )> requestDisplayDMA );
   uint8_t getIRQ() const;
 
   DisplayGenerator::Pixel const* getSrface() const;
@@ -92,43 +92,42 @@ public:
   };
 
 private:
+  BusMaster & mBusMaster;
+  uint64_t mAccessTick;
 
-    uint64_t mAccessTick;
+  std::array<std::unique_ptr<TimerCore>, 12> mTimers;
+  std::array<uint8_t, 32> mPalette;
 
-    std::array<std::unique_ptr<TimerCore>, 12> mTimers;
-    std::array<uint8_t, 32> mPalette;
+  std::unique_ptr<DisplayGenerator> mDisplayGenerator;
 
-    std::unique_ptr<DisplayGenerator> mDisplayGenerator;
-    std::function<void( uint64_t tick, uint16_t address )> mRequestDisplayDMA;
+  struct DisplayRegs
+  {
+    uint16_t dispAdr;
+    bool dispColor;
+    bool dispFourBit;
+    bool dispFlip;
+    bool DMAEnable;
+    uint8_t pbkup;
+  } mDisplayRegs;
 
-    struct DisplayRegs
-    {
-      uint16_t dispAdr;
-      bool dispColor;
-      bool dispFourBit;
-      bool dispFlip;
-      bool DMAEnable;
-      uint8_t pbkup;
-    } mDisplayRegs;
+  struct SerCtl
+  {
+    bool txinten;
+    bool rxinten;
+    bool paren;
+    bool txopen;
+    bool txbrk;
+    bool pareven;
+    bool txrdy;
+    bool rxrdy;
+    bool txempty;
+    bool parerr;
+    bool overrun;
+    bool framerr;
+    bool rxbrk;
+    bool parbit;
+  } mSerCtl;
 
-    struct SerCtl
-    {
-      bool txinten;
-      bool rxinten;
-      bool paren;
-      bool txopen;
-      bool txbrk;
-      bool pareven;
-      bool txrdy;
-      bool rxrdy;
-      bool txempty;
-      bool parerr;
-      bool overrun;
-      bool framerr;
-      bool rxbrk;
-      bool parbit;
-    } mSerCtl;
-
-    uint8_t mSerDat;
-    uint8_t mIRQ;
+  uint8_t mSerDat;
+  uint8_t mIRQ;
 };

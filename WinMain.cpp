@@ -97,8 +97,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 
     CPU cpu;
-    Mikey mikey;
-    BusMaster bus{ mikey };
+    BusMaster bus{};
     CpuLoop loop = cpuLoop( cpu );
     //CpuTrace trace = cpuTrace( cpu, bus.getTraceRequest() );
     loop.setBusMaster( &bus );
@@ -118,14 +117,14 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
         break;
 
       //auto t1 = std::chrono::high_resolution_clock::now();
-      bus.process( 16000000 / 60 );
+      auto surface = bus.process( 16000000 / 60 );
       //auto t2 = std::chrono::high_resolution_clock::now();
       //auto diff = t2 - t1;
       //char buf[100];
       //sprintf( buf, "%llu\n", std::chrono::duration_cast< std::chrono::milliseconds >( diff ).count() );
       //OutputDebugStringA( buf );
 
-      renderer.render( mikey.getSrface() );
+      renderer.render( surface );
     }
   }
   catch ( std::runtime_error const& )

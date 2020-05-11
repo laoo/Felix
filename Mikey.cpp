@@ -1,15 +1,16 @@
 #include "Mikey.hpp"
 #include <cassert>
 #include "TimerCore.hpp"
+#include "BusMaster.hpp"
 
-Mikey::Mikey() : mAccessTick{}, mTimers{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
+Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {}, mTimers{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x2]->borrowIn( tick );
     if ( auto dma = mDisplayGenerator->hblank( tick, mTimers[0x02]->getCount( tick ) ) )
     {
-      mRequestDisplayDMA( dma.tick, dma.address );
+      mBusMaster.requestDisplayDMA( dma.tick, dma.address );
     }
     mIRQ |= interrupt ? 0x01 : 0x00;
   } );  //timer 0 -> timer 2
@@ -304,13 +305,8 @@ void Mikey::setDMAData( uint64_t tick, uint64_t data )
 {
   if ( auto dma = mDisplayGenerator->pushData( tick, data ) )
   {
-    mRequestDisplayDMA( dma.tick, dma.address );
+    mBusMaster.requestDisplayDMA( dma.tick, dma.address );
   }
-}
-
-void Mikey::setDMARequestCallback( std::function<void( uint64_t tick, uint16_t address )> requestDisplayDMA )
-{
-  mRequestDisplayDMA = std::move( requestDisplayDMA );
 }
 
 uint8_t Mikey::getIRQ() const

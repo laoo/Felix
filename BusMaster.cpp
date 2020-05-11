@@ -6,15 +6,9 @@
 #include <filesystem>
 #include <cassert>
 
-BusMaster::BusMaster( Mikey & mikey ) : mMikey{ mikey }, mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
-mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{4}
+BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
+  mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{4}
 {
-  mMikey.setDMARequestCallback( [this]( uint64_t tick, uint16_t address )
-  {
-    mDMAAddress = address;
-    mActionQueue.push( { Action::DISPLAY_DMA, tick } );
-  } );
-
   {
     std::ifstream fin{ "lynxboot.img", std::ios::binary };
     if ( fin.bad() )
@@ -89,12 +83,18 @@ CPURequest * BusMaster::request( CPUWrite w )
   return &mReq;
 }
 
+void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
+{
+  mDMAAddress = address;
+  mActionQueue.push( { Action::DISPLAY_DMA, tick } );
+}
+
 TraceRequest & BusMaster::getTraceRequest()
 {
   return mDReq;
 }
 
-void BusMaster::process( uint64_t ticks )
+DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
 {
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
 
@@ -107,11 +107,11 @@ void BusMaster::process( uint64_t ticks )
     switch ( action )
     {
       case Action::DISPLAY_DMA:
-        mMikey.setDMAData( mCurrentTick, *(uint64_t*)( mRAM.data() + mDMAAddress ) );
+        mMikey->setDMAData( mCurrentTick, *(uint64_t*)( mRAM.data() + mDMAAddress ) );
         mBusReservationTick += 6 * mFastCycleTick + 2 * 5;
         break;
       case Action::FIRE_TIMER0:
-      if ( auto newAction = mMikey.fireTimer( mCurrentTick, ( int )action - ( int )Action::FIRE_TIMER0 ) )
+      if ( auto newAction = mMikey->fireTimer( mCurrentTick, ( int )action - ( int )Action::FIRE_TIMER0 ) )
       {
         mActionQueue.push( newAction );
       }
@@ -121,7 +121,7 @@ void BusMaster::process( uint64_t ticks )
       mSequencedAccessAddress = mReq.address + 1;
       mCurrentTick;
       mReq.tick = mCurrentTick;
-      mReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
+      mReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
       mReq.resume();
       mDReq.resume();
       break;
@@ -146,7 +146,7 @@ void BusMaster::process( uint64_t ticks )
       mSequencedAccessAddress = mReq.address + 1;
       mCurrentTick;
       mReq.tick = mCurrentTick;
-      mReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
+      mReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
       mReq.resume();
       mDReq.resume();
       break;
@@ -170,7 +170,7 @@ void BusMaster::process( uint64_t ticks )
       mSequencedAccessAddress = mReq.address + 1;
       mCurrentTick;
       mReq.tick = mCurrentTick;
-      mReq.interrupt = mMikey.getIRQ() != 0 ? CPU::I_IRQ : 0;
+      mReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
       mReq.resume();
       mDReq.resume();
       break;
@@ -202,18 +202,18 @@ void BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_READ_MIKEY:
-      mReq.value = mMikey.read( mReq.address );
+      mReq.value = mMikey->read( mReq.address );
       mReq.resume();
       break;
     case Action::CPU_WRITE_MIKEY:
-      if ( auto newAction = mMikey.write( mReq.address, mReq.value ) )
+      if ( auto newAction = mMikey->write( mReq.address, mReq.value ) )
       {
         mActionQueue.push( newAction );
       }
       mReq.resume();
       break;
     case Action::END_FRAME:
-      return;
+      return mMikey->getSrface();
     case Action::CPU_FETCH_OPCODE_SUZY:
     case Action::CPU_FETCH_OPCODE_MIKEY:
     case Action::CPU_FETCH_OPERAND_SUZY:
@@ -266,7 +266,7 @@ void BusMaster::request( CPURequest const & request )
       mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
       break;
     case PageType::MIKEY:
-      mBusReservationTick = mMikey.requestAccess( mBusReservationTick, request.address );
+      mBusReservationTick = mMikey->requestAccess( mBusReservationTick, request.address );
       break;
     case PageType::SUZY:
       mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, request.address );
