@@ -161,6 +161,7 @@
     <ClCompile Include="CPUExecute.cpp" />
     <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
+    <ClCompile Include="SuzyExecute.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="renderer.hxx" />
+    <ClInclude Include="SuzyExecute.hpp" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUTrace.hpp" />

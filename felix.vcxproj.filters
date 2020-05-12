@@ -37,6 +37,9 @@
     <ClCompile Include="WinRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SuzyExecute.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -73,6 +76,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="renderer.hxx">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SuzyExecute.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

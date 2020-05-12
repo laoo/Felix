@@ -7,7 +7,8 @@
 #include <cassert>
 
 BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
-  mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{4}
+    mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mCPUReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{4},
+    mSuzyExecute{}
 {
   {
     std::ifstream fin{ "lynxboot.img", std::ios::binary };
@@ -57,30 +58,58 @@ BusMaster::~BusMaster()
 
 CPURequest * BusMaster::request( CPURead r )
 {
-  mReq = CPURequest{ r };
-  request( mReq );
-  return &mReq;
+  mCPUReq = CPURequest{ r };
+  request( mCPUReq );
+  return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUFetchOpcode r )
 {
-  mReq = CPURequest{ r };
-  request( mReq );
-  return &mReq;
+  mCPUReq = CPURequest{ r };
+  request( mCPUReq );
+  return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUFetchOperand r )
 {
-  mReq = CPURequest{ r };
-  request( mReq );
-  return &mReq;
+  mCPUReq = CPURequest{ r };
+  request( mCPUReq );
+  return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUWrite w )
 {
-  mReq = CPURequest{ w };
-  request( mReq );
-  return &mReq;
+  mCPUReq = CPURequest{ w };
+  request( mCPUReq );
+  return &mCPUReq;
+}
+
+SuzyRequest * BusMaster::request( SuzyFetchSCB r )
+{
+  mSuzyReq = SuzyRequest{ r };
+  request( mCPUReq );
+  return &mSuzyReq;
+}
+
+SuzyRequest * BusMaster::request( SuzyFetchSprite r )
+{
+  mSuzyReq = SuzyRequest{ r };
+  request( mCPUReq );
+  return &mSuzyReq;
+}
+
+SuzyRequest * BusMaster::request( SuzyReadPixel r )
+{
+  mSuzyReq = SuzyRequest{ r };
+  request( mCPUReq );
+  return &mSuzyReq;
+}
+
+SuzyRequest * BusMaster::request( SuzyWritePixel w )
+{
+  mSuzyReq = SuzyRequest{ w };
+  request( mCPUReq );
+  return &mSuzyReq;
 }
 
 void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
@@ -129,104 +158,105 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       }
       break;
     case Action::CPU_FETCH_OPCODE_RAM:
-      mReq.value = mRAM[mReq.address];
-      mSequencedAccessAddress = mReq.address + 1;
+      mCPUReq.value = mRAM[mCPUReq.address];
+      mSequencedAccessAddress = mCPUReq.address + 1;
       mCurrentTick;
-      mReq.tick = mCurrentTick;
-      mReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mReq.resume();
+      mCPUReq.tick = mCurrentTick;
+      mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
+      mCPUReq.resume();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_RAM:
-      mReq.value = mRAM[mReq.address];
-      mSequencedAccessAddress = mReq.address + 1;
-      mReq.resume();
+      mCPUReq.value = mRAM[mCPUReq.address];
+      mSequencedAccessAddress = mCPUReq.address + 1;
+      mCPUReq.resume();
       mDReq.resume();
       break;
     case Action::CPU_READ_RAM:
-      mReq.value = mRAM[mReq.address];
-      mSequencedAccessAddress = mReq.address + 1;
-      mReq.resume();
+      mCPUReq.value = mRAM[mCPUReq.address];
+      mSequencedAccessAddress = mCPUReq.address + 1;
+      mCPUReq.resume();
       break;
     case Action::CPU_WRITE_RAM:
-      mRAM[mReq.address] = mReq.value;
+      mRAM[mCPUReq.address] = mCPUReq.value;
       mSequencedAccessAddress = ~0;
-      mReq.resume();
+      mCPUReq.resume();
       break;
     case Action::CPU_FETCH_OPCODE_FE:
-      mReq.value = mROM[mReq.address & 0x1ff];
-      mSequencedAccessAddress = mReq.address + 1;
+      mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
+      mSequencedAccessAddress = mCPUReq.address + 1;
       mCurrentTick;
-      mReq.tick = mCurrentTick;
-      mReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mReq.resume();
+      mCPUReq.tick = mCurrentTick;
+      mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
+      mCPUReq.resume();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FE:
-      mReq.value = mROM[mReq.address & 0x1ff];
-      mSequencedAccessAddress = mReq.address + 1;
-      mReq.resume();
+      mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
+      mSequencedAccessAddress = mCPUReq.address + 1;
+      mCPUReq.resume();
       mDReq.resume();
       break;
     case Action::CPU_READ_FE:
-      mReq.value = mROM[mReq.address & 0x1ff];
-      mSequencedAccessAddress = mReq.address + 1;
-      mReq.resume();
+      mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
+      mSequencedAccessAddress = mCPUReq.address + 1;
+      mCPUReq.resume();
       break;
     case Action::CPU_WRITE_FE:
       mSequencedAccessAddress = ~0;
-      mReq.resume();
+      mCPUReq.resume();
       break;
     case Action::CPU_FETCH_OPCODE_FF:
-      mReq.value = readFF( mReq.address & 0xff );
-      mSequencedAccessAddress = mReq.address + 1;
+      mCPUReq.value = readFF( mCPUReq.address & 0xff );
+      mSequencedAccessAddress = mCPUReq.address + 1;
       mCurrentTick;
-      mReq.tick = mCurrentTick;
-      mReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mReq.resume();
+      mCPUReq.tick = mCurrentTick;
+      mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
+      mCPUReq.resume();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FF:
-      mReq.value = readFF( mReq.address & 0xff );
-      mSequencedAccessAddress = mReq.address + 1;
-      mReq.resume();
+      mCPUReq.value = readFF( mCPUReq.address & 0xff );
+      mSequencedAccessAddress = mCPUReq.address + 1;
+      mCPUReq.resume();
       mDReq.resume();
       break;
     case Action::CPU_READ_FF:
-      mReq.value = readFF( mReq.address & 0xff );
-      mSequencedAccessAddress = mReq.address + 1;
-      mReq.resume();
+      mCPUReq.value = readFF( mCPUReq.address & 0xff );
+      mSequencedAccessAddress = mCPUReq.address + 1;
+      mCPUReq.resume();
       break;
     case Action::CPU_WRITE_FF:
-      writeFF( mReq.address & 0xff, mReq.value );
+      writeFF( mCPUReq.address & 0xff, mCPUReq.value );
       mSequencedAccessAddress = ~0;
-      mReq.resume();
+      mCPUReq.resume();
       break;
     case Action::CPU_READ_SUZY:
-      mReq.value = mSuzy->read( mReq.address );
-      mReq.resume();
+      mCPUReq.value = mSuzy->read( mCPUReq.address );
+      mCPUReq.resume();
       break;
     case Action::CPU_WRITE_SUZY:
-      if ( auto newAction = mSuzy->write( mReq.address, mReq.value ) )
+      if ( auto newAction = mSuzy->write( mCPUReq.address, mCPUReq.value ) )
       {
         mActionQueue.push( newAction );
       }
-      mReq.resume();
+      mCPUReq.resume();
       break;
     case Action::CPU_READ_MIKEY:
-      mReq.value = mMikey->read( mReq.address );
-      mReq.resume();
+      mCPUReq.value = mMikey->read( mCPUReq.address );
+      mCPUReq.resume();
       break;
     case Action::CPU_WRITE_MIKEY:
-      switch ( auto mikeyAction = mMikey->write( mReq.address, mReq.value ) )
+      switch ( auto mikeyAction = mMikey->write( mCPUReq.address, mCPUReq.value ) )
       {
       case Mikey::WriteAction::Type::START_SUZY:
-        //todo: start suzy
+        mSuzyExecute = suzyExecute( *mSuzy );
+        mSuzyExecute.setBusMaster( this );
         break;
       case Mikey::WriteAction::Type::FIRE_TIMER:
         mActionQueue.push( mikeyAction.action );
       case Mikey::WriteAction::Type::NONE:
-        mReq.resume();
+        mCPUReq.resume();
         break;
       }
       break;
@@ -290,6 +320,10 @@ void BusMaster::request( CPURequest const & request )
       mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, request.address );
       break;
   }
+}
+
+void BusMaster::request( SuzyRequest const & request )
+{
 }
 
 uint8_t BusMaster::readFF( uint16_t address )

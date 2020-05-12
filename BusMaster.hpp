@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "CPUExecute.hpp"
+#include "SuzyExecute.hpp"
 #include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
@@ -19,10 +20,15 @@ public:
   BusMaster();
   ~BusMaster();
 
-  CPURequest * request( CPURead r );
   CPURequest * request( CPUFetchOpcode r );
   CPURequest * request( CPUFetchOperand r );
+  CPURequest * request( CPURead r );
   CPURequest * request( CPUWrite w );
+  SuzyRequest * request( SuzyFetchSCB r );
+  SuzyRequest * request( SuzyFetchSprite r );
+  SuzyRequest * request( SuzyReadPixel r );
+  SuzyRequest * request( SuzyWritePixel w );
+
   void requestDisplayDMA( uint64_t tick, uint16_t address );
 
   DisplayGenerator::Pixel const* process( uint64_t ticks );
@@ -49,6 +55,8 @@ private:
   };
 
   void request( CPURequest const& request );
+  void request( SuzyRequest const& request );
+
   uint8_t readFF( uint16_t address );
   void writeFF( uint16_t address, uint8_t value );
 
@@ -61,11 +69,12 @@ private:
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
   ActionQueue mActionQueue;
-  CPURequest mReq;
+  CPURequest mCPUReq;
+  SuzyRequest mSuzyReq;
   TraceRequest mDReq;
   MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;
   uint64_t mFastCycleTick;
-
+  SuzyExecute mSuzyExecute;
 };
