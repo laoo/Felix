@@ -45,7 +45,7 @@ bool isHiccup( Opcode opcode )
   }
 }
 
-CpuLoop cpuLoop( CPU & cpu )
+CpuExecute cpuExecute( CPU & cpu )
 {
   for ( ;; )
   {
@@ -1311,22 +1311,22 @@ CpuLoop cpuLoop( CPU & cpu )
 }
 
 
-AwaitCPURead CpuLoop::promise_type::yield_value( CPURead r )
+AwaitCPURead CpuExecute::promise_type::yield_value( CPURead r )
 {
   return AwaitCPURead{ mBus->request( r ) };
 }
 
-AwaitCPUFetchOpcode CpuLoop::promise_type::yield_value( CPUFetchOpcode r )
+AwaitCPUFetchOpcode CpuExecute::promise_type::yield_value( CPUFetchOpcode r )
 {
   return AwaitCPUFetchOpcode{ mBus->request( r ) };
 }
 
-AwaitCPUFetchOperand CpuLoop::promise_type::yield_value( CPUFetchOperand r )
+AwaitCPUFetchOperand CpuExecute::promise_type::yield_value( CPUFetchOperand r )
 {
   return AwaitCPUFetchOperand{ mBus->request( r ) };
 }
 
-AwaitCPUWrite CpuLoop::promise_type::yield_value( CPUWrite w )
+AwaitCPUWrite CpuExecute::promise_type::yield_value( CPUWrite w )
 {
   return AwaitCPUWrite{ mBus->request( w ) };
 }

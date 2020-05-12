@@ -96,12 +96,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     DragAcceptFiles( hwnd, TRUE );
 
 
-    CPU cpu;
     BusMaster bus{};
-    CpuLoop loop = cpuLoop( cpu );
     //CpuTrace trace = cpuTrace( cpu, bus.getTraceRequest() );
-    loop.setBusMaster( &bus );
-
+ 
     for ( ;; )
     {
       while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )

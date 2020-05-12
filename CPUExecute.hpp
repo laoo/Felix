@@ -157,14 +157,14 @@ struct AwaitCPUWrite
   }
 };
 
-struct CpuLoop
+struct CpuExecute
 {
   struct promise_type;
   using handle = std::experimental::coroutine_handle<promise_type>;
 
   struct promise_type
   {
-    auto get_return_object() { return CpuLoop{ *this, handle::from_promise( *this ) }; }
+    auto get_return_object() { return CpuExecute{ this, handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void() {}
@@ -177,11 +177,15 @@ struct CpuLoop
     BusMaster * mBus;
   };
 
-  CpuLoop( promise_type & promise, handle c ) : promise{ promise }, coro{ c }
+  CpuExecute() : promise{}, coro{}
   {
   }
 
-  ~CpuLoop()
+  CpuExecute( promise_type * promise, handle c ) : promise{ promise }, coro{ c }
+  {
+  }
+
+  ~CpuExecute()
   {
     if ( coro )
       coro.destroy();
@@ -189,12 +193,12 @@ struct CpuLoop
 
   void setBusMaster( BusMaster * bus )
   {
-    promise.mBus = bus;
+    promise->mBus = bus;
     coro.resume();
   }
 
   handle coro;
-  promise_type & promise;
+  promise_type * promise;
 };
 
-CpuLoop cpuLoop( CPU & cpu );
+CpuExecute cpuExecute( CPU & cpu );

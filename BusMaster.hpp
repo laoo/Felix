@@ -13,6 +13,7 @@
 
 class Mikey;
 class Suzy;
+struct CPU;
 
 class BusMaster
 {
@@ -66,8 +67,11 @@ private:
   std::array<PageType, 256> mPageTypes;
   uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
+  std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
+  CpuExecute mCpuExecute;
+  SuzyExecute mSuzyExecute;
   ActionQueue mActionQueue;
   CPURequest mCPUReq;
   SuzyRequest mSuzyReq;
@@ -76,5 +80,4 @@ private:
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;
   uint64_t mFastCycleTick;
-  SuzyExecute mSuzyExecute;
 };

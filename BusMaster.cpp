@@ -7,8 +7,7 @@
 #include <cassert>
 
 BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
-    mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() }, mActionQueue{}, mCPUReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{4},
-    mSuzyExecute{}
+  mCpu{ std::make_shared<CPU>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() }, mCpuExecute{ cpuExecute( *mCpu ) }, mSuzyExecute{}, mActionQueue{}, mCPUReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
   {
     std::ifstream fin{ "lynxboot.img", std::ios::binary };
@@ -50,6 +49,8 @@ BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mC
         break;
     }
   }
+
+  mCpuExecute.setBusMaster( this );
 }
 
 BusMaster::~BusMaster()
