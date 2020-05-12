@@ -17,12 +17,30 @@ public:
   Mikey( BusMaster & busMaster );
   ~Mikey();
 
+  struct WriteAction
+  {
+    enum class Type
+    {
+      NONE,
+      FIRE_TIMER,
+      START_SUZY
+    } type;
+
+    SequencedAction action;
+
+    operator Type()
+    {
+      return type;
+    }
+  };
+
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
-  SequencedAction write( uint16_t address, uint8_t value );
+  WriteAction write( uint16_t address, uint8_t value );
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
   void setDMAData( uint64_t tick, uint64_t data );
   uint8_t getIRQ() const;
+  void suzyDone();
 
   DisplayGenerator::Pixel const* getSrface() const;
 
@@ -55,6 +73,7 @@ public:
   static constexpr uint16_t IODAT        = 0x8b;
   static constexpr uint16_t SERCTL       = 0x8c;
   static constexpr uint16_t SDONEACK     = 0x90;
+  static constexpr uint16_t CPUSLEEP     = 0x91;
   static constexpr uint16_t DISPCTL      = 0x92;
   static constexpr uint16_t PBKUP        = 0x93;
   static constexpr uint16_t DISPADR      = 0x94;
@@ -127,6 +146,8 @@ private:
     bool rxbrk;
     bool parbit;
   } mSerCtl;
+
+  bool mSuzyDone;
 
   uint8_t mSerDat;
   uint8_t mIRQ;

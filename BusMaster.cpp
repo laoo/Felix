@@ -111,6 +111,18 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
         mBusReservationTick += 6 * mFastCycleTick + 2 * 5;
         break;
       case Action::FIRE_TIMER0:
+      case Action::FIRE_TIMER1:
+      case Action::FIRE_TIMER2:
+      case Action::FIRE_TIMER3:
+      case Action::FIRE_TIMER4:
+      case Action::FIRE_TIMER5:
+      case Action::FIRE_TIMER6:
+      case Action::FIRE_TIMER7:
+      case Action::FIRE_TIMER8:
+      case Action::FIRE_TIMER9:
+      case Action::FIRE_TIMERA:
+      case Action::FIRE_TIMERB:
+      case Action::FIRE_TIMERC:
       if ( auto newAction = mMikey->fireTimer( mCurrentTick, ( int )action - ( int )Action::FIRE_TIMER0 ) )
       {
         mActionQueue.push( newAction );
@@ -206,11 +218,17 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       mReq.resume();
       break;
     case Action::CPU_WRITE_MIKEY:
-      if ( auto newAction = mMikey->write( mReq.address, mReq.value ) )
+      switch ( auto mikeyAction = mMikey->write( mReq.address, mReq.value ) )
       {
-        mActionQueue.push( newAction );
+      case Mikey::WriteAction::Type::START_SUZY:
+        //todo: start suzy
+        break;
+      case Mikey::WriteAction::Type::FIRE_TIMER:
+        mActionQueue.push( mikeyAction.action );
+      case Mikey::WriteAction::Type::NONE:
+        mReq.resume();
+        break;
       }
-      mReq.resume();
       break;
     case Action::END_FRAME:
       return mMikey->getSrface();

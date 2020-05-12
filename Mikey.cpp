@@ -163,8 +163,9 @@ uint8_t Mikey::read( uint16_t address )
   return uint8_t();
 }
 
-SequencedAction Mikey::write( uint16_t address, uint8_t value )
+Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
 {
+  SequencedAction result;
   address &= 0xff;
 
   if ( address < 0x20 )
@@ -172,16 +173,16 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     switch ( address & 0x3 )
     {
     case TIMER::BACKUP:
-      return mTimers[(address >> 2) & 7]->setBackup( mAccessTick, value );
+      result = mTimers[(address >> 2) & 7]->setBackup( mAccessTick, value );
       break;
     case TIMER::CONTROLA:
-      return mTimers[( address >> 2 ) & 7]->setControlA( mAccessTick, value );
+      result = mTimers[( address >> 2 ) & 7]->setControlA( mAccessTick, value );
       break;
     case TIMER::COUNT:
-      return mTimers[( address >> 2 ) & 7]->setCount( mAccessTick, value );
+      result = mTimers[( address >> 2 ) & 7]->setCount( mAccessTick, value );
       break;
     case TIMER::CONTROLB:
-      return mTimers[( address >> 2 ) & 7]->setControlB( mAccessTick, value );
+      result = mTimers[( address >> 2 ) & 7]->setControlB( mAccessTick, value );
       break;
     }
   }
@@ -232,6 +233,13 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
       mSerCtl.parerr = mSerCtl.overrun = mSerCtl.framerr = false;
     break;
   case SDONEACK:
+    mSuzyDone = false;
+    break;
+  case CPUSLEEP:
+    if ( !mSuzyDone )
+    {
+      return { WriteAction::Type::START_SUZY };
+    }
     break;
   case DISPCTL:
     mDisplayRegs.dispColor = ( value & DISPCTL::DISP_COLOR ) != 0;
@@ -292,7 +300,14 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     break;
   }
 
-  return {};
+  if ( result )
+  {
+    return { WriteAction::Type::FIRE_TIMER, result };
+  }
+  else
+  {
+    return {};
+  }
 }
 
 SequencedAction Mikey::fireTimer( uint64_t tick, uint32_t timer )
@@ -312,6 +327,11 @@ void Mikey::setDMAData( uint64_t tick, uint64_t data )
 uint8_t Mikey::getIRQ() const
 {
   return mIRQ;
+}
+
+void Mikey::suzyDone()
+{
+  mSuzyDone = true;
 }
 
 DisplayGenerator::Pixel const * Mikey::getSrface() const
