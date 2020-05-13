@@ -25,41 +25,41 @@ Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {},
     mDisplayGenerator->vblank( tick, mDisplayRegs.dispAdr );
     mIRQ |= interrupt ? 0x04 : 0x00;
   } );  //timer 2 -> timer 4
-  mTimers[0x3] = std::make_unique<TimerCore>( 0x4, [this]( uint64_t tick, bool interrupt )
+  mTimers[0x3] = std::make_unique<TimerCore>( 0x3, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x5]->borrowIn( tick );
     mIRQ |= interrupt ? 0x08 : 0x00;
   } );  //timer 3 -> timer 5
-  mTimers[0x4] = std::make_unique<TimerCore>( 0x5, [this]( uint64_t tick, bool interrupt )
+  mTimers[0x4] = std::make_unique<TimerCore>( 0x4, [this]( uint64_t tick, bool interrupt )
   {
   } );  //timer 4
-  mTimers[0x5] = std::make_unique<TimerCore>( 0x6, [this]( uint64_t tick, bool interrupt )
+  mTimers[0x5] = std::make_unique<TimerCore>( 0x5, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x7]->borrowIn( tick );
     mIRQ |= interrupt ? 0x20 : 0x00;
   } );  //timer 5 -> timer 7
-  mTimers[0x6] = std::make_unique<TimerCore>( 0x8, [this]( uint64_t tick, bool interrupt )
+  mTimers[0x6] = std::make_unique<TimerCore>( 0x6, [this]( uint64_t tick, bool interrupt )
   {
     mIRQ |= interrupt ? 0x40 : 0x00;
   } );  //timer 6
-  mTimers[0x7] = std::make_unique<TimerCore>( 0x9, [this]( uint64_t tick, bool interrupt )
+  mTimers[0x7] = std::make_unique<TimerCore>( 0x7, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x8]->borrowIn( tick );
     mIRQ |= interrupt ? 0x80 : 0x00;
   } );  //timer 7 -> audio 0
-  mTimers[0x8] = std::make_unique<TimerCore>( 0xa, [this]( uint64_t tick, bool unused )
+  mTimers[0x8] = std::make_unique<TimerCore>( 0x8, [this]( uint64_t tick, bool unused )
   {
     mTimers[0x9]->borrowIn( tick );
   } );  //audio 0 -> audio 1
-  mTimers[0x9] = std::make_unique<TimerCore>( 0xc, [this]( uint64_t tick, bool unused )
+  mTimers[0x9] = std::make_unique<TimerCore>( 0x9, [this]( uint64_t tick, bool unused )
   {
     mTimers[0xa]->borrowIn( tick );
   } );  //audio 1 -> audio 2
-  mTimers[0xa] = std::make_unique<TimerCore>( 0xd, [this]( uint64_t tick, bool unused )
+  mTimers[0xa] = std::make_unique<TimerCore>( 0xa, [this]( uint64_t tick, bool unused )
   {
     mTimers[0xb]->borrowIn( tick );
   } );  //audio 2 -> audio 3
-  mTimers[0xb] = std::make_unique<TimerCore>( 0xe, [this]( uint64_t tick, bool unused )
+  mTimers[0xb] = std::make_unique<TimerCore>( 0xb, [this]( uint64_t tick, bool unused )
   {
     mTimers[0x0]->borrowIn( tick );
   } );  //audio 3 -> timer 1
