@@ -8,7 +8,12 @@ Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {},
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x2]->borrowIn( tick );
-    if ( auto dma = mDisplayGenerator->hblank( tick, mTimers[0x02]->getCount( tick ) ) )
+    uint8_t cnt = mTimers[0x02]->getCount( tick );
+    if ( cnt == 101 )
+    {
+      mDisplayGenerator->updateDispAddr( mDisplayRegs.dispAdr );
+    }
+    if ( auto dma = mDisplayGenerator->hblank( tick, cnt ) )
     {
       mBusMaster.requestDisplayDMA( dma.tick, dma.address );
     }
@@ -22,7 +27,7 @@ Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {},
   mTimers[0x2] = std::make_unique<TimerCore>( 0x2, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x4]->borrowIn( tick );
-    mDisplayGenerator->vblank( tick, mDisplayRegs.dispAdr );
+    mDisplayGenerator->vblank( tick );
     mIRQ |= interrupt ? 0x04 : 0x00;
   } );  //timer 2 -> timer 4
   mTimers[0x3] = std::make_unique<TimerCore>( 0x3, [this]( uint64_t tick, bool interrupt )
@@ -259,6 +264,14 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
   case DISPADR+1:
     mDisplayRegs.dispAdr &= 0x00ff;
     mDisplayRegs.dispAdr |= value << 8;
+    break;
+  case MTEST0:
+    break;
+  case MTEST1:
+    break;
+  case MTEST2:
+    if ( ( value & 0x01 ) != 0 )
+      mDisplayGenerator->updateDispAddr( mDisplayRegs.dispAdr );
     break;
   case GREEN + 0x00:
   case GREEN + 0x01:

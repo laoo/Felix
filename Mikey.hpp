@@ -77,6 +77,9 @@ public:
   static constexpr uint16_t DISPCTL      = 0x92;
   static constexpr uint16_t PBKUP        = 0x93;
   static constexpr uint16_t DISPADR      = 0x94;
+  static constexpr uint16_t MTEST0       = 0x9c;
+  static constexpr uint16_t MTEST1       = 0x9d;
+  static constexpr uint16_t MTEST2       = 0x9e;
   static constexpr uint16_t GREEN        = 0xa0;
   static constexpr uint16_t BLUERED      = 0xb0;
 

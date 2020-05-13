@@ -1,7 +1,7 @@
 #include "DisplayGenerator.hpp"
 
 DisplayGenerator::DisplayGenerator() : mDMAData{}, mRowStartTick{}, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
-  mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
+mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
 {
   for ( uint32_t i = 0; i < 256; ++i )
   {
@@ -25,7 +25,7 @@ DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
     mRowStartTick = tick;
     mDMAIteration = 0;
     mDisplayedPixels = 0;
-    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), (uint16_t)( mDispAdr + mDisplayRow * 80 + mDMAIteration * ( 80 / DMA_ITERATIONS ) ) };
+    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), mDispAdr };
   }
   else
   {
@@ -40,7 +40,8 @@ DisplayGenerator::DMARequest DisplayGenerator::pushData( uint64_t tick, uint64_t
   flushDisplay( tick );
   if ( ++mDMAIteration < 10 )
   {
-    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), ( uint16_t )( mDispAdr + mDisplayRow * 80 + mDMAIteration * ( 80 / DMA_ITERATIONS ) ) };
+    mDispAdr += ( 80 / DMA_ITERATIONS );
+    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), mDispAdr };
   }
   else
   {
@@ -98,10 +99,14 @@ void DisplayGenerator::updatePalette( uint64_t tick, uint8_t reg, uint8_t value 
   }
 }
 
-void DisplayGenerator::vblank( uint64_t tick, uint16_t dispAdr )
+void DisplayGenerator::updateDispAddr( uint16_t dispAdr )
+{
+  mDispAdr = dispAdr;
+}
+
+void DisplayGenerator::vblank( uint64_t tick )
 {
   flushDisplay( tick );
-  mDispAdr = dispAdr;
 }
 
 void DisplayGenerator::flushDisplay( uint64_t tick )

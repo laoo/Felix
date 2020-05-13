@@ -34,8 +34,9 @@ public:
   DMARequest hblank( uint64_t tick, int row );
   DMARequest pushData( uint64_t tick, uint64_t data );
   void updatePalette( uint64_t tick, uint8_t reg, uint8_t value );
+  void updateDispAddr( uint16_t dispAdr );
 
-  void vblank( uint64_t tick, uint16_t dispAdr );
+  void vblank( uint64_t tick );
   Pixel const* getSrface() const;
 
 private:
