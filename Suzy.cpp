@@ -17,68 +17,100 @@ uint8_t Suzy::read( uint16_t address )
   switch ( address )
   {
   case TMPADR:
+    mEngine.tmpadr.l;
     break;
   case TMPADR + 1:
+    mEngine.tmpadr.h;
     break;
   case TILTACUM:
+    mEngine.tiltacum.l;
     break;
   case TILTACUM + 1:
+    mEngine.tiltacum.h;
     break;
   case HOFF:
+    mEngine.hoff.l;
     break;
   case HOFF + 1:
+    mEngine.hoff.h;
     break;
   case VOFF:
+    mEngine.voff.l;
     break;
   case VOFF + 1:
+    mEngine.hoff.h;
     break;
   case VIDBAS:
+    mEngine.vidbas.l;
     break;
   case VIDBAS + 1:
+    mEngine.vidbas.h;
     break;
   case COLLBAS:
+    mEngine.collbas.l;
     break;
   case COLLBAS + 1:
+    mEngine.collbas.h;
     break;
   case VIDADR:
+    mEngine.vidadr.l;
     break;
   case VIDADR + 1:
+    mEngine.vidadr.h;
     break;
   case COLLADR:
+    mEngine.colladr.l;
     break;
   case COLLADR + 1:
+    mEngine.colladr.h;
     break;
   case SCBNEXT:
+    mEngine.scbnext.l;
     break;
   case SCBNEXT + 1:
+    mEngine.scbnext.h;
     break;
   case SPRDLINE:
+    mEngine.sprdline.l;
     break;
   case SPRDLINE + 1:
+    mEngine.sprdline.h;
     break;
   case HPOSSTRT:
+    mEngine.hposstrt.l;
     break;
   case HPOSSTRT + 1:
+    mEngine.hposstrt.h;
     break;
   case VPOSSTRT:
+    mEngine.vposstrt.l;
     break;
   case VPOSSTRT + 1:
+    mEngine.vposstrt.h;
     break;
   case SPRHSIZ:
+    mEngine.sprhsiz.l;
     break;
   case SPRHSIZ + 1:
+    mEngine.sprhsiz.h;
     break;
   case SPRVSIZ:
+    mEngine.sprvsiz.l;
     break;
   case SPRVSIZ + 1:
+    mEngine.sprvsiz.h;
     break;
   case STRETCH:
+    mEngine.stretch.l;
     break;
   case STRETCH + 1:
+    mEngine.stretch.h;
     break;
   case TILT:
+    mEngine.tilt.l;
     break;
   case TILT + 1:
+    mEngine.tilt.h;
     break;
   case SPRDOFF:
     break;

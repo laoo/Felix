@@ -181,6 +181,36 @@ private:
     operator uint16_t() const { return w; }
   };
 
+  enum class BPP
+  {
+    ONE     = 0b00000000,
+    TWO     = 0b01000000,
+    THREE   = 0b10000000,
+    FOUR    = 0b11000000
+  };
+
+  enum class Sprite
+  {
+    SHADOW     = 0b00000111,
+    XOR        = 0b00000110,
+    XOR_SHADOW = 0b00000110,
+    NONCOLL    = 0b00000101,
+    NORMAL     = 0b00000100,
+    BOUNDARY   = 0b00000011,
+    BSHADOW    = 0b00000010,
+    BACKNONCOLL= 0b00000001,
+    BACKGROUND = 0b00000000,
+    BACK_SHADOW= 0b00000000
+  };
+
+  enum class Reload
+  {
+    NONE       = 0b00000000, //Reload nothing
+    HV         = 0b00010000, //Reload hsize, vsize
+    HVS        = 0b00100000, //Reload hsize, vsize, stretch
+    HVST       = 0b00110000 //Reload hsize, vsize, stretch, tilt
+  };
+
 private:
   struct Engine
   {
@@ -239,5 +269,17 @@ private:
   bool mMathCarry;         //Last carry bit.
   bool mVStretching;       //Vstretch
   bool mSpriteWorking;     //Sprite process was started and has neither completed nor been stopped.
+
+  BPP mBpp;
+  Sprite mSpriteType;
+  bool mHFlip;
+  bool mVFlip;
+  Reload mReload;
+  bool mLiteral;
+  bool mAlgo3;  //broken, do not set this bit!
+  bool mReusePalette;
+  bool mSkipSprite;
+  bool mDrawUp;
+  bool mDrawLeft;
 };
 
