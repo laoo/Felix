@@ -7,7 +7,6 @@
 #include "WinRenderer.hpp"
 #include "BusMaster.hpp"
 #include "CPUExecute.hpp"
-#include "CPUTrace.hpp"
 #include "Mikey.hpp"
 
 
@@ -97,7 +96,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 
     BusMaster bus{};
-    //CpuTrace trace = cpuTrace( cpu, bus.getTraceRequest() );
  
     for ( ;; )
     {

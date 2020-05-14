@@ -54,9 +54,22 @@ struct CpuTrace
     BusMaster * mBus;
   };
 
+  CpuTrace() : coro{}
+  {
+  }
+
   CpuTrace( handle c ) : coro{ c }
   {
   }
+
+  CpuTrace( CpuTrace const & other ) = delete;
+  CpuTrace & operator=( CpuTrace const & other ) = delete;
+  CpuTrace & operator=( CpuTrace && other ) noexcept
+  {
+    std::swap( coro, other.coro );
+    return *this;
+  }
+
 
   ~CpuTrace()
   {

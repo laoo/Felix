@@ -34,7 +34,6 @@ public:
 
   DisplayGenerator::Pixel const* process( uint64_t ticks );
 
-  TraceRequest & getTraceRequest();
 private:
 
   enum class PageType
@@ -70,12 +69,13 @@ private:
   std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
-  CpuExecute mCpuExecute;
-  SuzyExecute mSuzyExecute;
-  ActionQueue mActionQueue;
+  TraceRequest mDReq;
   CPURequest mCPUReq;
   SuzyRequest mSuzyReq;
-  TraceRequest mDReq;
+  CpuExecute mCpuExecute;
+  SuzyExecute mSuzyExecute;
+  CpuTrace mCpuTrace;
+  ActionQueue mActionQueue;
   MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;

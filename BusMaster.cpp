@@ -7,7 +7,9 @@
 #include <cassert>
 
 BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
-  mCpu{ std::make_shared<CPU>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() }, mCpuExecute{ cpuExecute( *mCpu ) }, mSuzyExecute{}, mActionQueue{}, mCPUReq{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
+  mCpu{ std::make_shared<CPU>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() },
+  mDReq{}, mCPUReq{}, mSuzyReq{}, mCpuExecute{ cpuExecute( *mCpu ) }, mSuzyExecute{}, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
+  mActionQueue{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
   {
     std::ifstream fin{ "lynxboot.img", std::ios::binary };
@@ -16,9 +18,9 @@ BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mC
 
     fin.read( ( char* )mROM.data(), mROM.size() );
   }
-  if ( size_t size = (size_t)std::filesystem::file_size( "d:/tests/5.o" ) )
+  if ( size_t size = (size_t)std::filesystem::file_size( "d:/test/tests/7.o" ) )
   {
-    std::ifstream fin{ "d:/tests/5.o", std::ios::binary };
+    std::ifstream fin{ "d:/test/tests/7.o", std::ios::binary };
     if ( fin.bad() )
       throw std::exception{};
 
@@ -50,6 +52,7 @@ BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mC
     }
   }
 
+  mCpuTrace = cpuTrace( *mCpu, mDReq );
   mCpuExecute.setBusMaster( this );
 }
 
@@ -117,11 +120,6 @@ void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
 {
   mDMAAddress = address;
   mActionQueue.push( { Action::DISPLAY_DMA, tick } );
-}
-
-TraceRequest & BusMaster::getTraceRequest()
-{
-  return mDReq;
 }
 
 DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
