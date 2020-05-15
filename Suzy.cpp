@@ -17,182 +17,156 @@ uint8_t Suzy::read( uint16_t address )
   switch ( address )
   {
   case TMPADR:
-    mEngine.tmpadr.l;
-    break;
+    return mEngine.tmpadr.l;
   case TMPADR + 1:
-    mEngine.tmpadr.h;
-    break;
+    return mEngine.tmpadr.h;
   case TILTACUM:
-    mEngine.tiltacum.l;
-    break;
+    return mEngine.tiltacum.l;
   case TILTACUM + 1:
-    mEngine.tiltacum.h;
-    break;
+    return mEngine.tiltacum.h;
   case HOFF:
-    mEngine.hoff.l;
-    break;
+    return mEngine.hoff.l;
   case HOFF + 1:
-    mEngine.hoff.h;
-    break;
+    return mEngine.hoff.h;
   case VOFF:
-    mEngine.voff.l;
-    break;
+    return mEngine.voff.l;
   case VOFF + 1:
-    mEngine.hoff.h;
-    break;
+    return mEngine.hoff.h;
   case VIDBAS:
-    mEngine.vidbas.l;
-    break;
+    return mEngine.vidbas.l;
   case VIDBAS + 1:
-    mEngine.vidbas.h;
-    break;
+    return mEngine.vidbas.h;
   case COLLBAS:
-    mEngine.collbas.l;
-    break;
+    return mEngine.collbas.l;
   case COLLBAS + 1:
-    mEngine.collbas.h;
-    break;
+    return mEngine.collbas.h;
   case VIDADR:
-    mEngine.vidadr.l;
-    break;
+    return mEngine.vidadr.l;
   case VIDADR + 1:
-    mEngine.vidadr.h;
-    break;
+    return mEngine.vidadr.h;
   case COLLADR:
-    mEngine.colladr.l;
-    break;
+    return mEngine.colladr.l;
   case COLLADR + 1:
-    mEngine.colladr.h;
-    break;
+    return mEngine.colladr.h;
   case SCBNEXT:
-    mEngine.scbnext.l;
-    break;
+    return mEngine.scbnext.l;
   case SCBNEXT + 1:
-    mEngine.scbnext.h;
-    break;
+    return mEngine.scbnext.h;
   case SPRDLINE:
-    mEngine.sprdline.l;
-    break;
+    return mEngine.sprdline.l;
   case SPRDLINE + 1:
-    mEngine.sprdline.h;
-    break;
+    return mEngine.sprdline.h;
   case HPOSSTRT:
-    mEngine.hposstrt.l;
-    break;
+    return mEngine.hposstrt.l;
   case HPOSSTRT + 1:
-    mEngine.hposstrt.h;
-    break;
+    return mEngine.hposstrt.h;
   case VPOSSTRT:
-    mEngine.vposstrt.l;
-    break;
+    return mEngine.vposstrt.l;
   case VPOSSTRT + 1:
-    mEngine.vposstrt.h;
-    break;
+    return mEngine.vposstrt.h;
   case SPRHSIZ:
-    mEngine.sprhsiz.l;
-    break;
+    return mEngine.sprhsiz.l;
   case SPRHSIZ + 1:
-    mEngine.sprhsiz.h;
-    break;
+    return mEngine.sprhsiz.h;
   case SPRVSIZ:
-    mEngine.sprvsiz.l;
-    break;
+    return mEngine.sprvsiz.l;
   case SPRVSIZ + 1:
-    mEngine.sprvsiz.h;
-    break;
+    return mEngine.sprvsiz.h;
   case STRETCH:
-    mEngine.stretch.l;
-    break;
+    return mEngine.stretch.l;
   case STRETCH + 1:
-    mEngine.stretch.h;
-    break;
+    return mEngine.stretch.h;
   case TILT:
-    mEngine.tilt.l;
-    break;
+    return mEngine.tilt.l;
   case TILT + 1:
-    mEngine.tilt.h;
-    break;
+    return mEngine.tilt.h;
   case SPRDOFF:
-    break;
+    return mEngine.sprdoff.l;
   case SPRDOFF + 1:
-    break;
+    return mEngine.sprdoff.h;
   case SCVPOS:
-    break;
+    return mEngine.scvpos.l;
   case SCVPOS + 1:
-    break;
+    return mEngine.scvpos.h;
   case COLLOFF:
-    break;
+    return mEngine.colloff.l;
   case COLLOFF + 1:
-    break;
+    return mEngine.colloff.h;
   case VSIZACUM:
-    break;
+    return mEngine.vsizacum.l;
   case VSIZACUM + 1:
-    break;
+    return mEngine.vsizacum.h;
   case HSIZOFF:
-    break;
+    return mEngine.hsizoff.l;
   case HSIZOFF + 1:
-    break;
+    return mEngine.hsizoff.h;
   case VSIZOFF:
-    break;
+    return mEngine.vsizoff.l;
   case VSIZOFF + 1:
-    break;
+    return mEngine.vsizoff.h;
   case SCBADR:
-    break;
+    return mEngine.scbadr.l;
   case SCBADR + 1:
-    break;
+    return mEngine.scbadr.h;
   case PROCADR:
-    break;
+    return mEngine.procadr.l;
   case PROCADR + 1:
-    break;
-
+    return mEngine.procadr.h;
   case MATHD:
-    break;
+    return mEngine.mathd;
   case MATHC:
-    break;
+    return mEngine.mathc;
   case MATHB:
-    break;
+    return mEngine.mathb;
   case MATHA:
-    break;
+    return mEngine.matha;
   case MATHP:
-    break;
+    return mEngine.mathp;
   case MATHN:
-
+    return mEngine.mathn;
   case MATHH:
-    break;
+    return mEngine.mathh;
   case MATHG:
-    break;
+    return mEngine.mathg;
   case MATHF:
-    break;
+    return mEngine.mathf;
   case MATHE:
-    break;
-
+    return mEngine.mathe;
   case MATHM:
-    break;
+    return mEngine.mathm;
   case MATHL:
-    break;
+    return mEngine.mathl;
   case MATHK:
-    break;
+    return mEngine.mathk;
   case MATHJ:
-    break;
-
-  case SPRINIT:
-    break;
+    return mEngine.mathj;
   case SUZYHREV:
     return 0x01;
-  case SUZYBUSEN:
-    break;
   case SPRSYS:
+    return
+      ( mMathWorking ? SPRSYS::MATHWORKING : 0 ) |
+      ( mMathWarning ? SPRSYS::MATHWARNING : 0 ) |
+      ( mMathCarry ? SPRSYS::MATHCARRY : 0 ) |
+      ( mVStretch ? SPRSYS::VSTRETCHING : 0 ) |
+      ( mLeftHand ? SPRSYS::LEFTHANDED : 0 ) |
+      ( mUnsafeAccess ? SPRSYS::UNSAFEACCESS : 0 ) |
+      ( mSpriteStop ? SPRSYS::SPRITETOSTOP : 0 ) |
+      ( mSpriteWorking ? SPRSYS::SPRITEWORKING : 0 );
     break;
-
+  case JOYSTICK:
+    return mJoystick;
+  case SWITCHES:
+    return mSwitches;
+  case RCART0:
+    return mCart0;
+  case RCART1:
+    return mCart1;
   default:
-    assert( false );
-    break;
+    return uint8_t( 0xff );
   }
-
-  return uint8_t( 0xff );
 }
 
-SequencedAction Suzy::write( uint16_t address, uint8_t value )
+void Suzy::write( uint16_t address, uint8_t value )
 {
   address &= 0xff;
 
@@ -208,8 +182,8 @@ SequencedAction Suzy::write( uint16_t address, uint8_t value )
       mEngine.tiltacum = value;
       break;
     case TILTACUM + 1:
-      break;
       mEngine.tiltacum.h = value;
+      break;
     case HOFF:
       mEngine.hoff = value;
       break;
@@ -388,20 +362,66 @@ SequencedAction Suzy::write( uint16_t address, uint8_t value )
       mEngine.mathj = value;
       break;
 
+    case SPRCTL0:
+      writeSPRCTL0( value );
+      break;
+    case SPRCTL1:
+      writeSPRCTL1( value );
+      break;
+    case SPRCOLL:
+      mSprColl = value;
     case SPRINIT:
-      //break;
-    case SUZYHREV:
-      //break;
+      mSprInit = value;
+      break;
     case SUZYBUSEN:
       mBusEnable = ( SUZYBUSEN::ENABLE & value ) != 0;
       break;
+    case SPRGO:
+      mSpriteStop = false;
+      mEveron = ( SPRGO::EVER_ON & value ) != 0;
+      mSpriteWorking = ( SPRGO::SPRITE_GO & value ) != 0;
+      break;
     case SPRSYS:
-      //break;
-
+      mSignMath = ( SPRSYS::SIGNMATH & value ) != 0;
+      mAccumulate = ( SPRSYS::ACCUMULATE & value ) != 0;
+      mNoCollide = ( SPRSYS::NO_COLLIDE & value ) != 0;
+      mVStretch = ( SPRSYS::VSTRETCH & value ) != 0;
+      mLeftHand = ( SPRSYS::LEFTHAND & value ) != 0;
+      mUnsafeAccess = mUnsafeAccess && ( SPRSYS::UNSAFEACCESSRST & value ) == 0;
+      mSpriteStop = ( SPRSYS::SPRITESTOP & value ) != 0;
+      break;
+    case RCART0:
+      writeCart( 0, value );
+      break;
+    case RCART1:
+      writeCart( 1, value );
+      break;
     default:
     assert( false );
     break;
   }
+}
 
-  return {};
+
+void Suzy::writeSPRCTL0( uint8_t value )
+{
+  mBpp = (BPP)( value & SPRCTL0::BITS_MASK );
+  mHFlip = ( value & SPRCTL0::HFLIP ) != 0;
+  mVFlip = ( value & SPRCTL0::VFLIP ) != 0;
+  mSpriteType = (Sprite)( value & SPRCTL0::SPRITE_MASK );
+}
+
+void Suzy::writeSPRCTL1( uint8_t value )
+{
+  mLiteral = ( value & SPRCTL1::LITERAL ) != 0;
+  mAlgo3 = ( value & SPRCTL1::ALGO_3 ) != 0;
+  mReload = (Reload)( value & SPRCTL1::RELOAD_MASK );
+  mReusePalette = ( value & SPRCTL1::REUSE_PALETTE ) != 0;
+  mSkipSprite = ( value & SPRCTL1::SKIP_SPRITE ) != 0;
+  mDrawUp = ( value & SPRCTL1::DRAW_UP ) != 0;
+  mDrawLeft = ( value & SPRCTL1::DRAW_LEFT ) != 0;
+}
+
+void Suzy::writeCart( int number, uint8_t value )
+{
 }

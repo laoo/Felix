@@ -9,7 +9,7 @@ public:
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
-  SequencedAction write( uint16_t address, uint8_t value );
+  void write( uint16_t address, uint8_t value );
 
 
   static constexpr uint16_t TMPADR    = 0x00;
@@ -81,6 +81,7 @@ private:
     static constexpr uint8_t FOUR_PER_PIXEL    = 0b11000000;
     static constexpr uint8_t HFLIP             = 0b00100000;
     static constexpr uint8_t VFLIP             = 0b00010000;
+    static constexpr uint8_t SPRITE_MASK       = 0b00000111;
     static constexpr uint8_t SHADOW_SPRITE     = 0b00000111;
     static constexpr uint8_t XOR_SPRITE        = 0b00000110;
     static constexpr uint8_t XOR_SHADOW_SPRITE = 0b00000110;
@@ -111,12 +112,18 @@ private:
   struct SPRCOLL
   {
     static constexpr uint8_t NO_COLLIDE        = 0b00100000;
+    static constexpr uint8_t NUMBER_MASK       = 0b00001111;
   };
-
 
   struct SUZYBUSEN
   {
     static constexpr uint8_t ENABLE   = 0b00000001; //Suzy Bus Enable, 0 = disabled
+  };
+
+  struct SPRGO
+  {
+    static constexpr uint8_t EVER_ON           = 0b00000100; //enable everon detector : 1 = enabled.
+    static constexpr uint8_t SPRITE_GO         = 0b00000001; //Sprite process enabled : 0 = disabled.Write a 1 to start the process, at completion of process this bit will be reset to 0. Either setting or clearing this bit will clear the Stop At End Of Current Sprite bit.
   };
 
   struct SPRSYS
@@ -158,9 +165,9 @@ private:
 
   struct SWITCHES
   {
-    static constexpr uint8_t CART1_IO_INACTIVE = 0b00000100;
-    static constexpr uint8_t CART0_IO_INACTIVE = 0b00000010;
-    static constexpr uint8_t PAUSE_SWITCH      = 0b00000001;
+    static constexpr uint8_t CART1_STROBE = 0b00000100;
+    static constexpr uint8_t CART0_STROBE = 0b00000010;
+    static constexpr uint8_t PAUSE_SWITCH = 0b00000001;
   };
 
   struct Reg
@@ -210,6 +217,11 @@ private:
     HVS        = 0b00100000, //Reload hsize, vsize, stretch
     HVST       = 0b00110000 //Reload hsize, vsize, stretch, tilt
   };
+
+  private:
+    void writeSPRCTL0( uint8_t value );
+    void writeSPRCTL1( uint8_t value );
+    void writeCart( int number, uint8_t value );
 
 private:
   struct Engine
@@ -267,19 +279,24 @@ private:
   bool mMathWorking;       //Math in process
   bool mMathWarning;       //Mathbit: If mult, 1 = accumulator overflow.If div, 1 = div by zero attempted.
   bool mMathCarry;         //Last carry bit.
-  bool mVStretching;       //Vstretch
   bool mSpriteWorking;     //Sprite process was started and has neither completed nor been stopped.
-
-  BPP mBpp;
-  Sprite mSpriteType;
   bool mHFlip;
   bool mVFlip;
-  Reload mReload;
   bool mLiteral;
   bool mAlgo3;  //broken, do not set this bit!
   bool mReusePalette;
   bool mSkipSprite;
   bool mDrawUp;
   bool mDrawLeft;
+  bool mEveron;
+  BPP mBpp;
+  Sprite mSpriteType;
+  Reload mReload;
+  uint8_t mSprColl;
+  uint8_t mSprInit; //should be 0xf3
+  uint8_t mJoystick;
+  uint8_t mSwitches;
+  uint8_t mCart0;
+  uint8_t mCart1;
 };
 

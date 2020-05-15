@@ -235,10 +235,7 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       mCPUReq.resume();
       break;
     case Action::CPU_WRITE_SUZY:
-      if ( auto newAction = mSuzy->write( mCPUReq.address, mCPUReq.value ) )
-      {
-        mActionQueue.push( newAction );
-      }
+      mSuzy->write( mCPUReq.address, mCPUReq.value );
       mCPUReq.resume();
       break;
     case Action::CPU_READ_MIKEY:
@@ -254,6 +251,7 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
         break;
       case Mikey::WriteAction::Type::FIRE_TIMER:
         mActionQueue.push( mikeyAction.action );
+        [[fallthrough]];
       case Mikey::WriteAction::Type::NONE:
         mCPUReq.resume();
         break;
