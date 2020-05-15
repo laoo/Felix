@@ -160,8 +160,41 @@ uint8_t Mikey::read( uint16_t address )
       ( mSerCtl.framerr ? 0x04 : 0x00 ) |
       ( mSerCtl.rxbrk ? 0x02 : 0x00 ) |
       ( mSerCtl.parbit ? 0x01 : 0x00 );
+  case GREEN + 0x00:
+  case GREEN + 0x01:
+  case GREEN + 0x02:
+  case GREEN + 0x03:
+  case GREEN + 0x04:
+  case GREEN + 0x05:
+  case GREEN + 0x06:
+  case GREEN + 0x07:
+  case GREEN + 0x08:
+  case GREEN + 0x09:
+  case GREEN + 0x0a:
+  case GREEN + 0x0b:
+  case GREEN + 0x0c:
+  case GREEN + 0x0d:
+  case GREEN + 0x0e:
+  case GREEN + 0x0f:
+  case BLUERED + 0x00:
+  case BLUERED + 0x01:
+  case BLUERED + 0x02:
+  case BLUERED + 0x03:
+  case BLUERED + 0x04:
+  case BLUERED + 0x05:
+  case BLUERED + 0x06:
+  case BLUERED + 0x07:
+  case BLUERED + 0x08:
+  case BLUERED + 0x09:
+  case BLUERED + 0x0a:
+  case BLUERED + 0x0b:
+  case BLUERED + 0x0c:
+  case BLUERED + 0x0d:
+  case BLUERED + 0x0e:
+  case BLUERED + 0x0f:
+    return mPalette[address - GREEN];
   default:
-    assert( false );
+    return (uint8_t)0xff;
     break;
   }
 
@@ -223,6 +256,12 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     break;
   case INTSET:
     mIRQ |= ~value;
+    break;
+  case SYSCTL1:
+    if ( ( value & SYSCTL1::POWERON ) == 0 )
+    {
+      mBusMaster.enterMonitor();
+    }
     break;
   case IODIR:
   case IODAT:
@@ -315,7 +354,7 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
 
   if ( result )
   {
-    return { WriteAction::Type::FIRE_TIMER, result };
+    return { WriteAction::Type::ENQUEUE_ACTION, result };
   }
   else
   {

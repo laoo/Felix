@@ -22,8 +22,8 @@ public:
     enum class Type
     {
       NONE,
-      FIRE_TIMER,
-      START_SUZY
+      ENQUEUE_ACTION,
+      START_SUZY,
     } type;
 
     SequencedAction action;
@@ -68,6 +68,7 @@ public:
   static constexpr uint16_t MSTEREO      = 0x50;
   static constexpr uint16_t INTRST       = 0x80;
   static constexpr uint16_t INTSET       = 0x81;
+  static constexpr uint16_t SYSCTL1      = 0x87;
   static constexpr uint16_t MIKEYHREV    = 0x89;
   static constexpr uint16_t IODIR        = 0x8a;
   static constexpr uint16_t IODAT        = 0x8b;
@@ -82,6 +83,12 @@ public:
   static constexpr uint16_t MTEST2       = 0x9e;
   static constexpr uint16_t GREEN        = 0xa0;
   static constexpr uint16_t BLUERED      = 0xb0;
+
+  struct SYSCTL1
+  {
+    static constexpr uint8_t POWERON          = 0b00000010; //writing 0 shuts down the console
+    static constexpr uint8_t CART_ADDR_STROBE = 0b00000001; //
+  };
 
   struct DISPCTL
   {

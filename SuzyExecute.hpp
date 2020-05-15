@@ -156,7 +156,7 @@ struct SuzyExecute
     auto get_return_object() { return SuzyExecute{ this, handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
-    void return_void() {}
+    void return_void();
     void unhandled_exception() { std::terminate(); }
     AwaitSuzyFetchSCB yield_value( SuzyFetchSCB f );
     AwaitSuzyFetchSprite yield_value( SuzyFetchSprite f );
@@ -166,6 +166,7 @@ struct SuzyExecute
     BusMaster * mBus;
   };
 
+
   SuzyExecute() : promise{}, coro{}
   {
   }
@@ -173,6 +174,16 @@ struct SuzyExecute
   SuzyExecute( promise_type * promise, handle c ) : promise{ promise }, coro{ c }
   {
   }
+
+  SuzyExecute( SuzyExecute const & other ) = delete;
+  SuzyExecute & operator=( SuzyExecute const & other ) = delete;
+  SuzyExecute & operator=( SuzyExecute && other ) noexcept
+  {
+    std::swap( coro, other.coro );
+    std::swap( promise, other.promise );
+    return *this;
+  }
+
 
   ~SuzyExecute()
   {

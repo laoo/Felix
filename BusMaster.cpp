@@ -116,6 +116,11 @@ SuzyRequest * BusMaster::request( SuzyWritePixel w )
   return &mSuzyReq;
 }
 
+void BusMaster::suzyStop()
+{
+  mCPUReq.resume();
+}
+
 void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
 {
   mDMAAddress = address;
@@ -249,7 +254,7 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
         mSuzyExecute = suzyExecute( *mSuzy );
         mSuzyExecute.setBusMaster( this );
         break;
-      case Mikey::WriteAction::Type::FIRE_TIMER:
+      case Mikey::WriteAction::Type::ENQUEUE_ACTION:
         mActionQueue.push( mikeyAction.action );
         [[fallthrough]];
       case Mikey::WriteAction::Type::NONE:
@@ -269,6 +274,10 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       break;
     }
   }
+}
+
+void BusMaster::enterMonitor()
+{
 }
 
 void BusMaster::request( CPURequest const & request )
@@ -356,7 +365,7 @@ void BusMaster::writeFF( uint16_t address, uint8_t value )
   {
     mRAM[0xff00 + address] = value;
   }
-  else
+  else if ( address == 0xf9 )
   {
     mMapCtl.sequentialDisable = ( value & 0x80 ) != 0;
     mMapCtl.vectorSpaceDisable = ( value & 0x08 ) != 0;
@@ -368,5 +377,9 @@ void BusMaster::writeFF( uint16_t address, uint8_t value )
     mPageTypes[0xfe] = mMapCtl.kernelDisable ? PageType::RAM : PageType::FE;
     mPageTypes[0xfd] = mMapCtl.mikeyDisable ? PageType::RAM : PageType::MIKEY;
     mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
+  }
+  else
+  {
+    //ignore write to ROM
   }
 }

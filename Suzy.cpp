@@ -1,7 +1,10 @@
 #include "Suzy.hpp"
 #include <cassert>
 
-Suzy::Suzy() : mEngine{}
+Suzy::Suzy() : mEngine{},
+  mBusEnable{}, mSignMath{}, mAccumulate{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{}, mMathWorking{},
+  mMathWarning{}, mMathCarry{}, mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mDrawUp{}, mDrawLeft{}, mEveron{}, mBpp{}, mSpriteType{}, mReload{},
+  mSprColl{}, mSprInit{}, mJoystick{}, mSwitches{}, mCart0{}, mCart1{}
 {
 }
 

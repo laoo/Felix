@@ -29,10 +29,13 @@ public:
   SuzyRequest * request( SuzyFetchSprite r );
   SuzyRequest * request( SuzyReadPixel r );
   SuzyRequest * request( SuzyWritePixel w );
+  void suzyStop();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
 
   DisplayGenerator::Pixel const* process( uint64_t ticks );
+
+  void enterMonitor();
 
 private:
 

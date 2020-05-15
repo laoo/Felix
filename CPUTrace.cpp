@@ -809,7 +809,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::BRL_BVS:
       co_await adf;
       lo = cpu.operand;
-      sprintf( buf + off, "$%04x\n", (int16_t)( cpu.pc + 1 + (int8_t)lo ) );
+      sprintf( buf + off, "$%04x\n", (uint16_t)( cpu.pc + 1 + (int8_t)lo ) );
       break;
     case Opcode::BZR_BBR0:
     case Opcode::BZR_BBR1:
@@ -831,7 +831,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       lo = cpu.operand;
       co_await adf;
       lo = cpu.operand;
-      sprintf( buf + off, "$%02x,$%04x\n", lo, (int16_t)( cpu.pc + 1 + (int8_t)hi ) );
+      sprintf( buf + off, "$%02x,$%04x\n", lo, (uint16_t)( cpu.pc + 1 + (int8_t)hi ) );
       break;
     }
 

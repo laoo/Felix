@@ -3,6 +3,7 @@
 
 SuzyExecute suzyExecute( Suzy & suzy )
 {
+
   co_return;
 }
 
@@ -24,4 +25,10 @@ AwaitSuzyReadPixel SuzyExecute::promise_type::yield_value( SuzyReadPixel f )
 AwaitSuzyWritePixel SuzyExecute::promise_type::yield_value( SuzyWritePixel f )
 {
   return AwaitSuzyWritePixel{ mBus->request( f ) };
+}
+
+
+void SuzyExecute::promise_type::return_void()
+{
+  mBus->suzyStop();
 }
