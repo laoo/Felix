@@ -39,6 +39,17 @@ struct SuzyWritePixel
 
 struct SuzyRequest
 {
+  enum class Op : uint8_t
+  {
+    NONE = 0,
+    READ,
+    READ4,
+    WRITE,
+    WRITE4,
+    MASKED_RMW,
+    XOR,
+    _SIZE
+  };
 
   union
   {
@@ -47,26 +58,18 @@ struct SuzyRequest
     {
       uint32_t value;
       uint16_t address;
-      uint8_t operation;
-      uint8_t count;  //currently ignored. always one byte
+      Op operation;
+      uint8_t mask;
     };
   };
 
-  static constexpr uint8_t RMW_MASK   = 0xc0;
-  static constexpr uint8_t READ       = 0x80;
-  static constexpr uint8_t WRITE      = 0x40;
-  static constexpr uint8_t OP_MASK    = 0x3f;
-  static constexpr uint8_t OP_VID_TRANS_MERGE_FULL    = 0x01;
-  static constexpr uint8_t OP_VID_TRANS_MERGE_LEFT    = 0x01;
-  static constexpr uint8_t OP_VID_TRANS_MERGE_RIGHT   = 0x01;
-  
-
   SuzyRequest() : raw{} {}
 
-  void operator()()
+  bool operator()()
   {
     raw = 0;
-    coro.resume();
+    coro();
+    return raw != 0;
   }
 
   explicit operator bool() const
@@ -165,7 +168,7 @@ struct SuzyExecute
   struct promise_type
   {
     auto get_return_object() { return SuzyExecute{ handle::from_promise( *this ) }; }
-    auto initial_suspend() { return std::experimental::suspend_never{}; }
+    auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void();
     void unhandled_exception() { std::terminate(); }

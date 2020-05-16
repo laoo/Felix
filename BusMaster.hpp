@@ -52,9 +52,8 @@ private:
     bool suzyDisable;
   };
 
-  void suzyRead();
-  void suzyRMW();
-  void suzyWrite();
+  void suzyMaskedRMW();
+  void suzyXor();
 
   void processCPU();
   void processSuzy();

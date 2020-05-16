@@ -229,16 +229,33 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
         break;
       }
       break;
+    case Action::SUZY_NONE:
+      mCPUReq();
+      break;
     case Action::SUZY_READ:
-      suzyRead();
+      mSuzyReq.value = mRAM[mSuzyReq.address];
       processSuzy();
       break;
-    case Action::SUZY_RMW:
-      suzyWrite();
+    case Action::SUZY_READ4:
+      assert( mSuzyReq.address <= 0xfffc );
+      mSuzyReq.value = *( (uint32_t const*)( mRAM.data() + mSuzyReq.address ) );
       processSuzy();
       break;
     case Action::SUZY_WRITE:
-      suzyRMW();
+      mRAM[mSuzyReq.address] = (uint8_t)mSuzyReq.value;
+      processSuzy();
+      break;
+    case Action::SUZY_WRITE4:
+      assert( mSuzyReq.address <= 0xfffc );
+      *( ( uint32_t* )( mRAM.data() + mSuzyReq.address ) ) =  mSuzyReq.value;
+      processSuzy();
+      break;
+    case Action::SUZY_MASKED_RMW:
+      suzyMaskedRMW();
+      processSuzy();
+      break;
+    case Action::SUZY_XOR:
+      suzyXor();
       processSuzy();
       break;
     case Action::END_FRAME:
@@ -259,31 +276,41 @@ void BusMaster::enterMonitor()
 {
 }
 
-void BusMaster::suzyRead()
+void BusMaster::suzyMaskedRMW()
 {
-  mSuzyReq.value = 0;
-  mSuzyReq.value = mRAM[mSuzyReq.address];
-  mSuzyReq();
+  auto value = mRAM[mSuzyReq.address] & mSuzyReq.mask | mSuzyReq.value;
+  mRAM[mSuzyReq.address] = ( uint8_t )value;
 }
 
-void BusMaster::suzyRMW()
+void BusMaster::suzyXor()
 {
-  uint32_t tmp{};
-  tmp = mRAM[mSuzyReq.address];
-  mRAM[mSuzyReq.address] = mSuzyReq.value;
-  mSuzyReq();
-}
-
-void BusMaster::suzyWrite()
-{
-  mRAM[mSuzyReq.address] = mSuzyReq.value;
-  mSuzyReq();
+  auto value = mRAM[mSuzyReq.address] ^ mSuzyReq.value;
+  mRAM[mSuzyReq.address] = ( uint8_t )value;
 }
 
 void BusMaster::processSuzy()
 {
-  if ( !mSuzyReq )
-    mCPUReq.resume();
+  struct Cost
+  {
+    int slow;
+    int fast;
+  };
+
+  static constexpr std::array<Cost, ( int )::SuzyRequest::Op::_SIZE> requestCost = {
+    Cost{ 0, 0 }, //NONE,
+    Cost{ 1, 0 }, //READ,
+    Cost{ 1, 3 }, //READ4,
+    Cost{ 1, 0 }, //WRITE,
+    Cost{ 1, 3 }, //WRITE4,
+    Cost{ 1, 1 }, //MASKED_RMW,
+    Cost{ 1, 1 }  //XOR,
+  };
+
+  mSuzyReq();
+  int op = ( int )mSuzyReq.operation;
+  mActionQueue.push( { ( Action )( ( int )Action::SUZY_NONE + op ), mBusReservationTick } );
+  auto cost = requestCost[op];
+  mBusReservationTick += cost.slow * 5ull + cost.fast * mFastCycleTick;
 }
 
 void BusMaster::processCPU()
