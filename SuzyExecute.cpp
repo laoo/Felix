@@ -1,7 +1,7 @@
 #include "SuzyExecute.hpp"
 #include "BusMaster.hpp"
 
-SuzyExecute suzyExecute( Suzy & suzy )
+SuzyExecute suzyExecute( Suzy & suzy, BusMaster & bus )
 {
 
   co_return;

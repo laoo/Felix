@@ -39,28 +39,39 @@ struct SuzyWritePixel
 
 struct SuzyRequest
 {
-  enum class Type
+
+  union
   {
-    NONE,
-    FETCH_SCB,
-    FETCH_SPRITE,
-    READ_PIXEL,
-    WRITE_PIXEL,
-  } mType;
+    uint64_t raw;
+    struct
+    {
+      uint32_t value;
+      uint16_t address;
+      uint8_t operation;
+      uint8_t count;  //currently ignored. always one byte
+    };
+  };
 
-  uint16_t address;
-  uint8_t value;
+  static constexpr uint8_t RMW_MASK   = 0xc0;
+  static constexpr uint8_t READ       = 0x80;
+  static constexpr uint8_t WRITE      = 0x40;
+  static constexpr uint8_t OP_MASK    = 0x3f;
+  static constexpr uint8_t OP_VID_TRANS_MERGE_FULL    = 0x01;
+  static constexpr uint8_t OP_VID_TRANS_MERGE_LEFT    = 0x01;
+  static constexpr uint8_t OP_VID_TRANS_MERGE_RIGHT   = 0x01;
+  
 
-  SuzyRequest() : mType{ Type::NONE }, address{}, value{} {}
-  SuzyRequest( SuzyFetchSCB r ) : mType{ Type::FETCH_SCB }, address{ r.address }, value{} {}
-  SuzyRequest( SuzyFetchSprite r ) : mType{ Type::FETCH_SPRITE }, address{ r.address }, value{} {}
-  SuzyRequest( SuzyReadPixel r ) : mType{ Type::READ_PIXEL }, address{ r.address }, value{} {}
-  SuzyRequest( SuzyWritePixel w ) : mType{ Type::WRITE_PIXEL }, address{ w.address }, value{ w.value } {}
+  SuzyRequest() : raw{} {}
 
-  void resume()
+  void operator()()
   {
-    mType = Type::NONE;
+    raw = 0;
     coro.resume();
+  }
+
+  explicit operator bool() const
+  {
+    return raw != 0;
   }
 
   std::experimental::coroutine_handle<> coro;
@@ -153,8 +164,8 @@ struct SuzyExecute
 
   struct promise_type
   {
-    auto get_return_object() { return SuzyExecute{ this, handle::from_promise( *this ) }; }
-    auto initial_suspend() { return std::experimental::suspend_always{}; }
+    auto get_return_object() { return SuzyExecute{ handle::from_promise( *this ) }; }
+    auto initial_suspend() { return std::experimental::suspend_never{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void();
     void unhandled_exception() { std::terminate(); }
@@ -167,11 +178,11 @@ struct SuzyExecute
   };
 
 
-  SuzyExecute() : promise{}, coro{}
+  SuzyExecute() : coro{}
   {
   }
 
-  SuzyExecute( promise_type * promise, handle c ) : promise{ promise }, coro{ c }
+  SuzyExecute( handle c ) : coro{ c }
   {
   }
 
@@ -180,7 +191,6 @@ struct SuzyExecute
   SuzyExecute & operator=( SuzyExecute && other ) noexcept
   {
     std::swap( coro, other.coro );
-    std::swap( promise, other.promise );
     return *this;
   }
 
@@ -191,14 +201,7 @@ struct SuzyExecute
       coro.destroy();
   }
 
-  void setBusMaster( BusMaster * bus )
-  {
-    promise->mBus = bus;
-    coro.resume();
-  }
-
   handle coro;
-  promise_type * promise;
 };
 
-SuzyExecute suzyExecute( Suzy & suzy );
+SuzyExecute suzyExecute( Suzy & suzy, BusMaster & bus );

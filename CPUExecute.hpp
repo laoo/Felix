@@ -162,7 +162,7 @@ struct CpuExecute
 
   struct promise_type
   {
-    auto get_return_object() { return CpuExecute{ this, handle::from_promise( *this ) }; }
+    auto get_return_object() { return CpuExecute{ handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void() {}
@@ -175,11 +175,11 @@ struct CpuExecute
     BusMaster * mBus;
   };
 
-  CpuExecute() : promise{}, coro{}
+  CpuExecute() : coro{}
   {
   }
 
-  CpuExecute( promise_type * promise, handle c ) : promise{ promise }, coro{ c }
+  CpuExecute( handle c ) : coro{ c }
   {
   }
 
@@ -191,12 +191,11 @@ struct CpuExecute
 
   void setBusMaster( BusMaster * bus )
   {
-    promise->mBus = bus;
+    coro.promise().mBus = bus;
     coro.resume();
   }
 
   handle coro;
-  promise_type * promise;
 };
 
 CpuExecute cpuExecute( CPU & cpu );

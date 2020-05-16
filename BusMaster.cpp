@@ -12,7 +12,7 @@ BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mC
   mActionQueue{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
   {
-    std::ifstream fin{ "lynxboot.img", std::ios::binary };
+    std::ifstream fin{ "d:/test/tests/lynxboot.img", std::ios::binary };
     if ( fin.bad() )
       throw std::exception{};
 
@@ -63,62 +63,29 @@ BusMaster::~BusMaster()
 CPURequest * BusMaster::request( CPURead r )
 {
   mCPUReq = CPURequest{ r };
-  request( mCPUReq );
+  processCPU();
   return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUFetchOpcode r )
 {
   mCPUReq = CPURequest{ r };
-  request( mCPUReq );
+  processCPU();
   return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUFetchOperand r )
 {
   mCPUReq = CPURequest{ r };
-  request( mCPUReq );
+  processCPU();
   return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUWrite w )
 {
   mCPUReq = CPURequest{ w };
-  request( mCPUReq );
+  processCPU();
   return &mCPUReq;
-}
-
-SuzyRequest * BusMaster::request( SuzyFetchSCB r )
-{
-  mSuzyReq = SuzyRequest{ r };
-  request( mCPUReq );
-  return &mSuzyReq;
-}
-
-SuzyRequest * BusMaster::request( SuzyFetchSprite r )
-{
-  mSuzyReq = SuzyRequest{ r };
-  request( mCPUReq );
-  return &mSuzyReq;
-}
-
-SuzyRequest * BusMaster::request( SuzyReadPixel r )
-{
-  mSuzyReq = SuzyRequest{ r };
-  request( mCPUReq );
-  return &mSuzyReq;
-}
-
-SuzyRequest * BusMaster::request( SuzyWritePixel w )
-{
-  mSuzyReq = SuzyRequest{ w };
-  request( mCPUReq );
-  return &mSuzyReq;
-}
-
-void BusMaster::suzyStop()
-{
-  mCPUReq.resume();
 }
 
 void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
@@ -251,8 +218,8 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       switch ( auto mikeyAction = mMikey->write( mCPUReq.address, mCPUReq.value ) )
       {
       case Mikey::WriteAction::Type::START_SUZY:
-        mSuzyExecute = suzyExecute( *mSuzy );
-        mSuzyExecute.setBusMaster( this );
+        mSuzyExecute = suzyExecute( *mSuzy, *this );
+        processSuzy();
         break;
       case Mikey::WriteAction::Type::ENQUEUE_ACTION:
         mActionQueue.push( mikeyAction.action );
@@ -261,6 +228,18 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
         mCPUReq.resume();
         break;
       }
+      break;
+    case Action::SUZY_READ:
+      suzyRead();
+      processSuzy();
+      break;
+    case Action::SUZY_RMW:
+      suzyWrite();
+      processSuzy();
+      break;
+    case Action::SUZY_WRITE:
+      suzyRMW();
+      processSuzy();
       break;
     case Action::END_FRAME:
       return mMikey->getSrface();
@@ -280,7 +259,34 @@ void BusMaster::enterMonitor()
 {
 }
 
-void BusMaster::request( CPURequest const & request )
+void BusMaster::suzyRead()
+{
+  mSuzyReq.value = 0;
+  mSuzyReq.value = mRAM[mSuzyReq.address];
+  mSuzyReq();
+}
+
+void BusMaster::suzyRMW()
+{
+  uint32_t tmp{};
+  tmp = mRAM[mSuzyReq.address];
+  mRAM[mSuzyReq.address] = mSuzyReq.value;
+  mSuzyReq();
+}
+
+void BusMaster::suzyWrite()
+{
+  mRAM[mSuzyReq.address] = mSuzyReq.value;
+  mSuzyReq();
+}
+
+void BusMaster::processSuzy()
+{
+  if ( !mSuzyReq )
+    mCPUReq.resume();
+}
+
+void BusMaster::processCPU()
 {
   static constexpr std::array<Action, 25> requestToAction = {
     Action::NONE,
@@ -310,26 +316,22 @@ void BusMaster::request( CPURequest const & request )
     Action::CPU_WRITE_SUZY
   };
 
-  auto pageType = mPageTypes[request.address >> 8];
-  mActionQueue.push( { requestToAction[( size_t )request.mType + ( int )pageType], mBusReservationTick } );
+  auto pageType = mPageTypes[mCPUReq.address >> 8];
+  mActionQueue.push( { requestToAction[( size_t )mCPUReq.mType + ( int )pageType], mBusReservationTick } );
   switch ( pageType )
   {
     case PageType::RAM:
     case PageType::FE:
     case PageType::FF:
-      mBusReservationTick += ( request.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+      mBusReservationTick += ( mCPUReq.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
       break;
     case PageType::MIKEY:
-      mBusReservationTick = mMikey->requestAccess( mBusReservationTick, request.address );
+      mBusReservationTick = mMikey->requestAccess( mBusReservationTick, mCPUReq.address );
       break;
     case PageType::SUZY:
-      mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, request.address );
+      mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, mCPUReq.address );
       break;
   }
-}
-
-void BusMaster::request( SuzyRequest const & request )
-{
 }
 
 uint8_t BusMaster::readFF( uint16_t address )

@@ -25,11 +25,6 @@ public:
   CPURequest * request( CPUFetchOperand r );
   CPURequest * request( CPURead r );
   CPURequest * request( CPUWrite w );
-  SuzyRequest * request( SuzyFetchSCB r );
-  SuzyRequest * request( SuzyFetchSprite r );
-  SuzyRequest * request( SuzyReadPixel r );
-  SuzyRequest * request( SuzyWritePixel w );
-  void suzyStop();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
 
@@ -57,8 +52,12 @@ private:
     bool suzyDisable;
   };
 
-  void request( CPURequest const& request );
-  void request( SuzyRequest const& request );
+  void suzyRead();
+  void suzyRMW();
+  void suzyWrite();
+
+  void processCPU();
+  void processSuzy();
 
   uint8_t readFF( uint16_t address );
   void writeFF( uint16_t address, uint8_t value );
