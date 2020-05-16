@@ -1,5 +1,6 @@
 #include "Suzy.hpp"
 #include <cassert>
+#include "BusMaster.hpp"
 
 Suzy::Suzy() : mEngine{},
   mBusEnable{}, mSignMath{}, mAccumulate{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{}, mMathWorking{},
@@ -432,5 +433,6 @@ void Suzy::writeCart( int number, uint8_t value )
 
 SuzyExecute Suzy::processSprites( BusMaster & bus )
 {
+  co_await bus;
   co_return;
 }

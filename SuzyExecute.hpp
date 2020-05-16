@@ -31,11 +31,10 @@ struct SuzyRequest
 
   SuzyRequest() : raw{} {}
 
-  bool operator()()
+  void operator()()
   {
     raw = 0;
     coro();
-    return raw != 0;
   }
 
   explicit operator bool() const
@@ -107,7 +106,7 @@ struct AwaitSuzyReadPixel
   }
 };
 
-struct AwaitSuzyWritePixel
+struct AwaitBusMaster
 {
   SuzyRequest * req;
 
@@ -134,10 +133,11 @@ struct SuzyExecute
   struct promise_type
   {
     auto get_return_object() { return SuzyExecute{ handle::from_promise( *this ) }; }
-    auto initial_suspend() { return std::experimental::suspend_always{}; }
+    auto initial_suspend() { return std::experimental::suspend_never{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void();
     void unhandled_exception() { std::terminate(); }
+    AwaitBusMaster await_transform( BusMaster & bus );
 
     BusMaster * mBus;
   };

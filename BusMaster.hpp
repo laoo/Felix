@@ -25,6 +25,7 @@ public:
   CPURequest * request( CPUFetchOperand r );
   CPURequest * request( CPURead r );
   CPURequest * request( CPUWrite w );
+  SuzyRequest * suzyRequest();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
 

@@ -88,6 +88,11 @@ CPURequest * BusMaster::request( CPUWrite w )
   return &mCPUReq;
 }
 
+SuzyRequest * BusMaster::suzyRequest()
+{
+  return &mSuzyReq;
+}
+
 void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
 {
   mDMAAddress = address;
