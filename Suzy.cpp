@@ -428,3 +428,9 @@ void Suzy::writeSPRCTL1( uint8_t value )
 void Suzy::writeCart( int number, uint8_t value )
 {
 }
+
+
+SuzyExecute Suzy::processSprites( BusMaster & bus )
+{
+  co_return;
+}

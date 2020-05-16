@@ -1,41 +1,7 @@
 #pragma once
 #include <experimental/coroutine>
-#include "Suzy.hpp"
 
 class BusMaster;
-
-struct SuzyFetchSCB
-{
-  uint16_t address;
-
-  struct Tag {};
-
-  SuzyFetchSCB( uint16_t a, Tag t ) : address{ a } {}
-};
-
-struct SuzyFetchSprite
-{
-  uint16_t address;
-
-  struct Tag {};
-
-  SuzyFetchSprite( uint16_t a, Tag t ) : address{ a } {}
-};
-
-struct SuzyReadPixel
-{
-  uint16_t address;
-
-  SuzyReadPixel( uint16_t a ) : address{ a } {}
-};
-
-struct SuzyWritePixel
-{
-  uint16_t address;
-  uint8_t value;
-
-  SuzyWritePixel( uint16_t a, uint8_t v ) : address{ a }, value{ v } {}
-};
 
 struct SuzyRequest
 {
@@ -172,10 +138,6 @@ struct SuzyExecute
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void();
     void unhandled_exception() { std::terminate(); }
-    AwaitSuzyFetchSCB yield_value( SuzyFetchSCB f );
-    AwaitSuzyFetchSprite yield_value( SuzyFetchSprite f );
-    AwaitSuzyReadPixel yield_value( SuzyReadPixel r );
-    AwaitSuzyWritePixel yield_value( SuzyWritePixel w );
 
     BusMaster * mBus;
   };
@@ -207,4 +169,3 @@ struct SuzyExecute
   handle coro;
 };
 
-SuzyExecute suzyExecute( Suzy & suzy, BusMaster & bus );

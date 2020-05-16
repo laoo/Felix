@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "ActionQueue.hpp"
+#include "SuzyExecute.hpp"
 
 class Suzy
 {
@@ -11,6 +12,9 @@ public:
   uint8_t read( uint16_t address );
   void write( uint16_t address, uint8_t value );
 
+  SuzyExecute processSprites( BusMaster & bus );
+
+private:
 
   static constexpr uint16_t TMPADR    = 0x00;
   static constexpr uint16_t TILTACUM  = 0x02;
@@ -67,10 +71,6 @@ public:
   static constexpr uint16_t SWITCHES  = 0xb1;
   static constexpr uint16_t RCART0    = 0xb2;
   static constexpr uint16_t RCART1    = 0xb3;
-
-
-
-private:
 
   struct SPRCTL0
   {
@@ -222,6 +222,7 @@ private:
     void writeSPRCTL0( uint8_t value );
     void writeSPRCTL1( uint8_t value );
     void writeCart( int number, uint8_t value );
+
 
 private:
   struct Engine
