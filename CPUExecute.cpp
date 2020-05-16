@@ -3,6 +3,26 @@
 #include "Opcodes.hpp"
 #include <cassert>
 
+AwaitCPURead CpuExecute::promise_type::await_transform( CPURead r )
+{
+  return AwaitCPURead{ mBus->request( r ) };
+}
+
+AwaitCPUFetchOpcode CpuExecute::promise_type::await_transform( CPUFetchOpcode r )
+{
+  return AwaitCPUFetchOpcode{ mBus->request( r ) };
+}
+
+AwaitCPUFetchOperand CpuExecute::promise_type::await_transform( CPUFetchOperand r )
+{
+  return AwaitCPUFetchOperand{ mBus->request( r ) };
+}
+
+AwaitCPUWrite CpuExecute::promise_type::await_transform( CPUWrite w )
+{
+  return AwaitCPUWrite{ mBus->request( w ) };
+}
+
 bool isHiccup( Opcode opcode )
 {
   switch ( opcode )
@@ -76,7 +96,7 @@ CpuExecute cpuExecute( CPU & cpu )
       cpu.opcode = Opcode::BRK_BRK;
     }
 
-    cpu.operand = eal = co_yield{ cpu.pc, CPUFetchOperand::Tag{} };
+    cpu.operand = eal = co_await CPUFetchOperand{ cpu.pc };
 
     switch ( cpu.opcode )
     {
@@ -91,178 +111,178 @@ CpuExecute cpuExecute( CPU & cpu )
     case Opcode::RZP_LDY:
     case Opcode::RZP_ORA:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RZP_ADC:
     case Opcode::RZP_SBC:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ ea };
+        co_await CPURead{ ea };
       }
       break;
     case Opcode::WZP_STA:
       ++cpu.pc;
-      co_yield{ ea, cpu.a };
+      co_await CPUWrite{ ea, cpu.a };
       break;
     case Opcode::WZP_STX:
       ++cpu.pc;
-      co_yield{ ea, cpu.x };
+      co_await CPUWrite{ ea, cpu.x };
       break;
     case Opcode::WZP_STY:
       ++cpu.pc;
-      co_yield{ ea, cpu.y };
+      co_await CPUWrite{ ea, cpu.y };
       break;
     case Opcode::WZP_STZ:
       ++cpu.pc;
-      co_yield{ ea, 0x00 };
+      co_await CPUWrite{ ea, 0x00 };
       break;
     case Opcode::MZP_ASL:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.asl( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_DEC:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.setnz( --d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_INC:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.setnz( ++d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_LSR:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.lsr( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_ROL:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.rol( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_ROR:
       ++cpu.pc;
       cpu.ror( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_TRB:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.setz( d & cpu.a );
       d &= ~cpu.a;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_TSB:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.setz( d & cpu.a );
       d |= cpu.a;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB0:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x01;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB1:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x02;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB2:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x04;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB3:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x08;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB4:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x10;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB5:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x20;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB6:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x40;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_RMB7:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d &= ~0x80;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB0:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x01;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB1:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x02;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB2:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x04;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB3:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x08;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB4:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x10;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB5:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x20;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB6:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x40;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZP_SMB7:
       ++cpu.pc;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       d |= 0x80;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     break;
     case Opcode::RZX_AND:
@@ -272,87 +292,87 @@ CpuExecute cpuExecute( CPU & cpu )
     case Opcode::RZX_LDA:
     case Opcode::RZX_LDY:
     case Opcode::RZX_ORA:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RZX_ADC:
     case Opcode::RZX_SBC:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ ea };
+        co_await CPURead{ ea };
       }
       break;
     case Opcode::RZY_LDX:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.y;
-      cpu.setnz( cpu.x = co_yield{ ea } );
+      cpu.setnz( cpu.x = co_await CPURead{ ea } );
       break;
     case Opcode::WZX_STA:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      co_yield{ ea, cpu.a };
+      co_await CPUWrite{ ea, cpu.a };
       break;
     case Opcode::WZX_STY:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      co_yield{ ea, cpu.y };
+      co_await CPUWrite{ ea, cpu.y };
       break;
     case Opcode::WZX_STZ:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      co_yield{ ea, 0x00 };
+      co_await CPUWrite{ ea, 0x00 };
       break;
     case Opcode::WZY_STX:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.y;
-      co_yield{ ea, cpu.x };
+      co_await CPUWrite{ ea, cpu.x };
       break;
     case Opcode::MZX_ASL:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.asl( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZX_DEC:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.setnz( --d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZX_INC:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.setnz( ++d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZX_LSR:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.lsr( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZX_ROL:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.rol( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MZX_ROR:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.ror( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::RIN_AND:
     case Opcode::RIN_CMP:
@@ -360,104 +380,104 @@ CpuExecute cpuExecute( CPU & cpu )
     case Opcode::RIN_LDA:
     case Opcode::RIN_ORA:
       ++cpu.pc;
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
-      d = co_yield{ t };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RIN_ADC:
     case Opcode::RIN_SBC:
       ++cpu.pc;
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
-      d = co_yield{ t };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ t };
+        co_await CPURead{ t };
       }
       break;
     case Opcode::WIN_STA:
       ++cpu.pc;
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
-      co_yield{ t, cpu.a };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
+      co_await CPUWrite{ t, cpu.a };
       break;
     case Opcode::RIX_AND:
     case Opcode::RIX_CMP:
     case Opcode::RIX_EOR:
     case Opcode::RIX_LDA:
     case Opcode::RIX_ORA:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
-      d = co_yield{ t };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RIX_ADC:
     case Opcode::RIX_SBC:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
-      d = co_yield{ t };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ t };
+        co_await CPURead{ t };
       }
       break;
     case Opcode::WIX_STA:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       eal += cpu.x;
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
-      co_yield{ t, cpu.a };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
+      co_await CPUWrite{ t, cpu.a };
       break;
     case Opcode::RIY_AND:
     case Opcode::RIY_CMP:
     case Opcode::RIY_EOR:
     case Opcode::RIY_LDA:
     case Opcode::RIY_ORA:
-      co_yield{ ++cpu.pc };
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
+      co_await CPURead{ ++cpu.pc };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
       ea = t;
       ea += cpu.y;
       if ( eah != th )
       {
         tl += cpu.y;
-        co_yield{ t };
+        co_await CPURead{ t };
       }
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RIY_ADC:
     case Opcode::RIY_SBC:
-      co_yield{ ++cpu.pc };
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
+      co_await CPURead{ ++cpu.pc };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
       ea = t;
       ea += cpu.y;
       if ( eah != th )
       {
         tl += cpu.y;
-        co_yield{ t };
+        co_await CPURead{ t };
       }
-      d = co_yield{ ea };
+      d = co_await CPURead{ ea };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ t };
+        co_await CPURead{ t };
       }
       break;
     case Opcode::WIY_STA:
-      co_yield{ ++cpu.pc };
-      tl = co_yield{ ea++ };
-      th = co_yield{ ea };
+      co_await CPURead{ ++cpu.pc };
+      tl = co_await CPURead{ ea++ };
+      th = co_await CPURead{ ea };
       ea = t;
       ea += cpu.y;
       tl += cpu.y;
-      co_yield{ t };
-      co_yield{ ea, cpu.a };
+      co_await CPURead{ t };
+      co_await CPUWrite{ ea, cpu.a };
       break;
     case Opcode::RAB_AND:
     case Opcode::RAB_BIT:
@@ -470,98 +490,98 @@ CpuExecute cpuExecute( CPU & cpu )
     case Opcode::RAB_LDY:
     case Opcode::RAB_ORA:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ ea };
+        co_await CPURead{ ea };
       }
       break;
     case Opcode::WAB_STA:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea, cpu.a };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPUWrite{ ea, cpu.a };
       break;
     case Opcode::WAB_STX:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea, cpu.x };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPUWrite{ ea, cpu.x };
       break;
     case Opcode::WAB_STY:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea, cpu.y };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPUWrite{ ea, cpu.y };
       break;
     case Opcode::WAB_STZ:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea, 0x00 };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPUWrite{ ea, 0x00 };
       break;
       break;
     case Opcode::MAB_ASL:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.asl( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAB_DEC:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.setnz( --d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAB_INC:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.setnz( ++d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAB_LSR:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.lsr( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAB_ROL:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.rol( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAB_ROR:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.ror( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAB_TRB:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.setz( d & cpu.a );
       d &= ~cpu.a;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAB_TSB:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      d = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      d = co_await CPURead{ ea };
       cpu.setz( d & cpu.a );
       d |= cpu.a;
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::RAX_AND:
     case Opcode::RAX_BIT:
@@ -571,32 +591,32 @@ CpuExecute cpuExecute( CPU & cpu )
     case Opcode::RAX_LDY:
     case Opcode::RAX_ORA:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       t += cpu.x;
       if ( th != eah )
       {
         eal += cpu.x;
-        co_yield{ ea };
+        co_await CPURead{ ea };
       }
-      d = co_yield{ t };
+      d = co_await CPURead{ t };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       t += cpu.x;
       if ( th != eah )
       {
         eal += cpu.x;
-        co_yield{ ea };
+        co_await CPURead{ ea };
       }
-      d = co_yield{ t };
+      d = co_await CPURead{ t };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ t };
+        co_await CPURead{ t };
       }
       break;
     case Opcode::RAY_AND:
@@ -606,162 +626,162 @@ CpuExecute cpuExecute( CPU & cpu )
     case Opcode::RAY_LDX:
     case Opcode::RAY_ORA:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       t += cpu.y;
       if ( th != eah )
       {
         eal += cpu.x;
-        co_yield{ ea };
+        co_await CPURead{ ea };
       }
-      d = co_yield{ t };
+      d = co_await CPURead{ t };
       cpu.executeR( cpu.opcode, d );
       break;
     case Opcode::RAY_ADC:
     case Opcode::RAY_SBC:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       t += cpu.y;
       if ( th != eah )
       {
         eal += cpu.x;
-        co_yield{ ea };
+        co_await CPURead{ ea };
       }
-      d = co_yield{ t };
+      d = co_await CPURead{ t };
       if ( cpu.executeR( cpu.opcode, d ) )
       {
-        co_yield{ t };
+        co_await CPURead{ t };
       }
       break;
     case Opcode::WAX_STA:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      co_yield{ t, cpu.a };
+      co_await CPURead{ ea };
+      co_await CPUWrite{ t, cpu.a };
       break;
     case Opcode::WAX_STZ:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      co_yield{ t, 0x00 };
+      co_await CPURead{ ea };
+      co_await CPUWrite{ t, 0x00 };
       break;
     case Opcode::WAY_STA:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.y;
       t += cpu.y;
-      co_yield{ ea };
-      co_yield{ t, cpu.a };
+      co_await CPURead{ ea };
+      co_await CPUWrite{ t, cpu.a };
       break;
     case Opcode::MAX_ASL:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      d = co_yield{ t };
+      co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.asl( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAX_DEC:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      d = co_yield{ t };
+      co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.setnz( --d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAX_INC:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      d = co_yield{ t };
+      co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.setnz( ++d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAX_LSR:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      d = co_yield{ t };
+      co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.lsr( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAX_ROL:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      d = co_yield{ t };
+      co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.rol( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::MAX_ROR:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       t = ea;
       eal += cpu.x;
       t += cpu.x;
-      co_yield{ ea };
-      d = co_yield{ t };
+      co_await CPURead{ ea };
+      d = co_await CPURead{ t };
       cpu.ror( d );
-      co_yield{ ea, d };
+      co_await CPUWrite{ ea, d };
       break;
     case Opcode::JMA_JMP:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       cpu.pc = ea;
       break;
     case Opcode::JSA_JSR:
       ++cpu.pc;
-      co_yield{ cpu.s };
-      co_yield{ cpu.s, cpu.pch };
+      co_await CPURead{ cpu.s };
+      co_await CPUWrite{ cpu.s, cpu.pch };
       cpu.sl--;
-      co_yield{ cpu.s, cpu.pcl };
+      co_await CPUWrite{ cpu.s, cpu.pcl };
       cpu.sl--;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
       cpu.pc = ea;
       break;
     case Opcode::JMX_JMP:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ cpu.pc };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ cpu.pc };
       t = ea;
       eal += cpu.x;
-      co_yield{ ea };
+      co_await CPURead{ ea };
       t += cpu.x;
-      eal = co_yield{ t++ };
-      eah = co_yield{ t };
+      eal = co_await CPURead{ t++ };
+      eah = co_await CPURead{ t };
       cpu.pc = ea;
       break;
     case Opcode::JMI_JMP:
       ++cpu.pc;
-      cpu.operand = eah = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      tl = co_yield{ ea };
+      cpu.operand = eah = co_await CPUFetchOperand{ cpu.pc++ };
+      tl = co_await CPURead{ ea };
       eal++;
-      co_yield{ ea };
+      co_await CPURead{ ea };
       eah += eal == 0 ? 1 : 0;
-      th = co_yield{ ea };
+      th = co_await CPURead{ ea };
       cpu.pc = t;
       break;
     case Opcode::IMP_ASL:
@@ -853,18 +873,18 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( cpu.executeR( cpu.opcode, eal ) )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
       }
       break;
     case Opcode::BRL_BCC:
       ++cpu.pc;
       if ( !cpu.C )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
@@ -873,11 +893,11 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( cpu.C )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
@@ -886,11 +906,11 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( cpu.Z )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
@@ -899,11 +919,11 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( cpu.N )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
@@ -912,11 +932,11 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( !cpu.Z )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
@@ -925,21 +945,21 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( !cpu.N )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
       break;
     case Opcode::BRL_BRA:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       t = cpu.pc + (int8_t)eal;
       if ( th != cpu.pch )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
       }
       cpu.pc = t;
       break;
@@ -947,11 +967,11 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( !cpu.V )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
@@ -960,20 +980,20 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( cpu.V )
       {
-        co_yield{ cpu.pc };
+        co_await CPURead{ cpu.pc };
         t = cpu.pc + (int8_t)eal;
         if ( th != cpu.pch )
         {
-          co_yield{ cpu.pc };
+          co_await CPURead{ cpu.pc };
         }
         cpu.pc = t;
       }
       break;
     case Opcode::BZR_BBR0:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x01 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -982,9 +1002,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBR1:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x02 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -993,9 +1013,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBR2:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x04 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1004,9 +1024,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBR3:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x08 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1015,9 +1035,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBR4:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x10 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1026,9 +1046,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBR5:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x20 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1037,9 +1057,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBR6:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x40 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1048,9 +1068,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBR7:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x80 ) == 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1059,9 +1079,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS0:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x01 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1070,9 +1090,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS1:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x02 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1081,9 +1101,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS2:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x04 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1092,9 +1112,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS3:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x08 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1103,9 +1123,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS4:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x10 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1114,9 +1134,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS5:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x20 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1125,9 +1145,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS6:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x40 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1136,9 +1156,9 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::BZR_BBS7:
       ++cpu.pc;
-      eal = co_yield{ ea };
-      cpu.operand = tl = co_yield{ cpu.pc++, CPUFetchOperand::Tag{} };
-      co_yield{ ea };
+      eal = co_await CPURead{ ea };
+      cpu.operand = tl = co_await CPUFetchOperand{ cpu.pc++ };
+      co_await CPURead{ ea };
       if ( ( eal & 0x80 ) != 0 )
       {
         t = cpu.pc + (int8_t)tl;
@@ -1149,41 +1169,41 @@ CpuExecute cpuExecute( CPU & cpu )
       ++cpu.pc;
       if ( cpu.interrupt & CPU::I_RESET )
       {
-        co_yield{ cpu.s };
+        co_await CPURead{ cpu.s };
         cpu.sl--;
-        co_yield{ cpu.s };
+        co_await CPURead{ cpu.s };
         cpu.sl--;
-        co_yield{ cpu.s };
+        co_await CPURead{ cpu.s };
         cpu.sl--;
-        eal = co_yield{ 0xfffc };
-        eah = co_yield{ 0xfffd };
+        eal = co_await CPURead{ 0xfffc };
+        eah = co_await CPURead{ 0xfffd };
         cpu.interrupt &= ~CPU::I_RESET;
       }
       else
       {
-        co_yield{ cpu.s, cpu.pch };
+        co_await CPUWrite{ cpu.s, cpu.pch };
         cpu.sl--;
-        co_yield{ cpu.s, cpu.pcl };
+        co_await CPUWrite{ cpu.s, cpu.pcl };
         cpu.sl--;
         if ( cpu.interrupt == CPU::I_NONE )
         {
-          co_yield{ cpu.s, cpu.p() };
+          co_await CPUWrite{ cpu.s, cpu.p() };
         }
         else
         {
-          co_yield{ cpu.s, cpu.pirq() };
+          co_await CPUWrite{ cpu.s, cpu.pirq() };
         }
         cpu.sl--;
         if ( cpu.interrupt & CPU::I_NMI )
         {
-          eal = co_yield{ 0xfffa };
-          eah = co_yield{ 0xfffb };
+          eal = co_await CPURead{ 0xfffa };
+          eah = co_await CPURead{ 0xfffb };
           cpu.interrupt &= ~CPU::I_NMI;
         }
         else
         {
-          eal = co_yield{ 0xfffe };
-          eah = co_yield{ 0xffff };
+          eal = co_await CPURead{ 0xfffe };
+          eah = co_await CPURead{ 0xffff };
           if ( cpu.interrupt == CPU::I_IRQ )
           {
             cpu.interrupt &= ~CPU::I_IRQ;
@@ -1197,59 +1217,59 @@ CpuExecute cpuExecute( CPU & cpu )
     case Opcode::RTI_RTI:
       ++cpu.pc;
       ++cpu.sl;
-      cpu.P = co_yield{ cpu.s };
+      cpu.P = co_await CPURead{ cpu.s };
       ++cpu.sl;
-      eal = co_yield{ cpu.s };
+      eal = co_await CPURead{ cpu.s };
       ++cpu.sl;
-      eah = co_yield{ cpu.s };
-      co_yield{ cpu.pc };
+      eah = co_await CPURead{ cpu.s };
+      co_await CPURead{ cpu.pc };
       cpu.pc = ea;
       break;
     case Opcode::RTS_RTS:
-      co_yield{ ++cpu.pc };
+      co_await CPURead{ ++cpu.pc };
       ++cpu.sl;
-      eal = co_yield{ cpu.s };
+      eal = co_await CPURead{ cpu.s };
       ++cpu.sl;
-      eah = co_yield{ cpu.s };
-      co_yield{ cpu.pc };
+      eah = co_await CPURead{ cpu.s };
+      co_await CPURead{ cpu.pc };
       ++ea;
       cpu.pc = ea;
       break;
     case Opcode::PHR_PHA:
-      co_yield{ cpu.s, cpu.a };
+      co_await CPUWrite{ cpu.s, cpu.a };
       cpu.sl--;
       break;
     case Opcode::PHR_PHP:
-      co_yield{ cpu.s, cpu.p() };
+      co_await CPUWrite{ cpu.s, cpu.p() };
       cpu.sl--;
       break;
     case Opcode::PHR_PHX:
-      co_yield{ cpu.s, cpu.x };
+      co_await CPUWrite{ cpu.s, cpu.x };
       cpu.sl--;
       break;
     case Opcode::PHR_PHY:
-      co_yield{ cpu.s, cpu.y };
+      co_await CPUWrite{ cpu.s, cpu.y };
       cpu.sl--;
       break;
     case Opcode::PLR_PLA:
-      co_yield{ cpu.pc };
+      co_await CPURead{ cpu.pc };
       ++cpu.sl;
-      cpu.setnz( cpu.a = co_yield{ cpu.s } );
+      cpu.setnz( cpu.a = co_await CPURead{ cpu.s } );
       break;
     case Opcode::PLR_PLP:
-      co_yield{ cpu.pc };
+      co_await CPURead{ cpu.pc };
       ++cpu.sl;
-      cpu.P = co_yield{ cpu.s };
+      cpu.P = co_await CPURead{ cpu.s };
       break;
     case Opcode::PLR_PLX:
-      co_yield{ cpu.pc };
+      co_await CPURead{ cpu.pc };
       ++cpu.sl;
-      cpu.setnz( cpu.x = co_yield{ cpu.s } );
+      cpu.setnz( cpu.x = co_await CPURead{ cpu.s } );
       break;
     case Opcode::PLR_PLY:
-      co_yield{ cpu.pc };
+      co_await CPURead{ cpu.pc };
       ++cpu.sl;
-      cpu.setnz( cpu.y = co_yield{ cpu.s } );
+      cpu.setnz( cpu.y = co_await CPURead{ cpu.s } );
       break;
     case Opcode::UND_2_02:
     case Opcode::UND_2_22:
@@ -1262,34 +1282,34 @@ CpuExecute cpuExecute( CPU & cpu )
       break;
     case Opcode::UND_3_44:
       ++cpu.pc;
-      co_yield{ ea };
+      co_await CPURead{ ea };
       break;
     case Opcode::UND_4_54:
     case Opcode::UND_4_d4:
     case Opcode::UND_4_f4:
       ++cpu.pc;
-      co_yield{ cpu.pc };
+      co_await CPURead{ cpu.pc };
       eal += cpu.x;
-      eal = co_yield{ ea };
+      eal = co_await CPURead{ ea };
       break;
     case Opcode::UND_4_dc:
     case Opcode::UND_4_fc:
       ++cpu.pc;
-      eah = co_yield{ cpu.pc++ };
-      co_yield{ ea };
+      eah = co_await CPURead{ cpu.pc++ };
+      co_await CPURead{ ea };
       break;
     case Opcode::UND_8_5c:
       //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opcode_mapping.html
       //op - code 5C consumes 3 bytes and 8 cycles but conforms to no known address mode; it remains interesting but useless.
       //I tested the instruction "5C 1234h" ( stored little - endian as 5Ch 34h 12h ) as an example, and observed the following : 3 cycles fetching the instruction, 1 cycle reading FF34, then 4 cycles reading FFFF.
       ++cpu.pc;
-      co_yield{ cpu.pc++ };
+      co_await CPURead{ cpu.pc++ };
       eah = 0xff;
-      co_yield{ ea };
-      co_yield{ 0xffff };
-      co_yield{ 0xffff };
-      co_yield{ 0xffff };
-      co_yield{ 0xffff };
+      co_await CPURead{ ea };
+      co_await CPURead{ 0xffff };
+      co_await CPURead{ 0xffff };
+      co_await CPURead{ 0xffff };
+      co_await CPURead{ 0xffff };
       break;
     default:  //for UND_1_xx
       break;
@@ -1297,7 +1317,7 @@ CpuExecute cpuExecute( CPU & cpu )
 
     for ( ;; )
     {
-      auto opint = co_yield { cpu.pc++, CPUFetchOpcode::Tag{} };
+      auto opint = co_await CPUFetchOpcode{ cpu.pc++ };
       cpu.opcode = opint.op;
       cpu.interrupt = opint.interrupt;
       cpu.tick = opint.tick;
@@ -1308,27 +1328,6 @@ CpuExecute cpuExecute( CPU & cpu )
     }
   }
 
-}
-
-
-AwaitCPURead CpuExecute::promise_type::yield_value( CPURead r )
-{
-  return AwaitCPURead{ mBus->request( r ) };
-}
-
-AwaitCPUFetchOpcode CpuExecute::promise_type::yield_value( CPUFetchOpcode r )
-{
-  return AwaitCPUFetchOpcode{ mBus->request( r ) };
-}
-
-AwaitCPUFetchOperand CpuExecute::promise_type::yield_value( CPUFetchOperand r )
-{
-  return AwaitCPUFetchOperand{ mBus->request( r ) };
-}
-
-AwaitCPUWrite CpuExecute::promise_type::yield_value( CPUWrite w )
-{
-  return AwaitCPUWrite{ mBus->request( w ) };
 }
 
 void CPU::asl( uint8_t & val )
