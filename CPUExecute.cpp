@@ -22,3 +22,8 @@ AwaitCPUWrite CpuExecute::promise_type::await_transform( CPUWrite w )
 }
 
 
+AwaitCPUBusMaster CpuExecute::promise_type::await_transform( BusMaster & bus )
+{
+  mBus = &bus;
+  return AwaitCPUBusMaster{ mBus->cpuRequest() };
+}

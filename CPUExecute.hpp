@@ -155,6 +155,26 @@ struct AwaitCPUWrite
   }
 };
 
+struct AwaitCPUBusMaster
+{
+  CPURequest * req;
+
+  bool await_ready()
+  {
+    return true;
+  }
+
+  void await_resume()
+  {
+  }
+
+  void await_suspend( std::experimental::coroutine_handle<> c )
+  {
+    req->coro = c;
+  }
+};
+
+
 struct CpuExecute
 {
   struct promise_type;
@@ -163,7 +183,7 @@ struct CpuExecute
   struct promise_type
   {
     auto get_return_object() { return CpuExecute{ handle::from_promise( *this ) }; }
-    auto initial_suspend() { return std::experimental::suspend_always{}; }
+    auto initial_suspend() { return std::experimental::suspend_never{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void() {}
     void unhandled_exception() { std::terminate(); }
@@ -171,6 +191,7 @@ struct CpuExecute
     AwaitCPUFetchOpcode await_transform( CPUFetchOpcode r );
     AwaitCPUFetchOperand await_transform( CPUFetchOperand r );
     AwaitCPUWrite await_transform( CPUWrite r );
+    AwaitCPUBusMaster await_transform( BusMaster & bus );
 
     BusMaster * mBus;
   };
@@ -187,12 +208,6 @@ struct CpuExecute
   {
     if ( coro )
       coro.destroy();
-  }
-
-  void setBusMaster( BusMaster * bus )
-  {
-    coro.promise().mBus = bus;
-    coro();
   }
 
   handle coro;

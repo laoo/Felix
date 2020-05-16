@@ -25,6 +25,8 @@ public:
   CPURequest * request( CPUFetchOperand r );
   CPURequest * request( CPURead r );
   CPURequest * request( CPUWrite w );
+ 
+  CPURequest * cpuRequest();
   SuzyRequest * suzyRequest();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
@@ -68,6 +70,7 @@ private:
   std::array<PageType, 256> mPageTypes;
   uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
+  ActionQueue mActionQueue;
   std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
@@ -77,7 +80,6 @@ private:
   CpuExecute mCpuExecute;
   SuzyExecute mSuzyExecute;
   CpuTrace mCpuTrace;
-  ActionQueue mActionQueue;
   MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;

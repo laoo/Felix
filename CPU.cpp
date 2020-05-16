@@ -44,8 +44,10 @@ bool isHiccup( Opcode opcode )
   }
 }
 
-CpuExecute CPU::execute()
+CpuExecute CPU::execute( BusMaster & bus )
 {
+  co_await bus;
+
   for ( ;; )
   {
     union

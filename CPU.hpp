@@ -98,7 +98,7 @@ struct CPU
   void ror( uint8_t & val );
   bool executeR( Opcode opcode, uint8_t value );
 
-  CpuExecute execute();
+  CpuExecute execute( BusMaster & bus );
 
 
   uint64_t tick;
