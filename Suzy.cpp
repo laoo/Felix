@@ -431,8 +431,8 @@ void Suzy::writeCart( int number, uint8_t value )
 }
 
 
-SuzyExecute Suzy::processSprites( BusMaster & bus )
+SuzyExecute Suzy::processSprites( SuzyRequest & req )
 {
-  co_await bus;
+  co_await req;
   co_return;
 }

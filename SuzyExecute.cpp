@@ -3,11 +3,11 @@
 
 void SuzyExecute::promise_type::return_void()
 {
-  mBus->suzyRequest()->raw = 0;
+  mReq->raw = 0;
 }
 
-AwaitBusMaster SuzyExecute::promise_type::await_transform( BusMaster & bus )
+AwaitSuzyRequest SuzyExecute::promise_type::await_transform( SuzyRequest & req )
 {
-  mBus = &bus;
-  return AwaitBusMaster{ mBus->suzyRequest() };
+  mReq = &req;
+  return AwaitSuzyRequest{ &req };
 }

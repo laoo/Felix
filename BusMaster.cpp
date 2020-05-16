@@ -227,7 +227,7 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       switch ( auto mikeyAction = mMikey->write( mCPUReq.address, mCPUReq.value ) )
       {
       case Mikey::WriteAction::Type::START_SUZY:
-        mSuzyExecute = mSuzy->processSprites( *this );
+        mSuzyExecute = mSuzy->processSprites( mSuzyReq );
         processSuzy();
         break;
       case Mikey::WriteAction::Type::ENQUEUE_ACTION:

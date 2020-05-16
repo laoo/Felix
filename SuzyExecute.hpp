@@ -1,8 +1,6 @@
 #pragma once
 #include <experimental/coroutine>
 
-class BusMaster;
-
 struct SuzyRequest
 {
   enum class Op : uint8_t
@@ -106,7 +104,7 @@ struct AwaitSuzyReadPixel
   }
 };
 
-struct AwaitBusMaster
+struct AwaitSuzyRequest
 {
   SuzyRequest * req;
 
@@ -137,9 +135,9 @@ struct SuzyExecute
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void();
     void unhandled_exception() { std::terminate(); }
-    AwaitBusMaster await_transform( BusMaster & bus );
+    AwaitSuzyRequest await_transform( SuzyRequest & req );
 
-    BusMaster * mBus;
+    SuzyRequest * mReq;
   };
 
 

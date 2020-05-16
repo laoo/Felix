@@ -12,7 +12,7 @@ public:
   uint8_t read( uint16_t address );
   void write( uint16_t address, uint8_t value );
 
-  SuzyExecute processSprites( BusMaster & bus );
+  SuzyExecute processSprites( SuzyRequest & req );
 
 private:
 
