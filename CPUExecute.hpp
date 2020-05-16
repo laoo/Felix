@@ -1,8 +1,8 @@
 #pragma once
 #include <experimental/coroutine>
-#include "CPU.hpp"
 
 class BusMaster;
+enum class Opcode : uint8_t;
 
 struct OpInt
 {
@@ -192,10 +192,8 @@ struct CpuExecute
   void setBusMaster( BusMaster * bus )
   {
     coro.promise().mBus = bus;
-    coro.resume();
+    coro();
   }
 
   handle coro;
 };
-
-CpuExecute cpuExecute( CPU & cpu );

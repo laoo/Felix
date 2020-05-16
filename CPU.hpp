@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "CPUExecute.hpp"
 
 //stolen form http://www.maizure.org/projects/decoded-bisqwit-nes-emulator/nesemu1_lines.txt
 template< unsigned bitno, typename T = uint8_t>
@@ -96,6 +97,9 @@ struct CPU
   void rol( uint8_t & val );
   void ror( uint8_t & val );
   bool executeR( Opcode opcode, uint8_t value );
+
+  CpuExecute execute();
+
 
   uint64_t tick;
   int interrupt;

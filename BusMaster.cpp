@@ -8,7 +8,7 @@
 
 BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{},
   mCpu{ std::make_shared<CPU>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() },
-  mDReq{}, mCPUReq{}, mSuzyReq{}, mCpuExecute{ cpuExecute( *mCpu ) }, mSuzyExecute{}, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
+  mDReq{}, mCPUReq{}, mSuzyReq{}, mCpuExecute{ mCpu->execute() }, mSuzyExecute{}, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mActionQueue{}, mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
   {
