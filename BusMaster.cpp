@@ -134,24 +134,24 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       mCurrentTick;
       mCPUReq.tick = mCurrentTick;
       mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mCPUReq.resume();
+      mCPUReq();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_RAM:
       mCPUReq.value = mRAM[mCPUReq.address];
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.resume();
+      mCPUReq();
       mDReq.resume();
       break;
     case Action::CPU_READ_RAM:
       mCPUReq.value = mRAM[mCPUReq.address];
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_WRITE_RAM:
       mRAM[mCPUReq.address] = mCPUReq.value;
       mSequencedAccessAddress = ~0;
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_FETCH_OPCODE_FE:
       mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
@@ -159,23 +159,23 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       mCurrentTick;
       mCPUReq.tick = mCurrentTick;
       mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mCPUReq.resume();
+      mCPUReq();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FE:
       mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.resume();
+      mCPUReq();
       mDReq.resume();
       break;
     case Action::CPU_READ_FE:
       mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_WRITE_FE:
       mSequencedAccessAddress = ~0;
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_FETCH_OPCODE_FF:
       mCPUReq.value = readFF( mCPUReq.address & 0xff );
@@ -183,36 +183,36 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       mCurrentTick;
       mCPUReq.tick = mCurrentTick;
       mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
-      mCPUReq.resume();
+      mCPUReq();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FF:
       mCPUReq.value = readFF( mCPUReq.address & 0xff );
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.resume();
+      mCPUReq();
       mDReq.resume();
       break;
     case Action::CPU_READ_FF:
       mCPUReq.value = readFF( mCPUReq.address & 0xff );
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_WRITE_FF:
       writeFF( mCPUReq.address & 0xff, mCPUReq.value );
       mSequencedAccessAddress = ~0;
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_READ_SUZY:
       mCPUReq.value = mSuzy->read( mCPUReq.address );
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_WRITE_SUZY:
       mSuzy->write( mCPUReq.address, mCPUReq.value );
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_READ_MIKEY:
       mCPUReq.value = mMikey->read( mCPUReq.address );
-      mCPUReq.resume();
+      mCPUReq();
       break;
     case Action::CPU_WRITE_MIKEY:
       switch ( auto mikeyAction = mMikey->write( mCPUReq.address, mCPUReq.value ) )
@@ -225,7 +225,7 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
         mActionQueue.push( mikeyAction.action );
         [[fallthrough]];
       case Mikey::WriteAction::Type::NONE:
-        mCPUReq.resume();
+        mCPUReq();
         break;
       }
       break;

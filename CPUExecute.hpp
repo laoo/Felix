@@ -67,10 +67,10 @@ struct CPURequest
   CPURequest( CPUFetchOperand r ) : mType{ Type::FETCH_OPERAND }, tick{}, address{ r.address }, value{}, interrupt{} {}
   CPURequest( CPUWrite w ) : mType{ Type::WRITE }, tick{}, address{ w.address }, value{ w.value }, interrupt{} {}
 
-  void resume()
+  void operator()()
   {
     mType = Type::NONE;
-    coro.resume();
+    coro();
   }
 
   std::experimental::coroutine_handle<> coro;
