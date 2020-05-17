@@ -235,6 +235,7 @@ private:
     void writeCart( int number, uint8_t value );
 
     SuzyCoSubroutine loadSCB( SuzyRequest & req );
+    PixelUnpacker pixelUnpacker();
 
 private:
   struct SCB

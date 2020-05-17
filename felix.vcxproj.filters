@@ -40,6 +40,9 @@
     <ClCompile Include="CPUExecute.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SuzyCoroutines.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">

@@ -497,6 +497,17 @@ SuzyCoSubroutine Suzy::loadSCB( SuzyRequest & req )
   }
 }
 
+PixelUnpacker Suzy::pixelUnpacker()
+{
+  for ( ;; )
+  {
+    co_await PixelUnpacker::LineData{};
+
+
+
+  }
+}
+
 
 SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
 {
