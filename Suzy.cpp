@@ -490,6 +490,8 @@ SuzyCoSubroutine Suzy::loadSCB( SuzyRequest & req )
     uint32_t p1 = co_await SuzyRead4{ mSCB.scbadr };
     mSCB.scbadr += 4;
 
+    //TODO: implement bug:
+    //The page break signal does not delay the end of the pen index palette loading.
     *( (uint32_t*)mPalette.data() ) = p0;
     *( ( uint32_t* )( mPalette.data() + 4 ) ) = p1;
   }
