@@ -162,7 +162,6 @@
     <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
-    <ClCompile Include="SuzyExecute.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />

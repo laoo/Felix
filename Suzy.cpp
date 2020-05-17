@@ -2,7 +2,7 @@
 #include <cassert>
 #include "BusMaster.hpp"
 
-Suzy::Suzy() : mEngine{},
+Suzy::Suzy() : mSCB{}, mMath{},
   mBusEnable{}, mSignMath{}, mAccumulate{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{}, mMathWorking{},
   mMathWarning{}, mMathCarry{}, mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mDrawUp{}, mDrawLeft{}, mEveron{}, mBpp{}, mSpriteType{}, mReload{},
   mSprColl{}, mSprInit{}, mJoystick{}, mSwitches{}, mCart0{}, mCart1{}
@@ -21,129 +21,129 @@ uint8_t Suzy::read( uint16_t address )
   switch ( address )
   {
   case TMPADR:
-    return mEngine.tmpadr.l;
+    return mSCB.tmpadr.l;
   case TMPADR + 1:
-    return mEngine.tmpadr.h;
+    return mSCB.tmpadr.h;
   case TILTACUM:
-    return mEngine.tiltacum.l;
+    return mSCB.tiltacum.l;
   case TILTACUM + 1:
-    return mEngine.tiltacum.h;
+    return mSCB.tiltacum.h;
   case HOFF:
-    return mEngine.hoff.l;
+    return mSCB.hoff.l;
   case HOFF + 1:
-    return mEngine.hoff.h;
+    return mSCB.hoff.h;
   case VOFF:
-    return mEngine.voff.l;
+    return mSCB.voff.l;
   case VOFF + 1:
-    return mEngine.hoff.h;
+    return mSCB.hoff.h;
   case VIDBAS:
-    return mEngine.vidbas.l;
+    return mSCB.vidbas.l;
   case VIDBAS + 1:
-    return mEngine.vidbas.h;
+    return mSCB.vidbas.h;
   case COLLBAS:
-    return mEngine.collbas.l;
+    return mSCB.collbas.l;
   case COLLBAS + 1:
-    return mEngine.collbas.h;
+    return mSCB.collbas.h;
   case VIDADR:
-    return mEngine.vidadr.l;
+    return mSCB.vidadr.l;
   case VIDADR + 1:
-    return mEngine.vidadr.h;
+    return mSCB.vidadr.h;
   case COLLADR:
-    return mEngine.colladr.l;
+    return mSCB.colladr.l;
   case COLLADR + 1:
-    return mEngine.colladr.h;
+    return mSCB.colladr.h;
   case SCBNEXT:
-    return mEngine.scbnext.l;
+    return mSCB.scbnext.l;
   case SCBNEXT + 1:
-    return mEngine.scbnext.h;
+    return mSCB.scbnext.h;
   case SPRDLINE:
-    return mEngine.sprdline.l;
+    return mSCB.sprdline.l;
   case SPRDLINE + 1:
-    return mEngine.sprdline.h;
+    return mSCB.sprdline.h;
   case HPOSSTRT:
-    return mEngine.hposstrt.l;
+    return mSCB.hposstrt.l;
   case HPOSSTRT + 1:
-    return mEngine.hposstrt.h;
+    return mSCB.hposstrt.h;
   case VPOSSTRT:
-    return mEngine.vposstrt.l;
+    return mSCB.vposstrt.l;
   case VPOSSTRT + 1:
-    return mEngine.vposstrt.h;
+    return mSCB.vposstrt.h;
   case SPRHSIZ:
-    return mEngine.sprhsiz.l;
+    return mSCB.sprhsiz.l;
   case SPRHSIZ + 1:
-    return mEngine.sprhsiz.h;
+    return mSCB.sprhsiz.h;
   case SPRVSIZ:
-    return mEngine.sprvsiz.l;
+    return mSCB.sprvsiz.l;
   case SPRVSIZ + 1:
-    return mEngine.sprvsiz.h;
+    return mSCB.sprvsiz.h;
   case STRETCH:
-    return mEngine.stretch.l;
+    return mSCB.stretch.l;
   case STRETCH + 1:
-    return mEngine.stretch.h;
+    return mSCB.stretch.h;
   case TILT:
-    return mEngine.tilt.l;
+    return mSCB.tilt.l;
   case TILT + 1:
-    return mEngine.tilt.h;
+    return mSCB.tilt.h;
   case SPRDOFF:
-    return mEngine.sprdoff.l;
+    return mSCB.sprdoff.l;
   case SPRDOFF + 1:
-    return mEngine.sprdoff.h;
+    return mSCB.sprdoff.h;
   case SCVPOS:
-    return mEngine.scvpos.l;
+    return mSCB.scvpos.l;
   case SCVPOS + 1:
-    return mEngine.scvpos.h;
+    return mSCB.scvpos.h;
   case COLLOFF:
-    return mEngine.colloff.l;
+    return mSCB.colloff.l;
   case COLLOFF + 1:
-    return mEngine.colloff.h;
+    return mSCB.colloff.h;
   case VSIZACUM:
-    return mEngine.vsizacum.l;
+    return mSCB.vsizacum.l;
   case VSIZACUM + 1:
-    return mEngine.vsizacum.h;
+    return mSCB.vsizacum.h;
   case HSIZOFF:
-    return mEngine.hsizoff.l;
+    return mSCB.hsizoff.l;
   case HSIZOFF + 1:
-    return mEngine.hsizoff.h;
+    return mSCB.hsizoff.h;
   case VSIZOFF:
-    return mEngine.vsizoff.l;
+    return mSCB.vsizoff.l;
   case VSIZOFF + 1:
-    return mEngine.vsizoff.h;
+    return mSCB.vsizoff.h;
   case SCBADR:
-    return mEngine.scbadr.l;
+    return mSCB.scbadr.l;
   case SCBADR + 1:
-    return mEngine.scbadr.h;
+    return mSCB.scbadr.h;
   case PROCADR:
-    return mEngine.procadr.l;
+    return mSCB.procadr.l;
   case PROCADR + 1:
-    return mEngine.procadr.h;
+    return mSCB.procadr.h;
   case MATHD:
-    return mEngine.mathd;
+    return mMath.mathd;
   case MATHC:
-    return mEngine.mathc;
+    return mMath.mathc;
   case MATHB:
-    return mEngine.mathb;
+    return mMath.mathb;
   case MATHA:
-    return mEngine.matha;
+    return mMath.matha;
   case MATHP:
-    return mEngine.mathp;
+    return mMath.mathp;
   case MATHN:
-    return mEngine.mathn;
+    return mMath.mathn;
   case MATHH:
-    return mEngine.mathh;
+    return mMath.mathh;
   case MATHG:
-    return mEngine.mathg;
+    return mMath.mathg;
   case MATHF:
-    return mEngine.mathf;
+    return mMath.mathf;
   case MATHE:
-    return mEngine.mathe;
+    return mMath.mathe;
   case MATHM:
-    return mEngine.mathm;
+    return mMath.mathm;
   case MATHL:
-    return mEngine.mathl;
+    return mMath.mathl;
   case MATHK:
-    return mEngine.mathk;
+    return mMath.mathk;
   case MATHJ:
-    return mEngine.mathj;
+    return mMath.mathj;
   case SUZYHREV:
     return 0x01;
   case SPRSYS:
@@ -177,193 +177,193 @@ void Suzy::write( uint16_t address, uint8_t value )
   switch ( address )
   {
     case TMPADR:
-      mEngine.tmpadr = value;
+      mSCB.tmpadr = value;
       break;
     case TMPADR + 1:
-      mEngine.tmpadr.h = value;
+      mSCB.tmpadr.h = value;
       break;
     case TILTACUM:
-      mEngine.tiltacum = value;
+      mSCB.tiltacum = value;
       break;
     case TILTACUM + 1:
-      mEngine.tiltacum.h = value;
+      mSCB.tiltacum.h = value;
       break;
     case HOFF:
-      mEngine.hoff = value;
+      mSCB.hoff = value;
       break;
     case HOFF + 1:
-      mEngine.hoff.h = value;
+      mSCB.hoff.h = value;
       break;
     case VOFF:
-      mEngine.voff = value;
+      mSCB.voff = value;
       break;
     case VOFF + 1:
-      mEngine.voff.h = value;
+      mSCB.voff.h = value;
       break;
     case VIDBAS:
-      mEngine.vidbas = value;
+      mSCB.vidbas = value;
       break;
     case VIDBAS + 1:
-      mEngine.vidbas.h = value;
+      mSCB.vidbas.h = value;
       break;
     case COLLBAS:
-      mEngine.collbas = value;
+      mSCB.collbas = value;
       break;
     case COLLBAS + 1:
-      mEngine.collbas.h = value;
+      mSCB.collbas.h = value;
       break;
     case VIDADR:
-      mEngine.vidadr = value;
+      mSCB.vidadr = value;
       break;
     case VIDADR + 1:
-      mEngine.vidadr.h = value;
+      mSCB.vidadr.h = value;
       break;
     case COLLADR:
-      mEngine.colladr = value;
+      mSCB.colladr = value;
       break;
     case COLLADR + 1:
-      mEngine.colladr.h = value;
+      mSCB.colladr.h = value;
       break;
     case SCBNEXT:
-      mEngine.scbnext = value;
+      mSCB.scbnext = value;
       break;
     case SCBNEXT + 1:
-      mEngine.scbnext.h = value;
+      mSCB.scbnext.h = value;
       break;
     case SPRDLINE:
-      mEngine.sprdline = value;
+      mSCB.sprdline = value;
       break;
     case SPRDLINE + 1:
-      mEngine.sprdline.h = value;
+      mSCB.sprdline.h = value;
       break;
     case HPOSSTRT:
-      mEngine.hposstrt = value;
+      mSCB.hposstrt = value;
       break;
     case HPOSSTRT + 1:
-      mEngine.hposstrt.h = value;
+      mSCB.hposstrt.h = value;
       break;
     case VPOSSTRT:
-      mEngine.vposstrt = value;
+      mSCB.vposstrt = value;
       break;
     case VPOSSTRT + 1:
-      mEngine.vposstrt.h = value;
+      mSCB.vposstrt.h = value;
       break;
     case SPRHSIZ:
-      mEngine.sprhsiz = value;
+      mSCB.sprhsiz = value;
       break;
     case SPRHSIZ + 1:
-      mEngine.sprhsiz.h = value;
+      mSCB.sprhsiz.h = value;
       break;
     case SPRVSIZ:
-      mEngine.sprvsiz = value;
+      mSCB.sprvsiz = value;
       break;
     case SPRVSIZ + 1:
-      mEngine.sprvsiz.h = value;
+      mSCB.sprvsiz.h = value;
       break;
     case STRETCH:
-      mEngine.stretch = value;
+      mSCB.stretch = value;
       break;
     case STRETCH + 1:
-      mEngine.stretch.h = value;
+      mSCB.stretch.h = value;
       break;
     case TILT:
-      mEngine.tilt = value;
+      mSCB.tilt = value;
       break;
     case TILT + 1:
-      mEngine.tilt.h = value;
+      mSCB.tilt.h = value;
       break;
     case SPRDOFF:
-      mEngine.sprdoff = value;
+      mSCB.sprdoff = value;
       break;
     case SPRDOFF + 1:
-      mEngine.sprdoff.h = value;
+      mSCB.sprdoff.h = value;
       break;
     case SCVPOS:
-      mEngine.scvpos = value;
+      mSCB.scvpos = value;
       break;
     case SCVPOS + 1:
-      mEngine.scvpos.h = value;
+      mSCB.scvpos.h = value;
       break;
     case COLLOFF:
-      mEngine.colloff = value;
+      mSCB.colloff = value;
       break;
     case COLLOFF + 1:
-      mEngine.colloff.h = value;
+      mSCB.colloff.h = value;
       break;
     case VSIZACUM:
-      mEngine.vsizacum = value;
+      mSCB.vsizacum = value;
       break;
     case VSIZACUM + 1:
-      mEngine.vsizacum.h = value;
+      mSCB.vsizacum.h = value;
       break;
     case HSIZOFF:
-      mEngine.hsizoff = value;
+      mSCB.hsizoff = value;
       break;
     case HSIZOFF + 1:
-      mEngine.hsizoff.h = value;
+      mSCB.hsizoff.h = value;
       break;
     case VSIZOFF:
-      mEngine.vsizoff = value;
+      mSCB.vsizoff = value;
       break;
     case VSIZOFF + 1:
-      mEngine.vsizoff.h = value;
+      mSCB.vsizoff.h = value;
       break;
     case SCBADR:
-      mEngine.scbadr = value;
+      mSCB.scbadr = value;
       break;
     case SCBADR + 1:
-      mEngine.scbadr.h = value;
+      mSCB.scbadr.h = value;
       break;
     case PROCADR:
-      mEngine.procadr = value;
+      mSCB.procadr = value;
       break;
     case PROCADR + 1:
-      mEngine.procadr.h = value;
+      mSCB.procadr.h = value;
       break;
 
     case MATHD:
-      mEngine.mathd = value;
+      mMath.mathd = value;
       break;
     case MATHC:
-      mEngine.mathc = value;
+      mMath.mathc = value;
       break;
     case MATHB:
-      mEngine.mathb = value;
+      mMath.mathb = value;
       break;
     case MATHA:
-      mEngine.matha = value;
+      mMath.matha = value;
       break;
     case MATHP:
-      mEngine.mathp = value;
+      mMath.mathp = value;
       break;
     case MATHN:
-      mEngine.mathn = value;
+      mMath.mathn = value;
       break;
 
     case MATHH:
-      mEngine.mathh = value;
+      mMath.mathh = value;
       break;
     case MATHG:
-      mEngine.mathg = value;
+      mMath.mathg = value;
       break;
     case MATHF:
-      mEngine.mathf = value;
+      mMath.mathf = value;
       break;
     case MATHE:
-      mEngine.mathe = value;
+      mMath.mathe = value;
       break;
 
     case MATHM:
-      mEngine.mathm = value;
+      mMath.mathm = value;
       break;
     case MATHL:
-      mEngine.mathl = value;
+      mMath.mathl = value;
       break;
     case MATHK:
-      mEngine.mathk = value;
+      mMath.mathk = value;
       break;
     case MATHJ:
-      mEngine.mathj = value;
+      mMath.mathj = value;
       break;
 
     case SPRCTL0:
@@ -430,9 +430,83 @@ void Suzy::writeCart( int number, uint8_t value )
 {
 }
 
+SuzyCoro Suzy::loadSCB( SuzyRequest & req )
+{
+  co_await req;
+
+  writeSPRCTL0( co_await SuzyRead{ mSCB.scbadr++ } );
+  writeSPRCTL1( co_await SuzyRead{ mSCB.scbadr++ } );
+  mSprColl = co_await SuzyRead{ mSCB.scbadr++ };
+  mSCB.scbnext.l = co_await SuzyRead{ mSCB.scbadr++ };
+  mSCB.scbnext.h = co_await SuzyRead{ mSCB.scbadr++ };
+
+  if ( mSkipSprite )
+    co_return;
+
+  mSCB.sprdline.l = co_await SuzyRead{ mSCB.scbadr++ };
+  mSCB.sprdline.h = co_await SuzyRead{ mSCB.scbadr++ };
+  mSCB.hposstrt.l = co_await SuzyRead{ mSCB.scbadr++ };
+  mSCB.hposstrt.h = co_await SuzyRead{ mSCB.scbadr++ };
+  mSCB.vposstrt.l = co_await SuzyRead{ mSCB.scbadr++ };
+  mSCB.vposstrt.h = co_await SuzyRead{ mSCB.scbadr++ };
+
+  mSCB.tilt = 0;
+  mSCB.stretch = 0;
+
+  switch ( mReload )
+  {
+  case Reload::HVST:  //Reload hsize, vsize, stretch, tilt
+    mSCB.sprhsiz.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprhsiz.h = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprvsiz.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprvsiz.h = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.stretch.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.stretch.h = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.tilt.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.tilt.h = co_await SuzyRead{ mSCB.scbadr++ };
+    break;
+  case Reload::HVS:   //Reload hsize, vsize, stretch
+    mSCB.sprhsiz.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprhsiz.h = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprvsiz.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprvsiz.h = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.stretch.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.stretch.h = co_await SuzyRead{ mSCB.scbadr++ };
+    break;
+  case Reload::HV:    //Reload hsize, vsize
+    mSCB.sprhsiz.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprhsiz.h = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprvsiz.l = co_await SuzyRead{ mSCB.scbadr++ };
+    mSCB.sprvsiz.h = co_await SuzyRead{ mSCB.scbadr++ };
+    break;
+  case Reload::NONE:  //Reload nothing
+    break;
+  }
+
+  if ( !mReusePalette )
+  {
+    uint32_t p0 = co_await SuzyRead4{ mSCB.scbadr };
+    mSCB.scbadr += 4;
+    uint32_t p1 = co_await SuzyRead4{ mSCB.scbadr };
+    mSCB.scbadr += 4;
+
+    *( (uint32_t*)mPalette.data() ) = p0;
+    *( ( uint32_t* )( mPalette.data() + 4 ) ) = p1;
+  }
+}
+
 
 SuzyExecute Suzy::processSprites( SuzyRequest & req )
 {
   co_await req;
+ 
+  while ( ( mSCB.scbnext & 0xff00 ) != 0 )
+  {
+    mSCB.scbadr = mSCB.scbnext;
+    mSCB.tmpadr = mSCB.scbadr;
+
+    co_await loadSCB( req );
+  }
+  
   co_return;
 }

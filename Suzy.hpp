@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <array>
 #include "ActionQueue.hpp"
 #include "SuzyExecute.hpp"
 
@@ -182,10 +183,20 @@ private:
       };
     };
 
-    Reg() : w{} {}
+    Reg( uint16_t w = 0 ) : w{ w } {}
 
     Reg & operator=( uint16_t value ) { w = value; return *this; }
     operator uint16_t() const { return w; }
+    Reg operator++( int )
+    {
+      Reg result{ w++ };
+      return result;
+    }
+    Reg & operator+=( int offset )
+    {
+      w += offset;
+      return *this;
+    }
   };
 
   enum class BPP
@@ -223,9 +234,10 @@ private:
     void writeSPRCTL1( uint8_t value );
     void writeCart( int number, uint8_t value );
 
+    SuzyCoro loadSCB( SuzyRequest & req );
 
 private:
-  struct Engine
+  struct SCB
   {
     Reg tmpadr;
     Reg tiltacum;
@@ -251,7 +263,10 @@ private:
     Reg vsizoff;
     Reg scbadr;
     Reg procadr;
+  } mSCB;
 
+  struct Math
+  {
     uint8_t mathd;
     uint8_t mathc;
     uint8_t mathb;
@@ -268,7 +283,9 @@ private:
     uint8_t mathl;
     uint8_t mathk;
     uint8_t mathj;
-  } mEngine;
+  } mMath;
+
+  std::array<uint8_t, 8> mPalette;
   bool mBusEnable;          //Suzy Bus Enable, 0 = disabled
   bool mSignMath;           //Signmath: 0 = unsigned math, 1 = signed math.
   bool mAccumulate;         //OK to accumvlate : 0 = do not accumulate, 1 = yes, accumulate.
