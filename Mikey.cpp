@@ -280,7 +280,10 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     mSuzyDone = false;
     break;
   case CPUSLEEP:
-    if ( !mSuzyDone )
+    //The presence of an interrupt in Mikey, regardless of the state of the CPU enable interrupt bit,
+    //will prevent the CPU from going to sleep, and thus prevent Suzy from functioning.
+    //So if sprites stop working, unintentional interrupt bits can be the hidden cause.
+    if ( !mSuzyDone && mIRQ == 0 )
     {
       return { WriteAction::Type::START_SUZY };
     }
