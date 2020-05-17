@@ -3,6 +3,7 @@
 #include <array>
 #include "ActionQueue.hpp"
 #include "SuzyCoroutines.hpp"
+#include "PixelUnpacker.hpp"
 
 class Suzy
 {
@@ -229,13 +230,16 @@ private:
     HVST       = 0b00110000 //Reload hsize, vsize, stretch, tilt
   };
 
-  private:
-    void writeSPRCTL0( uint8_t value );
-    void writeSPRCTL1( uint8_t value );
-    void writeCart( int number, uint8_t value );
+private:
+  void writeSPRCTL0( uint8_t value );
+  void writeSPRCTL1( uint8_t value );
+  void writeCart( int number, uint8_t value );
+  int bpp() const;
 
-    SuzyCoSubroutine loadSCB( SuzyRequest & req );
-    PixelUnpacker pixelUnpacker();
+  SuzyCoSubroutine loadSCB( SuzyRequest & req );
+  SuzyCoSubroutine renderSingleSprite( SuzyRequest & req );
+ 
+  PixelUnpacker pixelUnpacker();
 
 private:
   struct SCB

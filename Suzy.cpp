@@ -430,6 +430,11 @@ void Suzy::writeCart( int number, uint8_t value )
 {
 }
 
+int Suzy::bpp() const
+{
+  return ( ( int )mBpp >> 6 ) + 1;
+}
+
 SuzyCoSubroutine Suzy::loadSCB( SuzyRequest & req )
 {
   co_await req;
@@ -497,17 +502,52 @@ SuzyCoSubroutine Suzy::loadSCB( SuzyRequest & req )
   }
 }
 
+
 PixelUnpacker Suzy::pixelUnpacker()
 {
-  for ( ;; )
+  for co_await( auto & line : PixelUnpacker::Sprite{} )
   {
-    co_await PixelUnpacker::LineData{};
-
-
-
+    for co_await ( auto pen : line )
+    {
+      co_yield pen;
+    }
   }
 }
 
+SuzyCoSubroutine Suzy::renderSingleSprite( SuzyRequest & req )
+{
+  co_await req;
+
+  auto unpacker = pixelUnpacker();
+
+  mSCB.procadr = mSCB.sprdline;
+
+  for ( ;; )
+  {
+    mSCB.sprdoff = unpacker.startLine( bpp(), mLiteral, co_await SuzyRead4{ mSCB.procadr } );
+    mSCB.procadr += 4;
+    for ( ;; )
+    {
+      switch ( unpacker() )
+      {
+      case PixelUnpacker::Status::DATA_NEEDED:
+        unpacker.feedData( co_await SuzyRead4{ mSCB.procadr } );
+        mSCB.procadr += 4;
+        break;
+      case PixelUnpacker::Status::PEN_READY:
+        break;
+      case PixelUnpacker::Status::END_OF_LINE:
+        mSCB.sprdoff = unpacker.startLine( bpp(), mLiteral, co_await SuzyRead4{ mSCB.procadr } );
+        mSCB.procadr += 4;
+        break;
+      case PixelUnpacker::Status::END_OF_QUADRANT:
+        break;
+      case PixelUnpacker::Status::END_OF_SPRITE:
+        co_return;
+      }
+    }
+  }
+}
 
 SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
 {
@@ -519,6 +559,7 @@ SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
     mSCB.tmpadr = mSCB.scbadr;
 
     co_await loadSCB( req );
+    co_await renderSingleSprite( req );
   }
   
   co_return;

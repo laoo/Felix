@@ -43,6 +43,9 @@
     <ClCompile Include="SuzyCoroutines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PixelUnpacker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -82,6 +85,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="SuzyCoroutines.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PixelUnpacker.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

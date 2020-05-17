@@ -162,6 +162,7 @@
     <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="PixelUnpacker.cpp" />
     <ClCompile Include="SuzyCoroutines.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="Mikey.cpp" />
@@ -173,6 +174,7 @@
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
+    <ClInclude Include="PixelUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="SuzyCoroutines.hpp" />
     <ClInclude Include="TimerCore.hpp" />
