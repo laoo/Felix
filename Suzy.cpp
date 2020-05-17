@@ -4,8 +4,8 @@
 
 Suzy::Suzy() : mSCB{}, mMath{},
   mBusEnable{}, mSignMath{}, mAccumulate{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{}, mMathWorking{},
-  mMathWarning{}, mMathCarry{}, mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mDrawUp{}, mDrawLeft{}, mEveron{}, mBpp{}, mSpriteType{}, mReload{},
-  mSprColl{}, mSprInit{}, mJoystick{}, mSwitches{}, mCart0{}, mCart1{}
+  mMathWarning{}, mMathCarry{}, mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mDrawUp{}, mDrawLeft{}, mEveron{}, mFred{},
+  mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}, mJoystick{}, mSwitches{}, mCart0{}, mCart1{}
 {
 }
 
@@ -514,7 +514,7 @@ PixelUnpacker Suzy::pixelUnpacker()
   }
 }
 
-SuzyCoSubroutine Suzy::renderSingleSprite( SuzyRequest & req )
+SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
 {
   co_await req;
 
@@ -522,7 +522,7 @@ SuzyCoSubroutine Suzy::renderSingleSprite( SuzyRequest & req )
 
   mSCB.procadr = mSCB.sprdline;
 
-  for ( ;; )
+  //for ( ;; )
   {
     mSCB.sprdoff = unpacker.startLine( bpp(), mLiteral, co_await SuzyRead4{ mSCB.procadr } );
     mSCB.procadr += 4;
@@ -543,7 +543,7 @@ SuzyCoSubroutine Suzy::renderSingleSprite( SuzyRequest & req )
       case PixelUnpacker::Status::END_OF_QUADRANT:
         break;
       case PixelUnpacker::Status::END_OF_SPRITE:
-        co_return;
+        co_return true;
       }
     }
   }
@@ -559,7 +559,10 @@ SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
     mSCB.tmpadr = mSCB.scbadr;
 
     co_await loadSCB( req );
-    co_await renderSingleSprite( req );
+
+    mFred = 0;
+
+    bool isEveronScreen = co_await renderSingleSprite( req );
   }
   
   co_return;

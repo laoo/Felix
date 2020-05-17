@@ -25,12 +25,6 @@ PixelUnpacker::PixelUnpacker( PixelUnpacker && other ) noexcept : mCoro{ std::mo
   other.mCoro = nullptr;
 }
 
-PixelUnpacker & PixelUnpacker::operator=( PixelUnpacker && other ) noexcept
-{
-  std::swap( *this, other );
-  return *this;
-}
-
 PixelUnpacker::~PixelUnpacker()
 {
   if ( mCoro )

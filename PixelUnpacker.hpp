@@ -83,7 +83,7 @@ public:
     auto get_return_object() { return PixelUnpacker{ handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
-    void return_void() {}
+    void return_void() { unpacker->setResult( { Status::END_OF_SPRITE } ); }
     void unhandled_exception() { std::terminate(); }
     auto yield_value( uint8_t pen )
     {
@@ -142,7 +142,7 @@ public:
   PixelUnpacker( PixelUnpacker const & other ) = delete;
   PixelUnpacker& operator=( PixelUnpacker const & other ) = delete;
   PixelUnpacker( PixelUnpacker && other ) noexcept;
-  PixelUnpacker & operator=( PixelUnpacker && other ) noexcept;
+  PixelUnpacker & operator=( PixelUnpacker && other ) noexcept = delete;
   ~PixelUnpacker();
 
   uint8_t startLine( int32_t bpp, bool totallyLiteral, uint32_t initialData );

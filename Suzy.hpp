@@ -237,7 +237,7 @@ private:
   int bpp() const;
 
   SuzyCoSubroutine loadSCB( SuzyRequest & req );
-  SuzyCoSubroutine renderSingleSprite( SuzyRequest & req );
+  SuzyCoSubroutineT<bool> renderSingleSprite( SuzyRequest & req );
  
   PixelUnpacker pixelUnpacker();
 
@@ -312,6 +312,7 @@ private:
   bool mDrawUp;
   bool mDrawLeft;
   bool mEveron;
+  bool mFred;
   BPP mBpp;
   Sprite mSpriteType;
   Reload mReload;
