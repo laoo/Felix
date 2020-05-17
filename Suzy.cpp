@@ -430,7 +430,7 @@ void Suzy::writeCart( int number, uint8_t value )
 {
 }
 
-SuzyCoro Suzy::loadSCB( SuzyRequest & req )
+SuzyCoSubroutine Suzy::loadSCB( SuzyRequest & req )
 {
   co_await req;
 
@@ -496,7 +496,7 @@ SuzyCoro Suzy::loadSCB( SuzyRequest & req )
 }
 
 
-SuzyExecute Suzy::processSprites( SuzyRequest & req )
+SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
 {
   co_await req;
  

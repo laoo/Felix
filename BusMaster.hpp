@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 #include "CPUExecute.hpp"
-#include "SuzyExecute.hpp"
+#include "SuzyCoroutines.hpp"
 #include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
@@ -78,7 +78,7 @@ private:
   CPURequest mCPUReq;
   SuzyRequest mSuzyReq;
   CpuExecute mCpuExecute;
-  SuzyExecute mSuzyExecute;
+  SuzySpriteProcessor mSuzyExecute;
   CpuTrace mCpuTrace;
   MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;

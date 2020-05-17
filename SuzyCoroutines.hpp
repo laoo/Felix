@@ -45,14 +45,16 @@ struct SuzyRequest
 struct SuzyRead { uint16_t address; };
 struct SuzyRead4 { uint16_t address; };
 
-struct SuzyCoro
+class SuzyCoSubroutine
 {
+public:
+
   struct promise_type;
   using handle = std::experimental::coroutine_handle<promise_type>;
 
   struct promise_type
   {
-    auto get_return_object() { return SuzyCoro{ handle::from_promise( *this ) }; }
+    auto get_return_object() { return SuzyCoSubroutine{ handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept
     {
@@ -102,36 +104,50 @@ struct SuzyCoro
     std::experimental::coroutine_handle<> outer;
   };
 
-  SuzyCoro() : coro{} {}
-  SuzyCoro( handle c ) : coro{ c } {}
-  SuzyCoro( SuzyCoro const & other ) = delete;
-  SuzyCoro& operator=( SuzyCoro const & other ) = delete;
-  SuzyCoro & operator=( SuzyCoro && other ) noexcept
+  SuzyCoSubroutine( handle c ) : coro{ c } {}
+  SuzyCoSubroutine( SuzyCoSubroutine const & other ) = delete;
+  SuzyCoSubroutine& operator=( SuzyCoSubroutine const & other ) = delete;
+  SuzyCoSubroutine( SuzyCoSubroutine && other ) noexcept : coro{ std::move( other.coro ) }
+  {
+    other.coro = nullptr;
+  }
+  SuzyCoSubroutine & operator=( SuzyCoSubroutine && other ) noexcept
   {
     std::swap( coro, other.coro );
     return *this;
   }
-  ~SuzyCoro()
+  ~SuzyCoSubroutine()
   {
     if ( coro )
       coro.destroy();
   }
+
   void setOuter( std::experimental::coroutine_handle<> outer )
   {
     coro.promise().outer = outer;
   }
+
+  std::experimental::coroutine_handle<> getInner() const
+  {
+    return coro;
+  }
+
+private:
   handle coro;
 };
 
 
-struct SuzyExecute
+
+class SuzySpriteProcessor
 {
+public:
+
   struct promise_type;
   using handle = std::experimental::coroutine_handle<promise_type>;
 
   struct promise_type
   {
-    auto get_return_object() { return SuzyExecute{ handle::from_promise( *this ) }; }
+    auto get_return_object() { return SuzySpriteProcessor{ handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_never{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void()
@@ -151,36 +167,44 @@ struct SuzyExecute
       };
       return Awaiter{ &req };
     }
-    auto await_transform( SuzyCoro && suzyCoro )
+    auto await_transform( SuzyCoSubroutine && suzyCoro )
     {
       struct Awaiter
       {
-        SuzyCoro & suzyCoro;
+        SuzyCoSubroutine coro;
+        Awaiter( SuzyCoSubroutine && s ) : coro{ std::move( s ) } {}
         bool await_ready() { return false; }
         void await_resume() {}
-        auto await_suspend( std::experimental::coroutine_handle<> c ) { suzyCoro.setOuter( c ); return suzyCoro.coro; }
+        auto await_suspend( std::experimental::coroutine_handle<> c ) { coro.setOuter( c ); return coro.getInner(); }
       };
-      return Awaiter{ suzyCoro };
+      return Awaiter{ std::move( suzyCoro ) };
     }
 
     SuzyRequest * mReq;
   };
 
-  SuzyExecute() : coro{} {}
-  SuzyExecute( handle c ) : coro{ c } {}
-  SuzyExecute( SuzyExecute const & other ) = delete;
-  SuzyExecute & operator=( SuzyExecute const & other ) = delete;
-  SuzyExecute & operator=( SuzyExecute && other ) noexcept
+  SuzySpriteProcessor() : coro{} {}
+  SuzySpriteProcessor( handle c ) : coro{ c } {}
+  SuzySpriteProcessor( SuzySpriteProcessor const & other ) = delete;
+  SuzySpriteProcessor & operator=( SuzySpriteProcessor const & other ) = delete;
+  SuzySpriteProcessor( SuzySpriteProcessor && other ) noexcept : coro{ std::move( other.coro ) }
+  {
+    other.coro = nullptr;
+  }
+  SuzySpriteProcessor & operator=( SuzySpriteProcessor && other ) noexcept
   {
     std::swap( coro, other.coro );
     return *this;
   }
-  ~SuzyExecute()
+  ~SuzySpriteProcessor()
   {
     if ( coro )
       coro.destroy();
   }
+
+private:
   handle coro;
+
 };
 
 

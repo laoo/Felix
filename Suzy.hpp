@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <array>
 #include "ActionQueue.hpp"
-#include "SuzyExecute.hpp"
+#include "SuzyCoroutines.hpp"
 
 class Suzy
 {
@@ -13,7 +13,7 @@ public:
   uint8_t read( uint16_t address );
   void write( uint16_t address, uint8_t value );
 
-  SuzyExecute processSprites( SuzyRequest & req );
+  SuzySpriteProcessor processSprites( SuzyRequest & req );
 
 private:
 
@@ -234,7 +234,7 @@ private:
     void writeSPRCTL1( uint8_t value );
     void writeCart( int number, uint8_t value );
 
-    SuzyCoro loadSCB( SuzyRequest & req );
+    SuzyCoSubroutine loadSCB( SuzyRequest & req );
 
 private:
   struct SCB

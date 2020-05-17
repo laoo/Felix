@@ -78,7 +78,7 @@
     <ClInclude Include="renderer.hxx">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="SuzyExecute.hpp">
+    <ClInclude Include="SuzyCoroutines.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
