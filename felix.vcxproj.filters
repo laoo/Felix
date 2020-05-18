@@ -43,7 +43,7 @@
     <ClCompile Include="SuzyCoroutines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PixelUnpacker.cpp">
+    <ClCompile Include="PenUnpacker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -87,7 +87,7 @@
     <ClInclude Include="SuzyCoroutines.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="PixelUnpacker.hpp">
+    <ClInclude Include="PenUnpacker.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,4 +1,4 @@
-#include "PixelUnpacker.hpp"
+#include "PenUnpacker.hpp"
 
 namespace
 {
@@ -9,7 +9,7 @@ inline uint8_t reverse( uint8_t b )
 }
 }
 
-PixelUnpacker::PixelUnpacker( handle c ) : mCoro{ c },
+PenUnpacker::PenUnpacker( handle c ) : mCoro{ c },
   mShifter{}, mSize{}, mTotalSize{}, mSprDoff{},
   mBPP{}, mLiteral{},
   mLine{}, mResult{}
@@ -17,7 +17,7 @@ PixelUnpacker::PixelUnpacker( handle c ) : mCoro{ c },
   mCoro.promise().unpacker = this;
 }
 
-PixelUnpacker::PixelUnpacker( PixelUnpacker && other ) noexcept : mCoro{ std::move( other.mCoro ) },
+PenUnpacker::PenUnpacker( PenUnpacker && other ) noexcept : mCoro{ std::move( other.mCoro ) },
   mShifter{ other.mShifter }, mSize{ other.mSize }, mTotalSize{ other.mTotalSize }, mSprDoff{ other.mSprDoff },
   mBPP{ other.mBPP }, mLiteral{ other.mLiteral },
   mLine{ other.mLine }, mResult{}
@@ -25,20 +25,20 @@ PixelUnpacker::PixelUnpacker( PixelUnpacker && other ) noexcept : mCoro{ std::mo
   other.mCoro = nullptr;
 }
 
-PixelUnpacker::~PixelUnpacker()
+PenUnpacker::~PenUnpacker()
 {
   if ( mCoro )
     mCoro.destroy();
 }
 
 
-PixelUnpacker::Result PixelUnpacker::operator()()
+PenUnpacker::Result PenUnpacker::operator()()
 {
   mCoro();
   return mResult;
 }
 
-int PixelUnpacker::pull( uint32_t bits )
+int PenUnpacker::pull( uint32_t bits )
 {
   uint64_t result{};
   for ( uint32_t i = 0; i < bits; ++i )
@@ -54,7 +54,7 @@ int PixelUnpacker::pull( uint32_t bits )
 }
 
 
-void PixelUnpacker::feedData( uint32_t data )
+void PenUnpacker::feedData( uint32_t data )
 {
   for ( int i = 0; i < 4; ++i )
   {
@@ -66,7 +66,7 @@ void PixelUnpacker::feedData( uint32_t data )
   }
 }
 
-uint8_t PixelUnpacker::startLine( int32_t bpp, bool totallyLiteral, uint32_t initialData )
+uint8_t PenUnpacker::startLine( int32_t bpp, bool totallyLiteral, uint32_t initialData )
 {
   mShifter = 0;
   mBPP = bpp;
@@ -78,7 +78,7 @@ uint8_t PixelUnpacker::startLine( int32_t bpp, bool totallyLiteral, uint32_t ini
   return (uint8_t)mSprDoff;
 }
 
-bool PixelUnpacker::nextLine()
+bool PenUnpacker::nextLine()
 {
   if ( mSprDoff == 0 )
   {
@@ -101,7 +101,7 @@ bool PixelUnpacker::nextLine()
   }
 }
 
-PixelUnpacker::Line * PixelUnpacker::getLine()
+PenUnpacker::Line * PenUnpacker::getLine()
 {
   if ( mSprDoff == 0 )
   {
@@ -112,7 +112,7 @@ PixelUnpacker::Line * PixelUnpacker::getLine()
   return &mLine;
 }
 
-bool PixelUnpacker::nextPen()
+bool PenUnpacker::nextPen()
 {
   if ( !mLine.literal && mLine.count > 0 )
     return true;
@@ -134,7 +134,7 @@ bool PixelUnpacker::nextPen()
   return true;
 }
 
-uint8_t * PixelUnpacker::getPen()
+uint8_t * PenUnpacker::getPen()
 {
   if ( mLiteral )
   {

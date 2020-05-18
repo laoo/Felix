@@ -503,9 +503,9 @@ SuzyCoSubroutine Suzy::loadSCB( SuzyRequest & req )
 }
 
 
-PixelUnpacker Suzy::pixelUnpacker()
+PenUnpacker Suzy::pixelUnpacker()
 {
-  for co_await( auto & line : PixelUnpacker::Sprite{} )
+  for co_await( auto & line : PenUnpacker::Sprite{} )
   {
     for co_await ( auto pen : line )
     {
@@ -530,19 +530,19 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
     {
       switch ( unpacker() )
       {
-      case PixelUnpacker::Status::DATA_NEEDED:
+      case PenUnpacker::Status::DATA_NEEDED:
         unpacker.feedData( co_await SuzyRead4{ mSCB.procadr } );
         mSCB.procadr += 4;
         break;
-      case PixelUnpacker::Status::PEN_READY:
+      case PenUnpacker::Status::PEN_READY:
         break;
-      case PixelUnpacker::Status::END_OF_LINE:
+      case PenUnpacker::Status::END_OF_LINE:
         mSCB.sprdoff = unpacker.startLine( bpp(), mLiteral, co_await SuzyRead4{ mSCB.procadr } );
         mSCB.procadr += 4;
         break;
-      case PixelUnpacker::Status::END_OF_QUADRANT:
+      case PenUnpacker::Status::END_OF_QUADRANT:
         break;
-      case PixelUnpacker::Status::END_OF_SPRITE:
+      case PenUnpacker::Status::END_OF_SPRITE:
         co_return true;
       }
     }
@@ -563,6 +563,11 @@ SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
     mFred = 0;
 
     bool isEveronScreen = co_await renderSingleSprite( req );
+
+    if ( mEveron && !isEveronScreen )
+    {
+      co_await SuzyRMW{ ( uint16_t )( mSCB.scbadr + mSCB.colloff ), 0xff, 0x80 };
+    }
   }
   
   co_return;

@@ -3,7 +3,7 @@
 #include <array>
 #include "ActionQueue.hpp"
 #include "SuzyCoroutines.hpp"
-#include "PixelUnpacker.hpp"
+#include "PenUnpacker.hpp"
 
 class Suzy
 {
@@ -238,8 +238,8 @@ private:
 
   SuzyCoSubroutine loadSCB( SuzyRequest & req );
   SuzyCoSubroutineT<bool> renderSingleSprite( SuzyRequest & req );
- 
-  PixelUnpacker pixelUnpacker();
+
+  PenUnpacker pixelUnpacker();
 
 private:
   struct SCB

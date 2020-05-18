@@ -4,7 +4,7 @@
 #include <cassert>
 #include <experimental/coroutine>
 
-class PixelUnpacker
+class PenUnpacker
 {
 public:
 
@@ -79,8 +79,8 @@ public:
 
   struct promise_type
   {
-    PixelUnpacker * unpacker;
-    auto get_return_object() { return PixelUnpacker{ handle::from_promise( *this ) }; }
+    PenUnpacker * unpacker;
+    auto get_return_object() { return PenUnpacker{ handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void() { unpacker->setResult( { Status::END_OF_SPRITE } ); }
@@ -94,7 +94,7 @@ public:
     {
       struct Awaiter
       {
-        PixelUnpacker * unpacker;
+        PenUnpacker * unpacker;
         bool await_ready() { return unpacker->nextPen(); }
         PenIterator await_resume() { return { unpacker->getPen() }; }
         void await_suspend( std::experimental::coroutine_handle<> c ) {}
@@ -106,7 +106,7 @@ public:
       struct Awaiter
       {
         PenIterator * it;
-        PixelUnpacker * unpacker;
+        PenUnpacker * unpacker;
         bool await_ready() { return unpacker->nextPen(); }
         PenIterator * await_resume() { it->pen = unpacker->getPen(); return it; }
         void await_suspend( std::experimental::coroutine_handle<> c ) {}
@@ -117,7 +117,7 @@ public:
     {
       struct Awaiter
       {
-        PixelUnpacker * unpacker;
+        PenUnpacker * unpacker;
         bool await_ready() { return unpacker->nextLine(); }
         LineIterator await_resume() { return { unpacker->getLine() }; }
         void await_suspend( std::experimental::coroutine_handle<> c ) {}
@@ -129,7 +129,7 @@ public:
       struct Awaiter
       {
         LineIterator * it;
-        PixelUnpacker * unpacker;
+        PenUnpacker * unpacker;
         bool await_ready() { return unpacker->nextLine(); }
         LineIterator * await_resume() { it->line = unpacker->getLine(); return it; }
         void await_suspend( std::experimental::coroutine_handle<> c ) {}
@@ -138,12 +138,12 @@ public:
     }
   };
 
-  PixelUnpacker( handle c );
-  PixelUnpacker( PixelUnpacker const & other ) = delete;
-  PixelUnpacker& operator=( PixelUnpacker const & other ) = delete;
-  PixelUnpacker( PixelUnpacker && other ) noexcept;
-  PixelUnpacker & operator=( PixelUnpacker && other ) noexcept = delete;
-  ~PixelUnpacker();
+  PenUnpacker( handle c );
+  PenUnpacker( PenUnpacker const & other ) = delete;
+  PenUnpacker& operator=( PenUnpacker const & other ) = delete;
+  PenUnpacker( PenUnpacker && other ) noexcept;
+  PenUnpacker & operator=( PenUnpacker && other ) noexcept = delete;
+  ~PenUnpacker();
 
   uint8_t startLine( int32_t bpp, bool totallyLiteral, uint32_t initialData );
   void feedData( uint32_t data );

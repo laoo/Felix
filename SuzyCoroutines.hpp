@@ -46,6 +46,7 @@ struct SuzyRequest
 
 struct SuzyRead { uint16_t address; };
 struct SuzyRead4 { uint16_t address; };
+struct SuzyRMW { uint16_t address; uint8_t mask; uint8_t value; };
 
 class SuzyCoSubroutine
 {
@@ -104,6 +105,21 @@ public:
       };
       mReq->operation = SuzyRequest::Op::READ4;
       mReq->address = read.address;
+      return Awaiter{ mReq };
+    }
+    auto await_transform( SuzyRMW rmw )
+    {
+      struct Awaiter
+      {
+        SuzyRequest * req;
+        bool await_ready() { return false; }
+        void await_resume() {}
+        void await_suspend( std::experimental::coroutine_handle<> c ) { req->coro = c; }
+      };
+      mReq->operation = SuzyRequest::Op::MASKED_RMW;
+      mReq->address = rmw.address;
+      mReq->value = rmw.value;
+      mReq->mask = rmw.mask;
       return Awaiter{ mReq };
     }
     SuzyRequest * mReq;
@@ -169,7 +185,7 @@ public:
 
     void return_value( T value )
     {
-      t = value;
+      mReturnValue = value;
     }
 
     void unhandled_exception() { std::terminate(); }
@@ -204,9 +220,24 @@ public:
       mReq->address = read.address;
       return Awaiter{ mReq };
     }
+    auto await_transform( SuzyRMW rmw )
+    {
+      struct Awaiter
+      {
+        SuzyRequest * req;
+        bool await_ready() { return false; }
+        void await_resume() {}
+        void await_suspend( std::experimental::coroutine_handle<> c ) { req->coro = c; }
+      };
+      mReq->operation = SuzyRequest::Op::MASKED_RMW;
+      mReq->address = rmw.address;
+      mReq->value = rmw.value;
+      mReq->mask = rmw.mask;
+      return Awaiter{ mReq };
+    }
     SuzyRequest * mReq;
     std::experimental::coroutine_handle<> outer;
-    T t;
+    T mReturnValue;
   };
 
   SuzyCoSubroutineT( handle c ) : coro{ c } {}
@@ -239,7 +270,7 @@ public:
 
   T getResult() const
   {
-    return coro.promise().t;
+    return coro.promise().mReturnValue;
   }
 
 private:
@@ -304,6 +335,21 @@ public:
         auto await_suspend( std::experimental::coroutine_handle<> c ) { coro.setOuter( c ); return coro.getInner(); }
       };
       return Awaiter{ std::move( suzyCoro ) };
+    }
+    auto await_transform( SuzyRMW rmw )
+    {
+      struct Awaiter
+      {
+        SuzyRequest * req;
+        bool await_ready() { return false; }
+        void await_resume() {}
+        void await_suspend( std::experimental::coroutine_handle<> c ) { req->coro = c; }
+      };
+      mReq->operation = SuzyRequest::Op::MASKED_RMW;
+      mReq->address = rmw.address;
+      mReq->value = rmw.value;
+      mReq->mask = rmw.mask;
+      return Awaiter{ mReq };
     }
 
     SuzyRequest * mReq;
