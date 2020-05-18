@@ -247,7 +247,6 @@ private:
 
   SuzyCoSubroutine loadSCB( SuzyRequest & req );
   SuzyCoSubroutineT<bool> renderSingleSprite( SuzyRequest & req );
-
   PenUnpacker pixelUnpacker();
 
 private:
@@ -299,7 +298,7 @@ private:
     uint8_t mathj;
   } mMath;
 
-  std::array<uint8_t, 8> mPalette;
+  std::array<uint8_t, 16> mPalette;
   bool mBusEnable;          //Suzy Bus Enable, 0 = disabled
   bool mSignMath;           //Signmath: 0 = unsigned math, 1 = signed math.
   bool mAccumulate;         //OK to accumvlate : 0 = do not accumulate, 1 = yes, accumulate.
@@ -337,6 +336,9 @@ private:
     std::array<Quadrant, 4>{ Quadrant::UP_RIGHT, Quadrant::UP_LEFT, Quadrant::DOWN_LEFT, Quadrant::DOWN_RIGHT },
     std::array<Quadrant, 4>{ Quadrant::UP_LEFT, Quadrant::DOWN_LEFT, Quadrant::DOWN_RIGHT, Quadrant::UP_RIGHT }
   };
+
+  static constexpr int mScreenWidth = 160;
+  static constexpr int mScreenHeight = 102;
 };
 
 
