@@ -539,7 +539,7 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
   auto const& quadCycle = mQuadrantOrder[( size_t )mStartingQuadrant];
   size_t quadrant = ~0;
   bool isEveron{};
-  int dx{}, dy{};
+  int left{}, up{};
   uint16_t hsizacum{};
   int sprhpos{};
   mSCB.vsizacum = mSCB.sprvsiz;
@@ -550,6 +550,8 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
   mSCB.colladr = mSCB.collbas + mSCB.sprvpos * mScreenWidth;
   uint8_t pixelWidth{};
   uint8_t pixel{};
+  uint8_t pixelStore{};
+  uint8_t pixelMask{};
 
   for ( auto result = PenUnpacker::Result{ PenUnpacker::Status::NEXT_QUADRANT};; result = unpacker() )
   {
@@ -560,7 +562,7 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
       mSCB.procadr += 4;
       break;
     case PenUnpacker::Status::PEN_READY:
-      if ( dy == 1 && mSCB.sprvpos >= mScreenHeight || dy == -1 && (int16_t)( mSCB.sprvpos ) < 0 ) break;
+      if ( up == 0 && mSCB.sprvpos >= mScreenHeight || up == 1 && (int16_t)( mSCB.sprvpos ) < 0 ) break;
 
       hsizacum += mSCB.sprhsiz;
       pixelWidth = hsizacum >> 8;
@@ -574,11 +576,30 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
         // Stop horizontal loop if outside of screen bounds
         if ( sprhpos >= 0 && sprhpos < mScreenWidth )
         {
-          //co_await processPixel( sprhpos, pixel );
-          //co_await processCollision( sprhpos, pixel );
+          int even = sprhpos & 1;
+          uint8_t mask;
+          switch ( mSpriteType )
+          {
+          case Sprite::SHADOW:
+            break;
+          case Sprite::XOR:
+            break;
+          case Sprite::NONCOLL:
+            break;
+          case Sprite::NORMAL:
+            break;
+          case Sprite::BOUNDARY:
+            break;
+          case Sprite::BSHADOW:
+            break;
+          case Sprite::BACKNONCOLL:
+            break;
+          case Sprite::BACKGROUND:
+            break;
+          }
           isEveron = true;
         }
-        sprhpos += dx;
+        sprhpos += left ? -1 : 1;
       }
       break;
     case PenUnpacker::Status::NEXT_LINE:
@@ -594,25 +615,25 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
         mSCB.vsizacum.h = 0;
         mSCB.vidadr = mSCB.vidbas + mSCB.sprvpos * mScreenWidth / 2;
         mSCB.colladr = mSCB.collbas + mSCB.sprvpos * mScreenWidth / 2;
-        mSCB.sprvpos += dy;
+        mSCB.sprvpos += up ? -1 : 1;
       }
       mSCB.hposstrt += mSCB.tiltacum.h;
       mSCB.tiltacum.h = 0;
-      hsizacum = dx == 1 ? mSCB.hsizoff.w : 0;
+      hsizacum = left == 0 ? mSCB.hsizoff.w : 0;
       sprhpos = mSCB.hposstrt - mSCB.hoff;
       break;
     case PenUnpacker::Status::NEXT_QUADRANT:
       if ( ++quadrant > 3 )
         co_return isEveron;
-      dx = ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_LEFT ) == 0 ? 1 : -1;
-      dy = ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_UP ) == 0 ? 1 : -1;
-      dx *= mHFlip ? -1 : 1;
-      dy *= mVFlip ? -1 : 1;
+      left = ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_LEFT ) == 0 ? 0 : 1;
+      up = ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_UP ) == 0 ? 0 : 1;
+      left ^= mHFlip ? 1 : 0;
+      up ^= mVFlip ? 1 : 0;
       mSCB.tiltacum = 0;
-      mSCB.vsizacum = ( dy == 1 ) ? mSCB.vsizoff.w : 0;
+      mSCB.vsizacum = ( up == 0 ) ? mSCB.vsizoff.w : 0;
       mSCB.sprvpos = mSCB.vposstrt - mSCB.voff;
       if ( ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_UP ) != ( ( uint8_t )quadCycle[( size_t )mStartingQuadrant] & SPRCTL1::DRAW_UP ) )
-        mSCB.sprvpos += dx;
+        mSCB.sprvpos += up ? -1 : 1;
       break;
     case PenUnpacker::Status::NEXT_SPRITE:
       co_return isEveron;
