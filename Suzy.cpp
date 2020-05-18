@@ -518,9 +518,13 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
 {
   co_await req;
 
-  auto unpacker = pixelUnpacker();
+  if ( mSkipSprite )
+    co_return false;
 
   mSCB.procadr = mSCB.sprdline;
+
+  auto unpacker = pixelUnpacker();
+
 
   //for ( ;; )
   {
