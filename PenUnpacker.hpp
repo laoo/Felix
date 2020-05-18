@@ -12,9 +12,9 @@ public:
   {
     DATA_NEEDED,
     PEN_READY,
-    END_OF_LINE,
-    END_OF_QUADRANT,
-    END_OF_SPRITE
+    NEXT_LINE,
+    NEXT_QUADRANT,
+    NEXT_SPRITE
   };
 
   struct Result
@@ -83,7 +83,7 @@ public:
     auto get_return_object() { return PenUnpacker{ handle::from_promise( *this ) }; }
     auto initial_suspend() { return std::experimental::suspend_always{}; }
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
-    void return_void() { unpacker->setResult( { Status::END_OF_SPRITE } ); }
+    void return_void() { unpacker->setResult( { Status::NEXT_SPRITE } ); }
     void unhandled_exception() { std::terminate(); }
     auto yield_value( uint8_t pen )
     {

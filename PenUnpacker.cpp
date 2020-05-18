@@ -80,19 +80,19 @@ uint8_t PenUnpacker::startLine( int32_t bpp, bool totallyLiteral, uint32_t initi
 
 bool PenUnpacker::nextLine()
 {
-  if ( mSprDoff == 0 )
+  if ( mSize == 0 )
   {
-    setResult( { Status::END_OF_SPRITE } );
+    setResult( { Status::NEXT_LINE } );
+    return false;
+  }
+  else if ( mSprDoff == 0 )
+  {
+    setResult( { Status::NEXT_SPRITE } );
     return false;
   }
   else if ( mSprDoff == 1 )
   {
-    setResult( { Status::END_OF_QUADRANT } );
-    return false;
-  }
-  else if ( mSize == 0 )
-  {
-    setResult( { Status::END_OF_LINE } );
+    setResult( { Status::NEXT_QUADRANT } );
     return false;
   }
   else

@@ -107,6 +107,7 @@ private:
     static constexpr uint8_t RELOAD_HVST       = 0b00110000; //Reload hsize, vsize, stretch, tilt
     static constexpr uint8_t REUSE_PALETTE     = 0b00001000;
     static constexpr uint8_t SKIP_SPRITE       = 0b00000100;
+    static constexpr uint8_t STARGING_QUAD_MASK= 0b00000011;
     static constexpr uint8_t DRAW_UP           = 0b00000010;
     static constexpr uint8_t DRAW_LEFT         = 0b00000001;
   };
@@ -230,6 +231,14 @@ private:
     HVST       = 0b00110000 //Reload hsize, vsize, stretch, tilt
   };
 
+  enum class Quadrant
+  {
+    DOWN_RIGHT    = 0b00,
+    DOWN_LEFT     = 0b01,
+    UP_RIGHT      = 0b10,
+    UP_LEFT       = 0b11
+  };
+
 private:
   void writeSPRCTL0( uint8_t value );
   void writeSPRCTL1( uint8_t value );
@@ -261,7 +270,7 @@ private:
     Reg stretch;
     Reg tilt;
     Reg sprdoff;
-    Reg scvpos;
+    Reg sprvpos;
     Reg colloff;
     Reg vsizacum;
     Reg hsizoff;
@@ -309,10 +318,9 @@ private:
   bool mAlgo3;  //broken, do not set this bit!
   bool mReusePalette;
   bool mSkipSprite;
-  bool mDrawUp;
-  bool mDrawLeft;
   bool mEveron;
   bool mFred;
+  Quadrant mStartingQuadrant;
   BPP mBpp;
   Sprite mSpriteType;
   Reload mReload;
@@ -322,5 +330,14 @@ private:
   uint8_t mSwitches;
   uint8_t mCart0;
   uint8_t mCart1;
+
+  static constexpr std::array<std::array<Quadrant, 4>,4> mQuadrantOrder ={
+    std::array<Quadrant, 4>{ Quadrant::DOWN_RIGHT, Quadrant::UP_RIGHT, Quadrant::UP_LEFT, Quadrant::DOWN_LEFT },
+    std::array<Quadrant, 4>{ Quadrant::DOWN_LEFT, Quadrant::DOWN_RIGHT, Quadrant::UP_RIGHT, Quadrant::UP_LEFT },
+    std::array<Quadrant, 4>{ Quadrant::UP_RIGHT, Quadrant::UP_LEFT, Quadrant::DOWN_LEFT, Quadrant::DOWN_RIGHT },
+    std::array<Quadrant, 4>{ Quadrant::UP_LEFT, Quadrant::DOWN_LEFT, Quadrant::DOWN_RIGHT, Quadrant::UP_RIGHT }
+  };
 };
+
+
 

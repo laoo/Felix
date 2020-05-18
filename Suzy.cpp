@@ -4,7 +4,7 @@
 
 Suzy::Suzy() : mSCB{}, mMath{},
   mBusEnable{}, mSignMath{}, mAccumulate{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{}, mMathWorking{},
-  mMathWarning{}, mMathCarry{}, mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mDrawUp{}, mDrawLeft{}, mEveron{}, mFred{},
+  mMathWarning{}, mMathCarry{}, mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}, mJoystick{}, mSwitches{}, mCart0{}, mCart1{}
 {
 }
@@ -89,9 +89,9 @@ uint8_t Suzy::read( uint16_t address )
   case SPRDOFF + 1:
     return mSCB.sprdoff.h;
   case SCVPOS:
-    return mSCB.scvpos.l;
+    return mSCB.sprvpos.l;
   case SCVPOS + 1:
-    return mSCB.scvpos.h;
+    return mSCB.sprvpos.h;
   case COLLOFF:
     return mSCB.colloff.l;
   case COLLOFF + 1:
@@ -279,10 +279,10 @@ void Suzy::write( uint16_t address, uint8_t value )
       mSCB.sprdoff.h = value;
       break;
     case SCVPOS:
-      mSCB.scvpos = value;
+      mSCB.sprvpos = value;
       break;
     case SCVPOS + 1:
-      mSCB.scvpos.h = value;
+      mSCB.sprvpos.h = value;
       break;
     case COLLOFF:
       mSCB.colloff = value;
@@ -422,8 +422,7 @@ void Suzy::writeSPRCTL1( uint8_t value )
   mReload = (Reload)( value & SPRCTL1::RELOAD_MASK );
   mReusePalette = ( value & SPRCTL1::REUSE_PALETTE ) != 0;
   mSkipSprite = ( value & SPRCTL1::SKIP_SPRITE ) != 0;
-  mDrawUp = ( value & SPRCTL1::DRAW_UP ) != 0;
-  mDrawLeft = ( value & SPRCTL1::DRAW_LEFT ) != 0;
+  mStartingQuadrant = ( Quadrant )( value & SPRCTL1::STARGING_QUAD_MASK );
 }
 
 void Suzy::writeCart( int number, uint8_t value )
@@ -521,34 +520,43 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
   if ( mSkipSprite )
     co_return false;
 
-  mSCB.procadr = mSCB.sprdline;
-
   auto unpacker = pixelUnpacker();
 
+  auto const& quadCycle = mQuadrantOrder[( size_t )mStartingQuadrant];
+  size_t quadrant = ~0;
+  bool isEveron{};
+  int dx{}, dy{};
 
-  //for ( ;; )
+  for ( auto result = PenUnpacker::Result{ PenUnpacker::Status::NEXT_QUADRANT};; result = unpacker() )
   {
-    mSCB.sprdoff = unpacker.startLine( bpp(), mLiteral, co_await SuzyRead4{ mSCB.procadr } );
-    mSCB.procadr += 4;
-    for ( ;; )
+    switch ( result )
     {
-      switch ( unpacker() )
-      {
-      case PenUnpacker::Status::DATA_NEEDED:
-        unpacker.feedData( co_await SuzyRead4{ mSCB.procadr } );
-        mSCB.procadr += 4;
-        break;
-      case PenUnpacker::Status::PEN_READY:
-        break;
-      case PenUnpacker::Status::END_OF_LINE:
-        mSCB.sprdoff = unpacker.startLine( bpp(), mLiteral, co_await SuzyRead4{ mSCB.procadr } );
-        mSCB.procadr += 4;
-        break;
-      case PenUnpacker::Status::END_OF_QUADRANT:
-        break;
-      case PenUnpacker::Status::END_OF_SPRITE:
-        co_return true;
-      }
+    case PenUnpacker::Status::DATA_NEEDED:
+      unpacker.feedData( co_await SuzyRead4{ mSCB.procadr } );
+      mSCB.procadr += 4;
+      break;
+    case PenUnpacker::Status::PEN_READY:
+      break;
+    case PenUnpacker::Status::NEXT_LINE:
+      mSCB.sprdoff = unpacker.startLine( bpp(), mLiteral, co_await SuzyRead4{ mSCB.procadr } );
+      mSCB.procadr += 4;
+      break;
+    case PenUnpacker::Status::NEXT_QUADRANT:
+      if ( ++quadrant > 3 )
+        co_return isEveron;
+      dx = ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_LEFT ) == 0 ? 1 : -1;
+      dy = ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_UP ) == 0 ? 1 : -1;
+      dx *= mHFlip ? -1 : 1;
+      dy *= mVFlip ? -1 : 1;
+      mSCB.tiltacum = 0;
+      mSCB.vsizacum = ( dy == 1 ) ? mSCB.vsizoff.w : 0;
+      mSCB.sprvpos = mSCB.vposstrt - mSCB.voff;
+      mSCB.procadr = mSCB.sprdline;
+      if ( ( ( uint8_t )quadCycle[quadrant] & SPRCTL1::DRAW_UP ) != ( ( uint8_t )quadCycle[( size_t )mStartingQuadrant] & SPRCTL1::DRAW_UP ) )
+        mSCB.sprvpos += dx;
+      break;
+    case PenUnpacker::Status::NEXT_SPRITE:
+      co_return isEveron;
     }
   }
 }
