@@ -9,10 +9,9 @@
 #include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
-
+#include "Suzy.hpp"
 
 class Mikey;
-class Suzy;
 struct CPU;
 
 class BusMaster
@@ -55,8 +54,12 @@ private:
     bool suzyDisable;
   };
 
-  void suzyMaskedRMW();
-  void suzyXor();
+  void suzyRead( ISuzyProcess::RequestRead const* req );
+  void suzyRead4( ISuzyProcess::RequestRead4 const* req );
+  void suzyWrite( ISuzyProcess::RequestWrite const* req );
+  void suzyWrite4( ISuzyProcess::RequestWrite4 const* req );
+  void suzyMaskedRMW( ISuzyProcess::RequestRMW const* req );
+  void suzyXor( ISuzyProcess::RequestXOR const* req );
 
   void processCPU();
   void processSuzy();
@@ -84,4 +87,6 @@ private:
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;
   uint64_t mFastCycleTick;
+  std::shared_ptr<ISuzyProcess> mSuzyProcess;
+  ISuzyProcess::Request const* mSuzyProcessRequest;
 };

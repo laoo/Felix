@@ -46,6 +46,9 @@
     <ClCompile Include="PenUnpacker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SuzyProcess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -88,6 +91,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="PenUnpacker.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SuzyProcess.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

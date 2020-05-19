@@ -5,6 +5,76 @@
 #include "SuzyCoroutines.hpp"
 #include "PenUnpacker.hpp"
 
+
+class ISuzyProcess
+{
+public:
+
+  struct Request
+  {
+    enum Type
+    {
+      FINISH,
+      READ,
+      READ4,
+      WRITE,
+      WRITE4,
+      RMW,
+      XOR
+    } type;
+
+    Request( Type t ) : type{ t } {}
+  };
+
+
+public:
+
+  virtual ~ISuzyProcess() = default;
+  virtual Request const* advance() = 0;
+  virtual void respond( uint32_t value ) = 0;
+
+  struct RequestFinish : public Request
+  {
+    RequestFinish() : Request{ FINISH } {}
+  };
+  struct RequestRead : public Request
+  {
+    uint16_t addr;
+
+    RequestRead( uint16_t addr ) : Request{ READ }, addr{ addr } {}
+  };
+  struct RequestRead4 : public Request
+  {
+    uint16_t addr;
+    RequestRead4( uint16_t addr ) : Request{ READ4 }, addr{ addr } {}
+  };
+  struct RequestWrite : public Request
+  {
+    uint16_t addr;
+    uint8_t value;
+    RequestWrite( uint16_t addr, uint8_t value ) : Request{ WRITE }, addr{ addr }, value{ value } {}
+  };
+  struct RequestWrite4 : public Request
+  {
+    uint16_t addr;
+    uint32_t value;
+    RequestWrite4( uint16_t addr, uint32_t value ) : Request{ WRITE4 }, addr{ addr }, value{ value } {}
+  };
+  struct RequestRMW : public Request
+  {
+    uint16_t addr;
+    uint8_t value;
+    uint8_t mask;
+    RequestRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ RMW }, addr{ addr }, value{ value }, mask{ mask } {}
+  };
+  struct RequestXOR : public Request
+  {
+    uint16_t addr;
+    uint8_t value;
+    RequestXOR( uint16_t addr, uint8_t value ) : Request{ XOR }, addr{ addr }, value{ value } {}
+  };
+};
+
 class Suzy
 {
 public:
@@ -15,6 +85,7 @@ public:
   void write( uint16_t address, uint8_t value );
 
   SuzySpriteProcessor processSprites( SuzyRequest & req );
+  std::shared_ptr<ISuzyProcess> suzyProcess();
 
 private:
 

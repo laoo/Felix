@@ -1,6 +1,7 @@
 #include "Suzy.hpp"
 #include <cassert>
 #include "BusMaster.hpp"
+#include "SuzyProcess.hpp"
 
 Suzy::Suzy() : mSCB{}, mMath{},
   mBusEnable{}, mSignMath{}, mAccumulate{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{}, mMathWorking{},
@@ -577,7 +578,6 @@ SuzyCoSubroutineT<bool> Suzy::renderSingleSprite( SuzyRequest & req )
         if ( sprhpos >= 0 && sprhpos < mScreenWidth )
         {
           int even = sprhpos & 1;
-          uint8_t mask;
           switch ( mSpriteType )
           {
           case Sprite::SHADOW:
@@ -663,4 +663,9 @@ SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
   }
   
   co_return;
+}
+
+std::shared_ptr<ISuzyProcess> Suzy::suzyProcess()
+{
+  return std::make_shared<SuzyProcess>( *this );
 }

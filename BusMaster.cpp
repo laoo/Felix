@@ -1,6 +1,5 @@
 #include "BusMaster.hpp"
 #include "CPU.hpp"
-#include "Suzy.hpp"
 #include "Mikey.hpp"
 #include <fstream>
 #include <filesystem>
@@ -227,7 +226,8 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       switch ( auto mikeyAction = mMikey->write( mCPUReq.address, mCPUReq.value ) )
       {
       case Mikey::WriteAction::Type::START_SUZY:
-        mSuzyExecute = mSuzy->processSprites( mSuzyReq );
+        mSuzyProcess = mSuzy->suzyProcess();
+        //mSuzyExecute = mSuzy->processSprites( mSuzyReq );
         processSuzy();
         break;
       case Mikey::WriteAction::Type::ENQUEUE_ACTION:
@@ -239,32 +239,31 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
       }
       break;
     case Action::SUZY_NONE:
+      mSuzyProcess.reset();
       mCPUReq();
       break;
     case Action::SUZY_READ:
-      mSuzyReq.value = mRAM[mSuzyReq.address];
+      suzyRead( ( ISuzyProcess::RequestRead const* )mSuzyProcessRequest );
       processSuzy();
       break;
     case Action::SUZY_READ4:
-      assert( mSuzyReq.address <= 0xfffc );
-      mSuzyReq.value = *( (uint32_t const*)( mRAM.data() + mSuzyReq.address ) );
+      suzyRead4( ( ISuzyProcess::RequestRead4 const* )mSuzyProcessRequest );
       processSuzy();
       break;
     case Action::SUZY_WRITE:
-      mRAM[mSuzyReq.address] = (uint8_t)mSuzyReq.value;
+      suzyWrite( ( ISuzyProcess::RequestWrite const* )mSuzyProcessRequest );
       processSuzy();
       break;
     case Action::SUZY_WRITE4:
-      assert( mSuzyReq.address <= 0xfffc );
-      *( ( uint32_t* )( mRAM.data() + mSuzyReq.address ) ) =  mSuzyReq.value;
+      suzyWrite4( ( ISuzyProcess::RequestWrite4 const* )mSuzyProcessRequest );
       processSuzy();
       break;
     case Action::SUZY_MASKED_RMW:
-      suzyMaskedRMW();
+      suzyMaskedRMW( ( ISuzyProcess::RequestRMW const* )mSuzyProcessRequest );
       processSuzy();
       break;
     case Action::SUZY_XOR:
-      suzyXor();
+      suzyXor( ( ISuzyProcess::RequestXOR const* )mSuzyProcessRequest );
       processSuzy();
       break;
     case Action::END_FRAME:
@@ -285,16 +284,40 @@ void BusMaster::enterMonitor()
 {
 }
 
-void BusMaster::suzyMaskedRMW()
+void BusMaster::suzyRead( ISuzyProcess::RequestRead const * req )
 {
-  auto value = mRAM[mSuzyReq.address] & mSuzyReq.mask | mSuzyReq.value;
-  mRAM[mSuzyReq.address] = ( uint8_t )value;
+  auto value = mRAM[req->addr];
+  mSuzyProcess->respond( value );
 }
 
-void BusMaster::suzyXor()
+void BusMaster::suzyRead4( ISuzyProcess::RequestRead4 const* req )
 {
-  auto value = mRAM[mSuzyReq.address] ^ mSuzyReq.value;
-  mRAM[mSuzyReq.address] = ( uint8_t )value;
+  assert( req->addr <= 0xfffc );
+  auto value = *( ( uint32_t const* )( mRAM.data() + req->addr ) );
+  mSuzyProcess->respond( value );
+}
+
+void BusMaster::suzyWrite( ISuzyProcess::RequestWrite const * req )
+{
+  mRAM[req->addr] = req->value;
+}
+
+void BusMaster::suzyWrite4( ISuzyProcess::RequestWrite4 const * req )
+{
+  assert( req->addr <= 0xfffc );
+  *( ( uint32_t* )( mRAM.data() + req->addr ) ) =  req->value;
+}
+
+void BusMaster::suzyMaskedRMW( ISuzyProcess::RequestRMW const* req )
+{
+  auto value = mRAM[req->addr] & req->mask | req->value;
+  mRAM[req->addr] = ( uint8_t )value;
+}
+
+void BusMaster::suzyXor( ISuzyProcess::RequestXOR const* req )
+{
+  auto value = mRAM[req->addr] ^ req->value;
+  mRAM[req->addr] = ( uint8_t )value;
 }
 
 void BusMaster::processSuzy()
@@ -315,8 +338,8 @@ void BusMaster::processSuzy()
     Cost{ 1, 1 }  //XOR,
   };
 
-  mSuzyReq();
-  int op = ( int )mSuzyReq.operation;
+  mSuzyProcessRequest = mSuzyProcess->advance();
+  int op = ( int )mSuzyProcessRequest->type;
   mActionQueue.push( { ( Action )( ( int )Action::SUZY_NONE + op ), mBusReservationTick } );
   auto cost = requestCost[op];
   mBusReservationTick += cost.slow * 5ull + cost.fast * mFastCycleTick;

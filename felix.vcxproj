@@ -164,6 +164,7 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="PenUnpacker.cpp" />
     <ClCompile Include="SuzyCoroutines.cpp" />
+    <ClCompile Include="SuzyProcess.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="SuzyCoroutines.hpp" />
+    <ClInclude Include="SuzyProcess.hpp" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUTrace.hpp" />

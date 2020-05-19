@@ -3,6 +3,91 @@
 #include <cassert>
 #include <type_traits>
 
+
+
+class BaseCoroutine
+{
+public:
+  BaseCoroutine() : mCoro{} {}
+  BaseCoroutine( std::experimental::coroutine_handle<> c ) : mCoro{ c } {}
+  BaseCoroutine( BaseCoroutine const& other ) = delete;
+  BaseCoroutine & operator=( BaseCoroutine const& other ) = delete;
+  BaseCoroutine( BaseCoroutine && other ) noexcept : mCoro{ std::move( other.mCoro ) }
+  {
+    other.mCoro = nullptr;
+  }
+  BaseCoroutine & operator=( BaseCoroutine && other ) noexcept
+  {
+    mCoro = std::move( other.mCoro );
+    other.mCoro = nullptr;
+    return *this;
+  }
+  ~BaseCoroutine()
+  {
+    if ( mCoro )
+      mCoro.destroy();
+  }
+
+  void operator()()
+  {
+    assert( !mCoro.done() );
+    mCoro();
+  }
+
+private:
+  std::experimental::coroutine_handle<> mCoro;
+};
+
+template<typename Coro, typename... Ts>
+struct BasePromise : public Ts...
+{
+  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<BasePromise<Coro,Ts...>>::from_promise( *this ) }; }
+  void unhandled_exception() { std::terminate(); }
+};
+
+namespace promise
+{
+namespace initial
+{
+struct always
+{
+  auto initial_suspend() { return std::experimental::suspend_always{}; }
+};
+struct never
+{
+  auto initial_suspend() { return std::experimental::suspend_never{}; }
+};
+}
+namespace final
+{
+struct always
+{
+  auto final_suspend() { return std::experimental::suspend_always{}; }
+};
+struct never
+{
+  auto final_suspend() { return std::experimental::suspend_never{}; }
+};
+}
+struct ret_void
+{
+  void return_void()
+  {
+  }
+};
+template<typename T>
+struct ret_value
+{
+  T retValue;
+  void return_value( T value )
+  {
+    retValue = value;
+  }
+};
+}
+
+///////////////////////////////////////////////////
+
 struct SuzyRequest
 {
   enum class Op : uint8_t
@@ -46,7 +131,10 @@ struct SuzyRequest
 
 struct SuzyRead { uint16_t address; };
 struct SuzyRead4 { uint16_t address; };
-struct SuzyRMW { uint16_t address; uint8_t mask; uint8_t value; };
+struct SuzyWrite { uint16_t address; uint8_t value; };
+struct SuzyWrite4 { uint16_t address; uint32_t value; };
+struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
+struct SuzyXOR { uint16_t address; uint8_t value; };
 
 class SuzyCoSubroutine
 {
