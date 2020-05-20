@@ -2,7 +2,7 @@
 
 
 
-SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}
+SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}
 {
   auto p = process();
   mBaseCoroutine = std::move( p );
@@ -94,9 +94,6 @@ ProcessCoroutine SuzyProcess::process()
 SubCoroutine SuzyProcess::loadSCB()
 {
   co_await this;
-  co_await SuzyRead{ scb.scbadr++ };
-  co_return;
-
 
   mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.scbadr++ } );
   mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.scbadr++ } );
@@ -179,7 +176,87 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
 {
   co_await this;
 
+  if ( mSuzy.mSkipSprite )
+    co_return false;
+
+  bool isEveron{};
+
+  UnpackerCoroutine unpack = unpacker();
+  auto const& quadCycle = mSuzy.mQuadrantOrder[( size_t )mSuzy.mStartingQuadrant];
+
+  for ( int quadrant = 0; quadrant < 4; ++quadrant )
+  {
+    int left = ( ( uint8_t )quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT ) == 0 ? 0 : 1;
+    int up = ( ( uint8_t )quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP ) == 0 ? 0 : 1;
+    left ^= mSuzy.mHFlip ? 1 : 0;
+    up ^= mSuzy.mVFlip ? 1 : 0;
+    scb.tiltacum = 0;
+    scb.vsizacum = ( up == 0 ) ? scb.vsizoff.w : 0;
+    scb.sprvpos = scb.vposstrt - scb.voff;
+    if ( ( ( uint8_t )quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP ) != ( ( uint8_t )quadCycle[( size_t )mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_UP ) )
+      scb.sprvpos += up ? -1 : 1;
+
+    co_await unpack.sync( false );
+    while ( unpack.ready() )
+    {
+      scb.vsizacum += scb.sprvsiz;
+      uint8_t pixelHeight = scb.vsizacum.h;
+      uint8_t pixelRow = 0;
+      scb.vsizacum.h = 0;
+      scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+      scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+      for ( int v = 0; v < pixelHeight; ++v )
+      {
+        if ( up == 0 && scb.sprvpos >= Suzy::mScreenHeight || up == 1 && ( int16_t )( scb.sprvpos ) < 0 ) break;
+        scb.hposstrt += scb.tiltacum.h;
+        scb.tiltacum.h = 0;
+        uint16_t hsizacum = left == 0 ? scb.hsizoff.w : 0;
+        int sprhpos = scb.hposstrt - scb.hoff;
+        if ( ( ( uint8_t )quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT ) != ( ( uint8_t )quadCycle[( size_t )mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT ) )
+          sprhpos += left ? -1 : 1;
+
+        for co_await( auto pen : unpack )
+        {
+
+        }
+      }
+      scb.sprvpos += up ? -1 : 1;
+
+    }
+  }
+
   co_await SuzyRead{ scb.scbadr++ };
 
   co_return true;
+}
+
+UnpackerCoroutine SuzyProcess::unpacker()
+{
+  co_await this;
+
+  for ( ;; )
+  {
+    if ( co_await RowSync{} )
+    {
+      scb.sprdline += scb.sprdoff;
+    }
+
+    scb.procadr = scb.sprdline;
+
+    mShifter.push( co_await SuzyRead4{ scb.procadr } );
+    scb.procadr += 4;
+
+    scb.sprdoff = mShifter.pull<8>();
+    
+    if ( scb.sprdoff == 0 )
+      co_await UnpackerState::END_OF_SPRITE;
+    else if( scb.sprdoff == 1 )
+      co_await UnpackerState::END_OF_QUADRANT;
+    else for ( ;; )
+    {
+
+
+    }
+
+  }
 }

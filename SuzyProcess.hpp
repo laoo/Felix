@@ -1,6 +1,7 @@
 #pragma once
 #include "Suzy.hpp"
 #include "SuzyProcessCoro.hpp"
+#include "Shifter.hpp"
 
 class SuzyProcess : public ISuzyProcess
 {
@@ -33,6 +34,7 @@ private:
   ProcessCoroutine process();
   SubCoroutine loadSCB();
   SubCoroutineT<bool> renderSingleSprite();
+  UnpackerCoroutine unpacker();
 
 private:
   Suzy & mSuzy;
@@ -53,4 +55,5 @@ private:
 
   ProcessCoroutine mBaseCoroutine;
   std::experimental::coroutine_handle<> mCoro;
+  Shifter mShifter;
 };

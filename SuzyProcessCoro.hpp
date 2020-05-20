@@ -2,6 +2,7 @@
 #include <experimental/coroutine>
 #include <cassert>
 #include <type_traits>
+#include <optional>
 
 //struct SuzyRead { uint16_t address; };
 //struct SuzyRead4 { uint16_t address; };
@@ -10,6 +11,14 @@
 //struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
 //struct SuzyXOR { uint16_t address; uint8_t value; };
 
+struct RowSync {};
+enum class UnpackerState
+{
+  READY,
+  END_OF_LINE,
+  END_OF_QUADRANT,
+  END_OF_SPRITE
+};
 
 //promise components
 namespace coro
@@ -25,17 +34,6 @@ struct always
 struct never
 {
   auto initial_suspend() { return std::experimental::suspend_never{}; }
-};
-}
-namespace final
-{
-struct always
-{
-  auto final_suspend() { return std::experimental::suspend_always{}; }
-};
-struct never
-{
-  auto final_suspend() { return std::experimental::suspend_never{}; }
 };
 }
 struct ret_void
@@ -287,7 +285,7 @@ public:
       mCoro.destroy();
   }
 
-  void operator()()
+  void resume()
   {
     assert( !mCoro.done() );
     mCoro();
@@ -304,48 +302,169 @@ private:
 
 }
 
-
-
-template<typename ProcessCoroutine>
-struct SubCoroutinePromise :
-  public coro::promise::Base<ProcessCoroutine, SubCoroutinePromise<ProcessCoroutine>>,
+template<typename Coroutine>
+struct UnpackerPromise :
+  public coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>,
   public coro::promise::initial::always,
-  public coro::promise::Return<SubCoroutinePromise<ProcessCoroutine>>,
+  public coro::promise::Return<UnpackerPromise<Coroutine>>,
   public coro::promise::ret_void,
   public coro::promise::Init<false>,
-  public coro::promise::Requests<SubCoroutinePromise<ProcessCoroutine>>
+  public coro::promise::Requests<UnpackerPromise<Coroutine>>
 {
   using coro::promise::Init<false>::await_transform;
-  using coro::promise::Requests<SubCoroutinePromise<ProcessCoroutine>>::await_transform;
+  using coro::promise::Requests<UnpackerPromise<Coroutine>>::await_transform;
+  using coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>::caller;
+  using coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>::setCaller;
+
+  struct PenIterator
+  {
+    UnpackerPromise<Coroutine> * p;
+    int pen;
+
+    friend bool operator !=( PenIterator left, PenIterator right )
+    {
+      return left.p != right.p;
+    }
+    //Will be co_awaited
+    PenIterator & operator++() { return *this; }
+    uint8_t operator*() { return pen; }
+
+    bool await_ready() { return false; }
+    PenIterator & await_resume() { return *this; }
+    auto await_suspend( std::experimental::coroutine_handle<> c )
+    {
+      p->setCaller( c );
+      return std::experimental::coroutine_handle<UnpackerPromise<Coroutine>>::from_promise( *p );
+    }
+  } penIterator;
+  std::optional<bool> syncAdvance;
+  UnpackerState state;
+
+  struct AwaitReturnToCaller
+  {
+    std::experimental::coroutine_handle<> caller;
+    bool await_ready() { return false; }
+    void await_resume() {}
+    auto await_suspend( std::experimental::coroutine_handle<> c ) { return caller; }
+  };
+
+  auto await_transform( RowSync )
+  {
+    struct Awaiter
+    {
+      std::optional<bool> & syncAdvance;
+      bool await_ready() { return syncAdvance.has_value(); }
+      bool await_resume()
+      {
+        bool result = *syncAdvance;
+        syncAdvance.reset();
+        return result;
+      }
+      bool await_suspend( std::experimental::coroutine_handle<> c ) { return !syncAdvance.has_value(); }
+    };
+    return Awaiter{ syncAdvance };
+  }
+
+  auto await_transform( UnpackerState s )
+  {
+    state = s;
+    return AwaitReturnToCaller{ caller() };
+  }
+  auto yield_value( int pen )
+  {
+    state = UnpackerState::READY;
+    penIterator.pen = pen;
+    return AwaitReturnToCaller{ caller() };
+  }
 };
 
-template<typename ProcessCoroutine, typename RET>
-struct SubCoroutinePromiseT :
-  public coro::promise::Base<ProcessCoroutine, SubCoroutinePromiseT<ProcessCoroutine, RET>>,
+struct UnpackerCoroutine : public coro::Base<UnpackerPromise<UnpackerCoroutine>>
+{
+  //dummy. Will be co_awaited
+  UnpackerPromise<UnpackerCoroutine>::PenIterator & begin()
+  {
+    auto & p = coro().promise();
+    return p.penIterator = UnpackerPromise<UnpackerCoroutine>::PenIterator{
+      &p
+    };
+  }
+  UnpackerPromise<UnpackerCoroutine>::PenIterator end() { return {}; }
+
+  struct Awaiter
+  {
+    std::experimental::coroutine_handle<UnpackerPromise<UnpackerCoroutine>> h;
+    bool await_ready() { return false; }
+    void await_resume() {}
+    auto await_suspend( std::experimental::coroutine_handle<> c )
+    {
+      h.promise().setCaller( c );
+      return h;
+    }
+  };
+
+  auto sync( bool advance )
+  {
+    coro().promise().syncAdvance = advance;
+    return Awaiter{ coro() };
+  }
+  bool ready()
+  {
+    return coro().promise().state == UnpackerState::READY;
+  }
+};
+
+
+template<typename Coroutine>
+struct SubCoroutinePromise :
+  public coro::promise::Base<Coroutine, SubCoroutinePromise<Coroutine>>,
   public coro::promise::initial::always,
-  public coro::promise::Return<SubCoroutinePromiseT<ProcessCoroutine, RET>>,
+  public coro::promise::Return<SubCoroutinePromise<Coroutine>>,
+  public coro::promise::ret_void,
+  public coro::promise::Init<false>,
+  public coro::promise::Requests<SubCoroutinePromise<Coroutine>>
+{
+  using coro::promise::Init<false>::await_transform;
+  using coro::promise::Requests<SubCoroutinePromise<Coroutine>>::await_transform;
+};
+
+template<typename Coroutine, typename RET>
+struct SubCoroutinePromiseT :
+  public coro::promise::Base<Coroutine, SubCoroutinePromiseT<Coroutine, RET>>,
+  public coro::promise::initial::always,
+  public coro::promise::Return<SubCoroutinePromiseT<Coroutine, RET>>,
   public coro::promise::ret_value<RET>,
   public coro::promise::Init<false>,
-  public coro::promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>
+  public coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>
 {
   using coro::promise::Init<false>::await_transform;
-  using coro::promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>::await_transform;
+  using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
+
+  auto await_transform( UnpackerPromise<UnpackerCoroutine>::PenIterator & it )
+  {
+    return it;
+  }
+  auto await_transform( UnpackerCoroutine::Awaiter awaiter )
+  {
+    return awaiter;
+  }
 };
 
-template<typename ProcessCoroutine>
+template<typename Coroutine>
 struct CoroutinePromise :
-  public coro::promise::Base<ProcessCoroutine, CoroutinePromise<ProcessCoroutine>>,
+  public coro::promise::Base<Coroutine, CoroutinePromise<Coroutine>>,
   public coro::promise::initial::never,
   public coro::promise::ret_void,
   public coro::promise::Init<true>,
-  public coro::promise::Requests<CoroutinePromise<ProcessCoroutine>>,
+  public coro::promise::Requests<CoroutinePromise<Coroutine>>,
   public coro::promise::CallSubCoroutine,
-  public coro::promise::Final<CoroutinePromise<ProcessCoroutine>>
+  public coro::promise::Final<CoroutinePromise<Coroutine>>
 {
   using coro::promise::Init<true>::await_transform;
-  using coro::promise::Requests<CoroutinePromise<ProcessCoroutine>>::await_transform;
+  using coro::promise::Requests<CoroutinePromise<Coroutine>>::await_transform;
   using coro::promise::CallSubCoroutine::await_transform;
 };
+
+
 
 
 struct SubCoroutine : public coro::Base<SubCoroutinePromise<SubCoroutine>>
@@ -356,6 +475,7 @@ template<typename RET>
 struct SubCoroutineT : public coro::Base<SubCoroutinePromiseT<SubCoroutineT<RET>, RET>>
 {
 };
+
 
 struct ProcessCoroutine : public coro::Base<CoroutinePromise<ProcessCoroutine>>
 {

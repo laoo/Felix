@@ -177,6 +177,7 @@
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />
+    <ClInclude Include="Shifter.hpp" />
     <ClInclude Include="SuzyCoroutines.hpp" />
     <ClInclude Include="SuzyProcess.hpp" />
     <ClInclude Include="SuzyProcessCoro.hpp" />
