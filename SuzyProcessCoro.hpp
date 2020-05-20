@@ -10,49 +10,8 @@
 //struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
 //struct SuzyXOR { uint16_t address; uint8_t value; };
 
-template<typename PROMISE>
-class BaseCoroutine
-{
-public:
-  using promise_type = PROMISE;
-  using handle = std::experimental::coroutine_handle<promise_type>;
 
-  BaseCoroutine() : mCoro{} {}
-  BaseCoroutine( handle c ) : mCoro{ c } {}
-  BaseCoroutine( BaseCoroutine const& other ) = delete;
-  BaseCoroutine & operator=( BaseCoroutine const& other ) = delete;
-  BaseCoroutine( BaseCoroutine && other ) noexcept : mCoro{ std::move( other.mCoro ) }
-  {
-    other.mCoro = nullptr;
-  }
-  BaseCoroutine & operator=( BaseCoroutine && other ) noexcept
-  {
-    mCoro = std::move( other.mCoro );
-    other.mCoro = nullptr;
-    return *this;
-  }
-  ~BaseCoroutine()
-  {
-    if ( mCoro )
-      mCoro.destroy();
-  }
-
-  void operator()()
-  {
-    assert( !mCoro.done() );
-    mCoro();
-  }
-
-  handle coro()
-  {
-    return mCoro;
-  }
-
-private:
-  handle mCoro;
-};
-
-
+//promise components
 namespace promise
 {
 namespace initial
@@ -97,11 +56,7 @@ struct ret_value
     return retValue;
   }
 };
-}
 
-
-namespace
-{
 template<bool suspend>
 struct Init
 {
@@ -237,7 +192,50 @@ struct Requests
   }
 };
 
+struct CallSubCoroutine
+{
+  template<typename SUB>
+  auto await_transform( SUB && sub )
+  {
+    struct Awaiter
+    {
+      SUB sub;
+      Awaiter( SUB && s ) : sub{ std::move( s ) } {}
+      bool await_ready() { return false; }
+      void await_resume() {}
+      auto await_suspend( std::experimental::coroutine_handle<> c )
+      {
+        sub.coro().promise().setCaller( c );
+        return sub.coro();
+      }
+    };
+    return Awaiter{ std::move( sub ) };
+  }
+
+  template<typename RET, template<typename> typename SUB>
+  auto await_transform( SUB<RET> && sub )
+  {
+    struct Awaiter
+    {
+      SUB<RET> sub;
+      Awaiter( SUB<RET> && s ) : sub{ std::move( s ) } {}
+      bool await_ready() { return false; }
+      RET await_resume()
+      {
+        return sub.coro().promise().getRetValue();
+      }
+      auto await_suspend( std::experimental::coroutine_handle<> c )
+      {
+        sub.coro().promise().setCaller( c );
+        return sub.coro();
+      }
+    };
+    return Awaiter{ std::move( sub ) };
+  }
+};
+
 }
+
 
 template<typename Coro>
 struct BasePromise
@@ -259,149 +257,112 @@ private:
 };
 
 template<typename ProcessCoroutine>
-struct ProcessSubCoroutinePromise :
+struct SubCoroutinePromise :
   public BasePromise<ProcessCoroutine>,
   public promise::initial::always,
-  public Return<ProcessSubCoroutinePromise<ProcessCoroutine>>,
+  public promise::Return<SubCoroutinePromise<ProcessCoroutine>>,
   public promise::ret_void,
-  public Init<false>,
-  public Requests<ProcessSubCoroutinePromise<ProcessCoroutine>>
+  public promise::Init<false>,
+  public promise::Requests<SubCoroutinePromise<ProcessCoroutine>>
 {
 public:
 
-  using Init<false>::await_transform;
-  using Requests<ProcessSubCoroutinePromise<ProcessCoroutine>>::await_transform;
+  using promise::Init<false>::await_transform;
+  using promise::Requests<SubCoroutinePromise<ProcessCoroutine>>::await_transform;
 
-  auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<ProcessSubCoroutinePromise<ProcessCoroutine>>::from_promise( *this ) }; }
+  auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<SubCoroutinePromise<ProcessCoroutine>>::from_promise( *this ) }; }
 };
 
 template<typename ProcessCoroutine, typename RET>
-struct ProcessSubCoroutinePromiseT :
+struct SubCoroutinePromiseT :
   public BasePromise<ProcessCoroutine>,
   public promise::initial::always,
-  public Return<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>,
+  public promise::Return<SubCoroutinePromiseT<ProcessCoroutine, RET>>,
   public promise::ret_value<RET>,
-  public Init<false>,
-  public Requests<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>
+  public promise::Init<false>,
+  public promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>
 {
 public:
 
-  using Init<false>::await_transform;
-  using Requests<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>::await_transform;
+  using promise::Init<false>::await_transform;
+  using promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>::await_transform;
 
-  auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>::from_promise( *this ) }; }
-};
-
-//
-//template<typename RET>
-//struct coroutine_traits<SubCoroutineT<RET>, SuzyProcess*>
-//{
-//  struct promise_type :
-//    public BasePromise<SubCoroutineT<RET>>,
-//    public promise::initial::never,
-//    public Return<promise_type>,
-//    public promise::ret_value<RET>,
-//    public Init<false>,
-//    public Requests<promise_type>
-//  {
-//    using Init<false>::await_transform;
-//    using Requests<promise_type>::await_transform;
-//  };
-//};
-
-struct SubCoroutine : public BaseCoroutine<ProcessSubCoroutinePromise<SubCoroutine>>
-{
-};
-
-template<typename RET>
-struct SubCoroutineT : public BaseCoroutine<ProcessSubCoroutinePromiseT<SubCoroutineT<RET>, RET>>
-{
-};
-
-
-struct CallSubCoroutine
-{
-  auto await_transform( SubCoroutine && sub )
-  {
-    struct Awaiter
-    {
-      SubCoroutine sub;
-      Awaiter( SubCoroutine && s ) : sub{ std::move( s ) } {}
-      bool await_ready() { return false; }
-      void await_resume() {}
-      auto await_suspend( std::experimental::coroutine_handle<> c )
-      {
-        sub.coro().promise().setCaller( c );
-        return sub.coro();
-      }
-    };
-    return Awaiter{ std::move( sub ) };
-  }
-
-  template<typename RET>
-  auto await_transform( SubCoroutineT<RET> && sub )
-  {
-    struct Awaiter
-    {
-      SubCoroutineT<RET> sub;
-      Awaiter( SubCoroutineT<RET> && s ) : sub{ std::move( s ) } {}
-      bool await_ready() { return false; }
-      RET await_resume()
-      {
-        return sub.coro().promise().getRetValue();
-      }
-      auto await_suspend( std::experimental::coroutine_handle<> c )
-      {
-        sub.coro().promise().setCaller( c );
-        return sub.coro();
-      }
-    };
-    return Awaiter{ std::move( sub ) };
-  }
-
-
-  //template<typename RET>
-  //auto await_transform( SubCoroutineT<RET> && sub )
-  //{
-  //  struct Awaiter
-  //  {
-  //    SubCoroutineT<RET> sub;
-  //    Awaiter( SubCoroutineT<RET> && s ) : sub{ std::move( s ) } {}
-  //    bool await_ready() { return false; }
-  //    void await_resume() {}
-  //    auto await_suspend( std::experimental::coroutine_handle<> c )
-  //    {
-  //      auto callee = std::experimental::coroutine_handle<std::experimental::coroutine_traits<SuzyProcess::SubCoroutineT<RET>, SuzyProcess*>::promise_type>::from_address(
-  //        sub.coro().address()
-  //      );
-  //      callee.promise().setCaller( c );
-  //      return callee;
-  //    }
-  //  };
-  //  return Awaiter{ std::move( sub ) };
-  //}
+  auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<SubCoroutinePromiseT<ProcessCoroutine, RET>>::from_promise( *this ) }; }
 };
 
 
 template<typename ProcessCoroutine>
-struct ProcessCoroutinePromise :
+struct CoroutinePromise :
   public BasePromise<ProcessCoroutine>,
   public promise::initial::never,
   public promise::ret_void,
-  public Init<true>,
-  public Requests<ProcessCoroutinePromise<ProcessCoroutine>>,
-  public CallSubCoroutine,
-  public Final<ProcessCoroutinePromise<ProcessCoroutine>>
+  public promise::Init<true>,
+  public promise::Requests<CoroutinePromise<ProcessCoroutine>>,
+  public promise::CallSubCoroutine,
+  public promise::Final<CoroutinePromise<ProcessCoroutine>>
 {
 public:
-  using Init<true>::await_transform;
-  using Requests<ProcessCoroutinePromise<ProcessCoroutine>>::await_transform;
-  using CallSubCoroutine::await_transform;
+  using promise::Init<true>::await_transform;
+  using promise::Requests<CoroutinePromise<ProcessCoroutine>>::await_transform;
+  using promise::CallSubCoroutine::await_transform;
 
-  auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<ProcessCoroutinePromise<ProcessCoroutine>>::from_promise( *this ) }; }
+  auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<CoroutinePromise<ProcessCoroutine>>::from_promise( *this ) }; }
 };
 
 
-struct ProcessCoroutine : public BaseCoroutine<ProcessCoroutinePromise<ProcessCoroutine>>
+template<typename PROMISE>
+class BaseCoroutine
+{
+public:
+  using promise_type = PROMISE;
+  using handle = std::experimental::coroutine_handle<promise_type>;
+
+  BaseCoroutine() : mCoro{} {}
+  BaseCoroutine( handle c ) : mCoro{ c } {}
+  BaseCoroutine( BaseCoroutine const& other ) = delete;
+  BaseCoroutine & operator=( BaseCoroutine const& other ) = delete;
+  BaseCoroutine( BaseCoroutine && other ) noexcept : mCoro{ std::move( other.mCoro ) }
+  {
+    other.mCoro = nullptr;
+  }
+  BaseCoroutine & operator=( BaseCoroutine && other ) noexcept
+  {
+    mCoro = std::move( other.mCoro );
+    other.mCoro = nullptr;
+    return *this;
+  }
+  ~BaseCoroutine()
+  {
+    if ( mCoro )
+      mCoro.destroy();
+  }
+
+  void operator()()
+  {
+    assert( !mCoro.done() );
+    mCoro();
+  }
+
+  handle coro()
+  {
+    return mCoro;
+  }
+
+private:
+  handle mCoro;
+};
+
+
+struct SubCoroutine : public BaseCoroutine<SubCoroutinePromise<SubCoroutine>>
+{
+};
+
+template<typename RET>
+struct SubCoroutineT : public BaseCoroutine<SubCoroutinePromiseT<SubCoroutineT<RET>, RET>>
+{
+};
+
+
+struct ProcessCoroutine : public BaseCoroutine<CoroutinePromise<ProcessCoroutine>>
 {
 };
