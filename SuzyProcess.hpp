@@ -1,6 +1,6 @@
 #pragma once
 #include "Suzy.hpp"
-#include "SuzyCoroutines.hpp"
+#include "SuzyProcessCoro.hpp"
 
 class SuzyProcess : public ISuzyProcess
 {
@@ -29,16 +29,10 @@ public:
   void setHandle( std::experimental::coroutine_handle<> c );
 
 
-  struct ProcessCoroutine : public BaseCoroutine {};
-  struct SubCoroutine : public BaseCoroutine{};
-  template<typename RET>
-  struct SubCoroutineT : public BaseCoroutine {};
-
-
 private:
   ProcessCoroutine process();
   SubCoroutine loadSCB();
-  SubCoroutineT<bool> renderSingleSprite();
+  //SubCoroutineT<bool> renderSingleSprite();
 
 private:
   Suzy & mSuzy;
@@ -57,6 +51,6 @@ private:
     Response response;
   };
 
-  BaseCoroutine mBaseCoroutine;
+  ProcessCoroutine mBaseCoroutine;
   std::experimental::coroutine_handle<> mCoro;
 };

@@ -96,6 +96,9 @@
     <ClInclude Include="SuzyProcess.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="SuzyProcessCoro.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh">

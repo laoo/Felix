@@ -179,6 +179,7 @@
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="SuzyCoroutines.hpp" />
     <ClInclude Include="SuzyProcess.hpp" />
+    <ClInclude Include="SuzyProcessCoro.hpp" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUTrace.hpp" />
