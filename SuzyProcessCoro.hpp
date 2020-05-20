@@ -237,7 +237,6 @@ struct Requests
 template<typename Coro>
 struct BasePromise
 {
-  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<BasePromise<Coro>>::from_promise( *this ) }; }
   void unhandled_exception() { std::terminate(); }
 
   void setCaller( std::experimental::coroutine_handle<> c )
@@ -256,7 +255,7 @@ private:
 
 template<typename ProcessCoroutine>
 struct ProcessSubCoroutinePromise :
-  //public BasePromise<ProcessCoroutine>,
+  public BasePromise<ProcessCoroutine>,
   public promise::initial::always,
   public Return<ProcessSubCoroutinePromise<ProcessCoroutine>>,
   public promise::ret_void,
@@ -269,21 +268,6 @@ public:
   using Requests<ProcessSubCoroutinePromise<ProcessCoroutine>>::await_transform;
 
   auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<ProcessSubCoroutinePromise<ProcessCoroutine>>::from_promise( *this ) }; }
-  void unhandled_exception() { std::terminate(); }
-
-  void setCaller( std::experimental::coroutine_handle<> c )
-  {
-    mCaller = c;
-  }
-
-  std::experimental::coroutine_handle<> caller() noexcept
-  {
-    return mCaller;
-  }
-
-private:
-  std::experimental::coroutine_handle<> mCaller;
-
 };
 
 
@@ -353,7 +337,7 @@ struct CallSubCoroutine
 
 template<typename ProcessCoroutine>
 struct ProcessCoroutinePromise :
-  //public BasePromise<ProcessCoroutine>,
+  public BasePromise<ProcessCoroutine>,
   public promise::initial::never,
   public promise::ret_void,
   public Init<true>,
@@ -367,21 +351,6 @@ public:
   using CallSubCoroutine::await_transform;
 
   auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<ProcessCoroutinePromise<ProcessCoroutine>>::from_promise( *this ) }; }
-  void unhandled_exception() { std::terminate(); }
-
-  void setCaller( std::experimental::coroutine_handle<> c )
-  {
-    mCaller = c;
-  }
-
-  std::experimental::coroutine_handle<> caller() noexcept
-  {
-    return mCaller;
-  }
-
-private:
-  std::experimental::coroutine_handle<> mCaller;
-
 };
 
 
