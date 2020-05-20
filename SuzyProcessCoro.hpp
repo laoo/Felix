@@ -11,7 +11,7 @@
 //struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
 //struct SuzyXOR { uint16_t address; uint8_t value; };
 
-struct RowSync {};
+struct AdvanceLine {};
 enum class UnpackerState
 {
   READY,
@@ -316,20 +316,34 @@ struct UnpackerPromise :
   using coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>::caller;
   using coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>::setCaller;
 
+  struct PenData
+  {
+    int pen;
+    int ready;
+  } penData;
+
   struct PenIterator
   {
+    PenData * data;
     UnpackerPromise<Coroutine> * p;
-    int pen;
 
     friend bool operator !=( PenIterator left, PenIterator right )
     {
-      return left.p != right.p;
+      return left.data != right.data;
     }
     //Will be co_awaited
-    PenIterator & operator++() { return *this; }
-    uint8_t operator*() { return pen; }
+    PenIterator & operator++()
+    {
+      if ( p->state != UnpackerState::READY )
+      {
+        data = nullptr;
+      }
 
-    bool await_ready() { return false; }
+      return *this;
+    }
+    uint8_t operator*() { return data->pen; }
+
+    bool await_ready() { return data->ready-- > 0; }
     PenIterator & await_resume() { return *this; }
     auto await_suspend( std::experimental::coroutine_handle<> c )
     {
@@ -348,7 +362,7 @@ struct UnpackerPromise :
     auto await_suspend( std::experimental::coroutine_handle<> c ) { return caller; }
   };
 
-  auto await_transform( RowSync )
+  auto await_transform( AdvanceLine )
   {
     struct Awaiter
     {
@@ -373,7 +387,8 @@ struct UnpackerPromise :
   auto yield_value( int pen )
   {
     state = UnpackerState::READY;
-    penIterator.pen = pen;
+    penData.pen = pen;
+    penData.ready = 1;
     return AwaitReturnToCaller{ caller() };
   }
 };
@@ -384,9 +399,9 @@ struct UnpackerCoroutine : public coro::Base<UnpackerPromise<UnpackerCoroutine>>
   UnpackerPromise<UnpackerCoroutine>::PenIterator & begin()
   {
     auto & p = coro().promise();
-    return p.penIterator = UnpackerPromise<UnpackerCoroutine>::PenIterator{
-      &p
-    };
+    p.penIterator.p = &p;
+    p.penIterator.data = &p.penData;
+    return p.penIterator;
   }
   UnpackerPromise<UnpackerCoroutine>::PenIterator end() { return {}; }
 
@@ -439,7 +454,7 @@ struct SubCoroutinePromiseT :
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
 
-  auto await_transform( UnpackerPromise<UnpackerCoroutine>::PenIterator & it )
+  auto & await_transform( UnpackerPromise<UnpackerCoroutine>::PenIterator & it )
   {
     return it;
   }

@@ -217,7 +217,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
 
         for co_await( auto pen : unpack )
         {
-
+          int p = pen;
         }
       }
       scb.sprvpos += up ? -1 : 1;
@@ -233,14 +233,10 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
 UnpackerCoroutine SuzyProcess::unpacker()
 {
   co_await this;
+  int bpp = mSuzy.bpp();
 
   for ( ;; )
   {
-    if ( co_await RowSync{} )
-    {
-      scb.sprdline += scb.sprdoff;
-    }
-
     scb.procadr = scb.sprdline;
 
     mShifter.push( co_await SuzyRead4{ scb.procadr } );
@@ -252,11 +248,54 @@ UnpackerCoroutine SuzyProcess::unpacker()
       co_await UnpackerState::END_OF_SPRITE;
     else if( scb.sprdoff == 1 )
       co_await UnpackerState::END_OF_QUADRANT;
-    else for ( ;; )
+    else
     {
+      int totalBits = ( scb.sprdoff - 1 ) * 8;
+      if ( mSuzy.mLiteral )
+      {
+        while ( totalBits > bpp )
+        {
+          co_yield mShifter.pull( bpp );
+          totalBits -= bpp;
+        }
+      }
+      else
+      {
+        while ( totalBits > bpp + 1 )
+        {
+          int literal = mShifter.pull<1>();
+          int count = mShifter.pull<4>();
 
-
+          if ( literal )
+          {
+            while ( count-- >= 0 && totalBits > bpp )
+            {
+              co_yield mShifter.pull( bpp );
+              totalBits -= bpp;
+            }
+          }
+          else
+          {
+            int pen = mShifter.pull( bpp );
+            if ( count == 0 )
+            {
+              break;
+            }
+            else
+            {
+              while ( count-- >= 0 )
+              {
+                co_yield mShifter.pull( bpp );
+              }
+            }
+          }
+        }
+      }
+      co_await UnpackerState::END_OF_LINE;
+      if ( co_await AdvanceLine{} )
+      {
+        scb.sprdline += scb.sprdoff;
+      }
     }
-
   }
 }
