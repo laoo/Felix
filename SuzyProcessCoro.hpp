@@ -12,6 +12,8 @@
 
 
 //promise components
+namespace coro
+{
 namespace promise
 {
 namespace initial
@@ -234,10 +236,8 @@ struct CallSubCoroutine
   }
 };
 
-}
-
 template<typename Coro, typename Promise>
-struct BasePromise
+struct Base
 {
   void unhandled_exception() { std::terminate(); }
 
@@ -258,72 +258,30 @@ private:
   std::experimental::coroutine_handle<> mCaller;
 };
 
+}
 
-template<typename ProcessCoroutine>
-struct SubCoroutinePromise :
-  public BasePromise<ProcessCoroutine, SubCoroutinePromise<ProcessCoroutine>>,
-  public promise::initial::always,
-  public promise::Return<SubCoroutinePromise<ProcessCoroutine>>,
-  public promise::ret_void,
-  public promise::Init<false>,
-  public promise::Requests<SubCoroutinePromise<ProcessCoroutine>>
-{
-  using promise::Init<false>::await_transform;
-  using promise::Requests<SubCoroutinePromise<ProcessCoroutine>>::await_transform;
-};
-
-template<typename ProcessCoroutine, typename RET>
-struct SubCoroutinePromiseT :
-  public BasePromise<ProcessCoroutine, SubCoroutinePromiseT<ProcessCoroutine, RET>>,
-  public promise::initial::always,
-  public promise::Return<SubCoroutinePromiseT<ProcessCoroutine, RET>>,
-  public promise::ret_value<RET>,
-  public promise::Init<false>,
-  public promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>
-{
-  using promise::Init<false>::await_transform;
-  using promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>::await_transform;
-};
-
-
-template<typename ProcessCoroutine>
-struct CoroutinePromise :
-  public BasePromise<ProcessCoroutine, CoroutinePromise<ProcessCoroutine>>,
-  public promise::initial::never,
-  public promise::ret_void,
-  public promise::Init<true>,
-  public promise::Requests<CoroutinePromise<ProcessCoroutine>>,
-  public promise::CallSubCoroutine,
-  public promise::Final<CoroutinePromise<ProcessCoroutine>>
-{
-  using promise::Init<true>::await_transform;
-  using promise::Requests<CoroutinePromise<ProcessCoroutine>>::await_transform;
-  using promise::CallSubCoroutine::await_transform;
-};
-
-
-template<typename PROMISE>
-class BaseCoroutine
+template<typename Promise>
+class Base
 {
 public:
-  using promise_type = PROMISE;
+  using promise_type = Promise;
   using handle = std::experimental::coroutine_handle<promise_type>;
 
-  BaseCoroutine() : mCoro{} {}
-  BaseCoroutine( handle c ) : mCoro{ c } {}
-  BaseCoroutine( BaseCoroutine const& other ) = delete;
-  BaseCoroutine & operator=( BaseCoroutine const& other ) = delete;
-  BaseCoroutine( BaseCoroutine && other ) noexcept : mCoro{ std::move( other.mCoro ) }
+  Base() : mCoro{} {}
+  Base( handle c ) : mCoro{ c } {}
+  Base( Base const& other ) = delete;
+  Base & operator=( Base const& other ) = delete;
+  Base( Base && other ) noexcept : mCoro{ std::move( other.mCoro ) }
   {
     other.mCoro = nullptr;
   }
-  BaseCoroutine & operator=( BaseCoroutine && other ) noexcept
+  Base & operator=( Base && other ) noexcept
   {
     mCoro = std::move( other.mCoro );
     other.mCoro = nullptr;
     return *this;
   }
-  ~BaseCoroutine()
+  ~Base()
   {
     if ( mCoro )
       mCoro.destroy();
@@ -344,16 +302,61 @@ private:
   handle mCoro;
 };
 
+}
 
-struct SubCoroutine : public BaseCoroutine<SubCoroutinePromise<SubCoroutine>>
+
+
+template<typename ProcessCoroutine>
+struct SubCoroutinePromise :
+  public coro::promise::Base<ProcessCoroutine, SubCoroutinePromise<ProcessCoroutine>>,
+  public coro::promise::initial::always,
+  public coro::promise::Return<SubCoroutinePromise<ProcessCoroutine>>,
+  public coro::promise::ret_void,
+  public coro::promise::Init<false>,
+  public coro::promise::Requests<SubCoroutinePromise<ProcessCoroutine>>
+{
+  using coro::promise::Init<false>::await_transform;
+  using coro::promise::Requests<SubCoroutinePromise<ProcessCoroutine>>::await_transform;
+};
+
+template<typename ProcessCoroutine, typename RET>
+struct SubCoroutinePromiseT :
+  public coro::promise::Base<ProcessCoroutine, SubCoroutinePromiseT<ProcessCoroutine, RET>>,
+  public coro::promise::initial::always,
+  public coro::promise::Return<SubCoroutinePromiseT<ProcessCoroutine, RET>>,
+  public coro::promise::ret_value<RET>,
+  public coro::promise::Init<false>,
+  public coro::promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>
+{
+  using coro::promise::Init<false>::await_transform;
+  using coro::promise::Requests<SubCoroutinePromiseT<ProcessCoroutine, RET>>::await_transform;
+};
+
+template<typename ProcessCoroutine>
+struct CoroutinePromise :
+  public coro::promise::Base<ProcessCoroutine, CoroutinePromise<ProcessCoroutine>>,
+  public coro::promise::initial::never,
+  public coro::promise::ret_void,
+  public coro::promise::Init<true>,
+  public coro::promise::Requests<CoroutinePromise<ProcessCoroutine>>,
+  public coro::promise::CallSubCoroutine,
+  public coro::promise::Final<CoroutinePromise<ProcessCoroutine>>
+{
+  using coro::promise::Init<true>::await_transform;
+  using coro::promise::Requests<CoroutinePromise<ProcessCoroutine>>::await_transform;
+  using coro::promise::CallSubCoroutine::await_transform;
+};
+
+
+struct SubCoroutine : public coro::Base<SubCoroutinePromise<SubCoroutine>>
 {
 };
 
 template<typename RET>
-struct SubCoroutineT : public BaseCoroutine<SubCoroutinePromiseT<SubCoroutineT<RET>, RET>>
+struct SubCoroutineT : public coro::Base<SubCoroutinePromiseT<SubCoroutineT<RET>, RET>>
 {
 };
 
-struct ProcessCoroutine : public BaseCoroutine<CoroutinePromise<ProcessCoroutine>>
+struct ProcessCoroutine : public coro::Base<CoroutinePromise<ProcessCoroutine>>
 {
 };
