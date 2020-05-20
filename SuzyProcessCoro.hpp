@@ -52,25 +52,6 @@ private:
   handle mCoro;
 };
 
-template<typename Coro>
-struct BasePromise
-{
-  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<BasePromise<Coro>>::from_promise( *this ) }; }
-  void unhandled_exception() { std::terminate(); }
-
-  void setCaller( std::experimental::coroutine_handle<> c )
-  {
-    mCaller = c;
-  }
-
-  std::experimental::coroutine_handle<> caller() noexcept
-  {
-    return mCaller;
-  }
-
-private:
-  std::experimental::coroutine_handle<> mCaller;
-};
 
 namespace promise
 {
@@ -253,9 +234,29 @@ struct Requests
 
 }
 
+template<typename Coro>
+struct BasePromise
+{
+  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<BasePromise<Coro>>::from_promise( *this ) }; }
+  void unhandled_exception() { std::terminate(); }
+
+  void setCaller( std::experimental::coroutine_handle<> c )
+  {
+    mCaller = c;
+  }
+
+  std::experimental::coroutine_handle<> caller() noexcept
+  {
+    return mCaller;
+  }
+
+private:
+  std::experimental::coroutine_handle<> mCaller;
+};
 
 template<typename ProcessCoroutine>
 struct ProcessSubCoroutinePromise :
+  //public BasePromise<ProcessCoroutine>,
   public promise::initial::always,
   public Return<ProcessSubCoroutinePromise<ProcessCoroutine>>,
   public promise::ret_void,
@@ -352,6 +353,7 @@ struct CallSubCoroutine
 
 template<typename ProcessCoroutine>
 struct ProcessCoroutinePromise :
+  //public BasePromise<ProcessCoroutine>,
   public promise::initial::never,
   public promise::ret_void,
   public Init<true>,
