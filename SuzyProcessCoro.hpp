@@ -236,7 +236,7 @@ struct CallSubCoroutine
 
 }
 
-template<typename Coro, template<typename> typename Promise>
+template<typename Coro, typename Promise>
 struct BasePromise
 {
   void unhandled_exception() { std::terminate(); }
@@ -251,38 +251,17 @@ struct BasePromise
     return mCaller;
   }
 
-  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<Promise<Coro>>::from_promise( *( Promise<Coro>*)this ) }; }
+  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<Promise>::from_promise( *(Promise*)this ) }; }
 
 
 private:
   std::experimental::coroutine_handle<> mCaller;
 };
 
-template<typename Coro, typename Ret, template<typename,typename> typename Promise>
-struct BasePromiseT
-{
-  void unhandled_exception() { std::terminate(); }
-
-  void setCaller( std::experimental::coroutine_handle<> c )
-  {
-    mCaller = c;
-  }
-
-  std::experimental::coroutine_handle<> caller() noexcept
-  {
-    return mCaller;
-  }
-
-  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<Promise<Coro,Ret>>::from_promise( *( Promise<Coro,Ret>* )this ) }; }
-
-
-private:
-  std::experimental::coroutine_handle<> mCaller;
-};
 
 template<typename ProcessCoroutine>
 struct SubCoroutinePromise :
-  public BasePromise<ProcessCoroutine, SubCoroutinePromise>,
+  public BasePromise<ProcessCoroutine, SubCoroutinePromise<ProcessCoroutine>>,
   public promise::initial::always,
   public promise::Return<SubCoroutinePromise<ProcessCoroutine>>,
   public promise::ret_void,
@@ -295,7 +274,7 @@ struct SubCoroutinePromise :
 
 template<typename ProcessCoroutine, typename RET>
 struct SubCoroutinePromiseT :
-  public BasePromiseT<ProcessCoroutine, RET, SubCoroutinePromiseT>,
+  public BasePromise<ProcessCoroutine, SubCoroutinePromiseT<ProcessCoroutine, RET>>,
   public promise::initial::always,
   public promise::Return<SubCoroutinePromiseT<ProcessCoroutine, RET>>,
   public promise::ret_value<RET>,
@@ -309,7 +288,7 @@ struct SubCoroutinePromiseT :
 
 template<typename ProcessCoroutine>
 struct CoroutinePromise :
-  public BasePromise<ProcessCoroutine, CoroutinePromise>,
+  public BasePromise<ProcessCoroutine, CoroutinePromise<ProcessCoroutine>>,
   public promise::initial::never,
   public promise::ret_void,
   public promise::Init<true>,
