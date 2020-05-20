@@ -80,7 +80,7 @@ ProcessCoroutine SuzyProcess::process()
 
     mSuzy.mFred = 0;
 
-    bool isEveronScreen = true; // co_await renderSingleSprite();
+    bool isEveronScreen = co_await renderSingleSprite();
 
     if ( mSuzy.mEveron && !isEveronScreen )
     {
@@ -175,9 +175,11 @@ SubCoroutine SuzyProcess::loadSCB()
   }
 }
 
-//SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
-//{
-//  co_await this;
-//
-//  co_return true;
-//}
+SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
+{
+  co_await this;
+
+  co_await SuzyRead{ scb.scbadr++ };
+
+  co_return true;
+}

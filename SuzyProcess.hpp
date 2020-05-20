@@ -32,7 +32,7 @@ public:
 private:
   ProcessCoroutine process();
   SubCoroutine loadSCB();
-  //SubCoroutineT<bool> renderSingleSprite();
+  SubCoroutineT<bool> renderSingleSprite();
 
 private:
   Suzy & mSuzy;

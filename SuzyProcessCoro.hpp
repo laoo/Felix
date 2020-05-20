@@ -91,6 +91,11 @@ struct ret_value
   {
     retValue = value;
   }
+
+  T getRetValue() const
+  {
+    return retValue;
+  }
 };
 }
 
@@ -270,6 +275,22 @@ public:
   auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<ProcessSubCoroutinePromise<ProcessCoroutine>>::from_promise( *this ) }; }
 };
 
+template<typename ProcessCoroutine, typename RET>
+struct ProcessSubCoroutinePromiseT :
+  public BasePromise<ProcessCoroutine>,
+  public promise::initial::always,
+  public Return<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>,
+  public promise::ret_value<RET>,
+  public Init<false>,
+  public Requests<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>
+{
+public:
+
+  using Init<false>::await_transform;
+  using Requests<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>::await_transform;
+
+  auto get_return_object() { return ProcessCoroutine{ std::experimental::coroutine_handle<ProcessSubCoroutinePromiseT<ProcessCoroutine, RET>>::from_promise( *this ) }; }
+};
 
 //
 //template<typename RET>
@@ -292,6 +313,11 @@ struct SubCoroutine : public BaseCoroutine<ProcessSubCoroutinePromise<SubCorouti
 {
 };
 
+template<typename RET>
+struct SubCoroutineT : public BaseCoroutine<ProcessSubCoroutinePromiseT<SubCoroutineT<RET>, RET>>
+{
+};
+
 
 struct CallSubCoroutine
 {
@@ -311,6 +337,28 @@ struct CallSubCoroutine
     };
     return Awaiter{ std::move( sub ) };
   }
+
+  template<typename RET>
+  auto await_transform( SubCoroutineT<RET> && sub )
+  {
+    struct Awaiter
+    {
+      SubCoroutineT<RET> sub;
+      Awaiter( SubCoroutineT<RET> && s ) : sub{ std::move( s ) } {}
+      bool await_ready() { return false; }
+      RET await_resume()
+      {
+        return sub.coro().promise().getRetValue();
+      }
+      auto await_suspend( std::experimental::coroutine_handle<> c )
+      {
+        sub.coro().promise().setCaller( c );
+        return sub.coro();
+      }
+    };
+    return Awaiter{ std::move( sub ) };
+  }
+
 
   //template<typename RET>
   //auto await_transform( SubCoroutineT<RET> && sub )
@@ -357,6 +405,3 @@ public:
 struct ProcessCoroutine : public BaseCoroutine<ProcessCoroutinePromise<ProcessCoroutine>>
 {
 };
-
-//template<typename RET>
-//struct SubCoroutineT : public BaseCoroutine {};
