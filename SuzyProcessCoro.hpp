@@ -383,47 +383,9 @@ private:
 };
 
 
-class ProcessCoroutine
+struct ProcessCoroutine : public BaseCoroutine<ProcessCoroutinePromise<ProcessCoroutine>>
 {
-public:
-  using promise_type = ProcessCoroutinePromise<ProcessCoroutine>;
-  using handle = std::experimental::coroutine_handle<promise_type>;
-
-  ProcessCoroutine() : mCoro{} {}
-  ProcessCoroutine( handle c ) : mCoro{ c } {}
-  ProcessCoroutine( ProcessCoroutine const& other ) = delete;
-  ProcessCoroutine & operator=( ProcessCoroutine const& other ) = delete;
-  ProcessCoroutine( ProcessCoroutine && other ) noexcept : mCoro{ std::move( other.mCoro ) }
-  {
-    other.mCoro = nullptr;
-  }
-  ProcessCoroutine & operator=( ProcessCoroutine && other ) noexcept
-  {
-    mCoro = std::move( other.mCoro );
-    other.mCoro = nullptr;
-    return *this;
-  }
-  ~ProcessCoroutine()
-  {
-    if ( mCoro )
-      mCoro.destroy();
-  }
-
-  void operator()()
-  {
-    assert( !mCoro.done() );
-    mCoro();
-  }
-
-  std::experimental::coroutine_handle<> coro()
-  {
-    return mCoro;
-  }
-
-private:
-  handle mCoro;
 };
-
 
 //template<typename RET>
 //struct SubCoroutineT : public BaseCoroutine {};
