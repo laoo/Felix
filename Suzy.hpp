@@ -89,6 +89,8 @@ public:
 
 private:
 
+  friend class SuzyProcess;
+
   static constexpr uint16_t TMPADR    = 0x00;
   static constexpr uint16_t TILTACUM  = 0x02;
   static constexpr uint16_t HOFF      = 0x04;

@@ -34,15 +34,33 @@ public:
     mCoro();
   }
 
+  std::experimental::coroutine_handle<> coro()
+  {
+    return mCoro;
+  }
+
 private:
   std::experimental::coroutine_handle<> mCoro;
 };
 
-template<typename Coro, typename... Ts>
-struct BasePromise : public Ts...
+template<typename Coro>
+struct BasePromise
 {
-  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<BasePromise<Coro,Ts...>>::from_promise( *this ) }; }
+  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<BasePromise<Coro>>::from_promise( *this ) }; }
   void unhandled_exception() { std::terminate(); }
+
+  void setCaller( std::experimental::coroutine_handle<> c )
+  {
+    mCaller = c;
+  }
+
+  std::experimental::coroutine_handle<> caller() noexcept
+  {
+    return mCaller;
+  }
+
+private:
+  std::experimental::coroutine_handle<> mCaller;
 };
 
 namespace promise

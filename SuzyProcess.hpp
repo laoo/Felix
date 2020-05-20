@@ -28,12 +28,21 @@ public:
   Response const& getResponse() const;
   void setHandle( std::experimental::coroutine_handle<> c );
 
+
+  struct ProcessCoroutine : public BaseCoroutine {};
+  struct SubCoroutine : public BaseCoroutine{};
+  template<typename RET>
+  struct SubCoroutineT : public BaseCoroutine {};
+
+
 private:
-  BaseCoroutine process();
+  ProcessCoroutine process();
+  SubCoroutine loadSCB();
+  SubCoroutineT<bool> renderSingleSprite();
 
 private:
   Suzy & mSuzy;
-
+  Suzy::SCB & scb;
 
   union
   {
