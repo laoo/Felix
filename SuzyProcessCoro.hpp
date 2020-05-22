@@ -308,7 +308,8 @@ struct PenAssemblerPromise :
   public coro::promise::initial::never,
   public coro::promise::Return<PenAssemblerPromise<Coroutine>>,
   public coro::promise::ret_void,
-  public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
+  public coro::promise::Init<false>,
+public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
 {
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<PenAssemblerPromise<Coroutine>>::await_transform;
@@ -378,6 +379,23 @@ struct SubCoroutinePromiseT :
 {
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
+
+  auto await_transform( AssemblePen * penInit )
+  {
+    struct Awaiter
+    {
+      AssemblePen * pen;
+      bool await_ready() { return false; }
+      void await_resume() {}
+      bool await_suspend( std::experimental::coroutine_handle<> c )
+      {
+        std::swap( c, pen->c );
+        return false;
+      }
+    };
+    return Awaiter{ penInit };
+  }
+
 
   auto await_transform( AssemblePen & pen )
   {

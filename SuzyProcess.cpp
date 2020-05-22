@@ -185,6 +185,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
   if ( mSuzy.mSkipSprite )
     co_return false;
 
+  co_await &assemblePen();
   auto pa = penAssembler();
 
   bool isEveron{};
