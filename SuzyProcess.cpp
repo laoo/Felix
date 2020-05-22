@@ -65,7 +65,25 @@ void SuzyProcess::setHandle( std::experimental::coroutine_handle<> c )
   mCoro = c;
 }
 
+void SuzyProcess::setPenAssemblerHandle( std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> c )
+{
+  mPenAssemblerHandle = c;
+}
 
+std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> SuzyProcess::getPenAssemblerHandle()
+{
+  return mPenAssemblerHandle;
+}
+
+AssemblePen SuzyProcess::getAssembledPen()
+{
+  return mAssembledPen;
+}
+
+void SuzyProcess::setAssembledPen( AssemblePen pen )
+{
+  mAssembledPen = pen;
+}
 
 ProcessCoroutine SuzyProcess::process()
 {
@@ -179,6 +197,8 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
   if ( mSuzy.mSkipSprite )
     co_return false;
 
+  auto pa = penAssembler();
+
   bool isEveron{};
 
   int bpp = mSuzy.bpp();
@@ -227,7 +247,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
           {
             while ( totalBits > bpp )
             {
-              yield mShifter.pull( bpp );
+              co_await AssemblePen{ mShifter.pull( bpp ), 1 };
               totalBits -= bpp;
             }
           }
@@ -242,26 +262,19 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
               {
                 while ( count-- >= 0 && totalBits > bpp )
                 {
-                  co_yield mShifter.pull( bpp );
+                  co_await AssemblePen{ mShifter.pull( bpp ), 1 };
                   sprhpos += left ? -1 : 1;
                   totalBits -= bpp;
                 }
               }
               else
               {
-                int pen = mShifter.pull( bpp );
                 if ( count == 0 )
                 {
                   break;
                 }
-                else
-                {
-                  while ( count-- >= 0 )
-                  {
-                    co_yield pen;
-                    sprhpos += left ? -1 : 1;
-                  }
-                }
+                int pen = mShifter.pull( bpp );
+                co_await AssemblePen{ pen, count };
               }
             }
           }
@@ -274,29 +287,33 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
   co_return true;
 }
 
-UnpackerCoroutine SuzyProcess::assemblePen( uint8_t pen )
+PenAssemblerCoroutine SuzyProcess::penAssembler()
 {
-  hsizacum += scb.sprhsiz;
-  uint8_t pixelWidth = hsizacum >> 8;
-  hsizacum &= 0xff;
+  co_await this;
 
-  // Draw pixel
-  uint8_t pixelValue = mSuzy.mPalette[pixelIndex];
+  AssemblePen pen = co_await AssemblePen{};
 
-  for ( int h = 0; h < pixelWidth; h++ )
-  {
-    // Stop horizontal loop if outside of screen bounds
-    if ( sprhpos >= 0 && sprhpos < Suzy.SCREEN_WIDTH )
-    {
-      // Process pixel based on sprite type
-      bool left = sprhpos % 2 == 0;
-      ushort offset = ( ushort )( ( sprhpos + sprvpos * Suzy.SCREEN_WIDTH ) / 2 );
-      ProcessPixel( ( ushort )( VIDADR.Value + offset ), pixelValue, left );
-      ProcessCollision( ( ushort )( COLLADR.Value + offset ), pixelValue, left );
+  //hsizacum += scb.sprhsiz;02
+  //uint8_t pixelWidth = hsizacum >> 8;
+  //hsizacum &= 0xff;
 
-      isEverOnScreen = true;
-    }
-    sprhpos += horizontalIncrease;
-  }
+  //// Draw pixel
+  //uint8_t pixelValue = mSuzy.mPalette[pixelIndex];
+
+  //for ( int h = 0; h < pixelWidth; h++ )
+  //{
+  //  // Stop horizontal loop if outside of screen bounds
+  //  if ( sprhpos >= 0 && sprhpos < Suzy.SCREEN_WIDTH )
+  //  {
+  //    // Process pixel based on sprite type
+  //    bool left = sprhpos % 2 == 0;
+  //    ushort offset = ( ushort )( ( sprhpos + sprvpos * Suzy.SCREEN_WIDTH ) / 2 );
+  //    ProcessPixel( ( ushort )( VIDADR.Value + offset ), pixelValue, left );
+  //    ProcessCollision( ( ushort )( COLLADR.Value + offset ), pixelValue, left );
+
+  //    isEverOnScreen = true;
+  //  }
+  //  sprhpos += horizontalIncrease;
+  //}
 
 }

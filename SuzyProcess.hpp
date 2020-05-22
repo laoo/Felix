@@ -28,13 +28,17 @@ public:
   void setXor( uint16_t address, uint8_t value );
   Response const& getResponse() const;
   void setHandle( std::experimental::coroutine_handle<> c );
+  void setPenAssemblerHandle( std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> c );
+  std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> getPenAssemblerHandle();
+  AssemblePen getAssembledPen();
+  void setAssembledPen( AssemblePen pen );
 
 
 private:
   ProcessCoroutine process();
   SubCoroutine loadSCB();
   SubCoroutineT<bool> renderSingleSprite();
-  void assemblePen( uint8_t pen );
+  PenAssemblerCoroutine penAssembler();
 
 private:
   Suzy & mSuzy;
@@ -55,6 +59,8 @@ private:
 
   ProcessCoroutine mBaseCoroutine;
   std::experimental::coroutine_handle<> mCoro;
+  std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> mPenAssemblerHandle;
+  AssemblePen mAssembledPen;
   Shifter mShifter;
   int sprhpos;
   uint16_t hsizacum;

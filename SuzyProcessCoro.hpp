@@ -11,14 +11,7 @@
 //struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
 //struct SuzyXOR { uint16_t address; uint8_t value; };
 
-struct AdvanceLine {};
-enum class UnpackerState
-{
-  READY,
-  END_OF_LINE,
-  END_OF_QUADRANT,
-  END_OF_SPRITE
-};
+struct AssemblePen { int pen; int count; };
 
 //promise components
 namespace coro
@@ -303,129 +296,51 @@ private:
 }
 
 template<typename Coroutine>
-struct UnpackerPromise :
-  public coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>,
-  public coro::promise::initial::always,
-  public coro::promise::Return<UnpackerPromise<Coroutine>>,
+struct PenAssemblerPromise :
+  public coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>,
+  public coro::promise::initial::never,
+  public coro::promise::Return<PenAssemblerPromise<Coroutine>>,
   public coro::promise::ret_void,
   public coro::promise::Init<false>,
-  public coro::promise::Requests<UnpackerPromise<Coroutine>>
+  public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
 {
   using coro::promise::Init<false>::await_transform;
-  using coro::promise::Requests<UnpackerPromise<Coroutine>>::await_transform;
-  using coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>::caller;
-  using coro::promise::Base<Coroutine, UnpackerPromise<Coroutine>>::setCaller;
+  using coro::promise::Requests<PenAssemblerPromise<Coroutine>>::await_transform;
+  using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::caller;
+  using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::setCaller;
 
-  struct PenData
-  {
-    int pen;
-    int ready;
-  } penData;
-
-  struct PenIterator
-  {
-    PenData * data;
-    UnpackerPromise<Coroutine> * p;
-
-    friend bool operator !=( PenIterator left, PenIterator right )
-    {
-      return left.data != right.data;
-    }
-    //Will be co_awaited
-    PenIterator & operator++()
-    {
-      if ( p->state != UnpackerState::READY )
-      {
-        data = nullptr;
-      }
-
-      return *this;
-    }
-    uint8_t operator*() { return data->pen; }
-
-    bool await_ready() { return data->ready-- > 0; }
-    PenIterator & await_resume() { return *this; }
-    auto await_suspend( std::experimental::coroutine_handle<> c )
-    {
-      p->setCaller( c );
-      return std::experimental::coroutine_handle<UnpackerPromise<Coroutine>>::from_promise( *p );
-    }
-  } penIterator;
-  std::optional<bool> syncAdvance;
-  UnpackerState state;
-
-  struct AwaitReturnToCaller
-  {
-    std::experimental::coroutine_handle<> caller;
-    bool await_ready() { return false; }
-    void await_resume() {}
-    auto await_suspend( std::experimental::coroutine_handle<> c ) { return caller; }
-  };
-
-  auto await_transform( AdvanceLine )
+  auto await_transform( AssemblePen pen )
   {
     struct Awaiter
     {
-      std::optional<bool> & syncAdvance;
-      bool await_ready() { return syncAdvance.has_value(); }
-      bool await_resume()
-      {
-        bool result = *syncAdvance;
-        syncAdvance.reset();
-        return result;
-      }
-      bool await_suspend( std::experimental::coroutine_handle<> c ) { return !syncAdvance.has_value(); }
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      AssemblePen await_resume() { return p->getAssembledPen(); }
+      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setPenAssemblerHandle( c ); }
     };
-    return Awaiter{ syncAdvance };
+    SuzyProcess * p = suzyProcess();
+    return Awaiter{ p };
   }
 
-  auto await_transform( UnpackerState s )
-  {
-    state = s;
-    return AwaitReturnToCaller{ caller() };
-  }
-  auto yield_value( int pen )
-  {
-    state = UnpackerState::READY;
-    penData.pen = pen;
-    penData.ready = 1;
-    return AwaitReturnToCaller{ caller() };
-  }
 };
 
-struct UnpackerCoroutine : public coro::Base<UnpackerPromise<UnpackerCoroutine>>
+struct PenAssemblerCoroutine : public coro::Base<PenAssemblerPromise<PenAssemblerCoroutine>>
 {
-  //dummy. Will be co_awaited
-  UnpackerPromise<UnpackerCoroutine>::PenIterator & begin()
-  {
-    auto & p = coro().promise();
-    p.penIterator.p = &p;
-    p.penIterator.data = &p.penData;
-    return p.penIterator;
-  }
-  UnpackerPromise<UnpackerCoroutine>::PenIterator end() { return {}; }
+};
 
-  struct Awaiter
-  {
-    std::experimental::coroutine_handle<UnpackerPromise<UnpackerCoroutine>> h;
-    bool await_ready() { return false; }
-    void await_resume() {}
-    auto await_suspend( std::experimental::coroutine_handle<> c )
-    {
-      h.promise().setCaller( c );
-      return h;
-    }
-  };
-
-  auto sync( bool advance )
-  {
-    coro().promise().syncAdvance = advance;
-    return Awaiter{ coro() };
-  }
-  bool ready()
-  {
-    return coro().promise().state == UnpackerState::READY;
-  }
+template<typename Coroutine>
+struct CoroutinePromise :
+  public coro::promise::Base<Coroutine, CoroutinePromise<Coroutine>>,
+  public coro::promise::initial::never,
+  public coro::promise::ret_void,
+  public coro::promise::Init<true>,
+  public coro::promise::Requests<CoroutinePromise<Coroutine>>,
+  public coro::promise::CallSubCoroutine,
+  public coro::promise::Final<CoroutinePromise<Coroutine>>
+{
+  using coro::promise::Init<true>::await_transform;
+  using coro::promise::Requests<CoroutinePromise<Coroutine>>::await_transform;
+  using coro::promise::CallSubCoroutine::await_transform;
 };
 
 
@@ -454,32 +369,25 @@ struct SubCoroutinePromiseT :
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
 
-  auto & await_transform( UnpackerPromise<UnpackerCoroutine>::PenIterator & it )
+  auto await_transform( AssemblePen pen )
   {
-    return it;
-  }
-  auto await_transform( UnpackerCoroutine::Awaiter awaiter )
-  {
-    return awaiter;
+    struct Awaiter
+    {
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      AssemblePen await_resume() { return p->getAssembledPen(); }
+      auto await_suspend( std::experimental::coroutine_handle<> c )
+      {
+        auto penAssemblerHandle = p->getPenAssemblerHandle();
+        penAssemblerHandle.promise().setCaller( c );
+        return penAssemblerHandle;
+      }
+    };
+    SuzyProcess * p = suzyProcess();
+    p->setAssembledPen( pen );
+    return Awaiter{ p };
   }
 };
-
-template<typename Coroutine>
-struct CoroutinePromise :
-  public coro::promise::Base<Coroutine, CoroutinePromise<Coroutine>>,
-  public coro::promise::initial::never,
-  public coro::promise::ret_void,
-  public coro::promise::Init<true>,
-  public coro::promise::Requests<CoroutinePromise<Coroutine>>,
-  public coro::promise::CallSubCoroutine,
-  public coro::promise::Final<CoroutinePromise<Coroutine>>
-{
-  using coro::promise::Init<true>::await_transform;
-  using coro::promise::Requests<CoroutinePromise<Coroutine>>::await_transform;
-  using coro::promise::CallSubCoroutine::await_transform;
-};
-
-
 
 
 struct SubCoroutine : public coro::Base<SubCoroutinePromise<SubCoroutine>>
