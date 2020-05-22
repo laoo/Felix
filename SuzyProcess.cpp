@@ -2,7 +2,7 @@
 
 
 
-SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}
+SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}, sprhpos{}, hsizacum{}
 {
   auto p = process();
   mBaseCoroutine = std::move( p );
@@ -181,7 +181,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
 
   bool isEveron{};
 
-  UnpackerCoroutine unpack = unpacker();
+  int bpp = mSuzy.bpp();
   auto const& quadCycle = mSuzy.mQuadrantOrder[( size_t )mSuzy.mStartingQuadrant];
 
   for ( int quadrant = 0; quadrant < 4; ++quadrant )
@@ -196,106 +196,107 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
     if ( ( ( uint8_t )quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP ) != ( ( uint8_t )quadCycle[( size_t )mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_UP ) )
       scb.sprvpos += up ? -1 : 1;
 
-    co_await unpack.sync( false );
-    while ( unpack.ready() )
+    for ( ;; )
     {
-      scb.vsizacum += scb.sprvsiz;
-      uint8_t pixelHeight = scb.vsizacum.h;
-      uint8_t pixelRow = 0;
-      scb.vsizacum.h = 0;
+      scb.procadr = scb.sprdline;
+      mShifter.push( co_await SuzyRead4{ scb.procadr } );
+      scb.procadr += 4;
+      scb.sprdoff = mShifter.pull<8>();
+      if ( scb.sprdoff < 2 )
+        break;
+
+      int totalBits = ( scb.sprdoff - 1 ) * 8;
       scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
       scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
-      for ( int v = 0; v < pixelHeight; ++v )
+      scb.vsizacum += scb.sprvsiz;
+      uint8_t pixelHeight = scb.vsizacum.h;
+      scb.vsizacum.h = 0;
+      for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow )
       {
         if ( up == 0 && scb.sprvpos >= Suzy::mScreenHeight || up == 1 && ( int16_t )( scb.sprvpos ) < 0 ) break;
         scb.hposstrt += scb.tiltacum.h;
         scb.tiltacum.h = 0;
-        uint16_t hsizacum = left == 0 ? scb.hsizoff.w : 0;
-        int sprhpos = scb.hposstrt - scb.hoff;
+        hsizacum = left == 0 ? scb.hsizoff.w : 0;
+        sprhpos = scb.hposstrt - scb.hoff;
         if ( ( ( uint8_t )quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT ) != ( ( uint8_t )quadCycle[( size_t )mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT ) )
           sprhpos += left ? -1 : 1;
 
-        for co_await( auto pen : unpack )
+        for ( ;; )  //each pen in line
         {
-          int p = pen;
-        }
-      }
-      scb.sprvpos += up ? -1 : 1;
-
-    }
-  }
-
-  co_await SuzyRead{ scb.scbadr++ };
-
-  co_return true;
-}
-
-UnpackerCoroutine SuzyProcess::unpacker()
-{
-  co_await this;
-  int bpp = mSuzy.bpp();
-
-  for ( ;; )
-  {
-    scb.procadr = scb.sprdline;
-
-    mShifter.push( co_await SuzyRead4{ scb.procadr } );
-    scb.procadr += 4;
-
-    scb.sprdoff = mShifter.pull<8>();
-    
-    if ( scb.sprdoff == 0 )
-      co_await UnpackerState::END_OF_SPRITE;
-    else if( scb.sprdoff == 1 )
-      co_await UnpackerState::END_OF_QUADRANT;
-    else
-    {
-      int totalBits = ( scb.sprdoff - 1 ) * 8;
-      if ( mSuzy.mLiteral )
-      {
-        while ( totalBits > bpp )
-        {
-          co_yield mShifter.pull( bpp );
-          totalBits -= bpp;
-        }
-      }
-      else
-      {
-        while ( totalBits > bpp + 1 )
-        {
-          int literal = mShifter.pull<1>();
-          int count = mShifter.pull<4>();
-
-          if ( literal )
+          if ( mSuzy.mLiteral )
           {
-            while ( count-- >= 0 && totalBits > bpp )
+            while ( totalBits > bpp )
             {
-              co_yield mShifter.pull( bpp );
+              yield mShifter.pull( bpp );
               totalBits -= bpp;
             }
           }
           else
           {
-            int pen = mShifter.pull( bpp );
-            if ( count == 0 )
+            while ( totalBits > bpp + 1 )
             {
-              break;
-            }
-            else
-            {
-              while ( count-- >= 0 )
+              int literal = mShifter.pull<1>();
+              int count = mShifter.pull<4>();
+
+              if ( literal )
               {
-                co_yield mShifter.pull( bpp );
+                while ( count-- >= 0 && totalBits > bpp )
+                {
+                  co_yield mShifter.pull( bpp );
+                  sprhpos += left ? -1 : 1;
+                  totalBits -= bpp;
+                }
+              }
+              else
+              {
+                int pen = mShifter.pull( bpp );
+                if ( count == 0 )
+                {
+                  break;
+                }
+                else
+                {
+                  while ( count-- >= 0 )
+                  {
+                    co_yield pen;
+                    sprhpos += left ? -1 : 1;
+                  }
+                }
               }
             }
           }
         }
       }
-      co_await UnpackerState::END_OF_LINE;
-      if ( co_await AdvanceLine{} )
-      {
-        scb.sprdline += scb.sprdoff;
-      }
+      scb.sprdline += scb.sprdoff;
+      scb.sprvpos += up ? -1 : 1;
     }
   }
+  co_return true;
+}
+
+UnpackerCoroutine SuzyProcess::assemblePen( uint8_t pen )
+{
+  hsizacum += scb.sprhsiz;
+  uint8_t pixelWidth = hsizacum >> 8;
+  hsizacum &= 0xff;
+
+  // Draw pixel
+  uint8_t pixelValue = mSuzy.mPalette[pixelIndex];
+
+  for ( int h = 0; h < pixelWidth; h++ )
+  {
+    // Stop horizontal loop if outside of screen bounds
+    if ( sprhpos >= 0 && sprhpos < Suzy.SCREEN_WIDTH )
+    {
+      // Process pixel based on sprite type
+      bool left = sprhpos % 2 == 0;
+      ushort offset = ( ushort )( ( sprhpos + sprvpos * Suzy.SCREEN_WIDTH ) / 2 );
+      ProcessPixel( ( ushort )( VIDADR.Value + offset ), pixelValue, left );
+      ProcessCollision( ( ushort )( COLLADR.Value + offset ), pixelValue, left );
+
+      isEverOnScreen = true;
+    }
+    sprhpos += horizontalIncrease;
+  }
+
 }

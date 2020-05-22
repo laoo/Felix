@@ -34,7 +34,7 @@ private:
   ProcessCoroutine process();
   SubCoroutine loadSCB();
   SubCoroutineT<bool> renderSingleSprite();
-  UnpackerCoroutine unpacker();
+  void assemblePen( uint8_t pen );
 
 private:
   Suzy & mSuzy;
@@ -56,4 +56,7 @@ private:
   ProcessCoroutine mBaseCoroutine;
   std::experimental::coroutine_handle<> mCoro;
   Shifter mShifter;
+  int sprhpos;
+  uint16_t hsizacum;
+
 };
