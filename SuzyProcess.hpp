@@ -28,11 +28,7 @@ public:
   void setXor( uint16_t address, uint8_t value );
   Response const& getResponse() const;
   void setHandle( std::experimental::coroutine_handle<> c );
-  void setPenAssemblerHandle( std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> c );
-  std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> getPenAssemblerHandle();
-  AssemblePen getAssembledPen();
-  void setAssembledPen( AssemblePen pen );
-
+  AssemblePen & assemblePen( int pen = 0, int count = 0 );
 
 private:
   ProcessCoroutine process();

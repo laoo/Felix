@@ -11,7 +11,6 @@
 //struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
 //struct SuzyXOR { uint16_t address; uint8_t value; };
 
-struct AssemblePen { int pen; int count; };
 
 //promise components
 namespace coro
@@ -295,13 +294,20 @@ private:
 
 }
 
+struct AssemblePen
+{ 
+  int pen; 
+  int count; 
+  std::experimental::coroutine_handle<> c;
+};
+
+
 template<typename Coroutine>
 struct PenAssemblerPromise :
   public coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>,
   public coro::promise::initial::never,
   public coro::promise::Return<PenAssemblerPromise<Coroutine>>,
   public coro::promise::ret_void,
-  public coro::promise::Init<false>,
   public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
 {
   using coro::promise::Init<false>::await_transform;
@@ -309,17 +315,21 @@ struct PenAssemblerPromise :
   using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::caller;
   using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::setCaller;
 
-  auto await_transform( AssemblePen pen )
+
+  auto await_transform( AssemblePen & pen )
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      AssemblePen & pen;
       bool await_ready() { return false; }
-      AssemblePen await_resume() { return p->getAssembledPen(); }
-      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setPenAssemblerHandle( c ); }
+      AssemblePen await_resume() { return pen; }
+      auto await_suspend( std::experimental::coroutine_handle<> c )
+      {
+        std::swap( c, pen.c );
+        return c;
+      }
     };
-    SuzyProcess * p = suzyProcess();
-    return Awaiter{ p };
+    return Awaiter{ pen };
   }
 
 };
@@ -369,23 +379,20 @@ struct SubCoroutinePromiseT :
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
 
-  auto await_transform( AssemblePen pen )
+  auto await_transform( AssemblePen & pen )
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      AssemblePen & pen;
       bool await_ready() { return false; }
-      AssemblePen await_resume() { return p->getAssembledPen(); }
+      void await_resume() {}
       auto await_suspend( std::experimental::coroutine_handle<> c )
       {
-        auto penAssemblerHandle = p->getPenAssemblerHandle();
-        penAssemblerHandle.promise().setCaller( c );
-        return penAssemblerHandle;
+        std::swap( c, pen.c );
+        return c;
       }
     };
-    SuzyProcess * p = suzyProcess();
-    p->setAssembledPen( pen );
-    return Awaiter{ p };
+    return Awaiter{ pen };
   }
 };
 

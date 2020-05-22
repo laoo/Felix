@@ -65,24 +65,12 @@ void SuzyProcess::setHandle( std::experimental::coroutine_handle<> c )
   mCoro = c;
 }
 
-void SuzyProcess::setPenAssemblerHandle( std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> c )
+AssemblePen & SuzyProcess::assemblePen( int pen, int count )
 {
-  mPenAssemblerHandle = c;
-}
+  mAssembledPen.pen = pen;
+  mAssembledPen.count = count;
 
-std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> SuzyProcess::getPenAssemblerHandle()
-{
-  return mPenAssemblerHandle;
-}
-
-AssemblePen SuzyProcess::getAssembledPen()
-{
   return mAssembledPen;
-}
-
-void SuzyProcess::setAssembledPen( AssemblePen pen )
-{
-  mAssembledPen = pen;
 }
 
 ProcessCoroutine SuzyProcess::process()
@@ -247,7 +235,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
           {
             while ( totalBits > bpp )
             {
-              co_await AssemblePen{ mShifter.pull( bpp ), 1 };
+              co_await assemblePen( mShifter.pull( bpp ), 1 );
               totalBits -= bpp;
             }
           }
@@ -262,7 +250,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
               {
                 while ( count-- >= 0 && totalBits > bpp )
                 {
-                  co_await AssemblePen{ mShifter.pull( bpp ), 1 };
+                  co_await assemblePen( mShifter.pull( bpp ), 1 );
                   sprhpos += left ? -1 : 1;
                   totalBits -= bpp;
                 }
@@ -274,7 +262,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
                   break;
                 }
                 int pen = mShifter.pull( bpp );
-                co_await AssemblePen{ pen, count };
+                co_await assemblePen( pen, count );
               }
             }
           }
@@ -291,8 +279,11 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
 {
   co_await this;
 
-  AssemblePen pen = co_await AssemblePen{};
-
+  for ( ;; )
+  {
+    AssemblePen pen = co_await assemblePen();
+    int c = pen.count;
+  }
   //hsizacum += scb.sprhsiz;02
   //uint8_t pixelWidth = hsizacum >> 8;
   //hsizacum &= 0xff;
