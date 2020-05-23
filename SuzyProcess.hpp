@@ -28,14 +28,16 @@ public:
   void setXor( uint16_t address, uint8_t value );
   Response const& getResponse() const;
   void setHandle( std::experimental::coroutine_handle<> c );
-  AssemblePen & assemblePen( int pen, int count );
+  AssemblePen & readPen();
+  AssemblePen & readHeader();
+  AssemblePen & duplicatePen();
   AssemblePen & getPen();
   void initPen( std::experimental::coroutine_handle<> handle );
 
 private:
   ProcessCoroutine process();
   SubCoroutine loadSCB();
-  SubCoroutineT<bool> renderSingleSprite();
+  SubCoroutine renderSingleSprite();
   PenAssemblerCoroutine penAssembler();
 
 private:
@@ -62,5 +64,6 @@ private:
   Shifter mShifter;
   int sprhpos;
   uint16_t hsizacum;
-
+  int left;
+  bool mEveron;
 };

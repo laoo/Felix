@@ -56,6 +56,11 @@ public:
     return false;
   }
 
+  int size() const
+  {
+    return mSize;
+  }
+
 private:
   uint64_t mShifter;
   ////number of bits in shifters

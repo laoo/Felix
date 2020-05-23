@@ -296,8 +296,14 @@ private:
 
 struct AssemblePen
 { 
-  int pen; 
-  int count; 
+  enum class Op
+  {
+    READ_PEN,
+    READ_HEADER,
+    DUPLICATE_PEN
+  } op;
+  int count;
+  bool literal;
   std::experimental::coroutine_handle<> handle;
 };
 
@@ -365,19 +371,6 @@ struct SubCoroutinePromise :
 {
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<SubCoroutinePromise<Coroutine>>::await_transform;
-};
-
-template<typename Coroutine, typename RET>
-struct SubCoroutinePromiseT :
-  public coro::promise::Base<Coroutine, SubCoroutinePromiseT<Coroutine, RET>>,
-  public coro::promise::initial::always,
-  public coro::promise::Return<SubCoroutinePromiseT<Coroutine, RET>>,
-  public coro::promise::ret_value<RET>,
-  public coro::promise::Init<false>,
-  public coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>
-{
-  using coro::promise::Init<false>::await_transform;
-  using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
 
   auto await_transform( PenAssemblerCoroutine && pac )
   {
@@ -402,7 +395,7 @@ struct SubCoroutinePromiseT :
     {
       AssemblePen & pen;
       bool await_ready() { return false; }
-      void await_resume() {}
+      std::pair<int, bool> await_resume() { return std::make_pair( pen.count, pen.literal ); }
       auto await_suspend( std::experimental::coroutine_handle<> c )
       {
         std::swap( c, pen.handle );
@@ -411,6 +404,20 @@ struct SubCoroutinePromiseT :
     };
     return Awaiter{ pen };
   }
+
+};
+
+template<typename Coroutine, typename RET>
+struct SubCoroutinePromiseT :
+  public coro::promise::Base<Coroutine, SubCoroutinePromiseT<Coroutine, RET>>,
+  public coro::promise::initial::always,
+  public coro::promise::Return<SubCoroutinePromiseT<Coroutine, RET>>,
+  public coro::promise::ret_value<RET>,
+  public coro::promise::Init<false>,
+  public coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>
+{
+  using coro::promise::Init<false>::await_transform;
+  using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
 };
 
 
