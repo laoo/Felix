@@ -78,9 +78,10 @@ AssemblePen & SuzyProcess::getPen()
   return mAssembledPen;
 }
 
-AssemblePen * SuzyProcess::initPen()
+void SuzyProcess::initPen( std::experimental::coroutine_handle<> hCaller, std::experimental::coroutine_handle<> hAssembler )
 {
-  return &mAssembledPen;
+  mAssembledPen.callerHandle = hCaller;
+  mAssembledPen.assemblerHandle = hAssembler;
 }
 
 ProcessCoroutine SuzyProcess::process()
@@ -288,7 +289,6 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
 PenAssemblerCoroutine SuzyProcess::penAssembler()
 {
   co_await this;
-  co_await initPen();
 
   for ( ;; )
   {
