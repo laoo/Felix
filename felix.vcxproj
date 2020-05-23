@@ -165,6 +165,7 @@
     <ClCompile Include="PenUnpacker.cpp" />
     <ClCompile Include="SuzyCoroutines.cpp" />
     <ClCompile Include="SuzyProcess.cpp" />
+    <ClCompile Include="VidOperator.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="Suzy.hpp" />
+    <ClInclude Include="VidOperator.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>

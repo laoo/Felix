@@ -1,5 +1,5 @@
 #include "SuzyProcess.hpp"
-
+#include "VidOperator.hpp"
 
 
 SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}, sprhpos{}, hsizacum{}, left{}, mEveron{}
@@ -301,6 +301,8 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
 {
   co_await this;
 
+  VidOperator vidOp{};
+
   int bpp = mSuzy.bpp();
 
   int bitsToRed[] ={
@@ -317,10 +319,6 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
   };
   int pen{};
   bool colDirty{};
-
-  uint8_t mask{};
-  uint8_t pix{};
-
 
   for ( ;; )
   {
@@ -345,9 +343,14 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     }
     else if ( ap.op == AssemblePen::Op::FLUSH )
     {
-      if ( mask )
+      switch ( auto memOp = vidOp.flush() )
       {
-        co_await SuzyRMW{ scb.vidadr, pix, (uint8_t)~mask };
+      case VidOperator::MemOp::Op::WRITE:
+        break;
+        co_await SuzyWrite{ memOp.addr, memOp.value };
+        break;
+      default:
+        break;
       }
       if ( colDirty )
       {
