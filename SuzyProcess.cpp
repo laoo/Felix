@@ -83,6 +83,12 @@ AssemblePen & SuzyProcess::duplicatePen()
   return mAssembledPen;
 }
 
+AssemblePen & SuzyProcess::flush()
+{
+  mAssembledPen.op = AssemblePen::Op::FLUSH;
+  return mAssembledPen;
+}
+
 AssemblePen & SuzyProcess::getPen()
 {
   return mAssembledPen;
@@ -253,8 +259,8 @@ SubCoroutine SuzyProcess::renderSingleSprite()
         {
           while ( totalBits > bpp )
           {
-            auto [cnt, _] = co_await readPen();
-            totalBits -= cnt;
+            co_await readPen();
+            totalBits -= bpp;
           }
         }
         else
@@ -267,8 +273,8 @@ SubCoroutine SuzyProcess::renderSingleSprite()
             {
               while ( count-- >= 0 && totalBits > bpp )
               {
-                auto [cnt, _] = co_await readPen();
-                totalBits -= cnt;
+                co_await readPen();
+                totalBits -= bpp;
               }
             }
             else
@@ -283,6 +289,7 @@ SubCoroutine SuzyProcess::renderSingleSprite()
             }
           }
         }
+        co_await flush();
       }
       scb.sprdline += scb.sprdoff;
       scb.sprvpos += up ? -1 : 1;
@@ -299,6 +306,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
   int bitsToRed[] ={
     bpp,
     5,
+    0,
     0
   };
 
@@ -323,6 +331,11 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     {
       ap.literal = mShifter.pull<1>();
       ap.count = mShifter.pull<4>();
+      continue;
+    }
+    else if ( ap.op == AssemblePen::Op::FLUSH )
+    {
+      //flush output buffers
       continue;
     }
 
