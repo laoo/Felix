@@ -366,6 +366,25 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
       // Stop horizontal loop if outside of screen bounds
       if ( sprhpos >= 0 && sprhpos < Suzy::mScreenWidth )
       {
+        switch ( mSuzy.mSpriteType )
+        {
+        case Suzy::Sprite::BACKGROUND:
+          break;
+        case Suzy::Sprite::BACKNONCOLL:
+          break;
+        case Suzy::Sprite::BSHADOW:
+          break;
+        case Suzy::Sprite::BOUNDARY:
+          break;
+        case Suzy::Sprite::NORMAL:
+          break;
+        case Suzy::Sprite::NONCOLL:
+          break;
+        case Suzy::Sprite::XOR:
+          break;
+        case Suzy::Sprite::SHADOW:
+          break;
+        }
         // Process pixel based on sprite type
         //bool left = sprhpos % 2 == 0;
         //ushort offset = ( ushort )( ( sprhpos + sprvpos * Suzy.SCREEN_WIDTH ) / 2 );
