@@ -298,7 +298,8 @@ struct AssemblePen
 { 
   int pen; 
   int count; 
-  std::experimental::coroutine_handle<> c;
+  std::experimental::coroutine_handle<> callerHandle;
+  std::experimental::coroutine_handle<> assemblerHandle;
 };
 
 
@@ -316,6 +317,21 @@ public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
   using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::caller;
   using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::setCaller;
 
+  auto await_transform( AssemblePen * penInit )
+  {
+    struct Awaiter
+    {
+      AssemblePen * pen;
+      bool await_ready() { return false; }
+      void await_resume() {}
+      void await_suspend( std::experimental::coroutine_handle<> c )
+      {
+        pen->assemblerHandle = c;
+      }
+    };
+    return Awaiter{ penInit };
+  }
+
 
   auto await_transform( AssemblePen & pen )
   {
@@ -323,11 +339,10 @@ public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
     {
       AssemblePen & pen;
       bool await_ready() { return false; }
-      AssemblePen await_resume() { return pen; }
+      AssemblePen & await_resume(){ return pen; }
       auto await_suspend( std::experimental::coroutine_handle<> c )
       {
-        std::swap( c, pen.c );
-        return c;
+        return pen.callerHandle;
       }
     };
     return Awaiter{ pen };
@@ -380,22 +395,23 @@ struct SubCoroutinePromiseT :
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
 
-  auto await_transform( AssemblePen * penInit )
+  auto await_transform( PenAssemblerCoroutine && pac )
   {
     struct Awaiter
     {
-      AssemblePen * pen;
+      PenAssemblerCoroutine && pac;
+      SuzyProcess * p;
       bool await_ready() { return false; }
-      void await_resume() {}
-      bool await_suspend( std::experimental::coroutine_handle<> c )
+      PenAssemblerCoroutine await_resume() { return std::move( pac ); }
+      auto await_suspend( std::experimental::coroutine_handle<> c )
       {
-        std::swap( c, pen->c );
-        return false;
+        auto pen = p->initPen();
+        pen->callerHandle = c;
+        return pen->assemblerHandle;
       }
     };
-    return Awaiter{ penInit };
+    return Awaiter{ std::move( pac ), suzyProcess() };
   }
-
 
   auto await_transform( AssemblePen & pen )
   {
@@ -406,8 +422,7 @@ struct SubCoroutinePromiseT :
       void await_resume() {}
       auto await_suspend( std::experimental::coroutine_handle<> c )
       {
-        std::swap( c, pen.c );
-        return c;
+        return pen.assemblerHandle;
       }
     };
     return Awaiter{ pen };

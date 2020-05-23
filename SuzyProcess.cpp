@@ -73,6 +73,16 @@ AssemblePen & SuzyProcess::assemblePen( int pen, int count )
   return mAssembledPen;
 }
 
+AssemblePen & SuzyProcess::getPen()
+{
+  return mAssembledPen;
+}
+
+AssemblePen * SuzyProcess::initPen()
+{
+  return &mAssembledPen;
+}
+
 ProcessCoroutine SuzyProcess::process()
 {
   co_await this;
@@ -185,8 +195,7 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
   if ( mSuzy.mSkipSprite )
     co_return false;
 
-  co_await &assemblePen();
-  auto pa = penAssembler();
+  auto pa = co_await penAssembler();
 
   bool isEveron{};
 
@@ -279,10 +288,11 @@ SubCoroutineT<bool> SuzyProcess::renderSingleSprite()
 PenAssemblerCoroutine SuzyProcess::penAssembler()
 {
   co_await this;
+  co_await initPen();
 
   for ( ;; )
   {
-    AssemblePen pen = co_await assemblePen();
+    AssemblePen pen = co_await getPen();
     int c = pen.count;
   }
   //hsizacum += scb.sprhsiz;02
