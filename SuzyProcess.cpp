@@ -78,10 +78,9 @@ AssemblePen & SuzyProcess::getPen()
   return mAssembledPen;
 }
 
-void SuzyProcess::initPen( std::experimental::coroutine_handle<> hCaller, std::experimental::coroutine_handle<> hAssembler )
+void SuzyProcess::initPen( std::experimental::coroutine_handle<> handle )
 {
-  mAssembledPen.callerHandle = hCaller;
-  mAssembledPen.assemblerHandle = hAssembler;
+  mAssembledPen.handle = handle;
 }
 
 ProcessCoroutine SuzyProcess::process()

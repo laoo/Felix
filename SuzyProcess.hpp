@@ -30,7 +30,7 @@ public:
   void setHandle( std::experimental::coroutine_handle<> c );
   AssemblePen & assemblePen( int pen, int count );
   AssemblePen & getPen();
-  void initPen( std::experimental::coroutine_handle<> hCaller, std::experimental::coroutine_handle<> hAssembler );
+  void initPen( std::experimental::coroutine_handle<> handle );
 
 private:
   ProcessCoroutine process();

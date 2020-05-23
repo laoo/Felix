@@ -298,8 +298,7 @@ struct AssemblePen
 { 
   int pen; 
   int count; 
-  std::experimental::coroutine_handle<> callerHandle;
-  std::experimental::coroutine_handle<> assemblerHandle;
+  std::experimental::coroutine_handle<> handle;
 };
 
 
@@ -326,7 +325,8 @@ public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
       AssemblePen & await_resume(){ return pen; }
       auto await_suspend( std::experimental::coroutine_handle<> c )
       {
-        return pen.callerHandle;
+        std::swap( c, pen.handle );
+        return c;
       }
     };
     return Awaiter{ pen };
@@ -389,7 +389,7 @@ struct SubCoroutinePromiseT :
       PenAssemblerCoroutine await_resume() { return std::move( pac ); }
       auto await_suspend( std::experimental::coroutine_handle<> c )
       {
-        p->initPen( c, pac.coro() );
+        p->initPen( c );
         return pac.coro();
       }
     };
@@ -405,7 +405,8 @@ struct SubCoroutinePromiseT :
       void await_resume() {}
       auto await_suspend( std::experimental::coroutine_handle<> c )
       {
-        return pen.assemblerHandle;
+        std::swap( c, pen.handle );
+        return c;
       }
     };
     return Awaiter{ pen };
