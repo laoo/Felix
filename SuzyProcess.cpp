@@ -310,7 +310,17 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     0
   };
 
+  union
+  {
+    uint32_t colBuf;
+    std::array<uint8_t, sizeof( uint32_t )> colTab;
+  };
   int pen{};
+  bool colDirty{};
+
+  uint8_t mask{};
+  uint8_t pix{};
+
 
   for ( ;; )
   {
@@ -335,7 +345,14 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     }
     else if ( ap.op == AssemblePen::Op::FLUSH )
     {
-      //flush output buffers
+      if ( mask )
+      {
+        co_await SuzyRMW{ scb.vidadr, pix, (uint8_t)~mask };
+      }
+      if ( colDirty )
+      {
+        co_await SuzyWrite4{ scb.colladr, colBuf };
+      }
       continue;
     }
 
