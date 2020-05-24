@@ -7,67 +7,61 @@ class VidOperator
 public:
   struct MemOp
   {
-    uint16_t addr;
-    uint8_t value;
-    enum class Op : uint8_t
-    {
-      NONE,
-      READ,
-      WRITE,
-    } op;
+    static constexpr uint8_t LEFT  = 0b01000;
+    static constexpr uint8_t RIGHT = 0b10000;
+    static constexpr uint8_t WRITE = 0b00001;
+    static constexpr uint8_t MODIFY= 0b00010;
+    static constexpr uint8_t XOR   = 0b00100;
 
-    explicit operator bool() const
+    union
     {
-      return op != Op::NONE;
+      struct
+      {
+        uint16_t addr;
+        uint8_t value;
+        uint8_t op;
+      };
+      uint32_t word;
+    };
+ 
+    uint8_t mask() const
+    {
+      switch ( op & ( LEFT | RIGHT ) )
+      {
+      case RIGHT:
+        return 0xf0;
+      case LEFT:
+        return 0x0f;
+      default:
+        return 0x00;
+      }
     }
-    operator Op()
+
+    operator int() const
     {
-      return op;
+      return op & ( WRITE | MODIFY | XOR );
     }
-  };
 
-  struct State
-  {
-    int v;
   };
-
+ 
 public:
   VidOperator();
 
   MemOp flush();
 
-  typedef MemOp( *StateFuncT )( VidOperator::State & s );
+  void writeLeft( int pixel );
+  void rmwLeft( int pixel );
+  void writeRight( int pixel );
+  void rmwRight( int pixel );
+  void eor( int pixel );
+
+  typedef void( *StateFuncT )( VidOperator & vop );
 
   static constexpr size_t STATEFUN_SIZE = 1 << 6;
 
 private:
 
   std::array<StateFuncT, STATEFUN_SIZE> mStateFuncs;
+  MemOp mOp;
 
 };
-
-/*
-
-typedef int (*funct)();
-
-template<int V>
-constexpr int fun()
-{
-    if constexpr ( V == 3 )
-        return 1;
-    else return V + 3;
-}
-
-template<int... I>
-constexpr std::array<funct, 5> make(std::integer_sequence<int, I...>)
-{
-    return { fun<I>... };
-}
-
-int main( int argc, char** argv )
-{
-    static constexpr std::array<funct, 5> a{ make( std::make_integer_sequence<int, 5>{} ) };
-    return a[argc]();
-}
-
-*/

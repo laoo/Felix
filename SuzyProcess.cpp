@@ -345,9 +345,15 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     {
       switch ( auto memOp = vidOp.flush() )
       {
-      case VidOperator::MemOp::Op::WRITE:
-        break;
+      case VidOperator::MemOp::WRITE:
         co_await SuzyWrite{ memOp.addr, memOp.value };
+        break;
+      case VidOperator::MemOp::MODIFY:
+      case VidOperator::MemOp::WRITE | VidOperator::MemOp::MODIFY:
+        co_await SuzyRMW{ memOp.addr, memOp.value, memOp.mask() };
+        break;
+      case VidOperator::MemOp::XOR:
+        co_await SuzyXOR{ memOp.addr, memOp.value };
         break;
       default:
         break;
