@@ -99,7 +99,7 @@ void stateFun( VidOperator & vop )
  
   if constexpr ( Type::eor )
   {
-    //eor;
+    vop.eor( value );
   }
   else
   {

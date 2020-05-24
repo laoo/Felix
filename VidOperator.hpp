@@ -32,8 +32,10 @@ public:
         return 0xf0;
       case LEFT:
         return 0x0f;
-      default:
+      case LEFT | RIGHT:
         return 0x00;
+      default:
+        return 0xff;
       }
     }
 
