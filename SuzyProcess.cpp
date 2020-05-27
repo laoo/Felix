@@ -133,21 +133,21 @@ SubCoroutine SuzyProcess::loadSCB()
 {
   co_await this;
 
-  mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.scbadr++ } );
-  mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.scbadr++ } );
-  mSuzy.mSprColl = co_await SuzyRead{ scb.scbadr++ };
-  scb.scbnext.l = co_await SuzyRead{ scb.scbadr++ };
-  scb.scbnext.h = co_await SuzyRead{ scb.scbadr++ };
+  mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.tmpadr++ } );
+  mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.tmpadr++ } );
+  mSuzy.mSprColl = co_await SuzyRead{ scb.tmpadr++ };
+  scb.scbnext.l = co_await SuzyRead{ scb.tmpadr++ };
+  scb.scbnext.h = co_await SuzyRead{ scb.tmpadr++ };
 
   if ( mSuzy.mSkipSprite )
     co_return;
 
-  scb.sprdline.l = co_await SuzyRead{ scb.scbadr++ };
-  scb.sprdline.h = co_await SuzyRead{ scb.scbadr++ };
-  scb.hposstrt.l = co_await SuzyRead{ scb.scbadr++ };
-  scb.hposstrt.h = co_await SuzyRead{ scb.scbadr++ };
-  scb.vposstrt.l = co_await SuzyRead{ scb.scbadr++ };
-  scb.vposstrt.h = co_await SuzyRead{ scb.scbadr++ };
+  scb.sprdline.l = co_await SuzyRead{ scb.tmpadr++ };
+  scb.sprdline.h = co_await SuzyRead{ scb.tmpadr++ };
+  scb.hposstrt.l = co_await SuzyRead{ scb.tmpadr++ };
+  scb.hposstrt.h = co_await SuzyRead{ scb.tmpadr++ };
+  scb.vposstrt.l = co_await SuzyRead{ scb.tmpadr++ };
+  scb.vposstrt.h = co_await SuzyRead{ scb.tmpadr++ };
 
   scb.tilt = 0;
   scb.stretch = 0;
@@ -155,28 +155,28 @@ SubCoroutine SuzyProcess::loadSCB()
   switch ( mSuzy.mReload )
   {
   case Suzy::Reload::HVST:  //Reload hsize, vsize, stretch, tilt
-    scb.sprhsiz.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprhsiz.h = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprvsiz.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprvsiz.h = co_await SuzyRead{ scb.scbadr++ };
-    scb.stretch.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.stretch.h = co_await SuzyRead{ scb.scbadr++ };
-    scb.tilt.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.tilt.h = co_await SuzyRead{ scb.scbadr++ };
+    scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.stretch.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.stretch.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.tilt.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.tilt.h = co_await SuzyRead{ scb.tmpadr++ };
     break;
   case Suzy::Reload::HVS:   //Reload hsize, vsize, stretch
-    scb.sprhsiz.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprhsiz.h = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprvsiz.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprvsiz.h = co_await SuzyRead{ scb.scbadr++ };
-    scb.stretch.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.stretch.h = co_await SuzyRead{ scb.scbadr++ };
+    scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.stretch.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.stretch.h = co_await SuzyRead{ scb.tmpadr++ };
     break;
   case Suzy::Reload::HV:    //Reload hsize, vsize
-    scb.sprhsiz.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprhsiz.h = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprvsiz.l = co_await SuzyRead{ scb.scbadr++ };
-    scb.sprvsiz.h = co_await SuzyRead{ scb.scbadr++ };
+    scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
     break;
   case Suzy::Reload::NONE:  //Reload nothing
     break;
@@ -194,10 +194,10 @@ SubCoroutine SuzyProcess::loadSCB()
       };
     };
 
-    p0 = co_await SuzyRead4{ scb.scbadr };
-    scb.scbadr += 4;
-    p1 = co_await SuzyRead4{ scb.scbadr };
-    scb.scbadr += 4;
+    p0 = co_await SuzyRead4{ scb.tmpadr };
+    scb.tmpadr += 4;
+    p1 = co_await SuzyRead4{ scb.tmpadr };
+    scb.tmpadr += 4;
 
     //TODO: implement bug:
     //The page break signal does not delay the end of the pen index palette loading.
