@@ -126,7 +126,7 @@ ProcessCoroutine SuzyProcess::process()
     }
   }
 
-  co_return;
+  mSuzy.mSpriteWorking = false;
 }
 
 SubCoroutine SuzyProcess::loadSCB()
