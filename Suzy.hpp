@@ -87,8 +87,6 @@ public:
   SuzySpriteProcessor processSprites( SuzyRequest & req );
   std::shared_ptr<ISuzyProcess> suzyProcess();
 
-private:
-
   friend class SuzyProcess;
 
   static constexpr uint16_t TMPADR    = 0x00;

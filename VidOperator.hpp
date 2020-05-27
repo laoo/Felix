@@ -2,6 +2,8 @@
 #include "Suzy.hpp"
 #include <array>
 
+enum class Suzy::Sprite;
+
 class VidOperator
 {
 public:
@@ -17,9 +19,9 @@ public:
     {
       struct
       {
-        uint16_t addr;
         uint8_t value;
         uint8_t op;
+        uint16_t addr;
       };
       uint32_t word;
     };
@@ -43,27 +45,24 @@ public:
     {
       return op & ( WRITE | MODIFY | XOR );
     }
-
   };
+
+  static_assert( sizeof( MemOp ) == sizeof( uint32_t ) );
  
 public:
-  VidOperator();
+  VidOperator( Suzy::Sprite spriteType );
 
   MemOp flush();
-
-  void writeLeft( int pixel );
-  void rmwLeft( int pixel );
-  void writeRight( int pixel );
-  void rmwRight( int pixel );
-  void eor( int pixel );
-
-  typedef void( *StateFuncT )( VidOperator & vop );
+  void newLine( uint16_t vidadr );
+  MemOp process( int hpos, uint8_t pixel );
 
   static constexpr size_t STATEFUN_SIZE = 1 << 6;
 
 private:
-
-  std::array<StateFuncT, STATEFUN_SIZE> mStateFuncs;
+  std::array<MemOp, STATEFUN_SIZE> mStateFuncs;
+  int mOff;
   MemOp mOp;
+  uint16_t mVidAdr;
+  uint8_t mEdge;
 
 };

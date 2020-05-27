@@ -301,7 +301,9 @@ struct AssemblePen
     READ_PEN,
     READ_HEADER,
     DUPLICATE_PEN,
-    FLUSH
+    FLUSH,
+    NEW_LINE,
+    SIZE_
   } op;
   int count;
   bool literal;

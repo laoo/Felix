@@ -51,7 +51,7 @@ BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mC
     }
   }
 
-  mCpuTrace = cpuTrace( *mCpu, mDReq );
+  //mCpuTrace = cpuTrace( *mCpu, mDReq );
 }
 
 BusMaster::~BusMaster()
