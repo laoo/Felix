@@ -38,9 +38,9 @@ DisplayGenerator::DMARequest DisplayGenerator::pushData( uint64_t tick, uint64_t
 {
   mDMAData[mDMAIteration] = data;
   flushDisplay( tick );
+  mDispAdr += ( 80 / DMA_ITERATIONS );
   if ( ++mDMAIteration < 10 )
   {
-    mDispAdr += ( 80 / DMA_ITERATIONS );
     return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), mDispAdr };
   }
   else
