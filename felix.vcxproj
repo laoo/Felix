@@ -157,6 +157,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ActionQueue.cpp" />
+    <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="BusMaster.cpp" />
     <ClCompile Include="CPUExecute.cpp" />
     <ClCompile Include="CPUTrace.cpp" />
@@ -174,6 +175,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
+    <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="PenUnpacker.hpp" />

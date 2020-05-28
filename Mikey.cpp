@@ -1,6 +1,7 @@
 #include "Mikey.hpp"
 #include <cassert>
 #include "TimerCore.hpp"
+#include "AudioChannel.hpp"
 #include "BusMaster.hpp"
 
 Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {}, mTimers{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
@@ -54,18 +55,22 @@ Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {},
   } );  //timer 7 -> audio 0
   mTimers[0x8] = std::make_unique<TimerCore>( 0x8, [this]( uint64_t tick, bool unused )
   {
+    mAudioChannels[0x0]->trigger();
     mTimers[0x9]->borrowIn( tick );
   } );  //audio 0 -> audio 1
   mTimers[0x9] = std::make_unique<TimerCore>( 0x9, [this]( uint64_t tick, bool unused )
   {
+    mAudioChannels[0x1]->trigger();
     mTimers[0xa]->borrowIn( tick );
   } );  //audio 1 -> audio 2
   mTimers[0xa] = std::make_unique<TimerCore>( 0xa, [this]( uint64_t tick, bool unused )
   {
+    mAudioChannels[0x2]->trigger();
     mTimers[0xb]->borrowIn( tick );
   } );  //audio 2 -> audio 3
   mTimers[0xb] = std::make_unique<TimerCore>( 0xb, [this]( uint64_t tick, bool unused )
   {
+    mAudioChannels[0x3]->trigger();
     mTimers[0x0]->borrowIn( tick );
   } );  //audio 3 -> timer 1
 }
@@ -109,16 +114,12 @@ uint8_t Mikey::read( uint16_t address )
     {
     case TIMER::BACKUP:
       return mTimers[( address >> 2 ) & 7]->getBackup( mAccessTick );
-      break;
     case TIMER::CONTROLA:
       return mTimers[( address >> 2 ) & 7]->getControlA( mAccessTick );
-      break;
     case TIMER::COUNT:
       return mTimers[( address >> 2 ) & 7]->getCount( mAccessTick );
-      break;
     case TIMER::CONTROLB:
       return mTimers[( address >> 2 ) & 7]->getControlB( mAccessTick );
-      break;
     }
   }
   else if ( address < 0x40 )
@@ -126,21 +127,21 @@ uint8_t Mikey::read( uint16_t address )
     switch ( address & 0x7 )
     {
     case AUDIO::VOLCNTRL:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getVolume( mAccessTick );
     case AUDIO::FEEDBACK:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getFeedback( mAccessTick );
     case AUDIO::OUTPUT:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getOutput( mAccessTick );
     case AUDIO::SHIFT:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getShift( mAccessTick );
     case AUDIO::BACKUP:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getBackup( mAccessTick );
     case AUDIO::CONTROL:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getControl( mAccessTick );
     case AUDIO::COUNTER:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getCounter( mAccessTick );
     case AUDIO::OTHER:
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->getOther( mAccessTick );
     }
   }
   else switch ( address )
@@ -229,20 +230,28 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     switch ( address & 0x7 )
     {
     case AUDIO::VOLCNTRL:
+      result = mAudioChannels[( address >> 3 ) & 3]->setVolume( mAccessTick, (int8_t)value );
       break;
     case AUDIO::FEEDBACK:
+      result = mAudioChannels[( address >> 3 ) & 3]->setFeedback( mAccessTick, value );
       break;
     case AUDIO::OUTPUT:
+      result = mAudioChannels[( address >> 3 ) & 3]->setOutput( mAccessTick, value );
       break;
     case AUDIO::SHIFT:
+      result = mAudioChannels[( address >> 3 ) & 3]->setShift( mAccessTick, value );
       break;
     case AUDIO::BACKUP:
+      result = mAudioChannels[( address >> 3 ) & 3]->setBackup( mAccessTick, value );
       break;
     case AUDIO::CONTROL:
+      result = mAudioChannels[( address >> 3 ) & 3]->setControl( mAccessTick, value );
       break;
     case AUDIO::COUNTER:
+      result = mAudioChannels[( address >> 3 ) & 3]->setCounter( mAccessTick, value );
       break;
     case AUDIO::OTHER:
+      result = mAudioChannels[( address >> 3 ) & 3]->setOther( mAccessTick, value );
       break;
     }
   }

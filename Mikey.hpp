@@ -9,6 +9,7 @@
 
 class BusMaster;
 class TimerCore;
+class AudioChannel;
 class DisplayGenerator;
 
 class Mikey
@@ -125,6 +126,7 @@ private:
   uint64_t mAccessTick;
 
   std::array<std::unique_ptr<TimerCore>, 12> mTimers;
+  std::array<std::unique_ptr<AudioChannel>, 4> mAudioChannels;
   std::array<uint8_t, 32> mPalette;
 
   std::unique_ptr<DisplayGenerator> mDisplayGenerator;
