@@ -73,6 +73,11 @@ Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {},
     mAudioChannels[0x3]->trigger();
     mTimers[0x0]->borrowIn( tick );
   } );  //audio 3 -> timer 1
+
+  mAudioChannels[0x0] = std::make_unique<AudioChannel>( *mTimers[0x8] );
+  mAudioChannels[0x1] = std::make_unique<AudioChannel>( *mTimers[0x9] );
+  mAudioChannels[0x2] = std::make_unique<AudioChannel>( *mTimers[0xa] );
+  mAudioChannels[0x3] = std::make_unique<AudioChannel>( *mTimers[0xb] );
 }
 
 Mikey::~Mikey()
