@@ -8,9 +8,11 @@
 #include "BusMaster.hpp"
 #include "CPUExecute.hpp"
 #include "Mikey.hpp"
-
+#include "KeyInput.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
+KeyInput gKeyInput;
+
 
 wchar_t gClassName[] = L"FelixWindowClass";
 
@@ -41,6 +43,50 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
   switch ( msg )
   {
+  case WM_KEYDOWN:
+  case WM_KEYUP:
+    {
+      WORD hi = HIWORD( lParam );
+      bool down = ( hi & KF_UP ) == 0;
+      bool nonRepeat = ( hi & KF_REPEAT ) == 0;
+
+      if ( nonRepeat )
+      {
+        switch ( wParam )
+        {
+        case VK_LEFT:
+          gKeyInput.left = down;
+          break;
+        case VK_UP:
+          gKeyInput.up = down;
+          break;
+        case VK_RIGHT:
+          gKeyInput.right = down;
+          break;
+        case VK_DOWN:
+          gKeyInput.down = down;
+          break;
+        case '1':
+          gKeyInput.opt1 = down;
+          break;
+        case '2':
+          gKeyInput.opt2 = down;
+          break;
+        case 'Q':
+          gKeyInput.pause = down;
+          break;
+        case 'Z':
+          gKeyInput.a = down;
+          break;
+        case 'X':
+          gKeyInput.b = down;
+          break;
+        default:
+          break;
+        }
+      }
+    }
+    break;
   case WM_CLOSE:
     DestroyWindow( hwnd );
     break;
@@ -95,6 +141,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     DragAcceptFiles( hwnd, TRUE );
 
 
+    gKeyInput = KeyInput{};
     BusMaster bus{};
  
     for ( ;; )
@@ -112,7 +159,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
         break;
 
       //auto t1 = std::chrono::high_resolution_clock::now();
-      auto surface = bus.process( 16000000 / 60 );
+      auto surface = bus.process( 16000000 / 60, gKeyInput );
       //auto t2 = std::chrono::high_resolution_clock::now();
       //auto diff = t2 - t1;
       //char buf[100];

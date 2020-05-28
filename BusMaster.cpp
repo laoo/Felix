@@ -102,8 +102,9 @@ void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
   mActionQueue.push( { Action::DISPLAY_DMA, tick } );
 }
 
-DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks )
+DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks, KeyInput & keys )
 {
+  mSuzy->updateKeyInput( keys );
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
 
   for ( ;; )

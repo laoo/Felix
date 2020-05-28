@@ -30,7 +30,7 @@ public:
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
 
-  DisplayGenerator::Pixel const* process( uint64_t ticks );
+  DisplayGenerator::Pixel const* process( uint64_t ticks, KeyInput & keys );
 
   void enterMonitor();
 

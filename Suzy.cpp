@@ -10,6 +10,21 @@ Suzy::Suzy() : mSCB{}, mMath{},
 {
 }
 
+void Suzy::updateKeyInput( KeyInput const & input )
+{
+  mJoystick =
+    ( input.down ? JOYSTICK::DOWN : 0 ) |
+    ( input.up ? JOYSTICK::UP : 0 ) |
+    ( input.right ? JOYSTICK::RIGHT : 0 ) |
+    ( input.left ? JOYSTICK::LEFT : 0 ) |
+    ( input.opt1 ? JOYSTICK::OPTION1 : 0 ) |
+    ( input.opt2 ? JOYSTICK::OPTION2 : 0 ) |
+    ( input.b ? JOYSTICK::A : 0 ) |
+    ( input.a ? JOYSTICK::B : 0 );
+
+  mSwitches = input.pause ? SWITCHES::PAUSE_SWITCH : 0;
+}
+
 uint64_t Suzy::requestAccess( uint64_t tick, uint16_t address )
 {
   return tick + 5;

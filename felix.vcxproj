@@ -178,6 +178,7 @@
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
+    <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="Shifter.hpp" />
