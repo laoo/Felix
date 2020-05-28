@@ -124,6 +124,9 @@ ProcessCoroutine SuzyProcess::process()
     {
       co_await SuzyRMW{ ( uint16_t )( scb.scbadr + scb.colloff ), 0xff, 0x80 };
     }
+
+    if ( mSuzy.mSpriteStop )
+      break;
   }
 
   mSuzy.mSpriteWorking = false;
