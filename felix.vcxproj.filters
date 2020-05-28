@@ -55,6 +55,9 @@
     <ClCompile Include="AudioChannel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SuzyMath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -115,6 +118,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="KeyInput.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SuzyMath.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

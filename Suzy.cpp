@@ -3,9 +3,9 @@
 #include "BusMaster.hpp"
 #include "SuzyProcess.hpp"
 
-Suzy::Suzy() : mSCB{}, mMath{},
-  mBusEnable{}, mSignMath{}, mAccumulate{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{}, mMathWorking{},
-  mMathWarning{}, mMathCarry{}, mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
+Suzy::Suzy() : mSCB{}, mMath{}, mAccessTick{},
+  mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
+  mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}, mJoystick{}, mSwitches{}, mCart0{}, mCart1{}
 {
 }
@@ -40,7 +40,8 @@ void Suzy::updateKeyInput( KeyInput const & input )
 
 uint64_t Suzy::requestAccess( uint64_t tick, uint16_t address )
 {
-  return tick + 5;
+  mAccessTick = tick + 5;
+  return mAccessTick;
 }
 
 uint8_t Suzy::read( uint16_t address )
@@ -146,43 +147,30 @@ uint8_t Suzy::read( uint16_t address )
   case PROCADR + 1:
     return mSCB.procadr.h;
   case MATHD:
-    return mMath.mathd;
   case MATHC:
-    return mMath.mathc;
   case MATHB:
-    return mMath.mathb;
   case MATHA:
-    return mMath.matha;
   case MATHP:
-    return mMath.mathp;
   case MATHN:
-    return mMath.mathn;
   case MATHH:
-    return mMath.mathh;
   case MATHG:
-    return mMath.mathg;
   case MATHF:
-    return mMath.mathf;
   case MATHE:
-    return mMath.mathe;
   case MATHM:
-    return mMath.mathm;
   case MATHL:
-    return mMath.mathl;
   case MATHK:
-    return mMath.mathk;
   case MATHJ:
-    return mMath.mathj;
+    return mMath.peek( mAccessTick, address & 0xff );
   case SUZYHREV:
     return 0x01;
   case SPRSYS:
     return
-      ( mMathWorking ? SPRSYS::MATHWORKING : 0 ) |
-      ( mMathWarning ? SPRSYS::MATHWARNING : 0 ) |
-      ( mMathCarry ? SPRSYS::MATHCARRY : 0 ) |
+      ( mMath.working() ? SPRSYS::MATHWORKING : 0 ) |
+      ( mMath.warning() ? SPRSYS::MATHWARNING : 0 ) |
+      ( mMath.carry() ? SPRSYS::MATHCARRY : 0 ) |
       ( mVStretch ? SPRSYS::VSTRETCHING : 0 ) |
       ( mLeftHand ? SPRSYS::LEFTHANDED : 0 ) |
-      ( mUnsafeAccess ? SPRSYS::UNSAFEACCESS : 0 ) |
+      ( mMath.unsafeAccess() ? SPRSYS::UNSAFEACCESS : 0 ) |
       ( mSpriteStop ? SPRSYS::SPRITETOSTOP : 0 ) |
       ( mSpriteWorking ? SPRSYS::SPRITEWORKING : 0 );
     break;
@@ -351,50 +339,39 @@ void Suzy::write( uint16_t address, uint8_t value )
       break;
 
     case MATHD:
-      mMath.mathd = value;
+    case MATHB:
+    case MATHP:
+    case MATHH:
+    case MATHF:
+    case MATHK:
+      mMath.wpoke( mAccessTick, address & 0xff, value );
+      [[fallthrough]];
+    case MATHM:
+      mMath.carry( false );
       break;
     case MATHC:
-      mMath.mathc = value;
-      break;
-    case MATHB:
-      mMath.mathb = value;
+      mMath.poke( mAccessTick, address & 0xff, value );
+      mMath.signCD();
       break;
     case MATHA:
-      mMath.matha = value;
-      break;
-    case MATHP:
-      mMath.mathp = value;
-      break;
-    case MATHN:
-      mMath.mathn = value;
-      break;
-
-    case MATHH:
-      mMath.mathh = value;
-      break;
-    case MATHG:
-      mMath.mathg = value;
-      break;
-    case MATHF:
-      mMath.mathf = value;
+      if ( mMath.poke( mAccessTick, address & 0xff, value ) )
+      {
+        mMath.signAB();
+        mMath.mul( mAccessTick );
+      }
       break;
     case MATHE:
-      mMath.mathe = value;
+      if ( mMath.poke( mAccessTick, address & 0xff, value ) )
+      {
+        mMath.div( mAccessTick );
+      }
       break;
-
-    case MATHM:
-      mMath.mathm = value;
-      break;
+    case MATHN:
+    case MATHG:
     case MATHL:
-      mMath.mathl = value;
-      break;
-    case MATHK:
-      mMath.mathk = value;
-      break;
     case MATHJ:
-      mMath.mathj = value;
+      mMath.poke( mAccessTick, address & 0xff, value );
       break;
-
     case SPRCTL0:
       writeSPRCTL0( value );
       break;
@@ -415,12 +392,12 @@ void Suzy::write( uint16_t address, uint8_t value )
       mSpriteWorking = ( SPRGO::SPRITE_GO & value ) != 0;
       break;
     case SPRSYS:
-      mSignMath = ( SPRSYS::SIGNMATH & value ) != 0;
-      mAccumulate = ( SPRSYS::ACCUMULATE & value ) != 0;
+      mMath.signMath( ( SPRSYS::SIGNMATH & value ) != 0 );
+      mMath.accumulate( ( SPRSYS::ACCUMULATE & value ) != 0 );
       mNoCollide = ( SPRSYS::NO_COLLIDE & value ) != 0;
       mVStretch = ( SPRSYS::VSTRETCH & value ) != 0;
       mLeftHand = ( SPRSYS::LEFTHAND & value ) != 0;
-      mUnsafeAccess = mUnsafeAccess && ( SPRSYS::UNSAFEACCESSRST & value ) == 0;
+      mMath.unsafeAccess( mMath.unsafeAccess() && ( SPRSYS::UNSAFEACCESSRST & value ) == 0 );
       mSpriteStop = ( SPRSYS::SPRITESTOP & value ) != 0;
       break;
     case RCART0:

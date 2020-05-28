@@ -5,6 +5,7 @@
 #include "SuzyCoroutines.hpp"
 #include "PenUnpacker.hpp"
 #include "KeyInput.hpp"
+#include "SuzyMath.hpp"
 
 class ISuzyProcess
 {
@@ -350,38 +351,16 @@ private:
     Reg procadr;
   } mSCB;
 
-  struct Math
-  {
-    uint8_t mathd;
-    uint8_t mathc;
-    uint8_t mathb;
-    uint8_t matha;
-    uint8_t mathp;
-    uint8_t mathn;
-
-    uint8_t mathh;
-    uint8_t mathg;
-    uint8_t mathf;
-    uint8_t mathe;
-
-    uint8_t mathm;
-    uint8_t mathl;
-    uint8_t mathk;
-    uint8_t mathj;
-  } mMath;
+  SuzyMath mMath;
+  uint64_t mAccessTick;
 
   std::array<uint8_t, 16> mPalette;
   bool mBusEnable;          //Suzy Bus Enable, 0 = disabled
-  bool mSignMath;           //Signmath: 0 = unsigned math, 1 = signed math.
-  bool mAccumulate;         //OK to accumvlate : 0 = do not accumulate, 1 = yes, accumulate.
   bool mNoCollide;          //dont collide : 1 = dont collide with any sprites.
   bool mVStretch;           //Vstretch: 1 = stretch the v, 0 = Don't play with it, it will grow by itself.
   bool mLeftHand;           //Lefthand: 0 = normal handed
   bool mUnsafeAccess;       //Clear the 'unsafeAccess' bit: 1 = clear it, 0 = no change.
   bool mSpriteStop;        //Stop at end of current sprite : 1 = request to stop.Continue sprite processing by setting the Sprite Process Start Bit.Either setting or clearing the SPSB will clear this stop request.
-  bool mMathWorking;       //Math in process
-  bool mMathWarning;       //Mathbit: If mult, 1 = accumulator overflow.If div, 1 = div by zero attempted.
-  bool mMathCarry;         //Last carry bit.
   bool mSpriteWorking;     //Sprite process was started and has neither completed nor been stopped.
   bool mHFlip;
   bool mVFlip;
