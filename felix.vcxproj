@@ -189,6 +189,7 @@
     <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="Shifter.hpp" />
+    <ClInclude Include="SpriteTemplates.hpp" />
     <ClInclude Include="SuzyCoroutines.hpp" />
     <ClInclude Include="SuzyMath.hpp" />
     <ClInclude Include="SuzyProcess.hpp" />

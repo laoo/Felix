@@ -141,6 +141,9 @@
     <ClInclude Include="ComLynx.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="SpriteTemplates.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh">
