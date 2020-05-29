@@ -4,7 +4,8 @@
 #include "AudioChannel.hpp"
 #include "BusMaster.hpp"
 
-Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick {}, mTimers{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
+Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() },
+  mParallelPort{ mBusMaster.getCartridge(), mBusMaster.getComLynx(), *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -154,6 +155,10 @@ uint8_t Mikey::read( uint16_t address )
   case INTRST:
   case INTSET:
     return mIRQ;
+  case IODIR:
+    return mParallelPort.getDirection();
+  case IODAT:
+    return mParallelPort.getData();
   case MIKEYHREV:
     return 0x01;
   case SERCTL:
@@ -278,7 +283,10 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     }
     break;
   case IODIR:
+    mParallelPort.setDirection( value );
+    break;
   case IODAT:
+    mParallelPort.setData( value );
     break;
   case SERCTL:
     mSerCtl.txinten = ( value & 0x80 ) != 0;

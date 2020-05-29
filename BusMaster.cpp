@@ -1,12 +1,14 @@
 #include "BusMaster.hpp"
 #include "CPU.hpp"
+#include "Cartridge.hpp"
+#include "ComLynx.hpp"
 #include "Mikey.hpp"
 #include <fstream>
 #include <filesystem>
 #include <cassert>
 
 BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mActionQueue{},
-  mCpu{ std::make_shared<CPU>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() },
+mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() },
   mDReq{}, mCPUReq{}, mSuzyReq{}, mCpuExecute{ mCpu->execute( *this ) }, mSuzyExecute{}, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
@@ -283,6 +285,18 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks, KeyInput & ke
 
 void BusMaster::enterMonitor()
 {
+}
+
+Cartridge & BusMaster::getCartridge()
+{
+  assert( mCartridge );
+  return *mCartridge;
+}
+
+ComLynx & BusMaster::getComLynx()
+{
+  assert( mComLynx );
+  return *mComLynx;
 }
 
 void BusMaster::suzyRead( ISuzyProcess::RequestRead const * req )

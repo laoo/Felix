@@ -6,6 +6,7 @@
 #include <functional>
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
+#include "ParallelPort.hpp"
 
 class BusMaster;
 class TimerCore;
@@ -130,6 +131,8 @@ private:
   std::array<uint8_t, 32> mPalette;
 
   std::unique_ptr<DisplayGenerator> mDisplayGenerator;
+
+  ParallelPort mParallelPort;
 
   struct DisplayRegs
   {

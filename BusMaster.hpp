@@ -13,6 +13,8 @@
 
 class Mikey;
 struct CPU;
+class Cartridge;
+class ComLynx;
 
 class BusMaster
 {
@@ -33,6 +35,9 @@ public:
   DisplayGenerator::Pixel const* process( uint64_t ticks, KeyInput & keys );
 
   void enterMonitor();
+
+  Cartridge & getCartridge();
+  ComLynx & getComLynx();
 
 private:
 
@@ -75,6 +80,8 @@ private:
   uint64_t mCurrentTick;
   ActionQueue mActionQueue;
   std::shared_ptr<CPU> mCpu;
+  std::shared_ptr<Cartridge> mCartridge;
+  std::shared_ptr<ComLynx> mComLynx;
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
   TraceRequest mDReq;
