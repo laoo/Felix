@@ -8,9 +8,17 @@
 #define popcnt(X) std::popcount(X)
 
 #else
-#include <intrin.h>
 
-#define popcnt(X) __popcnt(X)
+uint32_t popcnt( uint32_t x )
+{
+  int v = 0;
+  while ( x != 0 )
+  {
+    x &= x - 1;
+    v++;
+  }
+  return v;
+}
 
 #endif
 
