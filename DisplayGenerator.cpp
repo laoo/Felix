@@ -131,3 +131,8 @@ DisplayGenerator::Pixel const * DisplayGenerator::getSrface() const
   return mSurface.data();
 }
 
+bool DisplayGenerator::rest() const
+{
+  return mDisplayRow < 103 && mDisplayRow > 99;
+}
+

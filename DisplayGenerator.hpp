@@ -39,6 +39,8 @@ public:
   void vblank( uint64_t tick );
   Pixel const* getSrface() const;
 
+  bool rest() const;
+
 private:
   void flushDisplay( uint64_t tick );
 
