@@ -159,10 +159,13 @@
     <ClCompile Include="ActionQueue.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="BusMaster.cpp" />
+    <ClCompile Include="Cartridge.cpp" />
+    <ClCompile Include="ComLynx.cpp" />
     <ClCompile Include="CPUExecute.cpp" />
     <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="ParallelPort.cpp" />
     <ClCompile Include="PenUnpacker.cpp" />
     <ClCompile Include="SuzyCoroutines.cpp" />
     <ClCompile Include="SuzyMath.cpp" />
@@ -178,8 +181,11 @@
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="BusMaster.hpp" />
+    <ClInclude Include="Cartridge.hpp" />
+    <ClInclude Include="ComLynx.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="KeyInput.hpp" />
+    <ClInclude Include="ParallelPort.hpp" />
     <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="Shifter.hpp" />
