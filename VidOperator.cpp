@@ -5,19 +5,14 @@
 namespace
 {
 
-struct SuzySpriteBACKGROUND
+template<Suzy::Sprite>
+struct SuzySprite
 {
-  static constexpr bool eor = false;
-  static constexpr bool background = true;
-
-  static constexpr bool opaque( int pixel )
-  {
-    return true;
-  }
-
 };
 
-struct SuzySpriteBACKNONCOLL
+
+template<>
+struct SuzySprite<Suzy::Sprite::BACKGROUND>
 {
   static constexpr bool eor = false;
   static constexpr bool background = true;
@@ -28,7 +23,20 @@ struct SuzySpriteBACKNONCOLL
   }
 };
 
-struct SuzySpriteBSHADOW
+template<>
+struct SuzySprite<Suzy::Sprite::BACKNONCOLL>
+{
+  static constexpr bool eor = false;
+  static constexpr bool background = true;
+
+  static constexpr bool opaque( int pixel )
+  {
+    return true;
+  }
+};
+
+template<>
+struct SuzySprite<Suzy::Sprite::BSHADOW>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
@@ -40,7 +48,8 @@ struct SuzySpriteBSHADOW
 
 };
 
-struct SuzySpriteBOUNDARY
+template<>
+struct SuzySprite<Suzy::Sprite::BOUNDARY>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
@@ -51,7 +60,8 @@ struct SuzySpriteBOUNDARY
   }
 };
 
-struct SuzySpriteNORMAL
+template<>
+struct SuzySprite<Suzy::Sprite::NORMAL>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
@@ -63,7 +73,8 @@ struct SuzySpriteNORMAL
 
 };
 
-struct SuzySpriteNONCOLL
+template<>
+struct SuzySprite<Suzy::Sprite::NONCOLL>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
@@ -75,12 +86,14 @@ struct SuzySpriteNONCOLL
 
 };
 
-struct SuzySpriteXOR
+template<>
+struct SuzySprite<Suzy::Sprite::XOR>
 {
   static constexpr bool eor = true;
 };
 
-struct SuzySpriteSHADOW
+template<>
+struct SuzySprite<Suzy::Sprite::SHADOW>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
@@ -133,42 +146,16 @@ constexpr VidOperator::MemOp stateFun()
   }
 }
 
-template<typename Type, int... I>
-static std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE> makeStateFunc( std::integer_sequence<int, I...> )
+template<int... I>
+static std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE*8> makeStateFunc( std::integer_sequence<int, I...> )
 {
-  return { stateFun<Type,I>()... };
-
+  return { stateFun<SuzySprite<(Suzy::Sprite)(I>>6)>,I>()... };
 }
 
-VidOperator::VidOperator( Suzy::Sprite spriteType ) : mStateFuncs{}, mOff{}, mOp{}, mVidAdr{}, mEdge{}
+VidOperator::VidOperator( Suzy::Sprite spriteType ) :
+  mStateFuncs{ makeStateFunc( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE * 8>{} ) },
+  mSpriteType{ (int)spriteType }, mOff{}, mOp{}, mVidAdr{}, mEdge{}
 {
-  switch ( spriteType )
-  {
-  case Suzy::Sprite::BACKGROUND:
-    mStateFuncs ={ makeStateFunc<SuzySpriteBACKGROUND>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  case Suzy::Sprite::BACKNONCOLL:
-    mStateFuncs ={ makeStateFunc<SuzySpriteBACKNONCOLL>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  case Suzy::Sprite::BSHADOW:
-    mStateFuncs ={ makeStateFunc<SuzySpriteBSHADOW>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  case Suzy::Sprite::BOUNDARY:
-    mStateFuncs ={ makeStateFunc<SuzySpriteBOUNDARY>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  case Suzy::Sprite::NORMAL:
-    mStateFuncs ={ makeStateFunc<SuzySpriteNORMAL>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  case Suzy::Sprite::NONCOLL:
-    mStateFuncs ={ makeStateFunc<SuzySpriteNONCOLL>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  case Suzy::Sprite::XOR:
-    mStateFuncs ={ makeStateFunc<SuzySpriteXOR>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  case Suzy::Sprite::SHADOW:
-    mStateFuncs ={ makeStateFunc<SuzySpriteSHADOW>( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE>{} ) };
-    break;
-  }
 }
 
 VidOperator::MemOp VidOperator::flush()
@@ -191,14 +178,14 @@ VidOperator::MemOp VidOperator::process( int hpos, uint8_t pixel )
   if ( mEdge )
   {
     mOff = off;
-    int idx = ( pixel << 2 ) | mEdge | ( hpos & 1 );
+    int idx = mSpriteType * VidOperator::STATEFUN_SIZE | ( pixel << 2 ) | mEdge | ( hpos & 1 );
     mOp = mStateFuncs[idx];
     mEdge = 0;
     return MemOp{};
   }
   else
   {
-    int idx = ( pixel << 2 ) | ( hpos & 1 );
+    int idx = mSpriteType * VidOperator::STATEFUN_SIZE | ( pixel << 2 ) | ( hpos & 1 );
     if ( mOff == off )
     {
       auto op = mStateFuncs[idx];

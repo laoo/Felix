@@ -59,7 +59,8 @@ public:
   static constexpr size_t STATEFUN_SIZE = 1 << 6;
 
 private:
-  std::array<MemOp, STATEFUN_SIZE> mStateFuncs;
+  std::array<MemOp, STATEFUN_SIZE*8> mStateFuncs;
+  int mSpriteType;
   int mOff;
   MemOp mOp;
   uint16_t mVidAdr;
