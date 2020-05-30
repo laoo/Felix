@@ -57,7 +57,7 @@ ColOperator::MemOp ColOperator::flush()
 {
   if ( mMask )
   {
-    return MemOp{ mMask, mStoreAddr, mColl };
+    return MemOp{ mMask, ( uint16_t )( mColAdr + mStoreAddr ), mColl };
   }
   else
   {
@@ -83,7 +83,7 @@ ColOperator::MemOp ColOperator::process( int hpos, uint8_t pixel )
   {
     if ( mMask )
     {
-      result = MemOp{ mMask, mStoreAddr, mColl };
+      result = MemOp{ mMask, (uint16_t)( mColAdr + mStoreAddr ), mColl };
       mMask = 0;
     }
     mStoreAddr = hposfloor;
@@ -92,7 +92,7 @@ ColOperator::MemOp ColOperator::process( int hpos, uint8_t pixel )
   assert( pixel < 16 );
   if ( mProcesStates[mSpriteType * ColOperator::POSSIBLE_PIXELS + pixel] )
   {
-    mMask |= 0xf0000000 >> hposrem;
+    mMask |= 0xf0000000 >> ( hposrem * 4 );
   }
  
   return result;
