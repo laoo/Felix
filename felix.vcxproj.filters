@@ -67,6 +67,9 @@
     <ClCompile Include="ComLynx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ColOperator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -139,6 +142,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ComLynx.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ColOperator.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="SpriteTemplates.hpp">

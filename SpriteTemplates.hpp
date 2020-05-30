@@ -10,16 +10,22 @@ struct SuzySprite
 template<>
 struct SuzySprite<Suzy::Sprite::BACKGROUND>
 {
+  //xor sprite performs always RMW on video buffer
   static constexpr bool eor = false;
+  //background sprite if always opaque so does not read video buffer
   static constexpr bool background = true;
-  static constexpr bool collRead = false;
+  //whether collision buffer is read and collision depository updated
+  static constexpr bool collDep = false;
+  //whether collision bufers is written
   static constexpr bool collWrite = true;
 
+  //whether given pixel is opaque
   static constexpr bool opaque( int pixel )
   {
     return true;
   }
 
+  //whether given pixel is colliding
   static constexpr bool colliding( int pixel )
   {
     return pixel != 0xe;
@@ -31,7 +37,7 @@ struct SuzySprite<Suzy::Sprite::BACKNONCOLL>
 {
   static constexpr bool eor = false;
   static constexpr bool background = true;
-  static constexpr bool collRead = false;
+  static constexpr bool collDep = false;
   static constexpr bool collWrite = false;
 
   static constexpr bool opaque( int pixel )
@@ -50,7 +56,7 @@ struct SuzySprite<Suzy::Sprite::BSHADOW>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
-  static constexpr bool collRead = true;
+  static constexpr bool collDep = true;
   static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )
@@ -69,7 +75,7 @@ struct SuzySprite<Suzy::Sprite::BOUNDARY>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
-  static constexpr bool collRead = true;
+  static constexpr bool collDep = true;
   static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )
@@ -88,7 +94,7 @@ struct SuzySprite<Suzy::Sprite::NORMAL>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
-  static constexpr bool collRead = true;
+  static constexpr bool collDep = true;
   static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )
@@ -107,7 +113,7 @@ struct SuzySprite<Suzy::Sprite::NONCOLL>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
-  static constexpr bool collRead = false;
+  static constexpr bool collDep = false;
   static constexpr bool collWrite = false;
 
   static constexpr bool opaque( int pixel )
@@ -117,7 +123,7 @@ struct SuzySprite<Suzy::Sprite::NONCOLL>
 
   static constexpr bool colliding( int pixel )
   {
-    return pixel != 0;
+    return false;
   }
 };
 
@@ -125,7 +131,7 @@ template<>
 struct SuzySprite<Suzy::Sprite::XOR>
 {
   static constexpr bool eor = true;
-  static constexpr bool collRead = true;
+  static constexpr bool collDep = true;
   static constexpr bool collWrite = true;
 
   static constexpr bool colliding( int pixel )
@@ -139,7 +145,7 @@ struct SuzySprite<Suzy::Sprite::SHADOW>
 {
   static constexpr bool eor = false;
   static constexpr bool background = false;
-  static constexpr bool collRead = true;
+  static constexpr bool collDep = true;
   static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )

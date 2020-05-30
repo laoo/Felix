@@ -160,6 +160,9 @@
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="BusMaster.cpp" />
     <ClCompile Include="Cartridge.cpp" />
+    <ClCompile Include="ColOperator.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="ComLynx.cpp" />
     <ClCompile Include="CPUExecute.cpp" />
     <ClCompile Include="CPUTrace.cpp" />
@@ -182,6 +185,7 @@
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="BusMaster.hpp" />
     <ClInclude Include="Cartridge.hpp" />
+    <ClInclude Include="ColOperator.hpp" />
     <ClInclude Include="ComLynx.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="KeyInput.hpp" />
