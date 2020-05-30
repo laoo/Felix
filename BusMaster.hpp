@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 #include "CPUExecute.hpp"
-#include "SuzyCoroutines.hpp"
 #include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
@@ -28,7 +27,6 @@ public:
   CPURequest * request( CPUWrite w );
  
   CPURequest * cpuRequest();
-  SuzyRequest * suzyRequest();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
 
@@ -86,9 +84,7 @@ private:
   std::shared_ptr<Suzy> mSuzy;
   TraceRequest mDReq;
   CPURequest mCPUReq;
-  SuzyRequest mSuzyReq;
   CpuExecute mCpuExecute;
-  SuzySpriteProcessor mSuzyExecute;
   CpuTrace mCpuTrace;
   MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;

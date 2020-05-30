@@ -3,7 +3,6 @@
 #include <array>
 #include <optional>
 #include "ActionQueue.hpp"
-#include "SuzyCoroutines.hpp"
 #include "PenUnpacker.hpp"
 #include "KeyInput.hpp"
 #include "SuzyMath.hpp"
@@ -22,7 +21,8 @@ public:
       WRITE,
       COLRMW,
       VIDRMW,
-      XOR
+      XOR,
+      _SIZE
     } type;
 
     Request( Type t ) : type{ t } {}
@@ -88,7 +88,6 @@ public:
   uint8_t read( uint16_t address );
   void write( uint16_t address, uint8_t value );
 
-  SuzySpriteProcessor processSprites( SuzyRequest & req );
   std::shared_ptr<ISuzyProcess> suzyProcess();
 
   friend class SuzyProcess;
@@ -320,10 +319,6 @@ private:
   void writeSPRCOLL( uint8_t value );
   void writeCart( int number, uint8_t value );
   int bpp() const;
-
-  SuzyCoSubroutine loadSCB( SuzyRequest & req );
-  SuzyCoSubroutineT<bool> renderSingleSprite( SuzyRequest & req );
-  PenUnpacker pixelUnpacker();
 
 private:
   struct SCB

@@ -40,9 +40,6 @@
     <ClCompile Include="CPUExecute.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SuzyCoroutines.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PenUnpacker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -106,9 +103,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="renderer.hxx">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SuzyCoroutines.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="PenUnpacker.hpp">

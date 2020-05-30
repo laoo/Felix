@@ -9,7 +9,7 @@
 
 BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mActionQueue{},
 mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() },
-  mDReq{}, mCPUReq{}, mSuzyReq{}, mCpuExecute{ mCpu->execute( *this ) }, mSuzyExecute{}, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
+  mDReq{}, mCPUReq{}, mCpuExecute{ mCpu->execute( *this ) }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
   {
@@ -91,11 +91,6 @@ CPURequest * BusMaster::request( CPUWrite w )
 CPURequest * BusMaster::cpuRequest()
 {
   return &mCPUReq;
-}
-
-SuzyRequest * BusMaster::suzyRequest()
-{
-  return &mSuzyReq;
 }
 
 void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
@@ -361,7 +356,7 @@ void BusMaster::processSuzy()
     int fast;
   };
 
-  static constexpr std::array<Cost, ( int )::SuzyRequest::Op::_SIZE> requestCost = {
+  static constexpr std::array<Cost, ( int )ISuzyProcess::Request::Type::_SIZE> requestCost = {
     Cost{ 0, 0 }, //NONE,
     Cost{ 1, 0 }, //READ,
     Cost{ 1, 3 }, //READ4,

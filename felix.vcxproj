@@ -168,7 +168,6 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
     <ClCompile Include="PenUnpacker.cpp" />
-    <ClCompile Include="SuzyCoroutines.cpp" />
     <ClCompile Include="SuzyMath.cpp" />
     <ClCompile Include="SuzyProcess.cpp" />
     <ClCompile Include="VidOperator.cpp" />
@@ -192,7 +191,6 @@
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="Shifter.hpp" />
     <ClInclude Include="SpriteTemplates.hpp" />
-    <ClInclude Include="SuzyCoroutines.hpp" />
     <ClInclude Include="SuzyMath.hpp" />
     <ClInclude Include="SuzyProcess.hpp" />
     <ClInclude Include="SuzyProcessCoro.hpp" />
