@@ -265,8 +265,8 @@ SubCoroutine SuzyProcess::renderSingleSprite()
       scb.sprdoff = mShifter.pull<8>();
       if ( scb.sprdoff < 2 )
         break;
-
       int totalBits = ( scb.sprdoff - 1 ) * 8;
+
       scb.vsizacum += scb.sprvsiz;
       uint8_t pixelHeight = scb.vsizacum.h;
       scb.vsizacum.h = 0;
@@ -319,6 +319,12 @@ SubCoroutine SuzyProcess::renderSingleSprite()
         }
         co_await flush();
         scb.sprvpos += up ? -1 : 1;
+        scb.procadr = scb.sprdline;
+        mShifter = Shifter{};
+        mShifter.push( co_await SuzyRead4{ scb.procadr } );
+        scb.procadr += 4;
+        scb.sprdoff = mShifter.pull<8>();
+        totalBits = ( scb.sprdoff - 1 ) * 8;
       }
       scb.sprdline += scb.sprdoff;
     }
