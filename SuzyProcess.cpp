@@ -45,9 +45,9 @@ void SuzyProcess::setWrite4( uint16_t address, uint32_t value )
   requestWrite4 = ISuzyProcess::RequestWrite4{ address, value };
 }
 
-void SuzyProcess::setRMW( uint16_t address, uint8_t value, uint8_t mask )
+void SuzyProcess::setVidRMW( uint16_t address, uint8_t value, uint8_t mask )
 {
-  requestRMW = ISuzyProcess::RequestRMW{ address, value, mask };
+  requestVidRMW = ISuzyProcess::RequestVidRMW{ address, value, mask };
 }
 
 void SuzyProcess::setXor( uint16_t address, uint8_t value )
@@ -444,7 +444,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
           break;
         case VidOperator::MemOp::MODIFY:
         case VidOperator::MemOp::WRITE | VidOperator::MemOp::MODIFY:
-          co_await SuzyRMW{ memOp.addr, memOp.value, memOp.mask() };
+          co_await SuzyVidRMW{ memOp.addr, memOp.value, memOp.mask() };
           break;
         case VidOperator::MemOp::XOR:
           co_await SuzyXOR{ memOp.addr, memOp.value };

@@ -24,7 +24,7 @@ public:
   void setRead4( uint16_t address );
   void setWrite( uint16_t address, uint8_t value );
   void setWrite4( uint16_t address, uint32_t value );
-  void setRMW( uint16_t address, uint8_t value, uint8_t mask );
+  void setVidRMW( uint16_t address, uint8_t value, uint8_t mask );
   void setXor( uint16_t address, uint8_t value );
   Response const& getResponse() const;
   void setHandle( std::experimental::coroutine_handle<> c );
@@ -55,7 +55,7 @@ private:
     RequestRead4 requestRead4;
     RequestWrite requestWrite;
     RequestWrite4 requestWrite4;
-    RequestRMW requestRMW;
+    RequestVidRMW requestVidRMW;
     RequestXOR requestXOR;
     Response response;
   };

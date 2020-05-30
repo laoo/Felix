@@ -156,7 +156,7 @@ struct Requests
     p->setWrite4( w.address, w.value );
     return Awaiter{ p };
   }
-  auto await_transform( SuzyRMW rmw )
+  auto await_transform( SuzyVidRMW rmw )
   {
     struct Awaiter
     {
@@ -166,7 +166,7 @@ struct Requests
       void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
-    p->setRMW( rmw.address, rmw.value, rmw.mask );
+    p->setVidRMW( rmw.address, rmw.value, rmw.mask );
     return Awaiter{ p };
   }
   auto await_transform( SuzyXOR x )

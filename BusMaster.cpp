@@ -262,7 +262,7 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks, KeyInput & ke
       processSuzy();
       break;
     case Action::SUZY_MASKED_RMW:
-      suzyMaskedRMW( ( ISuzyProcess::RequestRMW const* )mSuzyProcessRequest );
+      suzyVidRMW( ( ISuzyProcess::RequestVidRMW const* )mSuzyProcessRequest );
       processSuzy();
       break;
     case Action::SUZY_XOR:
@@ -323,7 +323,7 @@ void BusMaster::suzyWrite4( ISuzyProcess::RequestWrite4 const * req )
   *( ( uint32_t* )( mRAM.data() + req->addr ) ) =  req->value;
 }
 
-void BusMaster::suzyMaskedRMW( ISuzyProcess::RequestRMW const* req )
+void BusMaster::suzyVidRMW( ISuzyProcess::RequestVidRMW const* req )
 {
   auto value = mRAM[req->addr] & req->mask | req->value;
   mRAM[req->addr] = ( uint8_t )value;

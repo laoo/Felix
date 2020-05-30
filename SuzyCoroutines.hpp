@@ -48,7 +48,7 @@ struct SuzyRead { uint16_t address; };
 struct SuzyRead4 { uint16_t address; };
 struct SuzyWrite { uint16_t address; uint8_t value; };
 struct SuzyWrite4 { uint16_t address; uint32_t value; };
-struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
+struct SuzyVidRMW { uint16_t address; uint8_t value; uint8_t mask; };
 struct SuzyXOR { uint16_t address; uint8_t value; };
 
 class SuzyCoSubroutine
@@ -110,7 +110,7 @@ public:
       mReq->address = read.address;
       return Awaiter{ mReq };
     }
-    auto await_transform( SuzyRMW rmw )
+    auto await_transform( SuzyVidRMW rmw )
     {
       struct Awaiter
       {
@@ -223,7 +223,7 @@ public:
       mReq->address = read.address;
       return Awaiter{ mReq };
     }
-    auto await_transform( SuzyRMW rmw )
+    auto await_transform( SuzyVidRMW rmw )
     {
       struct Awaiter
       {
@@ -339,7 +339,7 @@ public:
       };
       return Awaiter{ std::move( suzyCoro ) };
     }
-    auto await_transform( SuzyRMW rmw )
+    auto await_transform( SuzyVidRMW rmw )
     {
       struct Awaiter
       {

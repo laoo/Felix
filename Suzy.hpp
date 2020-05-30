@@ -62,12 +62,12 @@ public:
     uint32_t value;
     RequestWrite4( uint16_t addr, uint32_t value ) : Request{ WRITE4 }, addr{ addr }, value{ value } {}
   };
-  struct RequestRMW : public Request
+  struct RequestVidRMW : public Request
   {
     uint16_t addr;
     uint8_t value;
     uint8_t mask;
-    RequestRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ RMW }, addr{ addr }, value{ value }, mask{ mask } {}
+    RequestVidRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ RMW }, addr{ addr }, value{ value }, mask{ mask } {}
   };
   struct RequestXOR : public Request
   {

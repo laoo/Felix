@@ -669,7 +669,7 @@ SuzySpriteProcessor Suzy::processSprites( SuzyRequest & req )
 
     if ( mEveron && !isEveronScreen )
     {
-      co_await SuzyRMW{ ( uint16_t )( mSCB.scbadr + mSCB.colloff ), 0xff, 0x80 };
+      co_await SuzyVidRMW{ ( uint16_t )( mSCB.scbadr + mSCB.colloff ), 0xff, 0x80 };
     }
   }
   
