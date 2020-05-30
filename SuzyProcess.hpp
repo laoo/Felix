@@ -23,7 +23,7 @@ public:
   void setRead( uint16_t address );
   void setRead4( uint16_t address );
   void setWrite( uint16_t address, uint8_t value );
-  void setWrite4( uint16_t address, uint32_t value );
+  void setColRMW( uint16_t address, uint32_t mask, uint8_t value );
   void setVidRMW( uint16_t address, uint8_t value, uint8_t mask );
   void setXor( uint16_t address, uint8_t value );
   Response const& getResponse() const;
@@ -54,7 +54,7 @@ private:
     RequestRead requestRead;
     RequestRead4 requestRead4;
     RequestWrite requestWrite;
-    RequestWrite4 requestWrite4;
+    RequestColRMW requestWrite4;
     RequestVidRMW requestVidRMW;
     RequestXOR requestXOR;
     Response response;

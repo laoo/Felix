@@ -20,8 +20,8 @@ public:
       READ,
       READ4,
       WRITE,
-      WRITE4,
-      RMW,
+      COLRMW,
+      VIDRMW,
       XOR
     } type;
 
@@ -56,18 +56,19 @@ public:
     uint8_t value;
     RequestWrite( uint16_t addr, uint8_t value ) : Request{ WRITE }, addr{ addr }, value{ value } {}
   };
-  struct RequestWrite4 : public Request
+  struct RequestColRMW : public Request
   {
+    uint32_t mask;
     uint16_t addr;
-    uint32_t value;
-    RequestWrite4( uint16_t addr, uint32_t value ) : Request{ WRITE4 }, addr{ addr }, value{ value } {}
+    uint8_t value;
+    RequestColRMW( uint16_t addr, uint32_t mask, uint8_t value ) : Request{ COLRMW }, mask{ mask }, addr{ addr }, value{ value } {}
   };
   struct RequestVidRMW : public Request
   {
     uint16_t addr;
     uint8_t value;
     uint8_t mask;
-    RequestVidRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ RMW }, addr{ addr }, value{ value }, mask{ mask } {}
+    RequestVidRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ VIDRMW }, addr{ addr }, value{ value }, mask{ mask } {}
   };
   struct RequestXOR : public Request
   {

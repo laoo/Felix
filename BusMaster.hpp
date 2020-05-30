@@ -62,7 +62,7 @@ private:
   void suzyRead( ISuzyProcess::RequestRead const* req );
   void suzyRead4( ISuzyProcess::RequestRead4 const* req );
   void suzyWrite( ISuzyProcess::RequestWrite const* req );
-  void suzyWrite4( ISuzyProcess::RequestWrite4 const* req );
+  void suzyColRMW( ISuzyProcess::RequestColRMW const* req );
   void suzyVidRMW( ISuzyProcess::RequestVidRMW const* req );
   void suzyXor( ISuzyProcess::RequestXOR const* req );
 

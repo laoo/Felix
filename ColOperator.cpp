@@ -19,65 +19,16 @@ bool preprocessFun( bool edge, int hposLast, int hposCurrent )
   }
 }
 
-template<typename Type>
-ColOperator::ProcessResult processFun( ColOperator::ProcessArg arg )
+template<typename Type, int PIXEL>
+bool processFun()
 {
-  //struct ProcessArg
-  //{
-  //  uint8_t inColl;
-  //  uint8_t sprColl;
-  //  uint8_t hiColl;
-  //  uint8_t pixel;
-  //};
-
-  //struct ProcessResult
-  //{
-  //  uint8_t hiCol;
-  //  uint8_t outCol;
-  //  uint8_t outMask;
-  //};
-
-  if ( Type::colliding( arg.pixel ) )
-  {
-    if constexpr ( Type::collWrite )
-    {
-      if constexpr ( Type::collDep )
-      {
-        return { std::max( arg.inColl, arg.hiColl), arg.sprColl, 0xf };
-      }
-      else
-      {
-        return { arg.hiColl, arg.sprColl, 0xf };
-      }
-    }
-    else
-    {
-      if constexpr ( Type::collDep )
-      {
-        return { std::max( arg.inColl, arg.hiColl ), 0x0, 0x0 };
-      }
-      else
-      {
-        return { arg.hiColl, 0x0, 0x0 };
-      }
-    }
-  }
-  else
-  {
-    return { arg.hiColl, 0x0, 0x0 };
-  }
+  return Type::colliding( PIXEL ) && Type::collWrite;
 }
 
 template<int... I>
-static std::array<ColOperator::preprocessFunT, 8> makePreprocessFunc( std::integer_sequence<int, I...> )
+static std::array<bool, ColOperator::STATES_SIZE> makeProcessStates( std::integer_sequence<int, I...> )
 {
-  return { preprocessFun<SuzySprite<( Suzy::Sprite )I>>... };
-}
-
-template<int... I>
-static std::array<ColOperator::processFunT, 8> makeProcessFunc( std::integer_sequence<int, I...> )
-{
-  return { processFun<SuzySprite<( Suzy::Sprite )I>>... };
+  return { processFun<SuzySprite<( Suzy::Sprite )( I / ColOperator::POSSIBLE_PIXELS )>,(I&(ColOperator::POSSIBLE_PIXELS-1))>()... };
 }
 
 template<int... I>
@@ -90,56 +41,69 @@ template<int... I>
 static std::array<bool, 8> makeDepositoryUpdatable( std::integer_sequence<int, I...> )
 {
   return { SuzySprite<( Suzy::Sprite )I>::collDep... };
-
 }
 
 
 ColOperator::ColOperator( Suzy::Sprite spriteType, uint8_t sprColl ) :
-  mPreprocesFuncs{ makePreprocessFunc( std::make_integer_sequence<int, 8>{} ) },
-  mProcesFuncs{ makeProcessFunc( std::make_integer_sequence<int, 8>{} ) },
+  mProcesStates{ makeProcessStates( std::make_integer_sequence<int, STATES_SIZE>{} ) },
   mSpriteCollideable{ makeSpriteCollideable( std::make_integer_sequence<int,8>{} ) },
   mDepositoryUpdatable{ makeDepositoryUpdatable( std::make_integer_sequence<int, 8>{} ) },
-  mSpriteType{ (int)spriteType },
-  mColl{ (uint8_t)( sprColl & Suzy::SPRCOLL::NUMBER_MASK ) },
-  mEnabled{ ( sprColl & Suzy::SPRCOLL::NO_COLLIDE ) != 0 }
+  mSpriteType{ (int)spriteType * ColOperator::POSSIBLE_PIXELS },
+  mMask{}, mStoreAddr{}, mColAdr{}, mColl{ (uint8_t)( ( sprColl & 0xf ) | ( ( sprColl & 0xf ) << 4 ) ) }, mHiColl{}
 {
 }
 
 ColOperator::MemOp ColOperator::flush()
 {
-  if ( !mEnabled )
-    return MemOp{};
-
-  return MemOp{};
+  if ( mMask )
+  {
+    return MemOp{ mMask, mStoreAddr, mColl };
+  }
+  else
+  {
+    return {};
+  }
 }
 
-void ColOperator::newLine( uint16_t vidadr )
+void ColOperator::newLine( uint16_t coladr )
 {
-}
-
-ColOperator::MemOp ColOperator::preProcess( int hpos )
-{
-  if ( !mEnabled )
-    return MemOp{};
-
-  return MemOp{};
+  mColAdr = coladr;
+  mStoreAddr = 0xffff;  //invalid address to detect first access
+  mMask = 0x0000;
 }
 
 ColOperator::MemOp ColOperator::process( int hpos, uint8_t pixel )
 {
-  if ( !mEnabled )
-    return MemOp{};
+  MemOp result{};
 
-  return MemOp{};
+  uint16_t hposfloor = (uint16_t)( hpos & ~7 );
+  int hposrem = hpos & 7;
+
+  if ( mStoreAddr != hposfloor )
+  {
+    if ( mMask )
+    {
+      result = MemOp{ mMask, mStoreAddr, mColl };
+      mMask = 0;
+    }
+    mStoreAddr = hposfloor;
+  }
+
+  assert( pixel < 16 );
+  if ( mProcesStates[mSpriteType * ColOperator::POSSIBLE_PIXELS + pixel] )
+  {
+    mMask |= 0xf0000000 >> hposrem;
+  }
+ 
+  return result;
 }
 
-void ColOperator::read( uint16_t value )
+void ColOperator::receiveHiColl( uint8_t value )
 {
-}
-
-bool ColOperator::enabled() const
-{
-  return mEnabled;
+  if ( mDepositoryUpdatable[mSpriteType] )
+  {
+    mHiColl = std::max( mHiColl, value );
+  }
 }
 
 uint8_t ColOperator::hiColl() const

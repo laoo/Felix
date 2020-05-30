@@ -40,9 +40,9 @@ void SuzyProcess::setWrite( uint16_t address, uint8_t value )
   requestWrite = ISuzyProcess::RequestWrite{ address, value };
 }
 
-void SuzyProcess::setWrite4( uint16_t address, uint32_t value )
+void SuzyProcess::setColRMW( uint16_t address, uint32_t mask, uint8_t value )
 {
-  requestWrite4 = ISuzyProcess::RequestWrite4{ address, value };
+  requestWrite4 = ISuzyProcess::RequestColRMW{ address, mask, value };
 }
 
 void SuzyProcess::setVidRMW( uint16_t address, uint8_t value, uint8_t mask )
@@ -334,7 +334,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
   co_await this;
 
   VidOperator vidOp{ mSuzy.mSpriteType };
-  ColOperator colOp{ mSuzy.mSpriteType, mSuzy.mSprColl };
+  ColOperator colOp{ mSuzy.mSpriteType, (uint8_t)( mSuzy.mSprColl & Suzy::SPRCOLL::NUMBER_MASK ) };
 
   int bpp = mSuzy.bpp();
 
@@ -376,19 +376,15 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
         co_await SuzyXOR{ memOp.addr, memOp.value };
         break;
       default:
-        co_await SuzyRMW{ memOp.addr, memOp.value, memOp.mask() };
+        co_await SuzyVidRMW{ memOp.addr, memOp.value, memOp.mask() };
         break;
       }
-      switch ( auto memOp = colOp.flush() )
+      if ( !mSuzy.mDisableCollisions )
       {
-      case ColOperator::MemOp::WRITE:
-        co_await SuzyWrite4{ memOp.addr, memOp.value };
-        break;
-      case ColOperator::MemOp::READ:
-        assert( false );
-        [[fallthrough]];
-      default:
-        break;
+        if( auto memOp = colOp.flush() )
+        {
+          colOp.receiveHiColl( co_await SuzyColRMW{ memOp.mask, memOp.addr, memOp.value } );
+        }
       }
       continue;
     case AssemblePen::Op::FINISH:
@@ -410,30 +406,11 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
       {
         uint8_t pixel = mSuzy.mPalette[pen];
 
-        if ( colOp.enabled() )
+        if ( !mSuzy.mDisableCollisions )
         {
-          switch ( auto memOp = colOp.preProcess( sprhpos ) )
+          if ( auto memOp = colOp.process( sprhpos, pixel ) )
           {
-          case ColOperator::MemOp::READ:
-            colOp.read( co_await SuzyRead4{ memOp.addr } );
-            break;
-          case ColOperator::MemOp::WRITE:
-            assert( false );
-            [[fallthrough]];
-          default:
-            break;
-          }
-
-          switch ( auto memOp = colOp.process( sprhpos, pixel ) )
-          {
-          case ColOperator::MemOp::WRITE:
-            co_await SuzyWrite4{ memOp.addr, memOp.value };
-            break;
-          case ColOperator::MemOp::READ:
-            assert( false );
-            [[fallthrough]];
-          default:
-            break;
+            colOp.receiveHiColl( co_await SuzyColRMW{ memOp.mask, memOp.addr, memOp.value } );
           }
         }
 

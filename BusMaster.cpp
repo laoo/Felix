@@ -13,15 +13,15 @@ mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mC
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
   {
-    std::ifstream fin{ "d:/tests/lynxboot.img", std::ios::binary };
+    std::ifstream fin{ "d:/test/tests/lynxboot.img", std::ios::binary };
     if ( fin.bad() )
       throw std::exception{};
 
     fin.read( ( char* )mROM.data(), mROM.size() );
   }
-  if ( size_t size = (size_t)std::filesystem::file_size( "d:/tests/7.o" ) )
+  if ( size_t size = (size_t)std::filesystem::file_size( "d:/test/tests/7.o" ) )
   {
-    std::ifstream fin{ "d:/tests/7.o", std::ios::binary };
+    std::ifstream fin{ "d:/test/tests/7.o", std::ios::binary };
     if ( fin.bad() )
       throw std::exception{};
 
@@ -257,11 +257,11 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks, KeyInput & ke
       suzyWrite( ( ISuzyProcess::RequestWrite const* )mSuzyProcessRequest );
       processSuzy();
       break;
-    case Action::SUZY_WRITE4:
-      suzyWrite4( ( ISuzyProcess::RequestWrite4 const* )mSuzyProcessRequest );
+    case Action::SUZY_COLRMW:
+      suzyColRMW( ( ISuzyProcess::RequestColRMW const* )mSuzyProcessRequest );
       processSuzy();
       break;
-    case Action::SUZY_MASKED_RMW:
+    case Action::SUZY_VIDRMW:
       suzyVidRMW( ( ISuzyProcess::RequestVidRMW const* )mSuzyProcessRequest );
       processSuzy();
       break;
@@ -317,10 +317,28 @@ void BusMaster::suzyWrite( ISuzyProcess::RequestWrite const * req )
   mRAM[req->addr] = req->value;
 }
 
-void BusMaster::suzyWrite4( ISuzyProcess::RequestWrite4 const * req )
+void BusMaster::suzyColRMW( ISuzyProcess::RequestColRMW const * req )
 {
   assert( req->addr <= 0xfffc );
-  *( ( uint32_t* )( mRAM.data() + req->addr ) ) =  req->value;
+  const uint32_t value = *( (uint32_t const*)( mRAM.data() + req->addr ) );
+
+  //broadcast
+  const uint8_t u8 = req->value;
+  const uint16_t u16 = req->value | ( req->value << 8 );
+  const uint32_t u32 = u16 | ( u16 << 16 );
+
+  const uint32_t rmwvaleu = ( value & ~req->mask ) | ( u32 & req->mask );
+  *( (uint32_t*)( mRAM.data() + req->addr ) ) =  rmwvaleu;
+
+  const uint32_t resvalue = value & req->mask;
+  uint8_t result{};
+
+  //horizontal max
+  for ( int i = 0; i < 8; ++i )
+  {
+    result = std::max( result, (uint8_t)( resvalue >> ( i * 4 ) & 0x0f ) );
+  }
+  mSuzyProcess->respond( result );
 }
 
 void BusMaster::suzyVidRMW( ISuzyProcess::RequestVidRMW const* req )
@@ -348,8 +366,8 @@ void BusMaster::processSuzy()
     Cost{ 1, 0 }, //READ,
     Cost{ 1, 3 }, //READ4,
     Cost{ 1, 0 }, //WRITE,
-    Cost{ 1, 3 }, //WRITE4,
-    Cost{ 1, 1 }, //MASKED_RMW,
+    Cost{ 1, 7 }, //COLRMW,
+    Cost{ 1, 1 }, //VIDRMW,
     Cost{ 1, 1 }  //XOR,
   };
 

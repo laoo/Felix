@@ -7,7 +7,7 @@
 //struct SuzyRead { uint16_t address; };
 //struct SuzyRead4 { uint16_t address; };
 //struct SuzyWrite { uint16_t address; uint8_t value; };
-//struct SuzyWrite4 { uint16_t address; uint32_t value; };
+//struct SuzyColRMW { uint16_t address; uint32_t value; };
 //struct SuzyRMW { uint16_t address; uint8_t value; uint8_t mask; };
 //struct SuzyXOR { uint16_t address; uint8_t value; };
 
@@ -143,17 +143,17 @@ struct Requests
     p->setWrite( w.address, w.value );
     return Awaiter{ p };
   }
-  auto await_transform( SuzyWrite4 w )
+  auto await_transform( SuzyColRMW w )
   {
     struct Awaiter
     {
       SuzyProcess * p;
       bool await_ready() { return false; }
-      void await_resume() {}
+      uint8_t await_resume() { return (uint8_t)p->getResponse().value; }
       void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
-    p->setWrite4( w.address, w.value );
+    p->setColRMW( w.address, w.mask, w.value );
     return Awaiter{ p };
   }
   auto await_transform( SuzyVidRMW rmw )

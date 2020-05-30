@@ -11,8 +11,8 @@ struct SuzyRequest
     READ,
     READ4,
     WRITE,
-    WRITE4,
-    MASKED_RMW,
+    COLRMW,
+    VIDRMW,
     XOR,
     _SIZE
   };
@@ -47,7 +47,7 @@ struct SuzyRequest
 struct SuzyRead { uint16_t address; };
 struct SuzyRead4 { uint16_t address; };
 struct SuzyWrite { uint16_t address; uint8_t value; };
-struct SuzyWrite4 { uint16_t address; uint32_t value; };
+struct SuzyColRMW { uint32_t mask; uint16_t address;  uint8_t value; };
 struct SuzyVidRMW { uint16_t address; uint8_t value; uint8_t mask; };
 struct SuzyXOR { uint16_t address; uint8_t value; };
 
@@ -119,7 +119,7 @@ public:
         void await_resume() {}
         void await_suspend( std::experimental::coroutine_handle<> c ) { req->coro = c; }
       };
-      mReq->operation = SuzyRequest::Op::MASKED_RMW;
+      mReq->operation = SuzyRequest::Op::VIDRMW;
       mReq->address = rmw.address;
       mReq->value = rmw.value;
       mReq->mask = rmw.mask;
@@ -348,7 +348,7 @@ public:
         void await_resume() {}
         void await_suspend( std::experimental::coroutine_handle<> c ) { req->coro = c; }
       };
-      mReq->operation = SuzyRequest::Op::MASKED_RMW;
+      mReq->operation = SuzyRequest::Op::VIDRMW;
       mReq->address = rmw.address;
       mReq->value = rmw.value;
       mReq->mask = rmw.mask;
