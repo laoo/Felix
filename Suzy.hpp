@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <array>
 #include <optional>
+#include <functional>
 #include "ActionQueue.hpp"
 #include "PenUnpacker.hpp"
 #include "KeyInput.hpp"
@@ -81,9 +82,8 @@ public:
 class Suzy
 {
 public:
-  Suzy();
+  Suzy( std::function<KeyInput()> const& inputProvider );
 
-  void updateKeyInput( KeyInput const& input );
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
   void write( uint16_t address, uint8_t value );
@@ -350,6 +350,7 @@ private:
   } mSCB;
 
   SuzyMath mMath;
+  std::function<KeyInput()> const mInputProvider;
   uint64_t mAccessTick;
 
   std::array<uint8_t, 16> mPalette;
@@ -374,8 +375,6 @@ private:
   Reload mReload;
   uint8_t mSprColl;
   uint8_t mSprInit; //should be 0xf3
-  uint8_t mJoystick;
-  uint8_t mSwitches;
   uint8_t mCart0;
   uint8_t mCart1;
   std::optional<uint8_t> mFred;

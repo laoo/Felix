@@ -4,7 +4,7 @@
 #include "AudioChannel.hpp"
 #include "BusMaster.hpp"
 
-Mikey::Mikey( BusMaster & busMaster ) : mBusMaster{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>() },
+Mikey::Mikey( BusMaster & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mBusMaster{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
   mParallelPort{ mBusMaster.getCartridge(), mBusMaster.getComLynx(), *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
@@ -133,13 +133,13 @@ uint8_t Mikey::read( uint16_t address )
     switch ( address & 0x7 )
     {
     case AUDIO::VOLCNTRL:
-      return mAudioChannels[( address >> 3 ) & 3]->getVolume( mAccessTick );
+      return mAudioChannels[( address >> 3 ) & 3]->getVolume();
     case AUDIO::FEEDBACK:
-      return mAudioChannels[( address >> 3 ) & 3]->getFeedback( mAccessTick );
+      return mAudioChannels[( address >> 3 ) & 3]->getFeedback();
     case AUDIO::OUTPUT:
-      return mAudioChannels[( address >> 3 ) & 3]->getOutput( mAccessTick );
+      return mAudioChannels[( address >> 3 ) & 3]->getOutput();
     case AUDIO::SHIFT:
-      return mAudioChannels[( address >> 3 ) & 3]->getShift( mAccessTick );
+      return mAudioChannels[( address >> 3 ) & 3]->getShift();
     case AUDIO::BACKUP:
       return mAudioChannels[( address >> 3 ) & 3]->getBackup( mAccessTick );
     case AUDIO::CONTROL:
@@ -240,16 +240,16 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     switch ( address & 0x7 )
     {
     case AUDIO::VOLCNTRL:
-      result = mAudioChannels[( address >> 3 ) & 3]->setVolume( mAccessTick, (int8_t)value );
+      result = mAudioChannels[( address >> 3 ) & 3]->setVolume( (int8_t)value );
       break;
     case AUDIO::FEEDBACK:
-      result = mAudioChannels[( address >> 3 ) & 3]->setFeedback( mAccessTick, value );
+      result = mAudioChannels[( address >> 3 ) & 3]->setFeedback( value );
       break;
     case AUDIO::OUTPUT:
-      result = mAudioChannels[( address >> 3 ) & 3]->setOutput( mAccessTick, value );
+      result = mAudioChannels[( address >> 3 ) & 3]->setOutput( value );
       break;
     case AUDIO::SHIFT:
-      result = mAudioChannels[( address >> 3 ) & 3]->setShift( mAccessTick, value );
+      result = mAudioChannels[( address >> 3 ) & 3]->setShift( value );
       break;
     case AUDIO::BACKUP:
       result = mAudioChannels[( address >> 3 ) & 3]->setBackup( mAccessTick, value );
@@ -409,6 +409,19 @@ uint8_t Mikey::getIRQ() const
 void Mikey::suzyDone()
 {
   mSuzyDone = true;
+}
+
+std::pair<float, float> Mikey::sampleAudio() const
+{
+  std::pair<float, float> result{};
+
+  for ( size_t i = 0; i < 4; ++i )
+  {
+    result.first += (int8_t)mAudioChannels[i]->getOutput();
+    result.second += (int8_t)mAudioChannels[i]->getOutput();
+  }
+
+  return { result.first / ( 4.0f * 128.0f ), result.second / ( 4.0f * 128.0f ) };
 }
 
 DisplayGenerator::Pixel const * Mikey::getSrface() const

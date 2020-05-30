@@ -26,25 +26,25 @@ AudioChannel::AudioChannel( TimerCore & timer ) : mTimer{ timer }, mShiftRegiste
 {
 }
 
-SequencedAction AudioChannel::setVolume( uint64_t tick, int8_t value )
+SequencedAction AudioChannel::setVolume( int8_t value )
 {
   mVolume = value;
   return {};
 }
 
-SequencedAction AudioChannel::setFeedback( uint64_t tick, uint8_t value )
+SequencedAction AudioChannel::setFeedback( uint8_t value )
 {
   mTapSelector = ( mTapSelector & 0b0011'1100'0000 ) | ( value & 0b0011'1111 ) | ( ( value & 0b1100'0000 ) << 4 );
   return {};
 }
 
-SequencedAction AudioChannel::setOutput( uint64_t tick, uint8_t value )
+SequencedAction AudioChannel::setOutput( uint8_t value )
 {
   mOutput = value;
   return {};
 }
 
-SequencedAction AudioChannel::setShift( uint64_t tick, uint8_t value )
+SequencedAction AudioChannel::setShift( uint8_t value )
 {
   mShiftRegister = ( mShiftRegister & 0xff00 ) | value;
   return {};
@@ -73,22 +73,22 @@ SequencedAction AudioChannel::setOther( uint64_t tick, uint8_t value )
   return mTimer.setControlB( tick, value & 0b0000'1111 );
 }
 
-uint8_t AudioChannel::getVolume( uint64_t tick )
+uint8_t AudioChannel::getVolume()
 {
   return (uint8_t)mVolume;
 }
 
-uint8_t AudioChannel::getFeedback( uint64_t tick )
+uint8_t AudioChannel::getFeedback()
 {
   return mTapSelector & 0b0000'0011'1111 | ( ( mTapSelector & 0b1100'0000'0000 ) >> 10 );
 }
 
-uint8_t AudioChannel::getOutput( uint64_t tick )
+uint8_t AudioChannel::getOutput()
 {
   return mOutput;
 }
 
-uint8_t AudioChannel::getShift( uint64_t tick )
+uint8_t AudioChannel::getShift()
 {
   return mShiftRegister & 0xff;
 }

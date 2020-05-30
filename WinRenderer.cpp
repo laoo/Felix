@@ -132,6 +132,6 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   UINT v[4]={};
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV, v );
   mImmediateContext->Dispatch( 10, 102, 1 );
-  mSwapChain->Present( 1, 0 );
+  mSwapChain->Present( 0, 0 );
 }
 

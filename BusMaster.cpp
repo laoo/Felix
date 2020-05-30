@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <cassert>
 
-BusMaster::BusMaster() : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mActionQueue{},
-mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this ) }, mSuzy{ std::make_shared<Suzy>() },
+BusMaster::BusMaster( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
+mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( inputProvider ) },
   mDReq{}, mCPUReq{}, mCpuExecute{ mCpu->execute( *this ) }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
@@ -108,9 +108,8 @@ void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
   mActionQueue.push( { Action::DISPLAY_DMA, tick } );
 }
 
-DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks, KeyInput & keys )
+void BusMaster::process( uint64_t ticks )
 {
-  mSuzy->updateKeyInput( keys );
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
 
   for ( ;; )
@@ -274,7 +273,7 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks, KeyInput & ke
       processSuzy();
       break;
     case Action::END_FRAME:
-      return mMikey->getSrface();
+      return;
     case Action::CPU_FETCH_OPCODE_SUZY:
     case Action::CPU_FETCH_OPCODE_MIKEY:
     case Action::CPU_FETCH_OPERAND_SUZY:
@@ -285,6 +284,21 @@ DisplayGenerator::Pixel const* BusMaster::process( uint64_t ticks, KeyInput & ke
       break;
     }
   }
+}
+
+std::pair<float, float> BusMaster::getSample( int sps )
+{
+  int cnt = 16000000 / sps;
+  mSamplesRemainder += 16000000 % sps;
+  if ( mSamplesRemainder > sps )
+  {
+    mSamplesRemainder &= sps;
+    cnt += 1;
+  }
+
+  process( cnt );
+
+  return mMikey->sampleAudio();
 }
 
 void BusMaster::enterMonitor()

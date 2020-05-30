@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <functional>
 #include "CPUExecute.hpp"
 #include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
@@ -18,7 +19,7 @@ class ComLynx;
 class BusMaster
 {
 public:
-  BusMaster();
+  BusMaster( std::function<void( DisplayGenerator::Pixel const* )> const& dispFun, std::function<KeyInput()> const& inputProvider );
   ~BusMaster();
 
   CPURequest * request( CPUFetchOpcode r );
@@ -30,7 +31,9 @@ public:
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
 
-  DisplayGenerator::Pixel const* process( uint64_t ticks, KeyInput & keys );
+  void process( uint64_t ticks );
+
+  std::pair<float, float> getSample( int sps );
 
   void enterMonitor();
 
@@ -76,6 +79,7 @@ private:
   std::array<PageType, 256> mPageTypes;
   uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
+  int mSamplesRemainder;
   ActionQueue mActionQueue;
   std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Cartridge> mCartridge;

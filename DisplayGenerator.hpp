@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <array>
+#include <functional>
 
 class DisplayGenerator
 {
@@ -28,7 +29,7 @@ public:
     }
   };
 
-  DisplayGenerator();
+  DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun );
   void dispCtl( bool dispColor, bool dispFlip, bool dmaEnable );
 
   DMARequest hblank( uint64_t tick, int row );
@@ -46,6 +47,7 @@ private:
 
 private:
   std::array<uint64_t,10> mDMAData;
+  std::function<void( DisplayGenerator::Pixel const* )> const mDisplayFun;
   uint64_t mRowStartTick;
   uint32_t mDMAIteration;
   int32_t mDisplayRow;

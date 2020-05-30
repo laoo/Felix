@@ -1,6 +1,6 @@
 #include "DisplayGenerator.hpp"
 
-DisplayGenerator::DisplayGenerator() : mDMAData{}, mRowStartTick{}, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
+DisplayGenerator::DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mDMAData{}, mDisplayFun{ fun }, mRowStartTick{}, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
 mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
 {
   for ( uint32_t i = 0; i < 256; ++i )
@@ -107,6 +107,8 @@ void DisplayGenerator::updateDispAddr( uint16_t dispAdr )
 void DisplayGenerator::vblank( uint64_t tick )
 {
   flushDisplay( tick );
+  if ( mDisplayFun )
+    mDisplayFun( mSurface.data() );
 }
 
 void DisplayGenerator::flushDisplay( uint64_t tick )

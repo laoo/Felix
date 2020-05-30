@@ -172,6 +172,7 @@
     <ClCompile Include="SuzyMath.cpp" />
     <ClCompile Include="SuzyProcess.cpp" />
     <ClCompile Include="VidOperator.cpp" />
+    <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Suzy.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="Suzy.hpp" />
     <ClInclude Include="VidOperator.hpp" />
+    <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>

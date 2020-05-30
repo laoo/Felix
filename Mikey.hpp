@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <functional>
+#include <utility>
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
 #include "ParallelPort.hpp"
@@ -16,7 +17,7 @@ class DisplayGenerator;
 class Mikey
 {
 public:
-  Mikey( BusMaster & busMaster );
+  Mikey( BusMaster & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun );
   ~Mikey();
 
   struct WriteAction
@@ -43,6 +44,8 @@ public:
   void setDMAData( uint64_t tick, uint64_t data );
   uint8_t getIRQ() const;
   void suzyDone();
+  std::pair<float, float> sampleAudio() const;
+
 
   DisplayGenerator::Pixel const* getSrface() const;
 

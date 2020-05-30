@@ -11,19 +11,19 @@ class AudioChannel
 public:
   AudioChannel( TimerCore & timer );
 
-  SequencedAction setVolume( uint64_t tick, int8_t );
-  SequencedAction setFeedback( uint64_t tick, uint8_t );
-  SequencedAction setOutput( uint64_t tick, uint8_t );
-  SequencedAction setShift( uint64_t tick, uint8_t );
+  SequencedAction setVolume( int8_t );
+  SequencedAction setFeedback( uint8_t );
+  SequencedAction setOutput( uint8_t );
+  SequencedAction setShift( uint8_t );
   SequencedAction setBackup( uint64_t tick, uint8_t );
   SequencedAction setControl( uint64_t tick, uint8_t );
   SequencedAction setCounter( uint64_t tick, uint8_t );
   SequencedAction setOther( uint64_t tick, uint8_t );
 
-  uint8_t getVolume( uint64_t tick );
-  uint8_t getFeedback( uint64_t tick );
-  uint8_t getOutput( uint64_t tick );
-  uint8_t getShift( uint64_t tick );
+  uint8_t getVolume();
+  uint8_t getFeedback();
+  uint8_t getOutput();
+  uint8_t getShift();
   uint8_t getBackup( uint64_t tick );
   uint8_t getControl( uint64_t tick );
   uint8_t getCounter( uint64_t tick );

@@ -10,6 +10,7 @@
 #include "Mikey.hpp"
 #include "KeyInput.hpp"
 #include "Log.hpp"
+#include "WinAudioOut.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
 KeyInput gKeyInput;
@@ -135,6 +136,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   try
   {
     WinRenderer renderer{ hwnd };
+    WinAudioOut audioOut{ (uint32_t)( 1000 / 30 ) };
 
     ShowWindow( hwnd, nCmdShow );
     UpdateWindow( hwnd );
@@ -144,7 +146,19 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     L_SET_LOGLEVEL( Log::LL_TRACE );
 
     gKeyInput = KeyInput{};
-    BusMaster bus{};
+    BusMaster bus{ [&]( DisplayGenerator::Pixel const* surface )
+    {
+      renderer.render( surface );
+    },
+    []()
+    {
+      return gKeyInput;
+    } };
+
+    std::function<std::pair<float, float>( int sps )> sampleSource = [&]( int sps ) ->std::pair<float, float>
+    {
+      return bus.getSample( sps );
+    };
  
     for ( ;; )
     {
@@ -160,15 +174,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       if ( msg.message == WM_QUIT )
         break;
 
-      //auto t1 = std::chrono::high_resolution_clock::now();
-      auto surface = bus.process( 16000000 / 60, gKeyInput );
-      //auto t2 = std::chrono::high_resolution_clock::now();
-      //auto diff = t2 - t1;
-      //char buf[100];
-      //sprintf( buf, "%llu\n", std::chrono::duration_cast< std::chrono::milliseconds >( diff ).count() );
-      //OutputDebugStringA( buf );
-
-      renderer.render( surface );
+      audioOut.fillBuffer( sampleSource );
+      std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
   }
   catch ( std::runtime_error const& )
