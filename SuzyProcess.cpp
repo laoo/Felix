@@ -266,14 +266,14 @@ SubCoroutine SuzyProcess::renderSingleSprite()
         break;
 
       int totalBits = ( scb.sprdoff - 1 ) * 8;
-      scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
-      scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
       scb.vsizacum += scb.sprvsiz;
       uint8_t pixelHeight = scb.vsizacum.h;
       scb.vsizacum.h = 0;
       for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow )
       {
         if ( up == 0 && scb.sprvpos >= Suzy::mScreenHeight || up == 1 && ( int16_t )( scb.sprvpos ) < 0 ) break;
+        scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+        scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
         co_await newLine();
         scb.hposstrt += scb.tiltacum.h;
         scb.tiltacum.h = 0;
@@ -317,9 +317,9 @@ SubCoroutine SuzyProcess::renderSingleSprite()
           }
         }
         co_await flush();
+        scb.sprvpos += up ? -1 : 1;
       }
       scb.sprdline += scb.sprdoff;
-      scb.sprvpos += up ? -1 : 1;
     }
     if ( scb.sprdoff == 0 )
       break;

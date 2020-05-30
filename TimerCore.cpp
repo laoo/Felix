@@ -12,7 +12,7 @@ TimerCore::TimerCore( int number, std::function<void( uint64_t, bool )> trigger 
 SequencedAction TimerCore::setBackup( uint64_t tick, uint8_t backup )
 {
   mBackup = backup;
-  return {};
+  return computeAction( tick );
 }
 
 SequencedAction TimerCore::setControlA( uint64_t tick, uint8_t controlA )
