@@ -153,8 +153,6 @@ SubCoroutine SuzyProcess::loadSCB()
 {
   co_await this;
 
-  L_DEBUG << "SCB $" << std::hex << scb.tmpadr.w;
-
   mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.tmpadr++ } );
   mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.tmpadr++ } );
   mSuzy.writeSPRCOLL( co_await SuzyRead{ scb.tmpadr++ } );
@@ -350,7 +348,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
 
   for ( ;; )
   {
-    auto ap = co_await getPen();
+    auto & ap = co_await getPen();
 
     int bits = bitsToRead[( int )ap.op];
     if ( mShifter.size() < bits )
@@ -393,6 +391,8 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     case AssemblePen::Op::FINISH:
       ap.count = colOp.hiColl();
       continue;
+    case AssemblePen::Op::DUPLICATE_PEN:
+      break;
     default:
       assert( false );
       continue;

@@ -124,7 +124,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return 0;
   }
 
-  HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, L"Felix", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320, 210, nullptr, nullptr, hInstance, nullptr );
+  HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, L"Felix", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, nullptr );
 
   if ( hwnd == nullptr )
   {
@@ -141,7 +141,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     DragAcceptFiles( hwnd, TRUE );
 
-    L_SET_LOGLEVEL( Log::LL_DEBUG );
+    L_SET_LOGLEVEL( Log::LL_TRACE );
 
     gKeyInput = KeyInput{};
     BusMaster bus{};
