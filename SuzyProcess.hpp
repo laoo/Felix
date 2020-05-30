@@ -62,7 +62,6 @@ private:
 
   ProcessCoroutine mBaseCoroutine;
   std::experimental::coroutine_handle<> mCoro;
-  std::experimental::coroutine_handle<PenAssemblerPromise<PenAssemblerCoroutine>> mPenAssemblerHandle;
   AssemblePen mAssembledPen;
   Shifter mShifter;
   int sprhpos;

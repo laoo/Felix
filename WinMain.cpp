@@ -136,7 +136,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   try
   {
     WinRenderer renderer{ hwnd };
-    WinAudioOut audioOut{ (uint32_t)( 1000 / 30 ) };
+    WinAudioOut audioOut{ (uint32_t)( 1000 / 45 ) };
 
     ShowWindow( hwnd, nCmdShow );
     UpdateWindow( hwnd );
@@ -174,8 +174,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       if ( msg.message == WM_QUIT )
         break;
 
-      audioOut.fillBuffer( sampleSource );
-      std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+      //audioOut.fillBuffer( sampleSource );
+      //std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+      bus.process( 10000 );
     }
   }
   catch ( std::runtime_error const& )

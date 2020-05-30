@@ -31,7 +31,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
 
   DXGI_SWAP_CHAIN_DESC sd;
   ZeroMemory( &sd, sizeof( sd ) );
-  sd.BufferCount = 1;
+  sd.BufferCount = 2;
   sd.BufferDesc.Width = 0;
   sd.BufferDesc.Height = 0;
   sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -70,7 +70,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
 void WinRenderer::render( DisplayGenerator::Pixel const * surface )
 {
   D3D11_TEXTURE2D_DESC desc{};
-  desc.Format = DXGI_FORMAT_B8G8R8X8_UNORM;
+  desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
   desc.Width = 160;
   desc.Height = 102;
   desc.MipLevels = 1;
@@ -132,6 +132,6 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   UINT v[4]={};
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV, v );
   mImmediateContext->Dispatch( 10, 102, 1 );
-  mSwapChain->Present( 0, 0 );
+  mSwapChain->Present( 1, 0 );
 }
 

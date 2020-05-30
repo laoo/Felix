@@ -19,6 +19,7 @@ void DisplayGenerator::dispCtl( bool dispColor, bool dispFlip, bool dmaEnable )
 
 DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
 {
+  flushDisplay( tick );
   mDisplayRow = 101 - row;
   if ( mDisplayRow >= 0 && mDMAEnable )
   {
