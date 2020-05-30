@@ -5,7 +5,17 @@
 #include <optional>
 
 struct SuzyRead { uint16_t address; };
-struct SuzyRead4 { uint16_t address; };
+struct SuzyRead4
+{
+  SuzyRead4( uint16_t adr ) : address{ adr }
+  {
+    if ( adr == 0xfffd )
+    {
+      int k = 42;
+    }
+  }
+  uint16_t address;
+};
 struct SuzyWrite { uint16_t address; uint8_t value; };
 struct SuzyColRMW { uint32_t mask; uint16_t address;  uint8_t value; };
 struct SuzyVidRMW { uint16_t address; uint8_t value; uint8_t mask; };

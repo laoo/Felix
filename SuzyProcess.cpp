@@ -1,6 +1,7 @@
 #include "SuzyProcess.hpp"
 #include "VidOperator.hpp"
 #include "ColOperator.hpp"
+#include "Log.hpp"
 
 SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}, sprhpos{}, hsizacum{}, left{}, mEveron{}
 {
@@ -151,6 +152,8 @@ ProcessCoroutine SuzyProcess::process()
 SubCoroutine SuzyProcess::loadSCB()
 {
   co_await this;
+
+  L_DEBUG << "SCB $" << std::hex << scb.tmpadr.w;
 
   mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.tmpadr++ } );
   mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.tmpadr++ } );
