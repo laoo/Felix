@@ -350,27 +350,23 @@ void BusMaster::suzyXor( ISuzyProcess::RequestXOR const* req )
 
 void BusMaster::processSuzy()
 {
-  struct Cost
-  {
-    int slow;
-    int fast;
-  };
-
-  static constexpr std::array<Cost, ( int )ISuzyProcess::Request::Type::_SIZE> requestCost = {
-    Cost{ 0, 0 }, //NONE,
-    Cost{ 1, 0 }, //READ,
-    Cost{ 1, 3 }, //READ4,
-    Cost{ 1, 0 }, //WRITE,
-    Cost{ 1, 7 }, //COLRMW,
-    Cost{ 1, 1 }, //VIDRMW,
-    Cost{ 1, 1 }  //XOR,
+  static constexpr std::array<int, ( int )ISuzyProcess::Request::Type::_SIZE> requestCost ={
+    0, //NONE,
+    0, //READ,
+    3, //READ4,
+    0, //WRITE,
+    7, //COLRMW,
+    1, //VIDRMW,
+    1  //XOR,
   };
 
   mSuzyProcessRequest = mSuzyProcess->advance();
   int op = ( int )mSuzyProcessRequest->type;
   mActionQueue.push( { ( Action )( ( int )Action::SUZY_NONE + op ), mBusReservationTick } );
-  auto cost = requestCost[op];
-  mBusReservationTick += cost.slow * 5ull + cost.fast * mFastCycleTick;
+  if ( op )
+  {
+    mBusReservationTick += 5ull + requestCost[op] * mFastCycleTick;
+  }
 }
 
 void BusMaster::processCPU()
