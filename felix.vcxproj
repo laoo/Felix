@@ -166,6 +166,7 @@
     <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
     <ClCompile Include="PenUnpacker.cpp" />
     <ClCompile Include="SuzyMath.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="ComLynx.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="KeyInput.hpp" />
+    <ClInclude Include="Log.hpp" />
     <ClInclude Include="ParallelPort.hpp" />
     <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />

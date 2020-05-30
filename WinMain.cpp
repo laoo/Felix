@@ -9,6 +9,7 @@
 #include "CPUExecute.hpp"
 #include "Mikey.hpp"
 #include "KeyInput.hpp"
+#include "Log.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
 KeyInput gKeyInput;
@@ -140,6 +141,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     DragAcceptFiles( hwnd, TRUE );
 
+    L_SET_LOGLEVEL( Log::LL_DEBUG );
 
     gKeyInput = KeyInput{};
     BusMaster bus{};
