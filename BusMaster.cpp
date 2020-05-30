@@ -25,10 +25,14 @@ mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mC
     if ( fin.bad() )
       throw std::exception{};
 
-    fin.read( ( char* )mRAM.data() + 0x1f6, size );
+    fin.seekg( 2 );
+    uint16_t start;
+    fin.read( ( char* )&start+1, 1 );
+    fin.read( ( char* )&start, 1 );
+    fin.read( ( char* )mRAM.data() + start - 6, size );
 
-    mROM[0x1fc] = 0x00;
-    mROM[0x1fd] = 0x02;
+    mROM[0x1fc] = start&0xff;
+    mROM[0x1fd] = start>>8;
   }
 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
