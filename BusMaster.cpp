@@ -12,6 +12,11 @@ mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mC
   mDReq{}, mCPUReq{}, mCpuExecute{ mCpu->execute( *this ) }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
 {
+  for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
+  {
+    *it = (uint8_t)rand();
+  }
+
   {
     std::ifstream fin{ "d:/test/tests/lynxboot.img", std::ios::binary };
     if ( fin.bad() )
