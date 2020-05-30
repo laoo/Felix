@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <array>
+#include <optional>
 #include "ActionQueue.hpp"
 #include "SuzyCoroutines.hpp"
 #include "PenUnpacker.hpp"
@@ -315,6 +316,7 @@ public:
 private:
   void writeSPRCTL0( uint8_t value );
   void writeSPRCTL1( uint8_t value );
+  void writeSPRCOLL( uint8_t value );
   void writeCart( int number, uint8_t value );
   int bpp() const;
 
@@ -369,7 +371,7 @@ private:
   bool mReusePalette;
   bool mSkipSprite;
   bool mEveron;
-  bool mFred;
+  bool mDisableCollisions;
   Quadrant mStartingQuadrant;
   BPP mBpp;
   Sprite mSpriteType;
@@ -380,6 +382,7 @@ private:
   uint8_t mSwitches;
   uint8_t mCart0;
   uint8_t mCart1;
+  std::optional<uint8_t> mFred;
 
   static constexpr std::array<std::array<Quadrant, 4>,4> mQuadrantOrder ={
     std::array<Quadrant, 4>{ Quadrant::DOWN_RIGHT, Quadrant::UP_RIGHT, Quadrant::UP_LEFT, Quadrant::DOWN_LEFT },

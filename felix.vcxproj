@@ -160,9 +160,7 @@
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="BusMaster.cpp" />
     <ClCompile Include="Cartridge.cpp" />
-    <ClCompile Include="ColOperator.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="ColOperator.cpp" />
     <ClCompile Include="ComLynx.cpp" />
     <ClCompile Include="CPUExecute.cpp" />
     <ClCompile Include="CPUTrace.cpp" />

@@ -33,6 +33,7 @@ public:
   AssemblePen & duplicatePen();
   AssemblePen & flush();
   AssemblePen & newLine();
+  AssemblePen & finish();
   AssemblePen & getPen();
   void initPen( std::experimental::coroutine_handle<> handle );
 

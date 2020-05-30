@@ -303,6 +303,7 @@ struct AssemblePen
     DUPLICATE_PEN,
     FLUSH,
     NEW_LINE,
+    FINISH,
     SIZE_
   } op;
   int count;

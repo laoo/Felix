@@ -1,6 +1,6 @@
 #include "SuzyProcess.hpp"
 #include "VidOperator.hpp"
-
+#include "ColOperator.hpp"
 
 SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}, sprhpos{}, hsizacum{}, left{}, mEveron{}
 {
@@ -95,6 +95,12 @@ AssemblePen & SuzyProcess::newLine()
   return mAssembledPen;
 }
 
+AssemblePen & SuzyProcess::finish()
+{
+  mAssembledPen.op = AssemblePen::Op::FINISH;
+  return mAssembledPen;
+}
+
 AssemblePen & SuzyProcess::getPen()
 {
   return mAssembledPen;
@@ -116,13 +122,23 @@ ProcessCoroutine SuzyProcess::process()
 
     co_await loadSCB();
 
-    mSuzy.mFred = 0;
+    mSuzy.mDisableCollisions = mSuzy.mNoCollide |
+      ( ( mSuzy.mSprColl & Suzy::SPRCOLL::NO_COLLIDE ) == 1 ) |
+      ( mSuzy.mSpriteType == Suzy::Sprite::BACKNONCOLL ) |
+      ( mSuzy.mSpriteType == Suzy::Sprite::NONCOLL );
+
+    mSuzy.mFred = std::nullopt;
 
     co_await renderSingleSprite();
 
     if ( mSuzy.mEveron && mEveron )
     {
-      co_await SuzyRMW{ ( uint16_t )( scb.scbadr + scb.colloff ), 0xff, 0x80 };
+      mSuzy.mFred = mSuzy.mFred.value_or( 0 ) | 0x80;
+    }
+
+    if ( mSuzy.mFred )
+    {
+      co_await SuzyWrite{ (uint16_t)( scb.scbadr + scb.colloff ), *mSuzy.mFred };
     }
 
     if ( mSuzy.mSpriteStop )
@@ -138,7 +154,7 @@ SubCoroutine SuzyProcess::loadSCB()
 
   mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.tmpadr++ } );
   mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.tmpadr++ } );
-  mSuzy.mSprColl = co_await SuzyRead{ scb.tmpadr++ };
+  mSuzy.writeSPRCOLL( co_await SuzyRead{ scb.tmpadr++ } );
   scb.scbnext.l = co_await SuzyRead{ scb.tmpadr++ };
   scb.scbnext.h = co_await SuzyRead{ scb.tmpadr++ };
 
@@ -308,6 +324,9 @@ SubCoroutine SuzyProcess::renderSingleSprite()
     if ( scb.sprdoff == 0 )
       break;
   }
+  auto [fred, _] = co_await finish();
+  if ( !mSuzy.mDisableCollisions )
+    mSuzy.mFred = fred & 0x0f;
 }
 
 PenAssemblerCoroutine SuzyProcess::penAssembler()
@@ -315,6 +334,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
   co_await this;
 
   VidOperator vidOp{ mSuzy.mSpriteType };
+  ColOperator colOp{ mSuzy.mSpriteType, mSuzy.mSprColl };
 
   int bpp = mSuzy.bpp();
 
@@ -323,13 +343,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     5
   };
 
-  union
-  {
-    uint32_t colBuf;
-    std::array<uint8_t, sizeof( uint32_t )> colTab;
-  };
   int pen{};
-  bool colDirty{};
 
   for ( ;; )
   {
@@ -353,6 +367,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
       continue;
     case AssemblePen::Op::NEW_LINE:
       vidOp.newLine( scb.vidadr );
+      colOp.newLine( scb.colladr );
       continue;
     case AssemblePen::Op::FLUSH:
       switch ( auto memOp = vidOp.flush() )
@@ -364,13 +379,24 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
         co_await SuzyRMW{ memOp.addr, memOp.value, memOp.mask() };
         break;
       }
-      if ( colDirty )
+      switch ( auto memOp = colOp.flush() )
       {
-        co_await SuzyWrite4{ scb.colladr, colBuf };
+      case ColOperator::MemOp::WRITE:
+        co_await SuzyWrite4{ memOp.addr, memOp.value };
+        break;
+      case ColOperator::MemOp::READ:
+        assert( false );
+        [[fallthrough]];
+      default:
+        break;
       }
       continue;
+    case AssemblePen::Op::FINISH:
+      ap.count = colOp.hiColl();
+      co_return;
     default:
-      break;
+      assert( false );
+      continue;
     }
 
     hsizacum += scb.sprhsiz;
@@ -382,7 +408,36 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
       // Stop horizontal loop if outside of screen bounds
       if ( sprhpos >= 0 && sprhpos < Suzy::mScreenWidth )
       {
-        switch ( auto memOp = vidOp.process( sprhpos, mSuzy.mPalette[pen] ) )
+        uint8_t pixel = mSuzy.mPalette[pen];
+
+        if ( colOp.enabled() )
+        {
+          switch ( auto memOp = colOp.preProcess( sprhpos ) )
+          {
+          case ColOperator::MemOp::READ:
+            colOp.read( co_await SuzyRead4{ memOp.addr } );
+            break;
+          case ColOperator::MemOp::WRITE:
+            assert( false );
+            [[fallthrough]];
+          default:
+            break;
+          }
+
+          switch ( auto memOp = colOp.process( sprhpos, pixel ) )
+          {
+          case ColOperator::MemOp::WRITE:
+            co_await SuzyWrite4{ memOp.addr, memOp.value };
+            break;
+          case ColOperator::MemOp::READ:
+            assert( false );
+            [[fallthrough]];
+          default:
+            break;
+          }
+        }
+
+        switch ( auto memOp = vidOp.process( sprhpos, pixel ) )
         {
         case VidOperator::MemOp::WRITE:
           co_await SuzyWrite{ memOp.addr, memOp.value };
@@ -397,7 +452,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
         default:
           break;
         }
-        //ProcessCollision( ( ushort )( COLLADR.Value + offset ), pixelValue, left );
+
         mEveron = true;
       }
       sprhpos += left ? -1 : 1;

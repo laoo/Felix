@@ -380,6 +380,7 @@ void Suzy::write( uint16_t address, uint8_t value )
       break;
     case SPRCOLL:
       mSprColl = value;
+      break;
     case SPRINIT:
       mSprInit = value;
       break;
@@ -431,6 +432,11 @@ void Suzy::writeSPRCTL1( uint8_t value )
   mStartingQuadrant = ( Quadrant )( value & SPRCTL1::STARGING_QUAD_MASK );
 }
 
+void Suzy::writeSPRCOLL( uint8_t value )
+{
+  mSprColl = value;
+}
+
 void Suzy::writeCart( int number, uint8_t value )
 {
 }
@@ -446,7 +452,7 @@ SuzyCoSubroutine Suzy::loadSCB( SuzyRequest & req )
 
   writeSPRCTL0( co_await SuzyRead{ mSCB.scbadr++ } );
   writeSPRCTL1( co_await SuzyRead{ mSCB.scbadr++ } );
-  mSprColl = co_await SuzyRead{ mSCB.scbadr++ };
+  writeSPRCOLL( co_await SuzyRead{ mSCB.scbadr++ } );
   mSCB.scbnext.l = co_await SuzyRead{ mSCB.scbadr++ };
   mSCB.scbnext.h = co_await SuzyRead{ mSCB.scbadr++ };
 

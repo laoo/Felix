@@ -9,16 +9,15 @@ class ColOperator
 public:
   struct MemOp
   {
+    static constexpr uint8_t NONE   = 0;
+    static constexpr uint8_t READ   = 1;
+    static constexpr uint8_t WRITE  = 2;
+
     uint32_t value;
     uint16_t addr;
-    enum class Op : uint16_t
-    {
-      NONE = 0,
-      READ,
-      WRITE
-    } op;
+    uint16_t op;
 
-    operator Op() const
+    operator uint16_t() const
     {
       return op;
     }
@@ -27,13 +26,16 @@ public:
   static_assert( sizeof( MemOp ) == sizeof( uint64_t ) );
 
 public:
-  ColOperator( Suzy::Sprite spriteType, uint8_t coll );;
+  ColOperator( Suzy::Sprite spriteType, uint8_t sprColl );
 
   MemOp flush();
   void newLine( uint16_t vidadr );
 
   MemOp preProcess( int hpos );
   MemOp process( int hpos, uint8_t pixel );
+  void read( uint16_t value );
+  bool enabled() const;
+  uint8_t hiColl() const;
 
   struct ProcessArg
   {
@@ -65,6 +67,7 @@ private:
   uint16_t mColAdr;
   uint8_t mEdge;
   uint8_t mColl;
-
+  uint8_t mHiColl;
+  bool mEnabled;
 
 };

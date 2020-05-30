@@ -64,7 +64,7 @@ ColOperator::ProcessResult processFun( ColOperator::ProcessArg arg )
   }
   else
   {
-    return { arg.hiCol, 0x0, 0x0 };
+    return { arg.hiColl, 0x0, 0x0 };
   }
 }
 
@@ -94,18 +94,23 @@ static std::array<bool, 8> makeDepositoryUpdatable( std::integer_sequence<int, I
 }
 
 
-ColOperator::ColOperator( Suzy::Sprite spriteType, uint8_t coll ) :
+ColOperator::ColOperator( Suzy::Sprite spriteType, uint8_t sprColl ) :
   mPreprocesFuncs{ makePreprocessFunc( std::make_integer_sequence<int, 8>{} ) },
   mProcesFuncs{ makeProcessFunc( std::make_integer_sequence<int, 8>{} ) },
   mSpriteCollideable{ makeSpriteCollideable( std::make_integer_sequence<int,8>{} ) },
   mDepositoryUpdatable{ makeDepositoryUpdatable( std::make_integer_sequence<int, 8>{} ) },
-  mSpriteType{ (int)spriteType }
+  mSpriteType{ (int)spriteType },
+  mColl{ (uint8_t)( sprColl & Suzy::SPRCOLL::NUMBER_MASK ) },
+  mEnabled{ ( sprColl & Suzy::SPRCOLL::NO_COLLIDE ) != 0 }
 {
 }
 
 ColOperator::MemOp ColOperator::flush()
 {
-  return MemOp();
+  if ( !mEnabled )
+    return MemOp{};
+
+  return MemOp{};
 }
 
 void ColOperator::newLine( uint16_t vidadr )
@@ -114,10 +119,30 @@ void ColOperator::newLine( uint16_t vidadr )
 
 ColOperator::MemOp ColOperator::preProcess( int hpos )
 {
-  return MemOp();
+  if ( !mEnabled )
+    return MemOp{};
+
+  return MemOp{};
 }
 
 ColOperator::MemOp ColOperator::process( int hpos, uint8_t pixel )
 {
-  return MemOp();
+  if ( !mEnabled )
+    return MemOp{};
+
+  return MemOp{};
+}
+
+void ColOperator::read( uint16_t value )
+{
+}
+
+bool ColOperator::enabled() const
+{
+  return mEnabled;
+}
+
+uint8_t ColOperator::hiColl() const
+{
+  return mHiColl;
 }
