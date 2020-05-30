@@ -389,7 +389,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
       continue;
     case AssemblePen::Op::FINISH:
       ap.count = colOp.hiColl();
-      co_return;
+      continue;
     default:
       assert( false );
       continue;
