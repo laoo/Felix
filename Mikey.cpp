@@ -3,6 +3,7 @@
 #include "TimerCore.hpp"
 #include "AudioChannel.hpp"
 #include "BusMaster.hpp"
+#include "Cartridge.hpp"
 
 Mikey::Mikey( BusMaster & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mBusMaster{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
   mParallelPort{ mBusMaster.getCartridge(), mBusMaster.getComLynx(), *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
@@ -302,6 +303,7 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     {
       mBusMaster.enterMonitor();
     }
+    mBusMaster.getCartridge().setCartAddressStrobe( ( value & SYSCTL1::CART_ADDR_STROBE ) == 1 );
     break;
   case IODIR:
     mParallelPort.setDirection( value );

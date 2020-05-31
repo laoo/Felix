@@ -14,5 +14,5 @@ public:
   void load( uint8_t * memory ) const;
 
 private:
-  std::vector<uint8_t> mData;
+  std::vector<uint8_t> const mData;
 };

@@ -8,6 +8,8 @@
 #include "KeyInput.hpp"
 #include "SuzyMath.hpp"
 
+class BusMaster;
+
 class ISuzyProcess
 {
 public:
@@ -82,7 +84,7 @@ public:
 class Suzy
 {
 public:
-  Suzy( std::function<KeyInput()> const& inputProvider );
+  Suzy( BusMaster & busMaster, std::function<KeyInput()> const& inputProvider );
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
@@ -321,6 +323,7 @@ private:
   int bpp() const;
 
 private:
+  BusMaster & mBusMaster;
   struct SCB
   {
     Reg tmpadr;
@@ -375,8 +378,6 @@ private:
   Reload mReload;
   uint8_t mSprColl;
   uint8_t mSprInit; //should be 0xf3
-  uint8_t mCart0;
-  uint8_t mCart1;
   std::optional<uint8_t> mFred;
 
   static constexpr std::array<std::array<Quadrant, 4>,4> mQuadrantOrder ={

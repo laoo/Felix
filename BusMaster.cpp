@@ -6,12 +6,13 @@
 #include "InputFile.hpp"
 #include "ImageBS93.hpp"
 #include "ImageBIOS.hpp"
+#include "ImageCart.hpp"
 #include <fstream>
 #include <filesystem>
 #include <cassert>
 
 BusMaster::BusMaster( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( inputProvider ) },
+mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mDReq{}, mCPUReq{}, mCpuExecute{ mCpu->execute( *this ) }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mInterruptMask{}
 {
@@ -55,12 +56,15 @@ void BusMaster::injectFile( InputFile const & file )
   case InputFile::FileType::BIOS:
     loadBIOS( file.getBIOS() );
     break;
+  case InputFile::FileType::CART:
+    loadCart( file.getCart() );
+    break;
   default:
     break;
   }
 }
 
-void BusMaster::loadBS93( std::shared_ptr<ImageBS93> const & image )
+void BusMaster::loadBS93( std::shared_ptr<ImageBS93 const> const & image )
 {
   if ( auto runAddress = image->load( mRAM.data() ) )
   {
@@ -68,9 +72,15 @@ void BusMaster::loadBS93( std::shared_ptr<ImageBS93> const & image )
   }
 }
 
-void BusMaster::loadBIOS( std::shared_ptr<ImageBIOS> const & image )
+void BusMaster::loadBIOS( std::shared_ptr<ImageBIOS const> const & image )
 {
   image->load( mROM.data() );
+}
+
+void BusMaster::loadCart( std::shared_ptr<ImageCart const> const & image )
+{
+  mCartridge = std::make_shared<Cartridge>( image );
+  pulseReset( std::nullopt );
 }
 
 void BusMaster::pulseReset( std::optional<uint16_t> resetAddress )

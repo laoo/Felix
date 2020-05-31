@@ -160,6 +160,7 @@
     <ClCompile Include="ActionQueue.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="BusMaster.cpp" />
+    <ClCompile Include="CartBank.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ColOperator.cpp" />
     <ClCompile Include="ComLynx.cpp" />
@@ -169,6 +170,8 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="ImageBIOS.cpp" />
     <ClCompile Include="ImageBS93.cpp" />
+    <ClCompile Include="ImageCart.cpp" />
+    <ClCompile Include="ImageLyx.cpp" />
     <ClCompile Include="InputFile.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
@@ -187,12 +190,15 @@
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="BusMaster.hpp" />
+    <ClInclude Include="CartBank.hpp" />
     <ClInclude Include="Cartridge.hpp" />
     <ClInclude Include="ColOperator.hpp" />
     <ClInclude Include="ComLynx.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="ImageBIOS.hpp" />
     <ClInclude Include="ImageBS93.hpp" />
+    <ClInclude Include="ImageCart.hpp" />
+    <ClInclude Include="ImageLyx.hpp" />
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="Log.hpp" />

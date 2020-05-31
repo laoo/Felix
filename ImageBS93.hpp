@@ -14,7 +14,7 @@ public:
     uint8_t load_addressLo;
     uint8_t sizeHi;
     uint8_t sizeLo;
-    uint8_t  magic[4];
+    uint8_t magic[4];
   };
 
 public:
@@ -27,5 +27,5 @@ private:
   uint16_t getSize() const;
 
 private:
-  std::vector<uint8_t> mData;
+  std::vector<uint8_t> const mData;
 };
