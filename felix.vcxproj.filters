@@ -180,4 +180,39 @@
       <Filter>Source Files</Filter>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="gsl\include\gsl\gsl">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\gsl_algorithm">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\gsl_assert">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\gsl_byte">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\gsl_util">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\multi_span">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\pointers">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\span">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\span_ext">
+      <Filter>gsl</Filter>
+    </None>
+    <None Include="gsl\include\gsl\string_span">
+      <Filter>gsl</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="gsl\GSL.natvis" />
+  </ItemGroup>
 </Project>
