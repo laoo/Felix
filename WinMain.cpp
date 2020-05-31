@@ -174,9 +174,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       return gKeyInput;
     } };
 
-    if ( !args.empty() )
+    for ( auto const& arg : args )
     {
-      InputFile file{ args[0] };
+      InputFile file{ arg };
       if ( file.valid() )
       {
         bus.injectFile( file );
@@ -202,13 +202,18 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       if ( msg.message == WM_QUIT )
         break;
 
+
       if ( !gDroppedFiles.empty() )
       {
-        InputFile file{ gDroppedFiles[0] };
-        if ( file.valid() )
+        for ( auto const& arg : gDroppedFiles )
         {
-          bus.injectFile( file );
+          InputFile file{ arg };
+          if ( file.valid() )
+          {
+            bus.injectFile( file );
+          }
         }
+
         gDroppedFiles.clear();
       }
 

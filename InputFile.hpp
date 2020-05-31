@@ -6,6 +6,7 @@
 #include <vector>
 
 class ImageBS93;
+class ImageBIOS;
 
 class InputFile
 {
@@ -13,6 +14,7 @@ public:
   enum class FileType
   {
     UNKNOWN,
+    BIOS,
     BS93
   };
 
@@ -22,12 +24,16 @@ public:
   FileType getType() const;
 
   std::shared_ptr<ImageBS93> getBS93() const;
+  std::shared_ptr<ImageBIOS> getBIOS() const;
+
 private:
   std::shared_ptr<ImageBS93> checkBS93( std::vector<uint8_t> && data ) const;
+  std::shared_ptr<ImageBIOS> checkBIOS( std::vector<uint8_t> && data ) const;
 
 private:
   FileType mType;
   std::shared_ptr<ImageBS93> mBS93;
+  std::shared_ptr<ImageBIOS> mBIOS;
 
   ;
 };

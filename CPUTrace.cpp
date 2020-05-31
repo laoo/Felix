@@ -833,7 +833,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       co_await adf;
       lo = cpu.operand;
       co_await adf;
-      lo = cpu.operand;
+      hi = cpu.operand;
       sprintf( buf + off, "$%02x,$%04x\n", lo, (uint16_t)( cpu.pc + 1 + (int8_t)hi ) );
       break;
     }

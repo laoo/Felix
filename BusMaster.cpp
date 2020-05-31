@@ -5,6 +5,7 @@
 #include "Mikey.hpp"
 #include "InputFile.hpp"
 #include "ImageBS93.hpp"
+#include "ImageBIOS.hpp"
 #include <fstream>
 #include <filesystem>
 #include <cassert>
@@ -19,14 +20,6 @@ mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mC
     *it = (uint8_t)rand();
   }
 
-  {
-    std::ifstream fin{ "d:/tests/lynxboot.img", std::ios::binary };
-    if ( fin.bad() )
-      throw std::exception{};
-
-    fin.read( ( char* )mROM.data(), mROM.size() );
-  }
- 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
   {
     switch ( i )
@@ -59,6 +52,9 @@ void BusMaster::injectFile( InputFile const & file )
   case InputFile::FileType::BS93:
     loadBS93( file.getBS93() );
     break;
+  case InputFile::FileType::BIOS:
+    loadBIOS( file.getBIOS() );
+    break;
   default:
     break;
   }
@@ -70,6 +66,11 @@ void BusMaster::loadBS93( std::shared_ptr<ImageBS93> const & image )
   {
     pulseReset( runAddress );
   }
+}
+
+void BusMaster::loadBIOS( std::shared_ptr<ImageBIOS> const & image )
+{
+  image->load( mROM.data() );
 }
 
 void BusMaster::pulseReset( std::optional<uint16_t> resetAddress )

@@ -79,6 +79,9 @@
     <ClCompile Include="ImageBS93.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ImageBIOS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -166,6 +169,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ImageBS93.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageBIOS.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

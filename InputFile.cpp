@@ -1,9 +1,13 @@
 #include "InputFile.hpp"
 #include <fstream>
 #include "ImageBS93.hpp"
+#include "ImageBIOS.hpp"
 
 InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
 {
+  if ( !std::filesystem::exists( path ) )
+    return;
+
   size_t size = ( size_t )std::filesystem::file_size( path );
   if ( size == 0 )
     return;
@@ -15,11 +19,19 @@ InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
     fin.read( ( char* )data.data(), size );
   }
 
-  if ( auto pBS93 = checkBS93( std::move( data ) ) )
+  if ( auto pBIOS = checkBIOS( std::move( data ) ) )
+  {
+    mType = FileType::BIOS;
+    mBIOS = std::move( pBIOS );
+    return;
+  }
+  else if ( auto pBS93 = checkBS93( std::move( data ) ) )
   {
     mType = FileType::BS93;
     mBS93 = std::move( pBS93 );
+    return;
   }
+
 }
 
 bool InputFile::valid() const
@@ -37,6 +49,11 @@ std::shared_ptr<ImageBS93> InputFile::getBS93() const
   return mBS93;
 }
 
+std::shared_ptr<ImageBIOS> InputFile::getBIOS() const
+{
+  return mBIOS;
+}
+
 std::shared_ptr<ImageBS93> InputFile::checkBS93( std::vector<uint8_t>&& data ) const
 {
   auto const* pHeader = ( ImageBS93::Header const* )data.data();
@@ -49,5 +66,19 @@ std::shared_ptr<ImageBS93> InputFile::checkBS93( std::vector<uint8_t>&& data ) c
   {
     return {};
   }
+}
+
+std::shared_ptr<ImageBIOS> InputFile::checkBIOS( std::vector<uint8_t>&& data ) const
+{
+  if ( data.size() != 512 )
+    return {};
+
+  uint16_t resetVector = *(uint16_t*)( data.data() + 0x1fc );
+
+  if ( resetVector < 0xfe00 )
+    return {};
+
+
+  return std::make_shared<ImageBIOS>( std::move( data ) );
 }
 
