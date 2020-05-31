@@ -1158,7 +1158,6 @@ CpuExecute CPU::execute( BusMaster & bus )
         sl--;
         eal = co_await CPURead{ 0xfffc };
         eah = co_await CPURead{ 0xfffd };
-        interrupt &= ~CPU::I_RESET;
       }
       else
       {
@@ -1166,29 +1165,24 @@ CpuExecute CPU::execute( BusMaster & bus )
         sl--;
         co_await CPUWrite{ s, pcl };
         sl--;
-        if ( interrupt == CPU::I_NONE )
+        if ( interrupt )
         {
-          co_await CPUWrite{ s, p() };
+          co_await CPUWrite{ s, pirq() };
         }
         else
         {
-          co_await CPUWrite{ s, pirq() };
+          co_await CPUWrite{ s, p() };
         }
         sl--;
         if ( interrupt & CPU::I_NMI )
         {
           eal = co_await CPURead{ 0xfffa };
           eah = co_await CPURead{ 0xfffb };
-          interrupt &= ~CPU::I_NMI;
         }
         else
         {
           eal = co_await CPURead{ 0xfffe };
           eah = co_await CPURead{ 0xffff };
-          if ( interrupt == CPU::I_IRQ )
-          {
-            interrupt &= ~CPU::I_IRQ;
-          }
         }
         set<bitI>();
       }

@@ -19,23 +19,35 @@ Mikey::Mikey( BusMaster & busMaster, std::function<void( DisplayGenerator::Pixel
       mBusMaster.requestDisplayDMA( dma.tick, dma.address );
     }
     mTimers[0x2]->borrowIn( tick );
-    mIRQ |= interrupt ? 0x01 : 0x00;
+    if ( interrupt )
+    {
+      setIRQ( 0x01 );
+    }
   } );  //timer 0 -> timer 2
   mTimers[0x1] = std::make_unique<TimerCore>( 0x1, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x3]->borrowIn( tick );
-    mIRQ |= interrupt ? 0x02 : 0x00;
+    if ( interrupt )
+    {
+      setIRQ( 0x02 );
+    }
   } );  //timer 1 -> timer 3
   mTimers[0x2] = std::make_unique<TimerCore>( 0x2, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x4]->borrowIn( tick );
     mDisplayGenerator->vblank( tick );
-    mIRQ |= interrupt ? 0x04 : 0x00;
+    if ( interrupt )
+    {
+      setIRQ( 0x04 );
+    }
   } );  //timer 2 -> timer 4
   mTimers[0x3] = std::make_unique<TimerCore>( 0x3, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x5]->borrowIn( tick );
-    mIRQ |= interrupt ? 0x08 : 0x00;
+    if ( interrupt )
+    {
+      setIRQ( 0x08 );
+    }
   } );  //timer 3 -> timer 5
   mTimers[0x4] = std::make_unique<TimerCore>( 0x4, [this]( uint64_t tick, bool interrupt )
   {
@@ -43,16 +55,25 @@ Mikey::Mikey( BusMaster & busMaster, std::function<void( DisplayGenerator::Pixel
   mTimers[0x5] = std::make_unique<TimerCore>( 0x5, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x7]->borrowIn( tick );
-    mIRQ |= interrupt ? 0x20 : 0x00;
+    if ( interrupt )
+    {
+      setIRQ( 0x20 );
+    }
   } );  //timer 5 -> timer 7
   mTimers[0x6] = std::make_unique<TimerCore>( 0x6, [this]( uint64_t tick, bool interrupt )
   {
-    mIRQ |= interrupt ? 0x40 : 0x00;
+    if ( interrupt )
+    {
+      setIRQ( 0x40 );
+    }
   } );  //timer 6
   mTimers[0x7] = std::make_unique<TimerCore>( 0x7, [this]( uint64_t tick, bool interrupt )
   {
     mTimers[0x8]->borrowIn( tick );
-    mIRQ |= interrupt ? 0x80 : 0x00;
+    if ( interrupt )
+    {
+      setIRQ( 0x80 );
+    }
   } );  //timer 7 -> audio 0
   mTimers[0x8] = std::make_unique<TimerCore>( 0x8, [this]( uint64_t tick, bool unused )
   {
@@ -271,10 +292,10 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
   case MSTEREO:
     break;
   case INTRST:
-    mIRQ &= ~value;
+    resetIRQ( value );
     break;
   case INTSET:
-    mIRQ |= ~value;
+    setIRQ( value );
     break;
   case SYSCTL1:
     if ( ( value & SYSCTL1::POWERON ) == 0 )
@@ -401,11 +422,6 @@ void Mikey::setDMAData( uint64_t tick, uint64_t data )
   }
 }
 
-uint8_t Mikey::getIRQ() const
-{
-  return mIRQ;
-}
-
 void Mikey::suzyDone()
 {
   mSuzyDone = true;
@@ -422,6 +438,24 @@ std::pair<float, float> Mikey::sampleAudio() const
   }
 
   return { result.first / ( 4.0f * 128.0f ), result.second / ( 4.0f * 128.0f ) };
+}
+
+void Mikey::setIRQ( uint8_t mask )
+{
+  mIRQ |= mask;
+  if ( mIRQ != 0 )
+  {
+    mBusMaster.assertInterrupt( CPU::I_IRQ );
+  }
+}
+
+void Mikey::resetIRQ( uint8_t mask )
+{
+  mIRQ &= ~mask;
+  if ( mIRQ == 0 )
+  {
+    mBusMaster.desertInterrupt( CPU::I_IRQ );
+  }
 }
 
 DisplayGenerator::Pixel const * Mikey::getSrface() const

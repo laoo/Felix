@@ -62,10 +62,10 @@ struct CPURequest
   uint8_t interrupt;
 
   CPURequest() : mType{ Type::NONE }, tick{}, address{}, value{}, interrupt{} {}
-  CPURequest( CPURead r ) : mType{ Type::READ }, tick{}, address{ r.address }, value{}, interrupt{} {}
-  CPURequest( CPUFetchOpcode r ) : mType{ Type::FETCH_OPCODE }, tick{}, address{ r.address }, value{}, interrupt{} {}
-  CPURequest( CPUFetchOperand r ) : mType{ Type::FETCH_OPERAND }, tick{}, address{ r.address }, value{}, interrupt{} {}
-  CPURequest( CPUWrite w ) : mType{ Type::WRITE }, tick{}, address{ w.address }, value{ w.value }, interrupt{} {}
+  CPURequest( CPURead r, uint8_t interrupt ) : mType{ Type::READ }, tick{}, address{ r.address }, value{}, interrupt{ interrupt } {}
+  CPURequest( CPUFetchOpcode r, uint8_t interrupt ) : mType{ Type::FETCH_OPCODE }, tick{}, address{ r.address }, value{}, interrupt{ interrupt } {}
+  CPURequest( CPUFetchOperand r, uint8_t interrupt ) : mType{ Type::FETCH_OPERAND }, tick{}, address{ r.address }, value{}, interrupt{ interrupt } {}
+  CPURequest( CPUWrite w, uint8_t interrupt ) : mType{ Type::WRITE }, tick{}, address{ w.address }, value{ w.value }, interrupt{ interrupt } {}
 
   void operator()()
   {

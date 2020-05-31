@@ -3,6 +3,8 @@
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
 #include "Mikey.hpp"
+#include "InputFile.hpp"
+#include "ImageBS93.hpp"
 #include <fstream>
 #include <filesystem>
 #include <cassert>
@@ -10,7 +12,7 @@
 BusMaster::BusMaster( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
 mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( inputProvider ) },
   mDReq{}, mCPUReq{}, mCpuExecute{ mCpu->execute( *this ) }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
-  mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }
+  mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mInterruptMask{}
 {
   for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
   {
@@ -18,28 +20,13 @@ mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mC
   }
 
   {
-    std::ifstream fin{ "d:/test/tests/lynxboot.img", std::ios::binary };
+    std::ifstream fin{ "d:/tests/lynxboot.img", std::ios::binary };
     if ( fin.bad() )
       throw std::exception{};
 
     fin.read( ( char* )mROM.data(), mROM.size() );
   }
-  if ( size_t size = (size_t)std::filesystem::file_size( "d:/test/tests/7.o" ) )
-  {
-    std::ifstream fin{ "d:/test/tests/7.o", std::ios::binary };
-    if ( fin.bad() )
-      throw std::exception{};
-
-    fin.seekg( 2 );
-    uint16_t start;
-    fin.read( ( char* )&start+1, 1 );
-    fin.read( ( char* )&start, 1 );
-    fin.read( ( char* )mRAM.data() + start - 6, size );
-
-    mROM[0x1fc] = start&0xff;
-    mROM[0x1fd] = start>>8;
-  }
-
+ 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
   {
     switch ( i )
@@ -65,34 +52,74 @@ mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>() }, mC
   //mCpuTrace = cpuTrace( *mCpu, mDReq );
 }
 
+void BusMaster::injectFile( InputFile const & file )
+{
+  switch ( file.getType() )
+  {
+  case InputFile::FileType::BS93:
+    loadBS93( file.getBS93() );
+    break;
+  default:
+    break;
+  }
+}
+
+void BusMaster::loadBS93( std::shared_ptr<ImageBS93> const & image )
+{
+  if ( auto runAddress = image->load( mRAM.data() ) )
+  {
+    pulseReset( runAddress );
+  }
+}
+
+void BusMaster::pulseReset( std::optional<uint16_t> resetAddress )
+{
+  if ( resetAddress )
+  {
+    writeDMACTL( 0x08 );  //enable RAM in vector space
+    mRAM[0xfffc] = *resetAddress & 0xff;
+    mRAM[0xfffd] = *resetAddress >> 8;
+  }
+
+  if ( mSuzyProcess )
+  {
+    mResetRequestDuringSpriteRendering = true;
+  }
+  else
+  {
+    assertInterrupt( CPU::I_RESET, mCurrentTick );
+    desertInterrupt( CPU::I_RESET, mCurrentTick + 5 * 10 );  //asserting RESET for 10 cycles to make sure none will miss it
+  }
+}
+
 BusMaster::~BusMaster()
 {
 }
 
 CPURequest * BusMaster::request( CPURead r )
 {
-  mCPUReq = CPURequest{ r };
+  mCPUReq = CPURequest{ r, mInterruptMask };
   processCPU();
   return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUFetchOpcode r )
 {
-  mCPUReq = CPURequest{ r };
+  mCPUReq = CPURequest{ r, mInterruptMask };
   processCPU();
   return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUFetchOperand r )
 {
-  mCPUReq = CPURequest{ r };
+  mCPUReq = CPURequest{ r, mInterruptMask };
   processCPU();
   return &mCPUReq;
 }
 
 CPURequest * BusMaster::request( CPUWrite w )
 {
-  mCPUReq = CPURequest{ w };
+  mCPUReq = CPURequest{ w, mInterruptMask };
   processCPU();
   return &mCPUReq;
 }
@@ -106,6 +133,42 @@ void BusMaster::requestDisplayDMA( uint64_t tick, uint16_t address )
 {
   mDMAAddress = address;
   mActionQueue.push( { Action::DISPLAY_DMA, tick } );
+}
+
+void BusMaster::assertInterrupt( int mask, std::optional<uint64_t> tick )
+{
+  if ( ( mask & CPU::I_IRQ ) != 0 )
+  {
+    mActionQueue.push( { Action::ASSERT_IRQ, tick.value_or( mCurrentTick ) } );
+    return;
+  }
+  else if ( ( mask & CPU::I_RESET ) != 0 )
+  {
+    mActionQueue.push( { Action::ASSERT_RESET, tick.value_or( mCurrentTick ) } );
+    return;
+  }
+  else
+  {
+    assert( !"Unsupported interrupt" );
+  }
+}
+
+void BusMaster::desertInterrupt( int mask, std::optional<uint64_t> tick )
+{
+  if ( ( mask & CPU::I_IRQ ) != 0 )
+  {
+    mActionQueue.push( { Action::DESERT_IRQ, tick.value_or( mCurrentTick ) } );
+    return;
+  }
+  else if ( ( mask & CPU::I_RESET ) != 0 )
+  {
+    mActionQueue.push( { Action::DESERT_RESET, tick.value_or( mCurrentTick ) } );
+    return;
+  }
+  else
+  {
+    assert( !"Unsupported interrupt" );
+  }
 }
 
 void BusMaster::process( uint64_t ticks )
@@ -145,9 +208,7 @@ void BusMaster::process( uint64_t ticks )
     case Action::CPU_FETCH_OPCODE_RAM:
       mCPUReq.value = mRAM[mCPUReq.address];
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCurrentTick;
       mCPUReq.tick = mCurrentTick;
-      mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
       mCPUReq();
       mDReq.resume();
       break;
@@ -170,9 +231,7 @@ void BusMaster::process( uint64_t ticks )
     case Action::CPU_FETCH_OPCODE_FE:
       mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCurrentTick;
       mCPUReq.tick = mCurrentTick;
-      mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
       mCPUReq();
       mDReq.resume();
       break;
@@ -194,9 +253,7 @@ void BusMaster::process( uint64_t ticks )
     case Action::CPU_FETCH_OPCODE_FF:
       mCPUReq.value = readFF( mCPUReq.address & 0xff );
       mSequencedAccessAddress = mCPUReq.address + 1;
-      mCurrentTick;
       mCPUReq.tick = mCurrentTick;
-      mCPUReq.interrupt = mMikey->getIRQ() != 0 ? CPU::I_IRQ : 0;
       mCPUReq();
       mDReq.resume();
       break;
@@ -246,6 +303,12 @@ void BusMaster::process( uint64_t ticks )
       break;
     case Action::SUZY_NONE:
       mSuzyProcess.reset();
+      //workaround to problem with resetting during Suzy activity
+      if ( mResetRequestDuringSpriteRendering )
+      {
+        mResetRequestDuringSpriteRendering = false;
+        pulseReset( std::nullopt );
+      }
       mCPUReq();
       break;
     case Action::SUZY_READ:
@@ -271,6 +334,18 @@ void BusMaster::process( uint64_t ticks )
     case Action::SUZY_XOR:
       suzyXor( ( ISuzyProcess::RequestXOR const* )mSuzyProcessRequest );
       processSuzy();
+      break;
+    case Action::ASSERT_IRQ:
+      mInterruptMask |= CPU::I_IRQ;
+      break;
+    case Action::ASSERT_RESET:
+      mInterruptMask |= CPU::I_RESET;
+      break;
+    case Action::DESERT_IRQ:
+      mInterruptMask &= ~CPU::I_IRQ;
+      break;
+    case Action::DESERT_RESET:
+      mInterruptMask &= ~CPU::I_RESET;
       break;
     case Action::END_FRAME:
       return;
@@ -475,19 +550,24 @@ void BusMaster::writeFF( uint16_t address, uint8_t value )
   }
   else if ( address == 0xf9 )
   {
-    mMapCtl.sequentialDisable = ( value & 0x80 ) != 0;
-    mMapCtl.vectorSpaceDisable = ( value & 0x08 ) != 0;
-    mMapCtl.kernelDisable = ( value & 0x04 ) != 0;
-    mMapCtl.mikeyDisable = ( value & 0x02 ) != 0;
-    mMapCtl.suzyDisable = ( value & 0x01 ) != 0;
-
-    mFastCycleTick = mMapCtl.sequentialDisable ? 5 : 4;
-    mPageTypes[0xfe] = mMapCtl.kernelDisable ? PageType::RAM : PageType::FE;
-    mPageTypes[0xfd] = mMapCtl.mikeyDisable ? PageType::RAM : PageType::MIKEY;
-    mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
+    writeDMACTL( value );
   }
   else
   {
     //ignore write to ROM
   }
+}
+
+void BusMaster::writeDMACTL( uint8_t value )
+{
+  mMapCtl.sequentialDisable = ( value & 0x80 ) != 0;
+  mMapCtl.vectorSpaceDisable = ( value & 0x08 ) != 0;
+  mMapCtl.kernelDisable = ( value & 0x04 ) != 0;
+  mMapCtl.mikeyDisable = ( value & 0x02 ) != 0;
+  mMapCtl.suzyDisable = ( value & 0x01 ) != 0;
+
+  mFastCycleTick = mMapCtl.sequentialDisable ? 5 : 4;
+  mPageTypes[0xfe] = mMapCtl.kernelDisable ? PageType::RAM : PageType::FE;
+  mPageTypes[0xfd] = mMapCtl.mikeyDisable ? PageType::RAM : PageType::MIKEY;
+  mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
 }

@@ -167,6 +167,8 @@
     <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="ImageBS93.cpp" />
+    <ClCompile Include="InputFile.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
     <ClCompile Include="PenUnpacker.cpp" />
@@ -188,6 +190,8 @@
     <ClInclude Include="ColOperator.hpp" />
     <ClInclude Include="ComLynx.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
+    <ClInclude Include="ImageBS93.hpp" />
+    <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="ParallelPort.hpp" />

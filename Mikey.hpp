@@ -42,9 +42,11 @@ public:
   WriteAction write( uint16_t address, uint8_t value );
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
   void setDMAData( uint64_t tick, uint64_t data );
-  uint8_t getIRQ() const;
   void suzyDone();
   std::pair<float, float> sampleAudio() const;
+
+  void setIRQ( uint8_t mask );
+  void resetIRQ( uint8_t mask );
 
 
   DisplayGenerator::Pixel const* getSrface() const;

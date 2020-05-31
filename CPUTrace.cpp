@@ -4,6 +4,9 @@
 #include <cassert>
 #include <cstdio>
 #include <Windows.h>
+#include <fstream>
+
+std::ofstream fout{ "d:/out.txt" };
 
 
 CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
@@ -835,7 +838,9 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       break;
     }
 
-    OutputDebugStringA( buf );
+    fout << buf;
+    fout.flush();
+    //OutputDebugStringA( buf );
 
     co_await adf;
   }

@@ -11,6 +11,7 @@
 #include "KeyInput.hpp"
 #include "Log.hpp"
 #include "WinAudioOut.hpp"
+#include "InputFile.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
 KeyInput gKeyInput;
@@ -30,6 +31,7 @@ void handleFileDrop( HDROP hDrop )
 #endif
 
   uint32_t cnt = DragQueryFile( hDrop, ~0, nullptr, 0 );
+  gDroppedFiles.resize( cnt );
 
   for ( uint32_t i = 0; i < cnt; ++i )
   {
@@ -172,6 +174,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       return gKeyInput;
     } };
 
+    if ( !args.empty() )
+    {
+      InputFile file{ args[0] };
+      if ( file.valid() )
+      {
+        bus.injectFile( file );
+      }
+    }
+
     std::function<std::pair<float, float>( int sps )> sampleSource = [&]( int sps ) ->std::pair<float, float>
     {
       return bus.getSample( sps );
@@ -190,6 +201,16 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
       if ( msg.message == WM_QUIT )
         break;
+
+      if ( !gDroppedFiles.empty() )
+      {
+        InputFile file{ gDroppedFiles[0] };
+        if ( file.valid() )
+        {
+          bus.injectFile( file );
+        }
+        gDroppedFiles.clear();
+      }
 
       //audioOut.fillBuffer( sampleSource );
       //std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );

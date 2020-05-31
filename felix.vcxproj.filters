@@ -73,6 +73,12 @@
     <ClCompile Include="WinAudioOut.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InputFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageBS93.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -154,6 +160,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="WinAudioOut.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InputFile.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageBS93.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

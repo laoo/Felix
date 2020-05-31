@@ -15,6 +15,8 @@ class Mikey;
 struct CPU;
 class Cartridge;
 class ComLynx;
+class InputFile;
+class ImageBS93;
 
 class BusMaster
 {
@@ -30,10 +32,13 @@ public:
   CPURequest * cpuRequest();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
+  void assertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
+  void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
 
   void process( uint64_t ticks );
-
   std::pair<float, float> getSample( int sps );
+
+  void injectFile( InputFile const& file );
 
   void enterMonitor();
 
@@ -73,6 +78,11 @@ private:
   uint8_t readFF( uint16_t address );
   void writeFF( uint16_t address, uint8_t value );
 
+  void loadBS93( std::shared_ptr<ImageBS93> const& image );
+
+  void pulseReset( std::optional<uint16_t> resetAddress );
+  void writeDMACTL( uint8_t value );
+
 private:
   std::array<uint8_t,65536> mRAM;
   std::array<uint8_t, 512> mROM;
@@ -96,4 +106,6 @@ private:
   uint64_t mFastCycleTick;
   std::shared_ptr<ISuzyProcess> mSuzyProcess;
   ISuzyProcess::Request const* mSuzyProcessRequest;
+  bool mResetRequestDuringSpriteRendering;
+  uint8_t mInterruptMask;
 };
