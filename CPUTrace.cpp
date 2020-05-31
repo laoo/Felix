@@ -16,7 +16,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     uint8_t lo;
     uint8_t hi;
 
-    int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", cpu.tick, (uint16_t)(cpu.pc-1), cpu.a, cpu.x, cpu.y, cpu.s, ( cpu.N ? 'N' : '-' ), ( cpu.V ? 'V' : '-' ), ( cpu.B ? 'B' : '-' ), ( cpu.D ? 'D' : '-' ), ( cpu.I ? 'I' : '-' ), ( cpu.Z ? 'Z' : '-' ), ( cpu.C ? 'C' : '-' ) );
+    int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", cpu.tick, (uint16_t)(cpu.pc-1), cpu.a, cpu.x, cpu.y, cpu.s, ( cpu.get<CPU::bitN>() ? 'N' : '-' ), ( cpu.get<CPU::bitV>() ? 'V' : '-' ), ( cpu.get<CPU::bitB>() ? 'B' : '-' ), ( cpu.get<CPU::bitD>() ? 'D' : '-' ), ( cpu.get<CPU::bitI>() ? 'I' : '-' ), ( cpu.get<CPU::bitZ>() ? 'Z' : '-' ), ( cpu.get<CPU::bitC>() ? 'C' : '-' ) );
 
     switch ( cpu.opcode )
     {

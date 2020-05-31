@@ -72,7 +72,7 @@ CpuExecute CPU::execute( BusMaster & bus )
 
     uint8_t d;
 
-    if ( interrupt && ( !I || ( interrupt & ~CPU::I_IRQ ) != 0 ) )
+    if ( interrupt && ( !get<bitI>() || ( interrupt & ~CPU::I_IRQ ) != 0 ) )
     {
       opcode = Opcode::BRK_BRK;
     }
@@ -93,13 +93,13 @@ CpuExecute CPU::execute( BusMaster & bus )
     case Opcode::RZP_ORA:
       ++pc;
       d = co_await CPURead{ ea };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RZP_ADC:
     case Opcode::RZP_SBC:
       ++pc;
       d = co_await CPURead{ ea };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ ea };
       }
@@ -276,14 +276,14 @@ CpuExecute CPU::execute( BusMaster & bus )
       co_await CPURead{ ++pc };
       eal += x;
       d = co_await CPURead{ ea };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RZX_ADC:
     case Opcode::RZX_SBC:
       co_await CPURead{ ++pc };
       eal += x;
       d = co_await CPURead{ ea };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ ea };
       }
@@ -364,7 +364,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       tl = co_await CPURead{ ea++ };
       th = co_await CPURead{ ea };
       d = co_await CPURead{ t };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RIN_ADC:
     case Opcode::RIN_SBC:
@@ -372,7 +372,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       tl = co_await CPURead{ ea++ };
       th = co_await CPURead{ ea };
       d = co_await CPURead{ t };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ t };
       }
@@ -393,7 +393,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       tl = co_await CPURead{ ea++ };
       th = co_await CPURead{ ea };
       d = co_await CPURead{ t };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RIX_ADC:
     case Opcode::RIX_SBC:
@@ -402,7 +402,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       tl = co_await CPURead{ ea++ };
       th = co_await CPURead{ ea };
       d = co_await CPURead{ t };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ t };
       }
@@ -430,7 +430,7 @@ CpuExecute CPU::execute( BusMaster & bus )
         co_await CPURead{ t };
       }
       d = co_await CPURead{ ea };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RIY_ADC:
     case Opcode::RIY_SBC:
@@ -445,7 +445,7 @@ CpuExecute CPU::execute( BusMaster & bus )
         co_await CPURead{ t };
       }
       d = co_await CPURead{ ea };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ t };
       }
@@ -473,14 +473,14 @@ CpuExecute CPU::execute( BusMaster & bus )
       ++pc;
       operand = eah = co_await CPUFetchOperand{ pc++ };
       d = co_await CPURead{ ea };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++pc;
       operand = eah = co_await CPUFetchOperand{ pc++ };
       d = co_await CPURead{ ea };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ ea };
       }
@@ -581,7 +581,7 @@ CpuExecute CPU::execute( BusMaster & bus )
         co_await CPURead{ ea };
       }
       d = co_await CPURead{ t };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
@@ -595,7 +595,7 @@ CpuExecute CPU::execute( BusMaster & bus )
         co_await CPURead{ ea };
       }
       d = co_await CPURead{ t };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ t };
       }
@@ -616,7 +616,7 @@ CpuExecute CPU::execute( BusMaster & bus )
         co_await CPURead{ ea };
       }
       d = co_await CPURead{ t };
-      executeR( opcode, d );
+      executeCommon( opcode, d );
       break;
     case Opcode::RAY_ADC:
     case Opcode::RAY_SBC:
@@ -630,7 +630,7 @@ CpuExecute CPU::execute( BusMaster & bus )
         co_await CPURead{ ea };
       }
       d = co_await CPURead{ t };
-      if ( executeR( opcode, d ) )
+      if ( executeCommon( opcode, d ) )
       {
         co_await CPURead{ t };
       }
@@ -769,16 +769,16 @@ CpuExecute CPU::execute( BusMaster & bus )
       asl( a );
       break;
     case Opcode::IMP_CLC:
-      C = 0;
+      clear<bitC>();
       break;
     case Opcode::IMP_CLD:
-      D = 0;
+      clear<bitD>();
       break;
     case Opcode::IMP_CLI:
-      I = 0;
+      clear<bitI>();
       break;
     case Opcode::IMP_CLV:
-      V = 0;
+      clear<bitV>();
       break;
     case Opcode::IMP_DEC:
       setnz( --a );
@@ -810,13 +810,13 @@ CpuExecute CPU::execute( BusMaster & bus )
       ror( a );
       break;
     case Opcode::IMP_SEC:
-      C = 1;
+      set<bitC>();
       break;
     case Opcode::IMP_SED:
-      D = 1;
+      set<bitD>();
       break;
     case Opcode::IMP_SEI:
-      I = 1;
+      set<bitI>();
       break;
     case Opcode::IMP_TAX:
       setnz( x = a );
@@ -847,19 +847,19 @@ CpuExecute CPU::execute( BusMaster & bus )
     case Opcode::IMM_LDY:
     case Opcode::IMM_ORA:
       ++pc;
-      executeR( opcode, eal );
+      executeCommon( opcode, eal );
       break;
     case Opcode::IMM_ADC:
     case Opcode::IMM_SBC:
       ++pc;
-      if ( executeR( opcode, eal ) )
+      if ( executeCommon( opcode, eal ) )
       {
         co_await CPURead{ pc };
       }
       break;
     case Opcode::BRL_BCC:
       ++pc;
-      if ( !C )
+      if ( !get<bitC>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -872,7 +872,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       break;
     case Opcode::BRL_BCS:
       ++pc;
-      if ( C )
+      if ( get<bitC>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -885,7 +885,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       break;
     case Opcode::BRL_BEQ:
       ++pc;
-      if ( Z )
+      if ( get<bitZ>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -898,7 +898,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       break;
     case Opcode::BRL_BMI:
       ++pc;
-      if ( N )
+      if ( get<bitN>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -911,7 +911,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       break;
     case Opcode::BRL_BNE:
       ++pc;
-      if ( !Z )
+      if ( !get<bitZ>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -924,7 +924,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       break;
     case Opcode::BRL_BPL:
       ++pc;
-      if ( !N )
+      if ( !get<bitN>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -946,7 +946,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       break;
     case Opcode::BRL_BVC:
       ++pc;
-      if ( !V )
+      if ( !get<bitV>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -959,7 +959,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       break;
     case Opcode::BRL_BVS:
       ++pc;
-      if ( V )
+      if ( get<bitV>() )
       {
         co_await CPURead{ pc };
         t = pc + ( int8_t )eal;
@@ -1190,9 +1190,9 @@ CpuExecute CPU::execute( BusMaster & bus )
             interrupt &= ~CPU::I_IRQ;
           }
         }
-        I = 1;
+        set<bitI>();
       }
-      D = 0;
+      clear<bitD>();
       pc = ea;
       break;
     case Opcode::RTI_RTI:
@@ -1313,33 +1313,33 @@ CpuExecute CPU::execute( BusMaster & bus )
 
 void CPU::asl( uint8_t & val )
 {
-  C = val >> 7;
+  set<bitC>( val >= 0x80 );
   setnz( val <<= 1 );
 }
 
 void CPU::lsr( uint8_t & val )
 {
-  C = val & 0x01;
+  set<bitC>( ( val & 0x01 ) != 0 );
   setnz( val >>= 1 );
 }
 
 void CPU::rol( uint8_t & val )
 {
   int roled = val << 1;
-  val = roled & 0xff | C;
+  val = roled & 0xff | ( get<bitC>() ? 0x01 : 0 );
   setnz( val );
-  C = ( roled & 0x100 ) ? 1 : 0;
+  set<bitC>( ( roled & 0x100 ) != 0 );
 }
 
 void CPU::ror( uint8_t & val )
 {
-  int newC = val & 1;
-  val = ( val >> 1 ) | ( C << 7 );
+  bool newC = ( val & 1 ) != 0;
+  val = ( val >> 1 ) | ( get<bitC>() ? 0x80 : 0 );
   setnz( val );
-  C = newC;
+  set<bitC>( newC );
 }
 
-bool CPU::executeR( Opcode opcode, uint8_t value )
+bool CPU::executeCommon( Opcode opcode, uint8_t value )
 {
   switch ( opcode )
   {
@@ -1352,12 +1352,12 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
   case Opcode::RAX_ADC:
   case Opcode::RAY_ADC:
   case Opcode::IMM_ADC:
-    if ( D )
+    if ( get<bitD>() )
     {
-      int lo = ( a & 0x0f ) + ( value & 0x0f ) + C;
+      int lo = ( a & 0x0f ) + ( value & 0x0f ) + ( get<bitC>() ? 0x01 : 0 );
       int hi = ( a & 0xf0 ) + ( value & 0xf0 );
-      V = 0;
-      C = 0;
+      clear<bitV>();
+      clear<bitC>();
       if ( lo > 0x09 )
       {
         hi += 0x10;
@@ -1365,7 +1365,7 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
       }
       if ( ~( a ^ value ) & ( a ^ hi ) & 0x80 )
       {
-        V = 1;
+        set<bitV>();
       }
       if ( hi > 0x90 )
       {
@@ -1373,7 +1373,7 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
       }
       if ( hi & 0xff00 )
       {
-        C = 1;
+        set<bitC>();
       }
       a = ( lo & 0x0f ) + ( hi & 0xf0 );
       setnz( a );
@@ -1381,16 +1381,16 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
     }
     else
     {
-      int sum = a + value + C;
-      V = 0;
-      C = 0;
+      int sum = a + value + ( get<bitC>() ? 0x01 : 0 );
+      clear<bitV>();
+      clear<bitC>();
       if ( ~( a ^ value ) & ( a ^ sum ) & 0x80 )
       {
-        V = 1;
+        set<bitV>();
       }
       if ( sum & 0xff00 )
       {
-        C = 1;
+        set<bitC>();
       }
       a = ( uint8_t )sum;
       setnz( a );
@@ -1412,8 +1412,8 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
   case Opcode::RAB_BIT:
   case Opcode::RAX_BIT:
     setz( a & value );
-    N = ( value & 0x80 ) == 0x00 ? 0 : 1;
-    V = ( value & 0x40 ) == 0x00 ? 0 : 1;
+    set<bitN>( ( value & 0x80 ) != 0x00 );
+    set<bitV>( ( value & 0x40 ) != 0x00 );
     break;
   case Opcode::IMM_BIT:
     setz( a & value );
@@ -1427,22 +1427,19 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
   case Opcode::RAX_CMP:
   case Opcode::RAY_CMP:
   case Opcode::IMM_CMP:
-    C = 0;
-    if ( a >= value ) C = 1;
-    setnz( a - value );
+    set<bitC>( a >= value );
+    setnz( a - value );;
     break;
   case Opcode::RZP_CPX:
   case Opcode::RAB_CPX:
   case Opcode::IMM_CPX:
-    C = 0;
-    if ( x >= value ) C = 1;
+    set<bitC>( x >= value );
     setnz( x - value );
     break;
   case Opcode::RZP_CPY:
   case Opcode::RAB_CPY:
   case Opcode::IMM_CPY:
-    C = 0;
-    if ( y >= value ) C = 1;
+    set<bitC>( y >= value );
     setnz( y - value );
     break;
   case Opcode::RZP_EOR:
@@ -1500,17 +1497,17 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
   case Opcode::RAX_SBC:
   case Opcode::RAY_SBC:
   case Opcode::IMM_SBC:
-    if ( D )
+    if ( get<bitD>() )
     {
-      int c = C ? 0 : 1;
+      int c = get<bitC>() ? 0 : 1;
       int sum = a - value - c;
       int lo = ( a & 0x0f ) - ( value & 0x0f ) - c;
       int hi = ( a & 0xf0 ) - ( value & 0xf0 );
-      V = 0;
-      C = 0;
+      clear<bitV>();
+      clear<bitC>();
       if ( ( a ^ value ) & ( a ^ sum ) & 0x80 )
       {
-        V = 1;
+        set<bitV>();
       }
       if ( lo & 0xf0 )
       {
@@ -1526,7 +1523,7 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
       }
       if ( ( sum & 0xff00 ) == 0 )
       {
-        C = 1;
+        set<bitC>();
       }
       a = ( lo & 0x0f ) + ( hi & 0xf0 );
       setnz( a );
@@ -1534,17 +1531,17 @@ bool CPU::executeR( Opcode opcode, uint8_t value )
     }
     else
     {
-      int c = C ? 0 : 1;
+      int c = get<bitC>() ? 0 : 1;
       int sum = a - value - c;
-      V = 0;
-      C = 0;
+      clear<bitV>();
+      clear<bitC>();
       if ( ( a ^ value ) & ( a ^ sum ) & 0x80 )
       {
-        V = 1;
+        set<bitV>();
       }
       if ( ( sum & 0xff00 ) == 0 )
       {
-        C = 1;
+        set<bitC>();
       }
       a = ( uint8_t )sum;
       setnz( a );

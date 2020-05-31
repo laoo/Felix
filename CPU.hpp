@@ -2,56 +2,18 @@
 #include <cstdint>
 #include "CPUExecute.hpp"
 
-//stolen form http://www.maizure.org/projects/decoded-bisqwit-nes-emulator/nesemu1_lines.txt
-template< unsigned bitno, typename T = uint8_t>
-struct RegBit
-{
-  T data;
-  template < typename T2>
-  RegBit & operator=( T2 val )
-  {
-    data = ( data & ~( 1 << bitno ) ) | ( ( val & 1 ) << bitno );
-    return *this;
-  }
-  operator unsigned() const
-  {
-    return ( data >> bitno ) & 1;
-  }
-
-  explicit operator bool () const
-  {
-    return ( ( data >> bitno ) & 1 ) != 0;
-  }
-
-};
-
 enum class Opcode : uint8_t;
 
 struct CPU
 {
-  uint8_t a;
-  uint8_t x;
-  uint8_t y;
-  union
-  {
-    uint16_t s;
-    struct
-    {
-      uint8_t sl;
-      uint8_t sh;
-    };
-  };
-  union
-  {
-    uint8_t P;
-    RegBit<0> C;
-    RegBit<1> Z;
-    RegBit<2> I;
-    RegBit<3> D;
-    RegBit<4> B;
-    RegBit<6> V;
-    RegBit<7> N;
-  };
+  static constexpr int bitC = 0;
+  static constexpr int bitZ = 1;
+  static constexpr int bitI = 2;
+  static constexpr int bitD = 3;
+  static constexpr int bitB = 4;
+  static constexpr int bitV = 6;
+  static constexpr int bitN = 7;
+
   union
   {
     uint16_t pc;
@@ -61,13 +23,26 @@ struct CPU
       uint8_t pch;
     };
   };
+  union
+  {
+    uint16_t s;
+    struct
+    {
+      uint8_t sl;
+      uint8_t sh;
+    };
+  };
+  uint8_t a;
+  uint8_t x;
+  uint8_t y;
+  uint8_t P;
 
   static const int I_NONE  = 0;
   static const int I_IRQ = 1;
   static const int I_NMI = 2;
   static const int I_RESET = 4;
 
-  CPU() : a{}, x{}, y{}, s{ 0x1ff }, pc{}, P{}, tick{}, interrupt{ I_RESET }, opcode{}, operand{}
+  CPU() : pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, tick{}, interrupt{ I_RESET }, opcode{}, operand{}
   {
   }
 
@@ -83,20 +58,50 @@ struct CPU
 
   void setnz( uint8_t v )
   {
-    Z = v == 0 ? 1 : 0;
-    N = v >= 0x80 ? 1 : 0;
+    set<bitZ>( v == 0 );
+    set<bitN>( v >= 0x80 );
   }
 
   void setz( uint8_t v )
   {
-    Z = v == 0 ? 1 : 0;
+    set<bitZ>( v == 0 );
+  }
+
+  template<int bit>
+  void set()
+  {
+    P |= 1 << bit;
+  }
+
+  template<int bit>
+  void set( bool value )
+  {
+    value ? set<bit>() : clear<bit>();
+  }
+
+  template<int bit>
+  void clear()
+  {
+    P &= ~( 1 << bit );
+  }
+
+  template<int bit>
+  void clear( bool value )
+  {
+    value ? clear<bit>() : set<bit>();
+  }
+
+  template<int bit>
+  bool get() const
+  {
+    return ( P & ( 1 << bit ) ) != 0;
   }
 
   void asl( uint8_t & val );
   void lsr( uint8_t & val );
   void rol( uint8_t & val );
   void ror( uint8_t & val );
-  bool executeR( Opcode opcode, uint8_t value );
+  bool executeCommon( Opcode opcode, uint8_t value );
 
   CpuExecute execute( BusMaster & bus );
 
