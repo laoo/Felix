@@ -105,6 +105,23 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
+
+  std::vector<std::wstring> args;
+
+  LPWSTR *szArgList;
+  int argCount;
+
+  szArgList = CommandLineToArgvW( GetCommandLine(), &argCount );
+  if ( szArgList != NULL )
+  {
+    for ( int i = 1; i < argCount; i++ )
+    {
+      args.emplace_back( szArgList[i] );
+    }
+
+    LocalFree( szArgList );
+  }
+
   WNDCLASSEX wc{};
 
   wc.cbSize        = sizeof( WNDCLASSEX );
