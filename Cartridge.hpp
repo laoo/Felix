@@ -9,6 +9,8 @@ public:
   void setAudIn( bool value );
 
   void setCartAddressData( bool value );
+  void setCartAddressStrobe( bool value );
+
   void setPower( bool value );
 
 

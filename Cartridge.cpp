@@ -17,6 +17,10 @@ void Cartridge::setCartAddressData( bool value )
 {
 }
 
+void Cartridge::setCartAddressStrobe( bool value )
+{
+}
+
 void Cartridge::setPower( bool value )
 {
 }
