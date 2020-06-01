@@ -80,10 +80,6 @@ private:
   uint8_t readFF( uint16_t address );
   void writeFF( uint16_t address, uint8_t value );
 
-  void loadBS93( std::shared_ptr<ImageBS93 const> const& image );
-  void loadBIOS( std::shared_ptr<ImageBIOS const> const& image );
-  void loadCart( std::shared_ptr<ImageCart const> const& image );
-
   void pulseReset( std::optional<uint16_t> resetAddress );
   void writeDMACTL( uint8_t value );
 

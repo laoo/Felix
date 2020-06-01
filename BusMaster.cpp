@@ -51,36 +51,21 @@ void BusMaster::injectFile( InputFile const & file )
   switch ( file.getType() )
   {
   case InputFile::FileType::BS93:
-    loadBS93( file.getBS93() );
+    if ( auto runAddress = file.getBS93()->load( mRAM.data() ) )
+    {
+      pulseReset( runAddress );
+    }
     break;
   case InputFile::FileType::BIOS:
-    loadBIOS( file.getBIOS() );
+    file.getBIOS()->load( mROM.data() );
     break;
   case InputFile::FileType::CART:
-    loadCart( file.getCart() );
+    mCartridge = std::make_shared<Cartridge>( file.getCart() );
+    pulseReset( std::nullopt );
     break;
   default:
     break;
   }
-}
-
-void BusMaster::loadBS93( std::shared_ptr<ImageBS93 const> const & image )
-{
-  if ( auto runAddress = image->load( mRAM.data() ) )
-  {
-    pulseReset( runAddress );
-  }
-}
-
-void BusMaster::loadBIOS( std::shared_ptr<ImageBIOS const> const & image )
-{
-  image->load( mROM.data() );
-}
-
-void BusMaster::loadCart( std::shared_ptr<ImageCart const> const & image )
-{
-  mCartridge = std::make_shared<Cartridge>( image );
-  pulseReset( std::nullopt );
 }
 
 void BusMaster::pulseReset( std::optional<uint16_t> resetAddress )
