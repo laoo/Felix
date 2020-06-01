@@ -258,20 +258,17 @@ SubCoroutine SuzyProcess::renderSingleSprite()
 
     for ( ;; )
     {
-      scb.procadr = scb.sprdline;
-      mShifter = Shifter{};
-      mShifter.push( co_await SuzyRead4{ scb.procadr } );
-      scb.procadr += 4;
-      scb.sprdoff = mShifter.pull<8>();
-      if ( scb.sprdoff < 2 )
-        break;
-      int totalBits = ( scb.sprdoff - 1 ) * 8;
-
       scb.vsizacum += scb.sprvsiz;
       uint8_t pixelHeight = scb.vsizacum.h;
       scb.vsizacum.h = 0;
       for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow )
       {
+        scb.procadr = scb.sprdline;
+        mShifter = Shifter{};
+        mShifter.push( co_await SuzyRead4{ scb.procadr } );
+        scb.procadr += 4;
+        scb.sprdoff = mShifter.pull<8>();
+        int totalBits = ( scb.sprdoff - 1 ) * 8;
         if ( up == 0 && scb.sprvpos >= Suzy::mScreenHeight || up == 1 && ( int16_t )( scb.sprvpos ) < 0 ) break;
         scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
         scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
@@ -319,14 +316,10 @@ SubCoroutine SuzyProcess::renderSingleSprite()
         }
         co_await flush();
         scb.sprvpos += up ? -1 : 1;
-        scb.procadr = scb.sprdline;
-        mShifter = Shifter{};
-        mShifter.push( co_await SuzyRead4{ scb.procadr } );
-        scb.procadr += 4;
-        scb.sprdoff = mShifter.pull<8>();
-        totalBits = ( scb.sprdoff - 1 ) * 8;
       }
       scb.sprdline += scb.sprdoff;
+      if ( scb.sprdoff < 2 )
+        break;
     }
     if ( scb.sprdoff == 0 )
       break;
