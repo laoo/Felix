@@ -6,7 +6,7 @@
 #include "Cartridge.hpp"
 
 Mikey::Mikey( BusMaster & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mBusMaster{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
-  mParallelPort{ mBusMaster.getCartridge(), mBusMaster.getComLynx(), *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
+  mParallelPort{ mBusMaster, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {

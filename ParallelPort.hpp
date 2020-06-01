@@ -4,12 +4,13 @@
 class Cartridge;
 class ComLynx;
 class DisplayGenerator;
+class BusMaster;
 
 class ParallelPort
 {
 public:
 
-  ParallelPort( Cartridge & cart, ComLynx & comLynx, DisplayGenerator const& displayGenerator );
+  ParallelPort( BusMaster & busMaster, DisplayGenerator const& displayGenerator );
 
   void setDirection( uint8_t value );
   uint8_t getDirection() const;
@@ -30,8 +31,7 @@ public:
 
 
 private:
-  Cartridge & mCart;
-  ComLynx & mComLynx;
+  BusMaster & mBusMaster;
   DisplayGenerator const& mDisplayGenerator;
   uint8_t mOutputMask;
   uint8_t mData;

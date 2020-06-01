@@ -2,9 +2,10 @@
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
 #include "DisplayGenerator.hpp"
+#include "BusMaster.hpp"
 
 
-ParallelPort::ParallelPort( Cartridge & cart, ComLynx & comLynx, DisplayGenerator const& displayGenerator ) : mCart{ cart }, mComLynx{ comLynx }, mDisplayGenerator{ displayGenerator },
+ParallelPort::ParallelPort( BusMaster & busMaster, DisplayGenerator const& displayGenerator ) : mBusMaster{ busMaster }, mDisplayGenerator{ displayGenerator },
   mOutputMask{}, mData{}
 {
 }
@@ -25,13 +26,13 @@ void ParallelPort::setData( uint8_t value )
 
   if ( ( mOutputMask & Mask::CART_ADDR_DATA ) != 0 )
   {
-    mCart.setCartAddressData( ( mData & Mask::CART_ADDR_DATA ) != 0 );
-    mCart.setPower( ( mData & Mask::CART_ADDR_DATA ) == 0 );
+    mBusMaster.getCartridge().setCartAddressData( ( mData & Mask::CART_ADDR_DATA ) != 0 );
+    mBusMaster.getCartridge().setPower( ( mData & Mask::CART_ADDR_DATA ) == 0 );
   }
 
   if ( ( mOutputMask & Mask::AUDIN ) != 0 )
   {
-    mCart.setAudIn( ( mData & Mask::AUDIN ) != 0 );
+    mBusMaster.getCartridge().setAudIn( ( mData & Mask::AUDIN ) != 0 );
   }
 }
 
@@ -41,7 +42,7 @@ uint8_t ParallelPort::getData() const
 
   if ( ( mOutputMask & Mask::AUDIN ) == 0 )
   {
-    result |= mCart.getAudIn() ? Mask::AUDIN : 0;
+    result |= mBusMaster.getCartridge().getAudIn() ? Mask::AUDIN : 0;
   }
   else
   {
@@ -59,7 +60,7 @@ uint8_t ParallelPort::getData() const
 
   if ( ( mOutputMask & Mask::NOEXP ) == 0 )
   {
-    result |= mComLynx.present() ? Mask::NOEXP : 0;
+    result |=mBusMaster.getComLynx().present() ? Mask::NOEXP : 0;
   }
   else
   {
