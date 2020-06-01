@@ -55,7 +55,7 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
       bool down = ( hi & KF_UP ) == 0;
       bool nonRepeat = ( hi & KF_REPEAT ) == 0;
 
-      if ( nonRepeat )
+      if ( nonRepeat == down )
       {
         switch ( wParam )
         {
