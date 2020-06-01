@@ -293,6 +293,7 @@ SubCoroutine SuzyProcess::renderSingleSprite()
           while ( totalBits > bpp + 1 )
           {
             auto [count, literal] = co_await readHeader();
+            totalBits -= bpp + 1;
 
             if ( literal )
             {
