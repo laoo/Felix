@@ -31,6 +31,7 @@ public:
 
   DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun );
   void dispCtl( bool dispColor, bool dispFlip, bool dmaEnable );
+  void setPBKUP( uint8_t value );
 
   DMARequest hblank( uint64_t tick, int row );
   DMARequest pushData( uint64_t tick, uint64_t data );
@@ -59,6 +60,7 @@ private:
   bool mDispColor;
   bool mDispFlip;
   bool mDMAEnable;
+  int mDMAOffset;
 
   static constexpr uint64_t DMA_ITERATIONS = 10;
   static constexpr uint64_t TICKS_PER_PIXEL = 12;

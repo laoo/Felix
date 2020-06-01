@@ -341,7 +341,7 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     mDisplayGenerator->dispCtl( mDisplayRegs.dispColor, mDisplayRegs.dispFlip, mDisplayRegs.DMAEnable );
     break;
   case PBKUP:
-    mDisplayRegs.pbkup = value;
+    mDisplayGenerator->setPBKUP( value );
     break;
   case DISPADR:
     mDisplayRegs.dispAdr &= 0xff00;

@@ -1,4 +1,5 @@
 #include "DisplayGenerator.hpp"
+#include <cmath>
 
 DisplayGenerator::DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mDMAData{}, mDisplayFun{ fun }, mRowStartTick{}, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
 mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
@@ -17,16 +18,23 @@ void DisplayGenerator::dispCtl( bool dispColor, bool dispFlip, bool dmaEnable )
   mDMAEnable = dmaEnable;
 }
 
+void DisplayGenerator::setPBKUP( uint8_t value )
+{
+  int h = (int)std::round( ( (int)value + 1.0 ) / 4.0 * 15.0 + 0.49 );
+  mDMAOffset = ( h - TICKS_PER_PIXEL * DMA_ITERATIONS ) * 16;
+}
+
+
 DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
 {
   flushDisplay( tick );
   mDisplayRow = 101 - row;
   if ( mDisplayRow >= 0 && mDMAEnable )
   {
-    mRowStartTick = tick;
+    mRowStartTick = tick + mDMAOffset;
     mDMAIteration = 0;
     mDisplayedPixels = 0;
-    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), mDispAdr };
+    return { mRowStartTick, mDispAdr };
   }
   else
   {
@@ -114,7 +122,7 @@ void DisplayGenerator::vblank( uint64_t tick )
 
 void DisplayGenerator::flushDisplay( uint64_t tick )
 {
-  if ( mRowStartTick == 0 )
+  if ( mRowStartTick == 0 || tick < mRowStartTick )
     return;
 
   uint32_t limit = (std::min)( 160u, ( uint32_t )( tick - mRowStartTick ) / ( uint32_t )TICKS_PER_PIXEL );

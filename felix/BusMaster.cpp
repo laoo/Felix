@@ -16,10 +16,10 @@ mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>( std::m
   mDReq{}, mCPUReq{}, mCpuExecute{ mCpu->execute( *this ) }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mInterruptMask{}
 {
-  for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
-  {
-    *it = (uint8_t)rand();
-  }
+  //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
+  //{
+  //  *it = (uint8_t)rand();
+  //}
 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
   {

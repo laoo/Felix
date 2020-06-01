@@ -146,7 +146,6 @@ private:
     bool dispFourBit;
     bool dispFlip;
     bool DMAEnable;
-    uint8_t pbkup;
   } mDisplayRegs;
 
   struct SerCtl
