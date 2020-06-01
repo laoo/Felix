@@ -4,3 +4,4 @@ out/
 renderer.hxx
 user.props
 felix/version.hpp
+VersionTool/VersionTool.vcxproj.user

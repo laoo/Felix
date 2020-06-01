@@ -3,6 +3,7 @@
 #include "ImageBS93.hpp"
 #include "ImageBIOS.hpp"
 #include "ImageLyx.hpp"
+#include "ImageLnx.hpp"
 
 InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
 {
@@ -36,6 +37,12 @@ InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
   {
     mType = FileType::CART;
     mCart = pLyx;
+    return;
+  }
+  else if ( auto pLnx = checkLnx( std::move( data ) ) )
+  {
+    mType = FileType::CART;
+    mCart = pLnx;
     return;
   }
 
@@ -92,6 +99,21 @@ std::shared_ptr<ImageBIOS const> InputFile::checkBIOS( std::vector<uint8_t>&& da
 
   return std::make_shared<ImageBIOS const>( std::move( data ) );
 }
+
+std::shared_ptr<ImageCart const> InputFile::checkLnx( std::vector<uint8_t>&& data ) const
+{
+  auto const* pHeader = ( ImageLnx::Header const* )data.data();
+
+  if ( pHeader->magic[0] == 'L' && pHeader->magic[1] == 'Y' && pHeader->magic[2] == 'N' && pHeader->magic[3] == 'X' && pHeader->version == 1 )
+  {
+    return std::make_shared<ImageLnx const>( std::move( data ) );
+  }
+  else
+  {
+    return {};
+  }
+}
+
 
 std::shared_ptr<ImageCart const> InputFile::checkLyx( std::vector<uint8_t>&& data ) const
 {

@@ -91,6 +91,9 @@
     <ClCompile Include="CartBank.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ImageLnx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -193,6 +196,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="version.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageLnx.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

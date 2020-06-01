@@ -160,6 +160,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)out\$(Platform)_$(Configuration)\VersionTool\VersionTool.exe $(ProjectDir)version.hpp "$(GIT_PATH)"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ActionQueue.cpp" />
@@ -176,6 +179,7 @@
     <ClCompile Include="ImageBIOS.cpp" />
     <ClCompile Include="ImageBS93.cpp" />
     <ClCompile Include="ImageCart.cpp" />
+    <ClCompile Include="ImageLnx.cpp" />
     <ClCompile Include="ImageLyx.cpp" />
     <ClCompile Include="InputFile.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -203,6 +207,7 @@
     <ClInclude Include="ImageBIOS.hpp" />
     <ClInclude Include="ImageBS93.hpp" />
     <ClInclude Include="ImageCart.hpp" />
+    <ClInclude Include="ImageLnx.hpp" />
     <ClInclude Include="ImageLyx.hpp" />
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="KeyInput.hpp" />
