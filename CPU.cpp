@@ -869,6 +869,10 @@ CpuExecute CPU::execute( BusMaster & bus )
         }
         pc = t;
       }
+      else
+      {
+        operand -= 1;
+      }
       break;
     case Opcode::BRL_BCS:
       ++pc;
@@ -881,6 +885,10 @@ CpuExecute CPU::execute( BusMaster & bus )
           co_await CPURead{ pc };
         }
         pc = t;
+      }
+      else
+      {
+        operand -= 1;
       }
       break;
     case Opcode::BRL_BEQ:
@@ -895,6 +903,10 @@ CpuExecute CPU::execute( BusMaster & bus )
         }
         pc = t;
       }
+      else
+      {
+        operand -= 1;
+      }
       break;
     case Opcode::BRL_BMI:
       ++pc;
@@ -907,6 +919,10 @@ CpuExecute CPU::execute( BusMaster & bus )
           co_await CPURead{ pc };
         }
         pc = t;
+      }
+      else
+      {
+        operand -= 1;
       }
       break;
     case Opcode::BRL_BNE:
@@ -921,6 +937,10 @@ CpuExecute CPU::execute( BusMaster & bus )
         }
         pc = t;
       }
+      else
+      {
+        operand -= 1;
+      }
       break;
     case Opcode::BRL_BPL:
       ++pc;
@@ -933,6 +953,10 @@ CpuExecute CPU::execute( BusMaster & bus )
           co_await CPURead{ pc };
         }
         pc = t;
+      }
+      else
+      {
+        operand -= 1;
       }
       break;
     case Opcode::BRL_BRA:
@@ -956,6 +980,10 @@ CpuExecute CPU::execute( BusMaster & bus )
         }
         pc = t;
       }
+      else
+      {
+        operand -= 1;
+      }
       break;
     case Opcode::BRL_BVS:
       ++pc;
@@ -968,6 +996,10 @@ CpuExecute CPU::execute( BusMaster & bus )
           co_await CPURead{ pc };
         }
         pc = t;
+      }
+      else
+      {
+        operand -= 1;
       }
       break;
     case Opcode::BZR_BBR0:
