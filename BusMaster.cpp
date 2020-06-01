@@ -76,6 +76,10 @@ void BusMaster::pulseReset( std::optional<uint16_t> resetAddress )
     mRAM[0xfffc] = *resetAddress & 0xff;
     mRAM[0xfffd] = *resetAddress >> 8;
   }
+  else
+  {
+    writeDMACTL( 0x00 );  //disable RAM in vector space
+  }
 
   if ( mSuzyProcess )
   {
