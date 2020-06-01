@@ -3,7 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "felix", "felix.vcxproj", "{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "felix", "felix\felix.vcxproj", "{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{C8AC1927-2A65-4362-BC7F-47C4A6CB790C}"
+	ProjectSection(SolutionItems) = preProject
+		gsl\include\gsl\gsl = gsl\include\gsl\gsl
+		gsl\include\gsl\gsl_algorithm = gsl\include\gsl\gsl_algorithm
+		gsl\include\gsl\gsl_assert = gsl\include\gsl\gsl_assert
+		gsl\include\gsl\gsl_byte = gsl\include\gsl\gsl_byte
+		gsl\include\gsl\gsl_util = gsl\include\gsl\gsl_util
+		gsl\include\gsl\multi_span = gsl\include\gsl\multi_span
+		gsl\include\gsl\pointers = gsl\include\gsl\pointers
+		gsl\include\gsl\span = gsl\include\gsl\span
+		gsl\include\gsl\span_ext = gsl\include\gsl\span_ext
+		gsl\include\gsl\string_span = gsl\include\gsl\string_span
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

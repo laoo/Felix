@@ -231,21 +231,6 @@
       <EnableDebuggingInformation>false</EnableDebuggingInformation>
     </FxCompile>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="gsl\include\gsl\gsl" />
-    <None Include="gsl\include\gsl\gsl_algorithm" />
-    <None Include="gsl\include\gsl\gsl_assert" />
-    <None Include="gsl\include\gsl\gsl_byte" />
-    <None Include="gsl\include\gsl\gsl_util" />
-    <None Include="gsl\include\gsl\multi_span" />
-    <None Include="gsl\include\gsl\pointers" />
-    <None Include="gsl\include\gsl\span" />
-    <None Include="gsl\include\gsl\span_ext" />
-    <None Include="gsl\include\gsl\string_span" />
-  </ItemGroup>
-  <ItemGroup>
-    <Natvis Include="gsl\GSL.natvis" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
