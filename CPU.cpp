@@ -1180,7 +1180,6 @@ CpuExecute CPU::execute( BusMaster & bus )
       }
       break;
     case Opcode::BRK_BRK:
-      ++pc;
       if ( interrupt & CPU::I_RESET )
       {
         co_await CPURead{ s };
@@ -1194,6 +1193,9 @@ CpuExecute CPU::execute( BusMaster & bus )
       }
       else
       {
+        //on interrupt PC should point to interrupted instruction
+        //on BRK should after past BRK argument
+        pc += interrupt ? -1 : 1;
         co_await CPUWrite{ s, pch };
         sl--;
         co_await CPUWrite{ s, pcl };
