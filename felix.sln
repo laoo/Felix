@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "felix", "felix\felix.vcxproj", "{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}"
+	ProjectSection(ProjectDependencies) = postProject
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97} = {30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{C8AC1927-2A65-4362-BC7F-47C4A6CB790C}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{C8AC1927-2A6
 		gsl\include\gsl\span_ext = gsl\include\gsl\span_ext
 		gsl\include\gsl\string_span = gsl\include\gsl\string_span
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VersionTool", "VersionTool\VersionTool.vcxproj", "{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +40,14 @@ Global
 		{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}.Release|x64.Build.0 = Release|x64
 		{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}.Release|x86.ActiveCfg = Release|Win32
 		{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}.Release|x86.Build.0 = Release|Win32
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Debug|x64.ActiveCfg = Debug|x64
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Debug|x64.Build.0 = Debug|x64
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Debug|x86.ActiveCfg = Debug|Win32
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Debug|x86.Build.0 = Debug|Win32
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Release|x64.ActiveCfg = Release|x64
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Release|x64.Build.0 = Release|x64
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Release|x86.ActiveCfg = Release|Win32
+		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

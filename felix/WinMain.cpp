@@ -12,6 +12,7 @@
 #include "Log.hpp"
 #include "WinAudioOut.hpp"
 #include "InputFile.hpp"
+#include "version.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
 KeyInput gKeyInput;
@@ -144,7 +145,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return 0;
   }
 
-  HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, L"Felix", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, nullptr );
+  std::wstring name = L"Felix " + std::wstring{ version_string };
+
+  HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, nullptr );
 
   if ( hwnd == nullptr )
   {

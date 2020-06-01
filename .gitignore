@@ -2,3 +2,5 @@
 tmp/
 out/
 renderer.hxx
+user.props
+felix/version.hpp
