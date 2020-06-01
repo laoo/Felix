@@ -64,7 +64,7 @@ private:
   std::experimental::coroutine_handle<> mCoro;
   AssemblePen mAssembledPen;
   Shifter mShifter;
-  int sprhpos;
+  uint16_t sprhpos;
   uint16_t hsizacum;
   int left;
   bool mEveron;

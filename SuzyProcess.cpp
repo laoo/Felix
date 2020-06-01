@@ -411,7 +411,7 @@ PenAssemblerCoroutine SuzyProcess::penAssembler()
     for ( int h = 0; h < pixelWidth; h++ )
     {
       // Stop horizontal loop if outside of screen bounds
-      if ( sprhpos >= 0 && sprhpos < Suzy::mScreenWidth )
+      if ( sprhpos < Suzy::mScreenWidth )
       {
         uint8_t pixel = mSuzy.mPalette[pen];
 
