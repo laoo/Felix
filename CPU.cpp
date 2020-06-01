@@ -960,6 +960,7 @@ CpuExecute CPU::execute( BusMaster & bus )
       }
       break;
     case Opcode::BRL_BRA:
+      operand -= 1;
       co_await CPURead{ ++pc };
       t = pc + ( int8_t )eal;
       if ( th != pch )
