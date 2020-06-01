@@ -28,7 +28,7 @@ uint8_t CartBank::operator()( uint32_t shiftRegister, uint32_t count ) const
   if ( mData.empty() )
     return 0xff;
 
-  uint32_t address = ( shiftRegister << mShift ) + count & ( ( 1 << mShift ) - 1 );
+  uint32_t address = ( shiftRegister << mShift ) + ( count & ( ( 1 << mShift ) - 1 ) );
   assert( address < mData.size() );
 
   return mData[address];
