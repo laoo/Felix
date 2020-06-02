@@ -167,7 +167,7 @@
   <ItemGroup>
     <ClCompile Include="ActionQueue.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
-    <ClCompile Include="BusMaster.cpp" />
+    <ClCompile Include="Felix.cpp" />
     <ClCompile Include="CartBank.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ColOperator.cpp" />
@@ -198,7 +198,7 @@
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
-    <ClInclude Include="BusMaster.hpp" />
+    <ClInclude Include="Felix.hpp" />
     <ClInclude Include="CartBank.hpp" />
     <ClInclude Include="Cartridge.hpp" />
     <ClInclude Include="ColOperator.hpp" />

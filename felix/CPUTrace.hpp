@@ -2,7 +2,7 @@
 #include <experimental/coroutine>
 #include "CPU.hpp"
 
-class BusMaster;
+class Felix;
 
 struct TraceRequest
 {
@@ -51,7 +51,7 @@ struct CpuTrace
     void return_void() {}
     void unhandled_exception() { std::terminate(); }
 
-    BusMaster * mBus;
+    Felix * mBus;
   };
 
   CpuTrace() : coro{}

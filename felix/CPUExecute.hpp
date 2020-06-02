@@ -1,7 +1,7 @@
 #pragma once
 #include <experimental/coroutine>
 
-class BusMaster;
+class Felix;
 enum class Opcode : uint8_t;
 
 struct OpInt
@@ -191,9 +191,9 @@ struct CpuExecute
     AwaitCPUFetchOpcode await_transform( CPUFetchOpcode r );
     AwaitCPUFetchOperand await_transform( CPUFetchOperand r );
     AwaitCPUWrite await_transform( CPUWrite r );
-    AwaitCPUBusMaster await_transform( BusMaster & bus );
+    AwaitCPUBusMaster await_transform( Felix & bus );
 
-    BusMaster * mBus;
+    Felix * mBus;
   };
 
   CpuExecute() : coro{}

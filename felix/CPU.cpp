@@ -44,7 +44,7 @@ bool isHiccup( Opcode opcode )
   }
 }
 
-CpuExecute CPU::execute( BusMaster & bus )
+CpuExecute CPU::execute( Felix & bus )
 {
   co_await bus;
 

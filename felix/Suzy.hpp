@@ -8,7 +8,7 @@
 #include "KeyInput.hpp"
 #include "SuzyMath.hpp"
 
-class BusMaster;
+class Felix;
 
 class ISuzyProcess
 {
@@ -84,7 +84,7 @@ public:
 class Suzy
 {
 public:
-  Suzy( BusMaster & busMaster, std::function<KeyInput()> const& inputProvider );
+  Suzy( Felix & busMaster, std::function<KeyInput()> const& inputProvider );
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
@@ -323,7 +323,7 @@ private:
   int bpp() const;
 
 private:
-  BusMaster & mBusMaster;
+  Felix & mBusMaster;
   struct SCB
   {
     Reg tmpadr;

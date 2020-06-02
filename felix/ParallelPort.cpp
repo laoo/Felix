@@ -2,10 +2,10 @@
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
 #include "DisplayGenerator.hpp"
-#include "BusMaster.hpp"
+#include "Felix.hpp"
 
 
-ParallelPort::ParallelPort( BusMaster & busMaster, DisplayGenerator const& displayGenerator ) : mBusMaster{ busMaster }, mDisplayGenerator{ displayGenerator },
+ParallelPort::ParallelPort( Felix & busMaster, DisplayGenerator const& displayGenerator ) : mBusMaster{ busMaster }, mDisplayGenerator{ displayGenerator },
   mOutputMask{}, mData{}
 {
 }

@@ -1,10 +1,10 @@
 #include "Suzy.hpp"
 #include <cassert>
-#include "BusMaster.hpp"
+#include "Felix.hpp"
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"
 
-Suzy::Suzy( BusMaster & busMaster, std::function<KeyInput()> const& inputProvider ) : mBusMaster{ busMaster }, mSCB {}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
+Suzy::Suzy( Felix & busMaster, std::function<KeyInput()> const& inputProvider ) : mBusMaster{ busMaster }, mSCB {}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
   mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
   mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}

@@ -1,5 +1,5 @@
 #include "CPUExecute.hpp"
-#include "BusMaster.hpp"
+#include "Felix.hpp"
 
 AwaitCPURead CpuExecute::promise_type::await_transform( CPURead r )
 {
@@ -22,7 +22,7 @@ AwaitCPUWrite CpuExecute::promise_type::await_transform( CPUWrite w )
 }
 
 
-AwaitCPUBusMaster CpuExecute::promise_type::await_transform( BusMaster & bus )
+AwaitCPUBusMaster CpuExecute::promise_type::await_transform( Felix & bus )
 {
   mBus = &bus;
   return AwaitCPUBusMaster{ mBus->cpuRequest() };

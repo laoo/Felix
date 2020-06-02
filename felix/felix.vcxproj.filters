@@ -7,9 +7,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BusMaster.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Mikey.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -94,12 +91,12 @@
     <ClCompile Include="ImageLnx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Felix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BusMaster.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Opcodes.hpp">
@@ -199,6 +196,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ImageLnx.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Felix.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

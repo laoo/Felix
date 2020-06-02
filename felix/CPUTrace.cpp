@@ -1,5 +1,5 @@
 #include "CPUTrace.hpp"
-#include "BusMaster.hpp"
+#include "Felix.hpp"
 #include "Opcodes.hpp"
 #include <cassert>
 #include <cstdio>

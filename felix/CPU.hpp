@@ -103,7 +103,7 @@ struct CPU
   void ror( uint8_t & val );
   bool executeCommon( Opcode opcode, uint8_t value );
 
-  CpuExecute execute( BusMaster & bus );
+  CpuExecute execute( Felix & bus );
 
 
   uint64_t tick;

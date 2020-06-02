@@ -9,7 +9,7 @@
 #include "DisplayGenerator.hpp"
 #include "ParallelPort.hpp"
 
-class BusMaster;
+class Felix;
 class TimerCore;
 class AudioChannel;
 class DisplayGenerator;
@@ -17,7 +17,7 @@ class DisplayGenerator;
 class Mikey
 {
 public:
-  Mikey( BusMaster & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun );
+  Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun );
   ~Mikey();
 
   struct WriteAction
@@ -128,7 +128,7 @@ public:
   };
 
 private:
-  BusMaster & mBusMaster;
+  Felix & mBusMaster;
   uint64_t mAccessTick;
 
   std::array<std::unique_ptr<TimerCore>, 12> mTimers;

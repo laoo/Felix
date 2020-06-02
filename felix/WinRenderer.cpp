@@ -129,7 +129,7 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   mImmediateContext->CSSetShaderResources( 0, 1, &texSRV.p );
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &mBackBufferUAV.p, nullptr );
   mImmediateContext->CSSetShader( mRendererCS, nullptr, 0 );
-  UINT v[4]={};
+  UINT v[4]= { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV, v );
   mImmediateContext->Dispatch( 10, 102, 1 );
   mSwapChain->Present( 1, 0 );

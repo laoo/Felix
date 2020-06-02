@@ -5,7 +5,7 @@
 #include <chrono>
 #include <experimental/coroutine>
 #include "WinRenderer.hpp"
-#include "BusMaster.hpp"
+#include "Felix.hpp"
 #include "CPUExecute.hpp"
 #include "Mikey.hpp"
 #include "KeyInput.hpp"
@@ -168,7 +168,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     L_SET_LOGLEVEL( Log::LL_TRACE );
 
     gKeyInput = KeyInput{};
-    BusMaster bus{ [&]( DisplayGenerator::Pixel const* surface )
+    Felix bus{ [&]( DisplayGenerator::Pixel const* surface )
     {
       renderer.render( surface );
     },
@@ -220,9 +220,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
         gDroppedFiles.clear();
       }
 
-      //audioOut.fillBuffer( sampleSource );
+      audioOut.fillBuffer( sampleSource );
       //std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-      bus.process( 10000 );
+      //bus.process( 10000 );
     }
   }
   catch ( std::runtime_error const& )
