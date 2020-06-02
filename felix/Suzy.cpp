@@ -4,7 +4,7 @@
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"
 
-Suzy::Suzy( Felix & busMaster, std::function<KeyInput()> const& inputProvider ) : mBusMaster{ busMaster }, mSCB {}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
+Suzy::Suzy( Felix & felix, std::function<KeyInput()> const& inputProvider ) : mFelix{ felix }, mSCB {}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
   mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
   mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}
@@ -180,9 +180,9 @@ uint8_t Suzy::read( uint16_t address )
     return input.pause ? SWITCHES::PAUSE_SWITCH : 0;
   }
   case RCART0:
-    return mBusMaster.getCartridge().peekRCART0();
+    return mFelix.getCartridge().peekRCART0();
   case RCART1:
-    return mBusMaster.getCartridge().peekRCART1();
+    return mFelix.getCartridge().peekRCART1();
   default:
     return uint8_t( 0xff );
   }

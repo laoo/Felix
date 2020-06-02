@@ -168,7 +168,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     L_SET_LOGLEVEL( Log::LL_TRACE );
 
     gKeyInput = KeyInput{};
-    Felix bus{ [&]( DisplayGenerator::Pixel const* surface )
+    Felix felix{ [&]( DisplayGenerator::Pixel const* surface )
     {
       renderer.render( surface );
     },
@@ -182,13 +182,13 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       InputFile file{ arg };
       if ( file.valid() )
       {
-        bus.injectFile( file );
+        felix.injectFile( file );
       }
     }
 
     std::function<std::pair<float, float>( int sps )> sampleSource = [&]( int sps ) ->std::pair<float, float>
     {
-      return bus.getSample( sps );
+      return felix.getSample( sps );
     };
  
     for ( ;; )
@@ -213,7 +213,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
           InputFile file{ arg };
           if ( file.valid() )
           {
-            bus.injectFile( file );
+            felix.injectFile( file );
           }
         }
 
@@ -222,7 +222,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
       audioOut.fillBuffer( sampleSource );
       //std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-      //bus.process( 10000 );
+      //felix.process( 10000 );
     }
   }
   catch ( std::runtime_error const& )

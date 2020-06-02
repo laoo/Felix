@@ -51,7 +51,7 @@ struct CpuTrace
     void return_void() {}
     void unhandled_exception() { std::terminate(); }
 
-    Felix * mBus;
+    Felix * mFelix;
   };
 
   CpuTrace() : coro{}

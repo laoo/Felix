@@ -10,7 +10,7 @@ class ParallelPort
 {
 public:
 
-  ParallelPort( Felix & busMaster, DisplayGenerator const& displayGenerator );
+  ParallelPort( Felix & felix, DisplayGenerator const& displayGenerator );
 
   void setDirection( uint8_t value );
   uint8_t getDirection() const;
@@ -31,7 +31,7 @@ public:
 
 
 private:
-  Felix & mBusMaster;
+  Felix & mFelix;
   DisplayGenerator const& mDisplayGenerator;
   uint8_t mOutputMask;
   uint8_t mData;

@@ -5,7 +5,7 @@
 #include "Felix.hpp"
 
 
-ParallelPort::ParallelPort( Felix & busMaster, DisplayGenerator const& displayGenerator ) : mBusMaster{ busMaster }, mDisplayGenerator{ displayGenerator },
+ParallelPort::ParallelPort( Felix & felix, DisplayGenerator const& displayGenerator ) : mFelix{ felix }, mDisplayGenerator{ displayGenerator },
   mOutputMask{}, mData{}
 {
 }
@@ -26,13 +26,13 @@ void ParallelPort::setData( uint8_t value )
 
   if ( ( mOutputMask & Mask::CART_ADDR_DATA ) != 0 )
   {
-    mBusMaster.getCartridge().setCartAddressData( ( mData & Mask::CART_ADDR_DATA ) != 0 );
-    mBusMaster.getCartridge().setPower( ( mData & Mask::CART_ADDR_DATA ) == 0 );
+    mFelix.getCartridge().setCartAddressData( ( mData & Mask::CART_ADDR_DATA ) != 0 );
+    mFelix.getCartridge().setPower( ( mData & Mask::CART_ADDR_DATA ) == 0 );
   }
 
   if ( ( mOutputMask & Mask::AUDIN ) != 0 )
   {
-    mBusMaster.getCartridge().setAudIn( ( mData & Mask::AUDIN ) != 0 );
+    mFelix.getCartridge().setAudIn( ( mData & Mask::AUDIN ) != 0 );
   }
 }
 
@@ -42,7 +42,7 @@ uint8_t ParallelPort::getData() const
 
   if ( ( mOutputMask & Mask::AUDIN ) == 0 )
   {
-    result |= mBusMaster.getCartridge().getAudIn() ? Mask::AUDIN : 0;
+    result |= mFelix.getCartridge().getAudIn() ? Mask::AUDIN : 0;
   }
   else
   {
@@ -60,7 +60,7 @@ uint8_t ParallelPort::getData() const
 
   if ( ( mOutputMask & Mask::NOEXP ) == 0 )
   {
-    result |=mBusMaster.getComLynx().present() ? Mask::NOEXP : 0;
+    result |=mFelix.getComLynx().present() ? Mask::NOEXP : 0;
   }
   else
   {

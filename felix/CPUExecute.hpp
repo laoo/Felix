@@ -191,9 +191,9 @@ struct CpuExecute
     AwaitCPUFetchOpcode await_transform( CPUFetchOpcode r );
     AwaitCPUFetchOperand await_transform( CPUFetchOperand r );
     AwaitCPUWrite await_transform( CPUWrite r );
-    AwaitCPUBusMaster await_transform( Felix & bus );
+    AwaitCPUBusMaster await_transform( Felix & felix );
 
-    Felix * mBus;
+    Felix * mFelix;
   };
 
   CpuExecute() : coro{}

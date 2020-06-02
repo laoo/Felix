@@ -5,8 +5,8 @@
 #include "Felix.hpp"
 #include "Cartridge.hpp"
 
-Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mBusMaster{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
-  mParallelPort{ mBusMaster, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
+Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
+  mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -17,7 +17,7 @@ Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel con
     }
     if ( auto dma = mDisplayGenerator->hblank( tick, cnt ) )
     {
-      mBusMaster.requestDisplayDMA( dma.tick, dma.address );
+      mFelix.requestDisplayDMA( dma.tick, dma.address );
     }
     mTimers[0x2]->borrowIn( tick );
     if ( interrupt )
@@ -301,9 +301,9 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
   case SYSCTL1:
     if ( ( value & SYSCTL1::POWERON ) == 0 )
     {
-      mBusMaster.enterMonitor();
+      mFelix.enterMonitor();
     }
-    mBusMaster.getCartridge().setCartAddressStrobe( ( value & SYSCTL1::CART_ADDR_STROBE ) == 1 );
+    mFelix.getCartridge().setCartAddressStrobe( ( value & SYSCTL1::CART_ADDR_STROBE ) == 1 );
     break;
   case IODIR:
     mParallelPort.setDirection( value );
@@ -420,7 +420,7 @@ void Mikey::setDMAData( uint64_t tick, uint64_t data )
 {
   if ( auto dma = mDisplayGenerator->pushData( tick, data ) )
   {
-    mBusMaster.requestDisplayDMA( dma.tick, dma.address );
+    mFelix.requestDisplayDMA( dma.tick, dma.address );
   }
 }
 
@@ -447,7 +447,7 @@ void Mikey::setIRQ( uint8_t mask )
   mIRQ |= mask;
   if ( mIRQ != 0 )
   {
-    mBusMaster.assertInterrupt( CPU::I_IRQ );
+    mFelix.assertInterrupt( CPU::I_IRQ );
   }
 }
 
@@ -456,7 +456,7 @@ void Mikey::resetIRQ( uint8_t mask )
   mIRQ &= ~mask;
   if ( mIRQ == 0 )
   {
-    mBusMaster.desertInterrupt( CPU::I_IRQ );
+    mFelix.desertInterrupt( CPU::I_IRQ );
   }
 }
 

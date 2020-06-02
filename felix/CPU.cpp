@@ -44,9 +44,9 @@ bool isHiccup( Opcode opcode )
   }
 }
 
-CpuExecute CPU::execute( Felix & bus )
+CpuExecute CPU::execute( Felix & felix )
 {
-  co_await bus;
+  co_await felix;
 
   for ( ;; )
   {

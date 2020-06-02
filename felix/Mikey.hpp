@@ -17,7 +17,7 @@ class DisplayGenerator;
 class Mikey
 {
 public:
-  Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun );
+  Mikey( Felix & felix, std::function<void( DisplayGenerator::Pixel const* )> const& fun );
   ~Mikey();
 
   struct WriteAction
@@ -128,7 +128,7 @@ public:
   };
 
 private:
-  Felix & mBusMaster;
+  Felix & mFelix;
   uint64_t mAccessTick;
 
   std::array<std::unique_ptr<TimerCore>, 12> mTimers;

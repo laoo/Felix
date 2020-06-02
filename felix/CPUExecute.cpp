@@ -3,27 +3,27 @@
 
 AwaitCPURead CpuExecute::promise_type::await_transform( CPURead r )
 {
-  return AwaitCPURead{ mBus->request( r ) };
+  return AwaitCPURead{ mFelix->request( r ) };
 }
 
 AwaitCPUFetchOpcode CpuExecute::promise_type::await_transform( CPUFetchOpcode r )
 {
-  return AwaitCPUFetchOpcode{ mBus->request( r ) };
+  return AwaitCPUFetchOpcode{ mFelix->request( r ) };
 }
 
 AwaitCPUFetchOperand CpuExecute::promise_type::await_transform( CPUFetchOperand r )
 {
-  return AwaitCPUFetchOperand{ mBus->request( r ) };
+  return AwaitCPUFetchOperand{ mFelix->request( r ) };
 }
 
 AwaitCPUWrite CpuExecute::promise_type::await_transform( CPUWrite w )
 {
-  return AwaitCPUWrite{ mBus->request( w ) };
+  return AwaitCPUWrite{ mFelix->request( w ) };
 }
 
 
-AwaitCPUBusMaster CpuExecute::promise_type::await_transform( Felix & bus )
+AwaitCPUBusMaster CpuExecute::promise_type::await_transform( Felix & felix )
 {
-  mBus = &bus;
-  return AwaitCPUBusMaster{ mBus->cpuRequest() };
+  mFelix = &felix;
+  return AwaitCPUBusMaster{ mFelix->cpuRequest() };
 }
