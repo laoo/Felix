@@ -26,13 +26,6 @@ public:
   Felix( std::function<void( DisplayGenerator::Pixel const* )> const& dispFun, std::function<KeyInput()> const& inputProvider );
   ~Felix();
 
-  CPURequest * request( CPUFetchOpcode r );
-  CPURequest * request( CPUFetchOperand r );
-  CPURequest * request( CPURead r );
-  CPURequest * request( CPUWrite w );
- 
-  CPURequest * cpuRequest();
-
   void requestDisplayDMA( uint64_t tick, uint16_t address );
   void assertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
   void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
@@ -97,7 +90,6 @@ private:
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
   TraceRequest mDReq;
-  CPURequest mCPUReq;
   CpuExecute mCpuExecute;
   CpuTrace mCpuTrace;
   MAPCTL mMapCtl;

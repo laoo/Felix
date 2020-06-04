@@ -183,6 +183,7 @@
     <ClCompile Include="ImageLyx.cpp" />
     <ClCompile Include="InputFile.cpp" />
     <ClCompile Include="Log.cpp" />
+    <ClCompile Include="MasterBus.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
     <ClCompile Include="PenUnpacker.cpp" />
     <ClCompile Include="SuzyMath.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="Log.hpp" />
+    <ClInclude Include="MasterBus.hpp" />
     <ClInclude Include="ParallelPort.hpp" />
     <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />

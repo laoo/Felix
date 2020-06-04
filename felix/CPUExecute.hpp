@@ -12,166 +12,32 @@ struct OpInt
 };
 
 
-struct CPUFetchOpcode
+struct CPUFetchOpcodeAwaiter
 {
-  uint16_t address;
-
-  struct Tag {};
-
-  explicit CPUFetchOpcode( uint16_t a ) : address{ a } {}
+  bool await_ready();
+  OpInt await_resume();
+  void await_suspend( std::experimental::coroutine_handle<> c );
 };
 
-struct CPUFetchOperand
+struct CPUFetchOperandAwaiter
 {
-  uint16_t address;
-
-  explicit CPUFetchOperand( uint16_t a ) : address{ a } {}
+  bool await_ready();
+  uint8_t await_resume();
+  void await_suspend( std::experimental::coroutine_handle<> c );
 };
 
-struct CPURead
+struct CPUReadAwaiter
 {
-  uint16_t address;
-
-  explicit CPURead( uint16_t a ) : address{ a } {}
+  bool await_ready();
+  uint8_t await_resume();
+  void await_suspend( std::experimental::coroutine_handle<> c );
 };
 
-
-struct CPUWrite
+struct CPUWriteAwaiter
 {
-  uint16_t address;
-  uint8_t value;
-
-  explicit CPUWrite( uint16_t a, uint8_t v ) : address{ a }, value{ v } {}
-};
-
-
-struct CPURequest
-{
-  enum class Type
-  {
-    NONE,
-    FETCH_OPCODE,
-    FETCH_OPERAND,
-    READ,
-    WRITE,
-  } mType;
-
-  uint64_t tick;
-  uint16_t address;
-  uint8_t value;
-  uint8_t interrupt;
-
-  CPURequest() : mType{ Type::NONE }, tick{}, address{}, value{}, interrupt{} {}
-  CPURequest( CPURead r, uint8_t interrupt ) : mType{ Type::READ }, tick{}, address{ r.address }, value{}, interrupt{ interrupt } {}
-  CPURequest( CPUFetchOpcode r, uint8_t interrupt ) : mType{ Type::FETCH_OPCODE }, tick{}, address{ r.address }, value{}, interrupt{ interrupt } {}
-  CPURequest( CPUFetchOperand r, uint8_t interrupt ) : mType{ Type::FETCH_OPERAND }, tick{}, address{ r.address }, value{}, interrupt{ interrupt } {}
-  CPURequest( CPUWrite w, uint8_t interrupt ) : mType{ Type::WRITE }, tick{}, address{ w.address }, value{ w.value }, interrupt{ interrupt } {}
-
-  void operator()()
-  {
-    mType = Type::NONE;
-    coro();
-  }
-
-  std::experimental::coroutine_handle<> coro;
-};
-
-struct AwaitCPURead
-{
-  CPURequest * req;
-
-  bool await_ready()
-  {
-    return false;
-  }
-
-  uint8_t await_resume()
-  {
-    return req->value;
-  }
-
-  void await_suspend( std::experimental::coroutine_handle<> c )
-  {
-    req->coro = c;
-  }
-};
-
-struct AwaitCPUFetchOpcode
-{
-  CPURequest * req;
-
-  bool await_ready()
-  {
-    return false;
-  }
-
-  OpInt await_resume()
-  {
-    return { req->tick, ( int )req->interrupt, ( Opcode )req->value };
-  }
-
-  void await_suspend( std::experimental::coroutine_handle<> c )
-  {
-    req->coro = c;
-  }
-};
-
-struct AwaitCPUFetchOperand
-{
-  CPURequest * req;
-
-  bool await_ready()
-  {
-    return false;
-  }
-
-  uint8_t await_resume()
-  {
-    return req->value;
-  }
-
-  void await_suspend( std::experimental::coroutine_handle<> c )
-  {
-    req->coro = c;
-  }
-};
-
-struct AwaitCPUWrite
-{
-  CPURequest * req;
-
-  bool await_ready()
-  {
-    return false;
-  }
-
-  void await_resume()
-  {
-  }
-
-  void await_suspend( std::experimental::coroutine_handle<> c )
-  {
-    req->coro = c;
-  }
-};
-
-struct AwaitCPUBusMaster
-{
-  CPURequest * req;
-
-  bool await_ready()
-  {
-    return true;
-  }
-
-  void await_resume()
-  {
-  }
-
-  void await_suspend( std::experimental::coroutine_handle<> c )
-  {
-    req->coro = c;
-  }
+  bool await_ready();
+  void await_resume();
+  void await_suspend( std::experimental::coroutine_handle<> c );
 };
 
 
@@ -187,28 +53,8 @@ struct CpuExecute
     auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
     void return_void() {}
     void unhandled_exception() { std::terminate(); }
-    AwaitCPURead await_transform( CPURead r );
-    AwaitCPUFetchOpcode await_transform( CPUFetchOpcode r );
-    AwaitCPUFetchOperand await_transform( CPUFetchOperand r );
-    AwaitCPUWrite await_transform( CPUWrite r );
-    AwaitCPUBusMaster await_transform( Felix & felix );
-
-    Felix * mFelix;
   };
 
-  CpuExecute() : coro{}
-  {
-  }
-
-  CpuExecute( handle c ) : coro{ c }
-  {
-  }
-
-  ~CpuExecute()
-  {
-    if ( coro )
-      coro.destroy();
-  }
-
-  handle coro;
+  CpuExecute( handle c );
+  ~CpuExecute();
 };

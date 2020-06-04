@@ -1,4 +1,5 @@
 #include "Felix.hpp"
+#include "MasterBus.hpp"
 #include "CPU.hpp"
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
@@ -13,7 +14,7 @@
 
 Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
 mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
-  mDReq{}, mCPUReq{}, mCpuExecute{ mCpu->execute( *this ) }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
+  mDReq{}, mCpuExecute{ mCpu->execute() }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mInterruptMask{}
 {
   //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )

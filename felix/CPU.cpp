@@ -1,6 +1,48 @@
 #include "CPU.hpp"
 #include "Opcodes.hpp"
+#include "MasterBus.hpp"
 #include <cassert>
+
+CPUFetchOpcodeAwaiter fetchOpcode( uint16_t address )
+{
+  auto & req = MasterBus::instance().cpuRequest();
+
+  req.type = MasterBus::CPURequest::Type::FETCH_OPCODE;
+  req.address = address;
+
+  return {};
+}
+
+CPUFetchOperandAwaiter fetchOperand( uint16_t address )
+{
+  auto & req = MasterBus::instance().cpuRequest();
+
+  req.type = MasterBus::CPURequest::Type::FETCH_OPERAND;
+  req.address = address;
+
+  return {};
+}
+
+CPUReadAwaiter read( uint16_t address )
+{
+  auto & req = MasterBus::instance().cpuRequest();
+
+  req.type = MasterBus::CPURequest::Type::READ;
+  req.address = address;
+
+  return {};
+}
+
+CPUWriteAwaiter write( uint16_t address, uint8_t value )
+{
+  auto & req = MasterBus::instance().cpuRequest();
+
+  req.type = MasterBus::CPURequest::Type::WRITE;
+  req.address = address;
+  req.value = value;
+
+  return {};
+}
 
 bool isHiccup( Opcode opcode )
 {
@@ -44,10 +86,8 @@ bool isHiccup( Opcode opcode )
   }
 }
 
-CpuExecute CPU::execute( Felix & felix )
+CpuExecute CPU::execute()
 {
-  co_await felix;
-
   for ( ;; )
   {
     union
@@ -77,7 +117,7 @@ CpuExecute CPU::execute( Felix & felix )
       opcode = Opcode::BRK_BRK;
     }
 
-    operand = eal = co_await CPUFetchOperand{ pc };
+    operand = eal = co_await fetchOperand( pc );
 
     switch ( opcode )
     {
@@ -92,178 +132,178 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::RZP_LDY:
     case Opcode::RZP_ORA:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       executeCommon( opcode, d );
       break;
     case Opcode::RZP_ADC:
     case Opcode::RZP_SBC:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ ea };
+        co_await read( ea );
       }
       break;
     case Opcode::WZP_STA:
       ++pc;
-      co_await CPUWrite{ ea, a };
+      co_await write( ea, a );
       break;
     case Opcode::WZP_STX:
       ++pc;
-      co_await CPUWrite{ ea, x };
+      co_await write( ea, x );
       break;
     case Opcode::WZP_STY:
       ++pc;
-      co_await CPUWrite{ ea, y };
+      co_await write( ea, y );
       break;
     case Opcode::WZP_STZ:
       ++pc;
-      co_await CPUWrite{ ea, 0x00 };
+      co_await write( ea, 0x00 );
       break;
     case Opcode::MZP_ASL:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       asl( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_DEC:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       setnz( --d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_INC:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       setnz( ++d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_LSR:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       lsr( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_ROL:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       rol( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_ROR:
       ++pc;
       ror( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_TRB:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       setz( d & a );
       d &= ~a;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_TSB:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       setz( d & a );
       d |= a;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB0:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x01;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB1:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x02;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB2:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x04;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB3:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x08;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB4:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x10;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB5:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x20;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB6:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x40;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_RMB7:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d &= ~0x80;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB0:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x01;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB1:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x02;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB2:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x04;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB3:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x08;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB4:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x10;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB5:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x20;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB6:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x40;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZP_SMB7:
       ++pc;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       d |= 0x80;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
       break;
     case Opcode::RZX_AND:
@@ -273,87 +313,87 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::RZX_LDA:
     case Opcode::RZX_LDY:
     case Opcode::RZX_ORA:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       executeCommon( opcode, d );
       break;
     case Opcode::RZX_ADC:
     case Opcode::RZX_SBC:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ ea };
+        co_await read( ea );
       }
       break;
     case Opcode::RZY_LDX:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += y;
-      setnz( x = co_await CPURead{ ea } );
+      setnz( x = co_await read( ea ) );
       break;
     case Opcode::WZX_STA:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      co_await CPUWrite{ ea, a };
+      co_await write( ea, a );
       break;
     case Opcode::WZX_STY:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      co_await CPUWrite{ ea, y };
+      co_await write( ea, y );
       break;
     case Opcode::WZX_STZ:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      co_await CPUWrite{ ea, 0x00 };
+      co_await write( ea, 0x00 );
       break;
     case Opcode::WZY_STX:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += y;
-      co_await CPUWrite{ ea, x };
+      co_await write( ea, x );
       break;
     case Opcode::MZX_ASL:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       asl( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZX_DEC:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       setnz( --d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZX_INC:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       setnz( ++d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZX_LSR:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       lsr( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZX_ROL:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       rol( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MZX_ROR:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       ror( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::RIN_AND:
     case Opcode::RIN_CMP:
@@ -361,104 +401,104 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::RIN_LDA:
     case Opcode::RIN_ORA:
       ++pc;
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
+      d = co_await read( t );
       executeCommon( opcode, d );
       break;
     case Opcode::RIN_ADC:
     case Opcode::RIN_SBC:
       ++pc;
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
+      d = co_await read( t );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ t };
+        co_await read( t );
       }
       break;
     case Opcode::WIN_STA:
       ++pc;
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
-      co_await CPUWrite{ t, a };
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
+      co_await write( t, a );
       break;
     case Opcode::RIX_AND:
     case Opcode::RIX_CMP:
     case Opcode::RIX_EOR:
     case Opcode::RIX_LDA:
     case Opcode::RIX_ORA:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
+      d = co_await read( t );
       executeCommon( opcode, d );
       break;
     case Opcode::RIX_ADC:
     case Opcode::RIX_SBC:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
+      d = co_await read( t );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ t };
+        co_await read( t );
       }
       break;
     case Opcode::WIX_STA:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       eal += x;
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
-      co_await CPUWrite{ t, a };
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
+      co_await write( t, a );
       break;
     case Opcode::RIY_AND:
     case Opcode::RIY_CMP:
     case Opcode::RIY_EOR:
     case Opcode::RIY_LDA:
     case Opcode::RIY_ORA:
-      co_await CPURead{ ++pc };
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
+      co_await read( ++pc );
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
       ea = t;
       ea += y;
       if ( eah != th )
       {
         tl += y;
-        co_await CPURead{ t };
+        co_await read( t );
       }
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       executeCommon( opcode, d );
       break;
     case Opcode::RIY_ADC:
     case Opcode::RIY_SBC:
-      co_await CPURead{ ++pc };
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
+      co_await read( ++pc );
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
       ea = t;
       ea += y;
       if ( eah != th )
       {
         tl += y;
-        co_await CPURead{ t };
+        co_await read( t );
       }
-      d = co_await CPURead{ ea };
+      d = co_await read( ea );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ t };
+        co_await read( t );
       }
       break;
     case Opcode::WIY_STA:
-      co_await CPURead{ ++pc };
-      tl = co_await CPURead{ ea++ };
-      th = co_await CPURead{ ea };
+      co_await read( ++pc );
+      tl = co_await read( ea++ );
+      th = co_await read( ea );
       ea = t;
       ea += y;
       tl += y;
-      co_await CPURead{ t };
-      co_await CPUWrite{ ea, a };
+      co_await read( t );
+      co_await write( ea, a );
       break;
     case Opcode::RAB_AND:
     case Opcode::RAB_BIT:
@@ -471,98 +511,98 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::RAB_LDY:
     case Opcode::RAB_ORA:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       executeCommon( opcode, d );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ ea };
+        co_await read( ea );
       }
       break;
     case Opcode::WAB_STA:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      co_await CPUWrite{ ea, a };
+      operand = eah = co_await fetchOperand( pc++ );
+      co_await write( ea, a );
       break;
     case Opcode::WAB_STX:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      co_await CPUWrite{ ea, x };
+      operand = eah = co_await fetchOperand( pc++ );
+      co_await write( ea, x );
       break;
     case Opcode::WAB_STY:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      co_await CPUWrite{ ea, y };
+      operand = eah = co_await fetchOperand( pc++ );
+      co_await write( ea, y );
       break;
     case Opcode::WAB_STZ:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      co_await CPUWrite{ ea, 0x00 };
+      operand = eah = co_await fetchOperand( pc++ );
+      co_await write( ea, 0x00 );
       break;
       break;
     case Opcode::MAB_ASL:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       asl( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAB_DEC:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       setnz( --d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAB_INC:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       setnz( ++d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAB_LSR:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       lsr( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAB_ROL:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       rol( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAB_ROR:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       ror( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAB_TRB:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       setz( d & a );
       d &= ~a;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAB_TSB:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      d = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      d = co_await read( ea );
       setz( d & a );
       d |= a;
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::RAX_AND:
     case Opcode::RAX_BIT:
@@ -572,32 +612,32 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::RAX_LDY:
     case Opcode::RAX_ORA:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       t += x;
       if ( th != eah )
       {
         eal += x;
-        co_await CPURead{ ea };
+        co_await read( ea );
       }
-      d = co_await CPURead{ t };
+      d = co_await read( t );
       executeCommon( opcode, d );
       break;
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       t += x;
       if ( th != eah )
       {
         eal += x;
-        co_await CPURead{ ea };
+        co_await read( ea );
       }
-      d = co_await CPURead{ t };
+      d = co_await read( t );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ t };
+        co_await read( t );
       }
       break;
     case Opcode::RAY_AND:
@@ -607,162 +647,162 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::RAY_LDX:
     case Opcode::RAY_ORA:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       t += y;
       if ( th != eah )
       {
         eal += x;
-        co_await CPURead{ ea };
+        co_await read( ea );
       }
-      d = co_await CPURead{ t };
+      d = co_await read( t );
       executeCommon( opcode, d );
       break;
     case Opcode::RAY_ADC:
     case Opcode::RAY_SBC:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       t += y;
       if ( th != eah )
       {
         eal += x;
-        co_await CPURead{ ea };
+        co_await read( ea );
       }
-      d = co_await CPURead{ t };
+      d = co_await read( t );
       if ( executeCommon( opcode, d ) )
       {
-        co_await CPURead{ t };
+        co_await read( t );
       }
       break;
     case Opcode::WAX_STA:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      co_await CPUWrite{ t, a };
+      co_await read( ea );
+      co_await write( t, a );
       break;
     case Opcode::WAX_STZ:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      co_await CPUWrite{ t, 0x00 };
+      co_await read( ea );
+      co_await write( t, 0x00 );
       break;
     case Opcode::WAY_STA:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += y;
       t += y;
-      co_await CPURead{ ea };
-      co_await CPUWrite{ t, a };
+      co_await read( ea );
+      co_await write( t, a );
       break;
     case Opcode::MAX_ASL:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      co_await read( ea );
+      d = co_await read( t );
       asl( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAX_DEC:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      co_await read( ea );
+      d = co_await read( t );
       setnz( --d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAX_INC:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      co_await read( ea );
+      d = co_await read( t );
       setnz( ++d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAX_LSR:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      co_await read( ea );
+      d = co_await read( t );
       lsr( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAX_ROL:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      co_await read( ea );
+      d = co_await read( t );
       rol( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::MAX_ROR:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       t = ea;
       eal += x;
       t += x;
-      co_await CPURead{ ea };
-      d = co_await CPURead{ t };
+      co_await read( ea );
+      d = co_await read( t );
       ror( d );
-      co_await CPUWrite{ ea, d };
+      co_await write( ea, d );
       break;
     case Opcode::JMA_JMP:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       pc = ea;
       break;
     case Opcode::JSA_JSR:
       ++pc;
-      co_await CPURead{ s };
-      co_await CPUWrite{ s, pch };
+      co_await read( s );
+      co_await write( s, pch );
       sl--;
-      co_await CPUWrite{ s, pcl };
+      co_await write( s, pcl );
       sl--;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
+      operand = eah = co_await fetchOperand( pc++ );
       pc = ea;
       break;
     case Opcode::JMX_JMP:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ pc };
+      operand = eah = co_await fetchOperand( pc++ );
+      co_await read( pc );
       t = ea;
       eal += x;
-      co_await CPURead{ ea };
+      co_await read( ea );
       t += x;
-      eal = co_await CPURead{ t++ };
-      eah = co_await CPURead{ t };
+      eal = co_await read( t++ );
+      eah = co_await read( t );
       pc = ea;
       break;
     case Opcode::JMI_JMP:
       ++pc;
-      operand = eah = co_await CPUFetchOperand{ pc++ };
-      tl = co_await CPURead{ ea };
+      operand = eah = co_await fetchOperand( pc++ );
+      tl = co_await read( ea );
       eal++;
-      co_await CPURead{ ea };
+      co_await read( ea );
       eah += eal == 0 ? 1 : 0;
-      th = co_await CPURead{ ea };
+      th = co_await read( ea );
       pc = t;
       break;
     case Opcode::IMP_ASL:
@@ -854,18 +894,18 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( executeCommon( opcode, eal ) )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
       }
       break;
     case Opcode::BRL_BCC:
       ++pc;
       if ( !get<bitC>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -878,11 +918,11 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( get<bitC>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -895,11 +935,11 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( get<bitZ>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -912,11 +952,11 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( get<bitN>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -929,11 +969,11 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( !get<bitZ>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -946,11 +986,11 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( !get<bitN>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -961,11 +1001,11 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BRL_BRA:
       operand -= 1;
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       t = pc + ( int8_t )eal;
       if ( th != pch )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
       }
       pc = t;
       break;
@@ -973,11 +1013,11 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( !get<bitV>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -990,11 +1030,11 @@ CpuExecute CPU::execute( Felix & felix )
       ++pc;
       if ( get<bitV>() )
       {
-        co_await CPURead{ pc };
+        co_await read( pc );
         t = pc + ( int8_t )eal;
         if ( th != pch )
         {
-          co_await CPURead{ pc };
+          co_await read( pc );
         }
         pc = t;
       }
@@ -1005,9 +1045,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR0:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x01 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1016,9 +1056,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR1:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x02 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1027,9 +1067,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR2:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x04 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1038,9 +1078,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR3:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x08 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1049,9 +1089,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR4:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x10 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1060,9 +1100,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR5:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x20 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1071,9 +1111,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR6:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x40 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1082,9 +1122,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBR7:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x80 ) == 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1093,9 +1133,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS0:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x01 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1104,9 +1144,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS1:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x02 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1115,9 +1155,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS2:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x04 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1126,9 +1166,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS3:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x08 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1137,9 +1177,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS4:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x10 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1148,9 +1188,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS5:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x20 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1159,9 +1199,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS6:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x40 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1170,9 +1210,9 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::BZR_BBS7:
       ++pc;
-      eal = co_await CPURead{ ea };
-      operand = tl = co_await CPUFetchOperand{ pc++ };
-      co_await CPURead{ ea };
+      eal = co_await read( ea );
+      operand = tl = co_await fetchOperand( pc++ );
+      co_await read( ea );
       if ( ( eal & 0x80 ) != 0 )
       {
         t = pc + ( int8_t )tl;
@@ -1182,42 +1222,42 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::BRK_BRK:
       if ( interrupt & CPU::I_RESET )
       {
-        co_await CPURead{ s };
+        co_await read( s );
         sl--;
-        co_await CPURead{ s };
+        co_await read( s );
         sl--;
-        co_await CPURead{ s };
+        co_await read( s );
         sl--;
-        eal = co_await CPURead{ 0xfffc };
-        eah = co_await CPURead{ 0xfffd };
+        eal = co_await read( 0xfffc );
+        eah = co_await read( 0xfffd );
       }
       else
       {
         //on interrupt PC should point to interrupted instruction
         //on BRK should after past BRK argument
         pc += interrupt ? -1 : 1;
-        co_await CPUWrite{ s, pch };
+        co_await write( s, pch );
         sl--;
-        co_await CPUWrite{ s, pcl };
+        co_await write( s, pcl );
         sl--;
         if ( interrupt )
         {
-          co_await CPUWrite{ s, pirq() };
+          co_await write( s, pirq() );
         }
         else
         {
-          co_await CPUWrite{ s, p() };
+          co_await write( s, p() );
         }
         sl--;
         if ( interrupt & CPU::I_NMI )
         {
-          eal = co_await CPURead{ 0xfffa };
-          eah = co_await CPURead{ 0xfffb };
+          eal = co_await read( 0xfffa );
+          eah = co_await read( 0xfffb );
         }
         else
         {
-          eal = co_await CPURead{ 0xfffe };
-          eah = co_await CPURead{ 0xffff };
+          eal = co_await read( 0xfffe );
+          eah = co_await read( 0xffff );
         }
         set<bitI>();
       }
@@ -1227,59 +1267,59 @@ CpuExecute CPU::execute( Felix & felix )
     case Opcode::RTI_RTI:
       ++pc;
       ++sl;
-      P = co_await CPURead{ s };
+      P = co_await read( s );
       ++sl;
-      eal = co_await CPURead{ s };
+      eal = co_await read( s );
       ++sl;
-      eah = co_await CPURead{ s };
-      co_await CPURead{ pc };
+      eah = co_await read( s );
+      co_await read( pc );
       pc = ea;
       break;
     case Opcode::RTS_RTS:
-      co_await CPURead{ ++pc };
+      co_await read( ++pc );
       ++sl;
-      eal = co_await CPURead{ s };
+      eal = co_await read( s );
       ++sl;
-      eah = co_await CPURead{ s };
-      co_await CPURead{ pc };
+      eah = co_await read( s );
+      co_await read( pc );
       ++ea;
       pc = ea;
       break;
     case Opcode::PHR_PHA:
-      co_await CPUWrite{ s, a };
+      co_await write( s, a );
       sl--;
       break;
     case Opcode::PHR_PHP:
-      co_await CPUWrite{ s, p() };
+      co_await write( s, p() );
       sl--;
       break;
     case Opcode::PHR_PHX:
-      co_await CPUWrite{ s, x };
+      co_await write( s, x );
       sl--;
       break;
     case Opcode::PHR_PHY:
-      co_await CPUWrite{ s, y };
+      co_await write( s, y );
       sl--;
       break;
     case Opcode::PLR_PLA:
-      co_await CPURead{ pc };
+      co_await read( pc );
       ++sl;
-      setnz( a = co_await CPURead{ s } );
+      setnz( a = co_await read( s ) );
       break;
     case Opcode::PLR_PLP:
-      co_await CPURead{ pc };
+      co_await read( pc );
       ++sl;
-      P = co_await CPURead{ s };
+      P = co_await read( s );
       break;
     case Opcode::PLR_PLX:
-      co_await CPURead{ pc };
+      co_await read( pc );
       ++sl;
-      setnz( x = co_await CPURead{ s } );
+      setnz( x = co_await read( s ) );
       break;
     case Opcode::PLR_PLY:
-      co_await CPURead{ pc };
+      co_await read( pc );
       ++sl;
-      setnz( y = co_await CPURead{ s } );
+      setnz( y = co_await read( s ) );
       break;
     case Opcode::UND_2_02:
     case Opcode::UND_2_22:
@@ -1292,34 +1332,34 @@ CpuExecute CPU::execute( Felix & felix )
       break;
     case Opcode::UND_3_44:
       ++pc;
-      co_await CPURead{ ea };
+      co_await read( ea );
       break;
     case Opcode::UND_4_54:
     case Opcode::UND_4_d4:
     case Opcode::UND_4_f4:
       ++pc;
-      co_await CPURead{ pc };
+      co_await read( pc );
       eal += x;
-      eal = co_await CPURead{ ea };
+      eal = co_await read( ea );
       break;
     case Opcode::UND_4_dc:
     case Opcode::UND_4_fc:
       ++pc;
-      eah = co_await CPURead{ pc++ };
-      co_await CPURead{ ea };
+      eah = co_await read( pc++ );
+      co_await read( ea );
       break;
     case Opcode::UND_8_5c:
       //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opcode_mapping.html
       //op - code 5C consumes 3 bytes and 8 cycles but conforms to no known address mode; it remains interesting but useless.
       //I tested the instruction "5C 1234h" ( stored little - endian as 5Ch 34h 12h ) as an example, and observed the following : 3 cycles fetching the instruction, 1 cycle reading FF34, then 4 cycles reading FFFF.
       ++pc;
-      co_await CPURead{ pc++ };
+      co_await read( pc++ );
       eah = 0xff;
-      co_await CPURead{ ea };
-      co_await CPURead{ 0xffff };
-      co_await CPURead{ 0xffff };
-      co_await CPURead{ 0xffff };
-      co_await CPURead{ 0xffff };
+      co_await read( ea );
+      co_await read( 0xffff );
+      co_await read( 0xffff );
+      co_await read( 0xffff );
+      co_await read( 0xffff );
       break;
     default:  //for UND_1_xx
       break;
@@ -1327,7 +1367,7 @@ CpuExecute CPU::execute( Felix & felix )
 
     for ( ;; )
     {
-      auto opint = co_await CPUFetchOpcode{ pc++ };
+      auto opint = co_await fetchOpcode( pc++ );
       opcode = opint.op;
       interrupt = opint.interrupt;
       tick = opint.tick;

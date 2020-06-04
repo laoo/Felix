@@ -94,6 +94,9 @@
     <ClCompile Include="Felix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MasterBus.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -199,6 +202,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Felix.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MasterBus.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

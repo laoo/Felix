@@ -1,29 +1,85 @@
 #include "CPUExecute.hpp"
-#include "Felix.hpp"
+#include "MasterBus.hpp"
+#include <stdexcept>
 
-AwaitCPURead CpuExecute::promise_type::await_transform( CPURead r )
+CpuExecute::CpuExecute( handle c )
 {
-  return AwaitCPURead{ mFelix->request( r ) };
+  auto & res = MasterBus::instance().cpuResponse();
+
+  if ( res.target )
+    throw std::exception{};
+
+  res.target = c;
 }
 
-AwaitCPUFetchOpcode CpuExecute::promise_type::await_transform( CPUFetchOpcode r )
+CpuExecute::~CpuExecute()
 {
-  return AwaitCPUFetchOpcode{ mFelix->request( r ) };
+  auto & res = MasterBus::instance().cpuResponse();
+  
+  if ( res.target )
+  {
+    res.target.destroy();
+    res.target = {};
+  }
 }
 
-AwaitCPUFetchOperand CpuExecute::promise_type::await_transform( CPUFetchOperand r )
+bool CPUFetchOpcodeAwaiter::await_ready()
 {
-  return AwaitCPUFetchOperand{ mFelix->request( r ) };
+  return false;
 }
 
-AwaitCPUWrite CpuExecute::promise_type::await_transform( CPUWrite w )
+OpInt CPUFetchOpcodeAwaiter::await_resume()
 {
-  return AwaitCPUWrite{ mFelix->request( w ) };
+  auto & res = MasterBus::instance().cpuResponse();
+
+  return { res.tick, res.interrupt, ( Opcode )res.value };
 }
 
-
-AwaitCPUBusMaster CpuExecute::promise_type::await_transform( Felix & felix )
+void CPUFetchOpcodeAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
 {
-  mFelix = &felix;
-  return AwaitCPUBusMaster{ mFelix->cpuRequest() };
+}
+
+bool CPUFetchOperandAwaiter::await_ready()
+{
+  return false;
+}
+
+uint8_t CPUFetchOperandAwaiter::await_resume()
+{
+  auto & res = MasterBus::instance().cpuResponse();
+
+  return res.value;
+}
+
+void CPUFetchOperandAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+{
+}
+
+bool CPUReadAwaiter::await_ready()
+{
+  return false;
+}
+
+uint8_t CPUReadAwaiter::await_resume()
+{
+  auto & res = MasterBus::instance().cpuResponse();
+
+  return res.value;
+}
+
+void CPUReadAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+{
+}
+
+bool CPUWriteAwaiter::await_ready()
+{
+  return false;
+}
+
+void CPUWriteAwaiter::await_resume()
+{
+}
+
+void CPUWriteAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+{
 }
