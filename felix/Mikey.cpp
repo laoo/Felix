@@ -5,8 +5,8 @@
 #include "Felix.hpp"
 #include "Cartridge.hpp"
 
-Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
-mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDone{}, mStereo{}, mSerDat{}, mIRQ{}
+Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
+mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -174,6 +174,16 @@ uint8_t Mikey::read( uint16_t address )
   }
   else switch ( address )
   {
+  case ATTENREG0:
+    return mAttenuation[0];
+  case ATTENREG1:
+    return mAttenuation[1];
+  case ATTENREG2:
+    return mAttenuation[2];
+  case ATTENREG3:
+    return mAttenuation[3];
+  case MPAN:
+    return mPan;
   case MSTEREO:
     return mStereo;
   case INTRST:
@@ -291,7 +301,20 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
   }
   else switch ( address )
   {
+  case ATTENREG0:
+    mAttenuation[0] = value;
+    break;
+  case ATTENREG1:
+    mAttenuation[1] = value;
+    break;
+  case ATTENREG2:
+    mAttenuation[2] = value;
+    break;
+  case ATTENREG3:
+    mAttenuation[3] = value;
+    break;
   case MPAN:
+    mPan = value;
     break;
   case MSTEREO:
     mStereo = value;
@@ -400,7 +423,7 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     mDisplayGenerator->updatePalette( mAccessTick, address - GREEN, value );
     break;
   default:
-    assert( false );
+//    assert( false );
     break;
   }
 
@@ -440,9 +463,28 @@ std::pair<float, float> Mikey::sampleAudio() const
   for ( size_t i = 0; i < 4; ++i )
   {
     if ( ( mStereo & ( (uint8_t)0x01 << i ) ) == 0 )
-      result.first += (int8_t)mAudioChannels[i]->getOutput();
+    {
+      if ( ( mPan & ( (uint8_t)0x01 << i ) ) != 0 )
+      {
+        result.first += ( (int8_t)mAudioChannels[i]->getOutput() * ( mAttenuation[i] & 0x0f ) ) / 16;
+      }
+      else
+      {
+        result.first += (int8_t)mAudioChannels[i]->getOutput();
+      }
+    }
+
     if ( ( mStereo & ( (uint8_t)0x10 << i ) ) == 0 )
-      result.second += (int8_t)mAudioChannels[i]->getOutput();
+    {
+      if ( ( mPan & ( (uint8_t)0x10 << i ) ) != 0 )
+      {
+        result.second += ( (int8_t)mAudioChannels[i]->getOutput() * ( mAttenuation[i] & 0xf0 ) ) / ( 16 * 16 );
+      }
+      else
+      {
+        result.second += (int8_t)mAudioChannels[i]->getOutput();
+      }
+    }
   }
 
   return { result.first / ( 4.0f * 128.0f ), result.second / ( 4.0f * 128.0f ) };

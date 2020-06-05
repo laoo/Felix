@@ -71,6 +71,10 @@ public:
     static constexpr uint16_t OTHER      = 0x7;
   };
 
+  static constexpr uint16_t ATTENREG0    = 0x40;
+  static constexpr uint16_t ATTENREG1    = 0x41;
+  static constexpr uint16_t ATTENREG2    = 0x42;
+  static constexpr uint16_t ATTENREG3    = 0x43;
   static constexpr uint16_t MPAN         = 0x44;
   static constexpr uint16_t MSTEREO      = 0x50;
   static constexpr uint16_t INTRST       = 0x80;
@@ -134,6 +138,7 @@ private:
   std::array<std::unique_ptr<TimerCore>, 12> mTimers;
   std::array<std::unique_ptr<AudioChannel>, 4> mAudioChannels;
   std::array<uint8_t, 32> mPalette;
+  std::array<uint8_t, 4> mAttenuation;
 
   std::unique_ptr<DisplayGenerator> mDisplayGenerator;
 
@@ -168,6 +173,7 @@ private:
 
   bool mSuzyDone;
 
+  uint8_t mPan;
   uint8_t mStereo;
   uint8_t mSerDat;
   uint8_t mIRQ;
