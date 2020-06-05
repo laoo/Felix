@@ -6,7 +6,7 @@
 #include "Cartridge.hpp"
 
 Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
-  mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSerDat{}, mIRQ{}
+mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDone{}, mStereo{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -174,6 +174,8 @@ uint8_t Mikey::read( uint16_t address )
   }
   else switch ( address )
   {
+  case MSTEREO:
+    return mStereo;
   case INTRST:
   case INTSET:
     return mIRQ;
@@ -290,7 +292,9 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
   else switch ( address )
   {
   case MPAN:
+    break;
   case MSTEREO:
+    mStereo = value;
     break;
   case INTRST:
     resetIRQ( value );
@@ -435,8 +439,10 @@ std::pair<float, float> Mikey::sampleAudio() const
 
   for ( size_t i = 0; i < 4; ++i )
   {
-    result.first += (int8_t)mAudioChannels[i]->getOutput();
-    result.second += (int8_t)mAudioChannels[i]->getOutput();
+    if ( ( mStereo & ( (uint8_t)0x01 << i ) ) == 0 )
+      result.first += (int8_t)mAudioChannels[i]->getOutput();
+    if ( ( mStereo & ( (uint8_t)0x10 << i ) ) == 0 )
+      result.second += (int8_t)mAudioChannels[i]->getOutput();
   }
 
   return { result.first / ( 4.0f * 128.0f ), result.second / ( 4.0f * 128.0f ) };

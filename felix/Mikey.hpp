@@ -168,6 +168,7 @@ private:
 
   bool mSuzyDone;
 
+  uint8_t mStereo;
   uint8_t mSerDat;
   uint8_t mIRQ;
 };
