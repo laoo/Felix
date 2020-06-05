@@ -1,5 +1,4 @@
 #include "Felix.hpp"
-#include "MasterBus.hpp"
 #include "CPU.hpp"
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
@@ -14,7 +13,7 @@
 
 Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
 mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
-  mDReq{}, mCpuExecute{ mCpu->execute() }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
+  mDReq{}, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}
 {
   //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
@@ -43,6 +42,8 @@ mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>(
         break;
     }
   }
+
+  mCpu->res.target();
 
   //mCpuTrace = cpuTrace( *mCpu, mDReq );
 }
@@ -144,8 +145,8 @@ void Felix::process( uint64_t ticks )
 {
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
 
-  auto & req = MasterBus::instance().cpuRequest();
-  auto & res = MasterBus::instance().cpuResponse();
+  auto & req = mCpu->req;
+  auto & res = mCpu->res;
 
   for ( ;; )
   {
@@ -469,7 +470,7 @@ void Felix::processCPU()
     Action::CPU_WRITE_SUZY
   };
 
-  auto & req = MasterBus::instance().cpuRequest();
+  auto & req = mCpu->req;
 
   auto pageType = mPageTypes[req.address >> 8];
   mActionQueue.push( { requestToAction[( size_t )req.type + ( size_t )pageType], mBusReservationTick } );

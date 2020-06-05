@@ -1,15 +1,36 @@
 #pragma once
 #include <cstdint>
-#include "CPUExecute.hpp"
+#include <experimental/coroutine>
 
 enum class Opcode : uint8_t;
 class Felix;
 
+
+namespace detail
+{
+template <class T>
+class NonCopyable
+{
+public:
+  NonCopyable( const NonCopyable & ) = delete;
+  T & operator = ( const T & ) = delete;
+
+protected:
+  NonCopyable() = default;
+  ~NonCopyable() = default;
+};
+}
+
+
 struct CPU
 {
   Felix & felix;
-  uint64_t tick;
-  int interrupt;
+  struct OpInt
+  {
+    uint64_t tick;
+    int interrupt;
+    Opcode op;
+  } opint;
 
   union
   {
@@ -34,7 +55,6 @@ struct CPU
   uint8_t y;
   uint8_t P;
 
-  Opcode opcode;
   uint8_t operand;
 
 
@@ -51,9 +71,7 @@ struct CPU
   static constexpr int bitV = 6;
   static constexpr int bitN = 7;
 
-  CPU( Felix & felix ) : felix{ felix }, tick{}, interrupt{ I_RESET }, pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, opcode{}, operand{}
-  {
-  }
+  CPU( Felix & felix );
 
   uint8_t p() const
   {
@@ -112,12 +130,84 @@ struct CPU
   void ror( uint8_t & val );
   bool executeCommon( Opcode opcode, uint8_t value );
 
-  CpuExecute execute();
+  struct Request : private detail::NonCopyable<Request>
+  {
+    enum class Type : uint8_t
+    {
+      NONE,
+      FETCH_OPCODE,
+      FETCH_OPERAND,
+      READ,
+      WRITE,
+    };
 
-  CPUFetchOpcodeAwaiter fetchOpcode( uint16_t address );
-  CPUFetchOperandAwaiter fetchOperand( uint16_t address );
-  CPUReadAwaiter read( uint16_t address );
-  CPUWriteAwaiter write( uint16_t address, uint8_t value );
+    uint16_t address;
+    uint8_t value;
+    Type type;
+  } req;
 
+  struct Response : private detail::NonCopyable<Response>
+  {
+    uint64_t tick;
+    int interrupt;
+    uint8_t value;
+    std::experimental::coroutine_handle<> target;
+  } res;
+
+  struct Execute
+  {
+    struct promise_type;
+    using handle = std::experimental::coroutine_handle<promise_type>;
+
+    struct promise_type
+    {
+      auto get_return_object() { return Execute{ handle::from_promise( *this ) }; }
+      auto initial_suspend() { return std::experimental::suspend_always{}; }
+      auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
+      void return_void() {}
+      void unhandled_exception() { std::terminate(); }
+    };
+
+    Execute();
+    Execute( handle c );
+    ~Execute();
+
+    handle coro;
+  } ex;
+
+  Execute execute();
+
+  struct CPUFetchOpcodeAwaiter : public Response
+  {
+    bool await_ready();
+    OpInt await_resume();
+    void await_suspend( std::experimental::coroutine_handle<> c );
+  };
+
+  struct CPUFetchOperandAwaiter : public Response
+  {
+    bool await_ready();
+    uint8_t await_resume();
+    void await_suspend( std::experimental::coroutine_handle<> c );
+  };
+
+  struct CPUReadAwaiter : public Response
+  {
+    bool await_ready();
+    uint8_t await_resume();
+    void await_suspend( std::experimental::coroutine_handle<> c );
+  };
+
+  struct CPUWriteAwaiter : public Response
+  {
+    bool await_ready();
+    void await_resume();
+    void await_suspend( std::experimental::coroutine_handle<> c );
+  };
+
+  CPUFetchOpcodeAwaiter & fetchOpcode( uint16_t address );
+  CPUFetchOperandAwaiter & fetchOperand( uint16_t address );
+  CPUReadAwaiter & read( uint16_t address );
+  CPUWriteAwaiter & write( uint16_t address, uint8_t value );
 };
 

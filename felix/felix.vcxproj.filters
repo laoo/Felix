@@ -34,9 +34,6 @@
     <ClCompile Include="CPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CPUExecute.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PenUnpacker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -94,9 +91,6 @@
     <ClCompile Include="Felix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MasterBus.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -109,9 +103,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Suzy.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CPUExecute.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="CPUTrace.hpp">
@@ -202,9 +193,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Felix.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MasterBus.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

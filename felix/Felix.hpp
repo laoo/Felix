@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include "CPUExecute.hpp"
 #include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
@@ -90,7 +89,6 @@ private:
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
   TraceRequest mDReq;
-  CpuExecute mCpuExecute;
   CpuTrace mCpuTrace;
   MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;

@@ -1,61 +1,11 @@
 #include "CPU.hpp"
 #include "Opcodes.hpp"
-#include "MasterBus.hpp"
 #include "Felix.hpp"
 #include <cassert>
 
-CPUFetchOpcodeAwaiter CPU::fetchOpcode( uint16_t address )
+bool isHiccup( Opcode op )
 {
-  auto & req = MasterBus::instance().cpuRequest();
-
-  req.type = MasterBus::CPURequest::Type::FETCH_OPCODE;
-  req.address = address;
-
-  felix.processCPU();
-
-  return {};
-}
-
-CPUFetchOperandAwaiter CPU::fetchOperand( uint16_t address )
-{
-  auto & req = MasterBus::instance().cpuRequest();
-
-  req.type = MasterBus::CPURequest::Type::FETCH_OPERAND;
-  req.address = address;
-
-  felix.processCPU();
-
-  return {};
-}
-
-CPUReadAwaiter CPU::read( uint16_t address )
-{
-  auto & req = MasterBus::instance().cpuRequest();
-
-  req.type = MasterBus::CPURequest::Type::READ;
-  req.address = address;
-
-  felix.processCPU();
-
-  return {};
-}
-
-CPUWriteAwaiter CPU::write( uint16_t address, uint8_t value )
-{
-  auto & req = MasterBus::instance().cpuRequest();
-
-  req.type = MasterBus::CPURequest::Type::WRITE;
-  req.address = address;
-  req.value = value;
-
-  felix.processCPU();
-
-  return {};
-}
-
-bool isHiccup( Opcode opcode )
-{
-  switch ( opcode )
+  switch ( op )
   {
   case Opcode::UND_1_03:
   case Opcode::UND_1_13:
@@ -95,7 +45,126 @@ bool isHiccup( Opcode opcode )
   }
 }
 
-CpuExecute CPU::execute()
+CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, operand{}, req{}, res{}, ex{ execute() }
+{
+  res.target = ex.coro;
+  opint.interrupt = I_RESET;
+}
+
+bool CPU::CPUFetchOpcodeAwaiter::await_ready()
+{
+  return false;
+}
+
+CPU::OpInt CPU::CPUFetchOpcodeAwaiter::await_resume()
+{
+  return { tick, interrupt, (Opcode)value };
+}
+
+void CPU::CPUFetchOpcodeAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+{
+}
+
+bool CPU::CPUFetchOperandAwaiter::await_ready()
+{
+  return false;
+}
+
+uint8_t CPU::CPUFetchOperandAwaiter::await_resume()
+{
+  return value;
+}
+
+void CPU::CPUFetchOperandAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+{
+}
+
+bool CPU::CPUReadAwaiter::await_ready()
+{
+  return false;
+}
+
+uint8_t CPU::CPUReadAwaiter::await_resume()
+{
+  return value;
+}
+
+void CPU::CPUReadAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+{
+}
+
+bool CPU::CPUWriteAwaiter::await_ready()
+{
+  return false;
+}
+
+void CPU::CPUWriteAwaiter::await_resume()
+{
+}
+
+void CPU::CPUWriteAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+{
+}
+
+
+CPU::CPUFetchOpcodeAwaiter & CPU::fetchOpcode( uint16_t address )
+{
+  req.type = Request::Type::FETCH_OPCODE;
+  req.address = address;
+
+  felix.processCPU();
+
+  return static_cast<CPU::CPUFetchOpcodeAwaiter &>( res );
+}
+
+CPU::CPUFetchOperandAwaiter & CPU::fetchOperand( uint16_t address )
+{
+  req.type = Request::Type::FETCH_OPERAND;
+  req.address = address;
+
+  felix.processCPU();
+
+  return static_cast<CPU::CPUFetchOperandAwaiter &>( res );
+}
+
+CPU::CPUReadAwaiter & CPU::read( uint16_t address )
+{
+  req.type = Request::Type::READ;
+  req.address = address;
+
+  felix.processCPU();
+
+  return static_cast<CPU::CPUReadAwaiter &>( res );
+}
+
+CPU::CPUWriteAwaiter & CPU::write( uint16_t address, uint8_t value )
+{
+  req.type = Request::Type::WRITE;
+  req.address = address;
+  req.value = value;
+
+  felix.processCPU();
+
+  return static_cast<CPU::CPUWriteAwaiter &>( res );
+}
+
+CPU::Execute::Execute() : coro{}
+{
+}
+
+CPU::Execute::Execute( handle c ) : coro{ c }
+{
+}
+
+CPU::Execute::~Execute()
+{
+  if ( coro )
+  {
+    coro.destroy();
+  }
+}
+
+CPU::Execute CPU::execute()
 {
   for ( ;; )
   {
@@ -121,14 +190,14 @@ CpuExecute CPU::execute()
 
     uint8_t d;
 
-    if ( interrupt && ( !get<bitI>() || ( interrupt & ~CPU::I_IRQ ) != 0 ) )
+    if ( opint.interrupt && ( !get<bitI>() || ( opint.interrupt & ~CPU::I_IRQ ) != 0 ) )
     {
-      opcode = Opcode::BRK_BRK;
+      opint.op = Opcode::BRK_BRK;
     }
 
     operand = eal = co_await fetchOperand( pc );
 
-    switch ( opcode )
+    switch ( opint.op )
     {
     case Opcode::RZP_AND:
     case Opcode::RZP_BIT:
@@ -142,13 +211,13 @@ CpuExecute CPU::execute()
     case Opcode::RZP_ORA:
       ++pc;
       d = co_await read( ea );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RZP_ADC:
     case Opcode::RZP_SBC:
       ++pc;
       d = co_await read( ea );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( ea );
       }
@@ -325,14 +394,14 @@ CpuExecute CPU::execute()
       co_await read( ++pc );
       eal += x;
       d = co_await read( ea );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RZX_ADC:
     case Opcode::RZX_SBC:
       co_await read( ++pc );
       eal += x;
       d = co_await read( ea );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( ea );
       }
@@ -413,7 +482,7 @@ CpuExecute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       d = co_await read( t );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RIN_ADC:
     case Opcode::RIN_SBC:
@@ -421,7 +490,7 @@ CpuExecute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       d = co_await read( t );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( t );
       }
@@ -442,7 +511,7 @@ CpuExecute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       d = co_await read( t );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RIX_ADC:
     case Opcode::RIX_SBC:
@@ -451,7 +520,7 @@ CpuExecute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       d = co_await read( t );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( t );
       }
@@ -479,7 +548,7 @@ CpuExecute CPU::execute()
         co_await read( t );
       }
       d = co_await read( ea );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RIY_ADC:
     case Opcode::RIY_SBC:
@@ -494,7 +563,7 @@ CpuExecute CPU::execute()
         co_await read( t );
       }
       d = co_await read( ea );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( t );
       }
@@ -522,14 +591,14 @@ CpuExecute CPU::execute()
       ++pc;
       operand = eah = co_await fetchOperand( pc++ );
       d = co_await read( ea );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++pc;
       operand = eah = co_await fetchOperand( pc++ );
       d = co_await read( ea );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( ea );
       }
@@ -630,7 +699,7 @@ CpuExecute CPU::execute()
         co_await read( ea );
       }
       d = co_await read( t );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
@@ -644,7 +713,7 @@ CpuExecute CPU::execute()
         co_await read( ea );
       }
       d = co_await read( t );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( t );
       }
@@ -665,7 +734,7 @@ CpuExecute CPU::execute()
         co_await read( ea );
       }
       d = co_await read( t );
-      executeCommon( opcode, d );
+      executeCommon( opint.op, d );
       break;
     case Opcode::RAY_ADC:
     case Opcode::RAY_SBC:
@@ -679,7 +748,7 @@ CpuExecute CPU::execute()
         co_await read( ea );
       }
       d = co_await read( t );
-      if ( executeCommon( opcode, d ) )
+      if ( executeCommon( opint.op, d ) )
       {
         co_await read( t );
       }
@@ -896,12 +965,12 @@ CpuExecute CPU::execute()
     case Opcode::IMM_LDY:
     case Opcode::IMM_ORA:
       ++pc;
-      executeCommon( opcode, eal );
+      executeCommon( opint.op, eal );
       break;
     case Opcode::IMM_ADC:
     case Opcode::IMM_SBC:
       ++pc;
-      if ( executeCommon( opcode, eal ) )
+      if ( executeCommon( opint.op, eal ) )
       {
         co_await read( pc );
       }
@@ -1229,7 +1298,7 @@ CpuExecute CPU::execute()
       }
       break;
     case Opcode::BRK_BRK:
-      if ( interrupt & CPU::I_RESET )
+      if ( opint.interrupt & CPU::I_RESET )
       {
         co_await read( s );
         sl--;
@@ -1244,12 +1313,12 @@ CpuExecute CPU::execute()
       {
         //on interrupt PC should point to interrupted instruction
         //on BRK should after past BRK argument
-        pc += interrupt ? -1 : 1;
+        pc += opint.interrupt ? -1 : 1;
         co_await write( s, pch );
         sl--;
         co_await write( s, pcl );
         sl--;
-        if ( interrupt )
+        if ( opint.interrupt )
         {
           co_await write( s, pirq() );
         }
@@ -1258,7 +1327,7 @@ CpuExecute CPU::execute()
           co_await write( s, p() );
         }
         sl--;
-        if ( interrupt & CPU::I_NMI )
+        if ( opint.interrupt & CPU::I_NMI )
         {
           eal = co_await read( 0xfffa );
           eah = co_await read( 0xfffb );
@@ -1358,7 +1427,7 @@ CpuExecute CPU::execute()
       co_await read( ea );
       break;
     case Opcode::UND_8_5c:
-      //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opcode_mapping.html
+      //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opint.op_mapping.html
       //op - code 5C consumes 3 bytes and 8 cycles but conforms to no known address mode; it remains interesting but useless.
       //I tested the instruction "5C 1234h" ( stored little - endian as 5Ch 34h 12h ) as an example, and observed the following : 3 cycles fetching the instruction, 1 cycle reading FF34, then 4 cycles reading FFFF.
       ++pc;
@@ -1376,11 +1445,8 @@ CpuExecute CPU::execute()
 
     do
     {
-      auto opint = co_await fetchOpcode( pc++ );
-      opcode = opint.op;
-      interrupt = opint.interrupt;
-      tick = opint.tick;
-    } while ( isHiccup( opcode ) );
+      opint = co_await fetchOpcode( pc++ );
+    } while ( isHiccup( opint.op ) );
   }
 
 }
@@ -1413,9 +1479,9 @@ void CPU::ror( uint8_t & val )
   set<bitC>( newC );
 }
 
-bool CPU::executeCommon( Opcode opcode, uint8_t value )
+bool CPU::executeCommon( Opcode op, uint8_t value )
 {
-  switch ( opcode )
+  switch ( op )
   {
   case Opcode::RZP_ADC:
   case Opcode::RZX_ADC:
