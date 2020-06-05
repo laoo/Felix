@@ -13,9 +13,9 @@
 #include <cassert>
 
 Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
+mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mDReq{}, mCpuExecute{ mCpu->execute() }, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
-  mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mInterruptMask{}
+  mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}
 {
   //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
   //{
@@ -59,10 +59,11 @@ void Felix::injectFile( InputFile const & file )
     break;
   case InputFile::FileType::BIOS:
     file.getBIOS()->load( mROM.data() );
+    pulseReset();
     break;
   case InputFile::FileType::CART:
     mCartridge = std::make_shared<Cartridge>( file.getCart() );
-    pulseReset( std::nullopt );
+    pulseReset();
     break;
   default:
     break;
@@ -95,39 +96,6 @@ void Felix::pulseReset( std::optional<uint16_t> resetAddress )
 
 Felix::~Felix()
 {
-}
-
-CPURequest * Felix::request( CPURead r )
-{
-  mCPUReq = CPURequest{ r, mInterruptMask };
-  processCPU();
-  return &mCPUReq;
-}
-
-CPURequest * Felix::request( CPUFetchOpcode r )
-{
-  mCPUReq = CPURequest{ r, mInterruptMask };
-  processCPU();
-  return &mCPUReq;
-}
-
-CPURequest * Felix::request( CPUFetchOperand r )
-{
-  mCPUReq = CPURequest{ r, mInterruptMask };
-  processCPU();
-  return &mCPUReq;
-}
-
-CPURequest * Felix::request( CPUWrite w )
-{
-  mCPUReq = CPURequest{ w, mInterruptMask };
-  processCPU();
-  return &mCPUReq;
-}
-
-CPURequest * Felix::cpuRequest()
-{
-  return &mCPUReq;
 }
 
 void Felix::requestDisplayDMA( uint64_t tick, uint16_t address )
@@ -176,6 +144,9 @@ void Felix::process( uint64_t ticks )
 {
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
 
+  auto & req = MasterBus::instance().cpuRequest();
+  auto & res = MasterBus::instance().cpuResponse();
+
   for ( ;; )
   {
     auto seqAction = mActionQueue.pop();
@@ -207,87 +178,87 @@ void Felix::process( uint64_t ticks )
       }
       break;
     case Action::CPU_FETCH_OPCODE_RAM:
-      mCPUReq.value = mRAM[mCPUReq.address];
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.tick = mCurrentTick;
-      mCPUReq();
+      res.value = mRAM[req.address];
+      mSequencedAccessAddress = req.address + 1;
+      res.tick = mCurrentTick;
+      res.target();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_RAM:
-      mCPUReq.value = mRAM[mCPUReq.address];
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq();
+      res.value = mRAM[req.address];
+      mSequencedAccessAddress = req.address + 1;
+      res.target();
       mDReq.resume();
       break;
     case Action::CPU_READ_RAM:
-      mCPUReq.value = mRAM[mCPUReq.address];
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq();
+      res.value = mRAM[req.address];
+      mSequencedAccessAddress = req.address + 1;
+      res.target();
       break;
     case Action::CPU_WRITE_RAM:
-      mRAM[mCPUReq.address] = mCPUReq.value;
+      mRAM[req.address] = req.value;
       mSequencedAccessAddress = ~0;
-      mCPUReq();
+      res.target();
       break;
     case Action::CPU_FETCH_OPCODE_FE:
-      mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.tick = mCurrentTick;
-      mCPUReq();
+      res.value = mROM[req.address & 0x1ff];
+      mSequencedAccessAddress = req.address + 1;
+      res.tick = mCurrentTick;
+      res.target();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FE:
-      mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq();
+      res.value = mROM[req.address & 0x1ff];
+      mSequencedAccessAddress = req.address + 1;
+      res.target();
       mDReq.resume();
       break;
     case Action::CPU_READ_FE:
-      mCPUReq.value = mROM[mCPUReq.address & 0x1ff];
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq();
+      res.value = mROM[req.address & 0x1ff];
+      mSequencedAccessAddress = req.address + 1;
+      res.target();
       break;
     case Action::CPU_WRITE_FE:
       mSequencedAccessAddress = ~0;
-      mCPUReq();
+      res.target();
       break;
     case Action::CPU_FETCH_OPCODE_FF:
-      mCPUReq.value = readFF( mCPUReq.address & 0xff );
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq.tick = mCurrentTick;
-      mCPUReq();
+      res.value = readFF( req.address & 0xff );
+      mSequencedAccessAddress = req.address + 1;
+      res.tick = mCurrentTick;
+      res.target();
       mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FF:
-      mCPUReq.value = readFF( mCPUReq.address & 0xff );
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq();
+      res.value = readFF( req.address & 0xff );
+      mSequencedAccessAddress = req.address + 1;
+      res.target();
       mDReq.resume();
       break;
     case Action::CPU_READ_FF:
-      mCPUReq.value = readFF( mCPUReq.address & 0xff );
-      mSequencedAccessAddress = mCPUReq.address + 1;
-      mCPUReq();
+      res.value = readFF( req.address & 0xff );
+      mSequencedAccessAddress = req.address + 1;
+      res.target();
       break;
     case Action::CPU_WRITE_FF:
-      writeFF( mCPUReq.address & 0xff, mCPUReq.value );
+      writeFF( req.address & 0xff, req.value );
       mSequencedAccessAddress = ~0;
-      mCPUReq();
+      res.target();
       break;
     case Action::CPU_READ_SUZY:
-      mCPUReq.value = mSuzy->read( mCPUReq.address );
-      mCPUReq();
+      res.value = mSuzy->read( req.address );
+      res.target();
       break;
     case Action::CPU_WRITE_SUZY:
-      mSuzy->write( mCPUReq.address, mCPUReq.value );
-      mCPUReq();
+      mSuzy->write( req.address, req.value );
+      res.target();
       break;
     case Action::CPU_READ_MIKEY:
-      mCPUReq.value = mMikey->read( mCPUReq.address );
-      mCPUReq();
+      res.value = mMikey->read( req.address );
+      res.target();
       break;
     case Action::CPU_WRITE_MIKEY:
-      switch ( auto mikeyAction = mMikey->write( mCPUReq.address, mCPUReq.value ) )
+      switch ( auto mikeyAction = mMikey->write( req.address, req.value ) )
       {
       case Mikey::WriteAction::Type::START_SUZY:
         mSuzyProcess = mSuzy->suzyProcess();
@@ -298,7 +269,7 @@ void Felix::process( uint64_t ticks )
         mActionQueue.push( mikeyAction.action );
         [[fallthrough]];
       case Mikey::WriteAction::Type::NONE:
-        mCPUReq();
+        res.target();
         break;
       }
       break;
@@ -308,9 +279,9 @@ void Felix::process( uint64_t ticks )
       if ( mResetRequestDuringSpriteRendering )
       {
         mResetRequestDuringSpriteRendering = false;
-        pulseReset( std::nullopt );
+        pulseReset();
       }
-      mCPUReq();
+      res.target();
       break;
     case Action::SUZY_READ:
       suzyRead( ( ISuzyProcess::RequestRead const* )mSuzyProcessRequest );
@@ -337,16 +308,16 @@ void Felix::process( uint64_t ticks )
       processSuzy();
       break;
     case Action::ASSERT_IRQ:
-      mInterruptMask |= CPU::I_IRQ;
+      res.interrupt |= CPU::I_IRQ;
       break;
     case Action::ASSERT_RESET:
-      mInterruptMask |= CPU::I_RESET;
+      res.interrupt |= CPU::I_RESET;
       break;
     case Action::DESERT_IRQ:
-      mInterruptMask &= ~CPU::I_IRQ;
+      res.interrupt &= ~CPU::I_IRQ;
       break;
     case Action::DESERT_RESET:
-      mInterruptMask &= ~CPU::I_RESET;
+      res.interrupt &= ~CPU::I_RESET;
       break;
     case Action::END_FRAME:
       return;
@@ -498,20 +469,22 @@ void Felix::processCPU()
     Action::CPU_WRITE_SUZY
   };
 
-  auto pageType = mPageTypes[mCPUReq.address >> 8];
-  mActionQueue.push( { requestToAction[( size_t )mCPUReq.mType + ( int )pageType], mBusReservationTick } );
+  auto & req = MasterBus::instance().cpuRequest();
+
+  auto pageType = mPageTypes[req.address >> 8];
+  mActionQueue.push( { requestToAction[( size_t )req.type + ( size_t )pageType], mBusReservationTick } );
   switch ( pageType )
   {
     case PageType::RAM:
     case PageType::FE:
     case PageType::FF:
-      mBusReservationTick += ( mCPUReq.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+      mBusReservationTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
       break;
     case PageType::MIKEY:
-      mBusReservationTick = mMikey->requestAccess( mBusReservationTick, mCPUReq.address );
+      mBusReservationTick = mMikey->requestAccess( mBusReservationTick, req.address );
       break;
     case PageType::SUZY:
-      mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, mCPUReq.address );
+      mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, req.address );
       break;
   }
 }

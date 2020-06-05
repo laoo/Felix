@@ -39,6 +39,7 @@ public:
 
   Cartridge & getCartridge();
   ComLynx & getComLynx();
+  void processCPU();
 
 private:
 
@@ -67,13 +68,12 @@ private:
   void suzyVidRMW( ISuzyProcess::RequestVidRMW const* req );
   void suzyXor( ISuzyProcess::RequestXOR const* req );
 
-  void processCPU();
   void processSuzy();
 
   uint8_t readFF( uint16_t address );
   void writeFF( uint16_t address, uint8_t value );
 
-  void pulseReset( std::optional<uint16_t> resetAddress );
+  void pulseReset( std::optional<uint16_t> resetAddress = std::nullopt );
   void writeMAPCTL( uint8_t value );
 
 private:
@@ -99,5 +99,4 @@ private:
   std::shared_ptr<ISuzyProcess> mSuzyProcess;
   ISuzyProcess::Request const* mSuzyProcessRequest;
   bool mResetRequestDuringSpriteRendering;
-  uint8_t mInterruptMask;
 };

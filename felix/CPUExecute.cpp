@@ -2,6 +2,10 @@
 #include "MasterBus.hpp"
 #include <stdexcept>
 
+CpuExecute::CpuExecute()
+{
+}
+
 CpuExecute::CpuExecute( handle c )
 {
   auto & res = MasterBus::instance().cpuResponse();

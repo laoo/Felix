@@ -3,16 +3,13 @@
 #include "CPUExecute.hpp"
 
 enum class Opcode : uint8_t;
+class Felix;
 
 struct CPU
 {
-  static constexpr int bitC = 0;
-  static constexpr int bitZ = 1;
-  static constexpr int bitI = 2;
-  static constexpr int bitD = 3;
-  static constexpr int bitB = 4;
-  static constexpr int bitV = 6;
-  static constexpr int bitN = 7;
+  Felix & felix;
+  uint64_t tick;
+  int interrupt;
 
   union
   {
@@ -37,12 +34,24 @@ struct CPU
   uint8_t y;
   uint8_t P;
 
-  static const int I_NONE  = 0;
-  static const int I_IRQ = 1;
-  static const int I_NMI = 2;
-  static const int I_RESET = 4;
+  Opcode opcode;
+  uint8_t operand;
 
-  CPU() : pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, tick{}, interrupt{ I_RESET }, opcode{}, operand{}
+
+  static constexpr int I_NONE  = 0;
+  static constexpr int I_IRQ   = 1;
+  static constexpr int I_NMI   = 2;
+  static constexpr int I_RESET = 4;
+
+  static constexpr int bitC = 0;
+  static constexpr int bitZ = 1;
+  static constexpr int bitI = 2;
+  static constexpr int bitD = 3;
+  static constexpr int bitB = 4;
+  static constexpr int bitV = 6;
+  static constexpr int bitN = 7;
+
+  CPU( Felix & felix ) : felix{ felix }, tick{}, interrupt{ I_RESET }, pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, opcode{}, operand{}
   {
   }
 
@@ -105,11 +114,10 @@ struct CPU
 
   CpuExecute execute();
 
-
-  uint64_t tick;
-  int interrupt;
-  Opcode opcode;
-  uint8_t operand;
+  CPUFetchOpcodeAwaiter fetchOpcode( uint16_t address );
+  CPUFetchOperandAwaiter fetchOperand( uint16_t address );
+  CPUReadAwaiter read( uint16_t address );
+  CPUWriteAwaiter write( uint16_t address, uint8_t value );
 
 };
 

@@ -55,6 +55,7 @@ struct CpuExecute
     void unhandled_exception() { std::terminate(); }
   };
 
+  CpuExecute();
   CpuExecute( handle c );
   ~CpuExecute();
 };

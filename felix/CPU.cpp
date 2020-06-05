@@ -1,45 +1,54 @@
 #include "CPU.hpp"
 #include "Opcodes.hpp"
 #include "MasterBus.hpp"
+#include "Felix.hpp"
 #include <cassert>
 
-CPUFetchOpcodeAwaiter fetchOpcode( uint16_t address )
+CPUFetchOpcodeAwaiter CPU::fetchOpcode( uint16_t address )
 {
   auto & req = MasterBus::instance().cpuRequest();
 
   req.type = MasterBus::CPURequest::Type::FETCH_OPCODE;
   req.address = address;
 
+  felix.processCPU();
+
   return {};
 }
 
-CPUFetchOperandAwaiter fetchOperand( uint16_t address )
+CPUFetchOperandAwaiter CPU::fetchOperand( uint16_t address )
 {
   auto & req = MasterBus::instance().cpuRequest();
 
   req.type = MasterBus::CPURequest::Type::FETCH_OPERAND;
   req.address = address;
 
+  felix.processCPU();
+
   return {};
 }
 
-CPUReadAwaiter read( uint16_t address )
+CPUReadAwaiter CPU::read( uint16_t address )
 {
   auto & req = MasterBus::instance().cpuRequest();
 
   req.type = MasterBus::CPURequest::Type::READ;
   req.address = address;
 
+  felix.processCPU();
+
   return {};
 }
 
-CPUWriteAwaiter write( uint16_t address, uint8_t value )
+CPUWriteAwaiter CPU::write( uint16_t address, uint8_t value )
 {
   auto & req = MasterBus::instance().cpuRequest();
 
   req.type = MasterBus::CPURequest::Type::WRITE;
   req.address = address;
   req.value = value;
+
+  felix.processCPU();
 
   return {};
 }
@@ -1365,17 +1374,13 @@ CpuExecute CPU::execute()
       break;
     }
 
-    for ( ;; )
+    do
     {
       auto opint = co_await fetchOpcode( pc++ );
       opcode = opint.op;
       interrupt = opint.interrupt;
       tick = opint.tick;
-      if ( isHiccup( opcode ) )
-        continue;
-      else
-        break;
-    }
+    } while ( isHiccup( opcode ) );
   }
 
 }
