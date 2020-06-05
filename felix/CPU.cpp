@@ -45,10 +45,19 @@ bool isHiccup( Opcode op )
   }
 }
 
-CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, operand{}, req{}, res{}, ex{ execute() }
+CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, operand{}, mReq{}, mRes{}, mEx{ execute() }
 {
-  res.target = ex.coro;
+  mRes.target = mEx.coro;
   opint.interrupt = I_RESET;
+}
+
+CPU::Request & CPU::req()
+{
+  return mReq;
+}
+CPU::Response & CPU::res()
+{
+  return mRes;
 }
 
 bool CPU::CPUFetchOpcodeAwaiter::await_ready()
@@ -109,43 +118,43 @@ void CPU::CPUWriteAwaiter::await_suspend( std::experimental::coroutine_handle<> 
 
 CPU::CPUFetchOpcodeAwaiter & CPU::fetchOpcode( uint16_t address )
 {
-  req.type = Request::Type::FETCH_OPCODE;
-  req.address = address;
+  mReq.type = Request::Type::FETCH_OPCODE;
+  mReq.address = address;
 
   felix.processCPU();
 
-  return static_cast<CPU::CPUFetchOpcodeAwaiter &>( res );
+  return static_cast<CPU::CPUFetchOpcodeAwaiter &>( mRes );
 }
 
 CPU::CPUFetchOperandAwaiter & CPU::fetchOperand( uint16_t address )
 {
-  req.type = Request::Type::FETCH_OPERAND;
-  req.address = address;
+  mReq.type = Request::Type::FETCH_OPERAND;
+  mReq.address = address;
 
   felix.processCPU();
 
-  return static_cast<CPU::CPUFetchOperandAwaiter &>( res );
+  return static_cast<CPU::CPUFetchOperandAwaiter &>( mRes );
 }
 
 CPU::CPUReadAwaiter & CPU::read( uint16_t address )
 {
-  req.type = Request::Type::READ;
-  req.address = address;
+  mReq.type = Request::Type::READ;
+  mReq.address = address;
 
   felix.processCPU();
 
-  return static_cast<CPU::CPUReadAwaiter &>( res );
+  return static_cast<CPU::CPUReadAwaiter &>( mRes );
 }
 
 CPU::CPUWriteAwaiter & CPU::write( uint16_t address, uint8_t value )
 {
-  req.type = Request::Type::WRITE;
-  req.address = address;
-  req.value = value;
+  mReq.type = Request::Type::WRITE;
+  mReq.address = address;
+  mReq.value = value;
 
   felix.processCPU();
 
-  return static_cast<CPU::CPUWriteAwaiter &>( res );
+  return static_cast<CPU::CPUWriteAwaiter &>( mRes );
 }
 
 CPU::Execute::Execute() : coro{}

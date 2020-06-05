@@ -4,26 +4,61 @@
 
 enum class Opcode : uint8_t;
 class Felix;
+struct CpuTrace;
+struct TraceRequest;
 
+class CPU
+{
 
-namespace detail
-{
-template <class T>
-class NonCopyable
-{
+  template <class T>
+  class NonCopyable
+  {
+  public:
+    NonCopyable( const NonCopyable & ) = delete;
+    T & operator = ( const T & ) = delete;
+
+  protected:
+    NonCopyable() = default;
+    ~NonCopyable() = default;
+  };
+
 public:
-  NonCopyable( const NonCopyable & ) = delete;
-  T & operator = ( const T & ) = delete;
 
-protected:
-  NonCopyable() = default;
-  ~NonCopyable() = default;
-};
-}
+  struct Request : private NonCopyable<Request>
+  {
+    enum class Type : uint8_t
+    {
+      NONE,
+      FETCH_OPCODE,
+      FETCH_OPERAND,
+      READ,
+      WRITE,
+    };
 
+    uint16_t address;
+    uint8_t value;
+    Type type;
+  };
 
-struct CPU
-{
+  struct Response : private NonCopyable<Response>
+  {
+    uint64_t tick;
+    int interrupt;
+    uint8_t value;
+    std::experimental::coroutine_handle<> target;
+  };
+
+  static constexpr int I_NONE  = 0;
+  static constexpr int I_IRQ   = 1;
+  static constexpr int I_NMI   = 2;
+  static constexpr int I_RESET = 4;
+
+  CPU( Felix & felix );
+
+  Request & req();
+  Response & res();
+
+private:
   Felix & felix;
   struct OpInt
   {
@@ -58,10 +93,6 @@ struct CPU
   uint8_t operand;
 
 
-  static constexpr int I_NONE  = 0;
-  static constexpr int I_IRQ   = 1;
-  static constexpr int I_NMI   = 2;
-  static constexpr int I_RESET = 4;
 
   static constexpr int bitC = 0;
   static constexpr int bitZ = 1;
@@ -70,8 +101,6 @@ struct CPU
   static constexpr int bitB = 4;
   static constexpr int bitV = 6;
   static constexpr int bitN = 7;
-
-  CPU( Felix & felix );
 
   uint8_t p() const
   {
@@ -130,29 +159,10 @@ struct CPU
   void ror( uint8_t & val );
   bool executeCommon( Opcode opcode, uint8_t value );
 
-  struct Request : private detail::NonCopyable<Request>
-  {
-    enum class Type : uint8_t
-    {
-      NONE,
-      FETCH_OPCODE,
-      FETCH_OPERAND,
-      READ,
-      WRITE,
-    };
 
-    uint16_t address;
-    uint8_t value;
-    Type type;
-  } req;
 
-  struct Response : private detail::NonCopyable<Response>
-  {
-    uint64_t tick;
-    int interrupt;
-    uint8_t value;
-    std::experimental::coroutine_handle<> target;
-  } res;
+  Request mReq;
+  Response mRes;
 
   struct Execute
   {
@@ -173,7 +183,7 @@ struct CPU
     ~Execute();
 
     handle coro;
-  } ex;
+  } mEx;
 
   Execute execute();
 
@@ -209,5 +219,7 @@ struct CPU
   CPUFetchOperandAwaiter & fetchOperand( uint16_t address );
   CPUReadAwaiter & read( uint16_t address );
   CPUWriteAwaiter & write( uint16_t address, uint8_t value );
+
+  friend CpuTrace cpuTrace( CPU & cpu, TraceRequest & req );
 };
 

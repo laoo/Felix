@@ -11,7 +11,7 @@
 #include "Suzy.hpp"
 
 class Mikey;
-struct CPU;
+class CPU;
 class Cartridge;
 class ComLynx;
 class InputFile;

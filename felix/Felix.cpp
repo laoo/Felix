@@ -43,7 +43,7 @@ mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>(
     }
   }
 
-  mCpu->res.target();
+  mCpu->res().target();
 
   //mCpuTrace = cpuTrace( *mCpu, mDReq );
 }
@@ -145,8 +145,8 @@ void Felix::process( uint64_t ticks )
 {
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
 
-  auto & req = mCpu->req;
-  auto & res = mCpu->res;
+  auto & req = mCpu->req();
+  auto & res = mCpu->res();
 
   for ( ;; )
   {
@@ -470,7 +470,7 @@ void Felix::processCPU()
     Action::CPU_WRITE_SUZY
   };
 
-  auto & req = mCpu->req;
+  auto & req = mCpu->req();
 
   auto pageType = mPageTypes[req.address >> 8];
   mActionQueue.push( { requestToAction[( size_t )req.type + ( size_t )pageType], mBusReservationTick } );
