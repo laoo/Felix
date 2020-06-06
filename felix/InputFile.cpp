@@ -4,6 +4,7 @@
 #include "ImageBIOS.hpp"
 #include "ImageLyx.hpp"
 #include "ImageLnx.hpp"
+#include "ImageBIN.hpp"
 
 InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
 {
@@ -36,13 +37,19 @@ InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
   else if ( auto pLyx = checkLyx( std::move( data ) ) )
   {
     mType = FileType::CART;
-    mCart = pLyx;
+    mCart = std::move( pLyx );
     return;
   }
   else if ( auto pLnx = checkLnx( std::move( data ) ) )
   {
     mType = FileType::CART;
-    mCart = pLnx;
+    mCart = std::move( pLnx );
+    return;
+  }
+  else if ( auto pBIN = checkBIN( std::move( data ) ) )
+  {
+    mType = FileType::BIN;
+    mBIN = std::move( pBIN );
     return;
   }
 
@@ -71,6 +78,11 @@ std::shared_ptr<ImageBIOS const> InputFile::getBIOS() const
 std::shared_ptr<ImageCart const> InputFile::getCart() const
 {
   return mCart;
+}
+
+std::shared_ptr<ImageBIN const> InputFile::getBIN() const
+{
+  return mBIN;
 }
 
 std::shared_ptr<ImageBS93 const> InputFile::checkBS93( std::vector<uint8_t>&& data ) const
@@ -112,6 +124,14 @@ std::shared_ptr<ImageCart const> InputFile::checkLnx( std::vector<uint8_t>&& dat
   {
     return {};
   }
+}
+
+std::shared_ptr<ImageBIN const> InputFile::checkBIN( std::vector<uint8_t>&& data ) const
+{
+  if ( data.size() != 65536 )
+    return {};
+
+  return std::make_shared<ImageBIN const>( std::move( data ) );
 }
 
 

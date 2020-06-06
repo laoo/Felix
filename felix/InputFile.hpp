@@ -8,6 +8,7 @@
 class ImageBS93;
 class ImageBIOS;
 class ImageCart;
+class ImageBIN;
 
 class InputFile
 {
@@ -17,7 +18,8 @@ public:
     UNKNOWN,
     BIOS,
     BS93,
-    CART
+    CART,
+    BIN
   };
 
   InputFile( std::filesystem::path const& path );
@@ -28,18 +30,21 @@ public:
   std::shared_ptr<ImageBS93 const> getBS93() const;
   std::shared_ptr<ImageBIOS const> getBIOS() const;
   std::shared_ptr<ImageCart const> getCart() const;
+  std::shared_ptr<ImageBIN const> getBIN() const;
 
 private:
   std::shared_ptr<ImageBS93 const> checkBS93( std::vector<uint8_t> && data ) const;
   std::shared_ptr<ImageBIOS const> checkBIOS( std::vector<uint8_t> && data ) const;
   std::shared_ptr<ImageCart const> checkLyx( std::vector<uint8_t> && data ) const;
   std::shared_ptr<ImageCart const> checkLnx( std::vector<uint8_t> && data ) const;
+  std::shared_ptr<ImageBIN const> checkBIN( std::vector<uint8_t> && data ) const;
 
 private:
   FileType mType;
   std::shared_ptr<ImageBS93 const> mBS93;
   std::shared_ptr<ImageBIOS const> mBIOS;
   std::shared_ptr<ImageCart const> mCart;
+  std::shared_ptr<ImageBIN const> mBIN;
 
   ;
 };

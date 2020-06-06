@@ -7,6 +7,7 @@
 #include "ImageBS93.hpp"
 #include "ImageBIOS.hpp"
 #include "ImageCart.hpp"
+#include "ImageBIN.hpp"
 #include <fstream>
 #include <filesystem>
 #include <cassert>
@@ -45,7 +46,7 @@ mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>(
 
   mCpu->res().target();
 
-  //mCpuTrace = cpuTrace( *mCpu, mDReq );
+  mCpuTrace = cpuTrace( *mCpu, mDReq );
 }
 
 void Felix::injectFile( InputFile const & file )
@@ -65,6 +66,10 @@ void Felix::injectFile( InputFile const & file )
   case InputFile::FileType::CART:
     mCartridge = std::make_shared<Cartridge>( file.getCart() );
     pulseReset();
+    break;
+  case InputFile::FileType::BIN:
+    file.getBIN()->load( mRAM.data() );
+    pulseReset( 0x400 );
     break;
   default:
     break;
