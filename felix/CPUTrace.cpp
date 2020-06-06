@@ -19,9 +19,9 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     uint8_t lo;
     uint8_t hi;
 
-    int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", cpu.tick, (uint16_t)(cpu.pc-1), cpu.a, cpu.x, cpu.y, cpu.s, ( cpu.get<CPU::bitN>() ? 'N' : '-' ), ( cpu.get<CPU::bitV>() ? 'V' : '-' ), ( cpu.get<CPU::bitB>() ? 'B' : '-' ), ( cpu.get<CPU::bitD>() ? 'D' : '-' ), ( cpu.get<CPU::bitI>() ? 'I' : '-' ), ( cpu.get<CPU::bitZ>() ? 'Z' : '-' ), ( cpu.get<CPU::bitC>() ? 'C' : '-' ) );
+    int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", cpu.state.tick, (uint16_t)(cpu.state.pc-1), cpu.state.a, cpu.state.x, cpu.state.y, cpu.state.s, ( cpu.get<CPU::bitN>() ? 'N' : '-' ), ( cpu.get<CPU::bitV>() ? 'V' : '-' ), ( cpu.get<CPU::bitB>() ? 'B' : '-' ), ( cpu.get<CPU::bitD>() ? 'D' : '-' ), ( cpu.get<CPU::bitI>() ? 'I' : '-' ), ( cpu.get<CPU::bitZ>() ? 'Z' : '-' ), ( cpu.get<CPU::bitC>() ? 'C' : '-' ) );
 
-    switch ( cpu.op )
+    switch ( cpu.state.op )
     {
     case Opcode::RZP_AND:
     case Opcode::RZX_AND:
@@ -414,15 +414,15 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       off += sprintf( buf + off, "bbs7 " );
       break;
     case Opcode::BRK_BRK:
-      if ( ( cpu.interrupt & CPU::I_RESET ) != 0 )
+      if ( ( cpu.state.interrupt & CPU::I_RESET ) != 0 )
       {
         off += sprintf( buf + off, "RESET\n" );
       }
-      else if ( ( cpu.interrupt & CPU::I_NMI ) != 0 )
+      else if ( ( cpu.state.interrupt & CPU::I_NMI ) != 0 )
       {
         off += sprintf( buf + off, "NMI\n" );
       }
-      else if ( ( cpu.interrupt & CPU::I_IRQ ) != 0 )
+      else if ( ( cpu.state.interrupt & CPU::I_IRQ ) != 0 )
       {
         off += sprintf( buf + off, "IRQ\n" );
       }
@@ -507,7 +507,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     }
 
 
-    switch ( cpu.op )
+    switch ( cpu.state.op )
     {
     case Opcode::UND_1_03:
     case Opcode::UND_1_13:
@@ -812,7 +812,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::BRL_BVS:
       co_await adf;
       lo = cpu.operand;
-      sprintf( buf + off, "$%04x\n", (uint16_t)( cpu.pc + 1 + (int8_t)lo ) );
+      sprintf( buf + off, "$%04x\n", (uint16_t)( cpu.state.pc + 1 + (int8_t)lo ) );
       break;
     case Opcode::BZR_BBR0:
     case Opcode::BZR_BBR1:
@@ -834,7 +834,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       lo = cpu.operand;
       co_await adf;
       hi = cpu.operand;
-      sprintf( buf + off, "$%02x,$%04x\n", lo, (uint16_t)( cpu.pc + 1 + (int8_t)hi ) );
+      sprintf( buf + off, "$%02x,$%04x\n", lo, (uint16_t)( cpu.state.pc + 1 + (int8_t)hi ) );
       break;
     }
 

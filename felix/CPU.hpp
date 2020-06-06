@@ -40,10 +40,65 @@ public:
     Type type;
   };
 
+  struct State
+  {
+    State() : tick{}, interrupt{ I_RESET }, op{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, ea{}, t{}, m1{}, m2{} {}
+
+    uint64_t tick;
+    uint8_t interrupt;
+    Opcode op;
+    union
+    {
+      uint16_t pc;
+      struct
+      {
+        uint8_t pcl;
+        uint8_t pch;
+      };
+    };
+    union
+    {
+      uint16_t s;
+      struct
+      {
+        uint8_t sl;
+        uint8_t sh;
+      };
+    };
+    uint8_t a;
+    uint8_t x;
+    uint8_t y;
+    uint8_t p;
+
+    union
+    {
+      uint16_t ea{};
+      struct
+      {
+        uint8_t eal;
+        uint8_t eah;
+      };
+    };
+
+    union
+    {
+      uint16_t t;
+      struct
+      {
+        uint8_t tl;
+        uint8_t th;
+      };
+    };
+
+    uint8_t m1;
+    uint8_t m2;
+
+  };
+
   struct Response : private NonCopyable<Response>
   {
-    Response( CPU & cpu, std::experimental::coroutine_handle<> coro ) : cpu{ cpu }, tick{}, interrupt{}, value{}, target{ coro } {}
-    CPU & cpu;
+    Response( State & state, std::experimental::coroutine_handle<> coro ) : state{ state }, tick{}, interrupt{}, value{}, target{ coro } {}
+    State & state;
     uint64_t tick;
     int interrupt;
     uint8_t value;
@@ -62,58 +117,11 @@ public:
 
 private:
   Felix & felix;
-  uint64_t tick;
-  int interrupt;
-  Opcode op;
 
-  union
-  {
-    uint16_t pc;
-    struct
-    {
-      uint8_t pcl;
-      uint8_t pch;
-    };
-  };
-  union
-  {
-    uint16_t s;
-    struct
-    {
-      uint8_t sl;
-      uint8_t sh;
-    };
-  };
-  uint8_t a;
-  uint8_t x;
-  uint8_t y;
-  uint8_t p;
-
+  State state;
   uint8_t operand;
 
-  union
-  {
-    uint16_t ea{};
-    struct
-    {
-      uint8_t eal;
-      uint8_t eah;
-    };
-  };
-
-  union
-  {
-    uint16_t t;
-    struct
-    {
-      uint8_t tl;
-      uint8_t th;
-    };
-  };
-
-  uint8_t m1;
-  uint8_t m2;
-
+  static constexpr size_t ss = sizeof( State );
 
   static constexpr int bitC = 0;
   static constexpr int bitZ = 1;
@@ -126,12 +134,12 @@ private:
 
   uint8_t getP() const
   {
-    return p | ( 1 << bit1 ) | ( interrupt != 0 ? 0 : ( 1 << bitB ) );
+    return state.p | ( 1 << bit1 ) | ( state.interrupt != 0 ? 0 : ( 1 << bitB ) );
   }
 
   void setP( uint8_t value )
   {
-    p = value;
+    state.p = value;
   }
 
   void setnz( uint8_t v )
@@ -148,7 +156,7 @@ private:
   template<int bit>
   void set()
   {
-    p |= 1 << bit;
+    state.p |= 1 << bit;
   }
 
   template<int bit>
@@ -160,7 +168,7 @@ private:
   template<int bit>
   void clear()
   {
-    p &= ~( 1 << bit );
+    state.p &= ~( 1 << bit );
   }
 
   template<int bit>
@@ -172,7 +180,7 @@ private:
   template<int bit>
   bool get() const
   {
-    return ( p & ( 1 << bit ) ) != 0;
+    return ( state.p & ( 1 << bit ) ) != 0;
   }
 
   uint8_t asl( uint8_t val );
