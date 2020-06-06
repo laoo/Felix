@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <experimental/coroutine>
+#include <fstream>
 
 enum class Opcode : uint8_t;
 class Felix;
@@ -112,7 +113,7 @@ public:
   static constexpr int I_NMI   = 2;
   static constexpr int I_RESET = 4;
 
-  CPU( Felix & felix );
+  CPU( Felix & felix, bool trace );
 
   Request & req();
   Response & res();
@@ -220,6 +221,8 @@ private:
 
   Request mReq;
   Response mRes;
+  bool mTrace;
+  std::ofstream mFtrace;
 
   Execute execute();
   bool isHiccup();
@@ -256,9 +259,6 @@ private:
   CPUFetchOperandAwaiter & fetchOperand( uint16_t address );
   CPUReadAwaiter & read( uint16_t address );
   CPUWriteAwaiter & write( uint16_t address, uint8_t value );
-
-  friend CpuTrace cpuTrace( CPU & cpu, TraceRequest & req );
-  friend void trace( CPU::State & state );
 
   void trace( int pcoff = 1, int soff = 0 );
 

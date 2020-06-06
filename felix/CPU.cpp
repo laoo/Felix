@@ -2,9 +2,7 @@
 #include "Opcodes.hpp"
 #include "Felix.hpp"
 #include <cassert>
-#include <fstream>
 
-std::ofstream ftrace{ "d:/trace.log" };
 
 
 bool CPU::isHiccup()
@@ -50,8 +48,12 @@ bool CPU::isHiccup()
   }
 }
 
-CPU::CPU( Felix & felix ) : felix{ felix }, state{}, operand{}, mEx{ execute() }, mReq{}, mRes{ state, mEx.coro }
+CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, state{}, operand{}, mEx{ execute() }, mReq{}, mRes{ state, mEx.coro }, mTrace{ trace }
 {
+  if ( mTrace )
+  {
+    mFtrace = std::ofstream{ "d:/trace.log" };
+  }
 }
 
 CPU::Request & CPU::req()
@@ -1826,6 +1828,9 @@ bool CPU::executeCommon( Opcode op, uint8_t value )
 
 void CPU::trace( int pcoff, int soff )
 {
+  if ( !mTrace )
+    return;
+
   char buf[256];
 
   int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", state.tick, ( uint16_t )( state.pc - pcoff ), state.a, state.x, state.y, state.s+soff, ( CPU::get<CPU::bitN>( state.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( state.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( state.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( state.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( state.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( state.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( state.p ) ? 'C' : '-' ) );
@@ -2624,6 +2629,6 @@ void CPU::trace( int pcoff, int soff )
     break;
   }
 
-  ftrace << buf;
+  mFtrace << buf;
 
 }
