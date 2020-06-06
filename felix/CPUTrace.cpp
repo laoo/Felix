@@ -807,12 +807,16 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::BRL_BMI:
     case Opcode::BRL_BNE:
     case Opcode::BRL_BPL:
-    case Opcode::BRL_BRA:
     case Opcode::BRL_BVC:
     case Opcode::BRL_BVS:
       co_await adf;
       lo = cpu.operand;
-      sprintf( buf + off, "$%04x\n", (uint16_t)( cpu.state.pc + 1 + (int8_t)lo ) );
+      sprintf( buf + off, "$%04x\n", (uint16_t)( cpu.state.pc - 1 + (int8_t)lo ) );
+      break;
+    case Opcode::BRL_BRA:
+      co_await adf;
+      lo = cpu.operand;
+      sprintf( buf + off, "$%04x\n", ( uint16_t )( cpu.state.pc + ( int8_t )lo ) );
       break;
     case Opcode::BZR_BBR0:
     case Opcode::BZR_BBR1:
@@ -822,6 +826,12 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     case Opcode::BZR_BBR5:
     case Opcode::BZR_BBR6:
     case Opcode::BZR_BBR7:
+      co_await adf;
+      lo = cpu.operand;
+      co_await adf;
+      hi = cpu.operand;
+      sprintf( buf + off, "$%02x,$%04x\n", lo, ( uint16_t )( cpu.state.pc - 6 + ( int8_t )hi ) );
+      break;
     case Opcode::BZR_BBS0:
     case Opcode::BZR_BBS1:
     case Opcode::BZR_BBS2:
@@ -834,7 +844,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       lo = cpu.operand;
       co_await adf;
       hi = cpu.operand;
-      sprintf( buf + off, "$%02x,$%04x\n", lo, (uint16_t)( cpu.state.pc + 1 + (int8_t)hi ) );
+      sprintf( buf + off, "$%02x,$%04x\n", lo, (uint16_t)( cpu.state.pc + (int8_t)hi ) );
       break;
     }
 
@@ -845,4 +855,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     co_await adf;
   }
 }
+
+
+
 

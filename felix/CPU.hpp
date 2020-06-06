@@ -42,7 +42,7 @@ public:
 
   struct State
   {
-    State() : tick{}, interrupt{ I_RESET }, op{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, ea{}, t{}, m1{}, m2{} {}
+    State() : tick{}, interrupt{ I_RESET }, op{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, ea{}, fa{}, t{}, m1{}, m2{} {}
 
     uint64_t tick;
     uint8_t interrupt;
@@ -79,6 +79,8 @@ public:
         uint8_t eah;
       };
     };
+
+    uint16_t fa{};
 
     union
     {
@@ -183,6 +185,12 @@ private:
     return ( state.p & ( 1 << bit ) ) != 0;
   }
 
+  template<int bit>
+  static bool get( uint8_t p)
+  {
+    return ( p & ( 1 << bit ) ) != 0;
+  }
+
   uint8_t asl( uint8_t val );
   uint8_t lsr( uint8_t val );
   uint8_t rol( uint8_t val );
@@ -214,6 +222,7 @@ private:
   Response mRes;
 
   Execute execute();
+  bool isHiccup();
 
   struct CPUFetchOpcodeAwaiter : public Response
   {
@@ -249,5 +258,9 @@ private:
   CPUWriteAwaiter & write( uint16_t address, uint8_t value );
 
   friend CpuTrace cpuTrace( CPU & cpu, TraceRequest & req );
+  friend void trace( CPU::State & state );
+
+  void trace( int pcoff = 1, int soff = 0 );
+
 };
 
