@@ -8,20 +8,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "felix", "felix\felix.vcxpro
 		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97} = {30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gsl", "gsl", "{C8AC1927-2A65-4362-BC7F-47C4A6CB790C}"
-	ProjectSection(SolutionItems) = preProject
-		gsl\include\gsl\gsl = gsl\include\gsl\gsl
-		gsl\include\gsl\gsl_algorithm = gsl\include\gsl\gsl_algorithm
-		gsl\include\gsl\gsl_assert = gsl\include\gsl\gsl_assert
-		gsl\include\gsl\gsl_byte = gsl\include\gsl\gsl_byte
-		gsl\include\gsl\gsl_util = gsl\include\gsl\gsl_util
-		gsl\include\gsl\multi_span = gsl\include\gsl\multi_span
-		gsl\include\gsl\pointers = gsl\include\gsl\pointers
-		gsl\include\gsl\span = gsl\include\gsl\span
-		gsl\include\gsl\span_ext = gsl\include\gsl\span_ext
-		gsl\include\gsl\string_span = gsl\include\gsl\string_span
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VersionTool", "VersionTool\VersionTool.vcxproj", "{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "helpers", "helpers", "{01B87F5A-7A71-4C3B-9578-B8F939BF4438}"

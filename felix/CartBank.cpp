@@ -18,7 +18,7 @@ constexpr uint32_t calcShift( int32_t v )
 }
 }
 
-CartBank::CartBank( gsl::span<uint8_t const> data, std::optional<uint32_t> declaredSize ) : mData{ std::move( data ) }, mShift{}
+CartBank::CartBank( std::span<uint8_t const> data, std::optional<uint32_t> declaredSize ) : mData{ std::move( data ) }, mShift{}
 {
   mShift = calcShift( declaredSize.value_or( ( int32_t )mData.size() ) );
 }

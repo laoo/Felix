@@ -15,11 +15,11 @@ ImageLnx::ImageLnx( std::vector<uint8_t> data ) : ImageCart{ std::move( data ) }
   size_t bank1ASize = std::min( imageDataSize - bank0Size - bank1Size - bank0ASize, ( size_t )mHeader->pageSizeBank1 * 256 );
 
   if ( bank0Size )
-    mBank0 ={ gsl::span<uint8_t const>{ pImageData + bank0Offset, bank0Size }, ( uint32_t )mHeader->pageSizeBank0 * 256 };
+    mBank0 ={ std::span<uint8_t const>{ pImageData + bank0Offset, bank0Size }, ( uint32_t )mHeader->pageSizeBank0 * 256 };
   if ( bank1Size )
-    mBank1 ={ gsl::span<uint8_t const>{ pImageData + bank1Offset, bank1Size }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
+    mBank1 ={ std::span<uint8_t const>{ pImageData + bank1Offset, bank1Size }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
   if ( bank0Size )
-    mBank0A ={ gsl::span<uint8_t const>{ pImageData + bank0AOffset, bank0ASize }, ( uint32_t )mHeader->pageSizeBank0 * 256 };
+    mBank0A ={ std::span<uint8_t const>{ pImageData + bank0AOffset, bank0ASize }, ( uint32_t )mHeader->pageSizeBank0 * 256 };
   if ( bank1Size )
-    mBank1A ={ gsl::span<uint8_t const>{ pImageData + bank1AOffset, bank1ASize }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
+    mBank1A ={ std::span<uint8_t const>{ pImageData + bank1AOffset, bank1ASize }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
 }
