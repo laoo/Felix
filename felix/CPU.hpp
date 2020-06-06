@@ -42,7 +42,7 @@ public:
 
   struct Response : private NonCopyable<Response>
   {
-    Response( CPU & cpu ) : cpu{ cpu }, tick{}, interrupt{}, value{}, target{} {}
+    Response( CPU & cpu, std::experimental::coroutine_handle<> coro ) : cpu{ cpu }, tick{}, interrupt{}, value{}, target{ coro } {}
     CPU & cpu;
     uint64_t tick;
     int interrupt;
@@ -62,12 +62,9 @@ public:
 
 private:
   Felix & felix;
-  struct OpInt
-  {
-    uint64_t tick;
-    int interrupt;
-    Opcode op;
-  } opint;
+  uint64_t tick;
+  int interrupt;
+  Opcode op;
 
   union
   {
@@ -129,7 +126,7 @@ private:
 
   uint8_t getP() const
   {
-    return p | ( 1 << bit1 ) | ( opint.interrupt != 0 ? 0 : ( 1 << bitB ) );
+    return p | ( 1 << bit1 ) | ( interrupt != 0 ? 0 : ( 1 << bitB ) );
   }
 
   void setP( uint8_t value )
@@ -184,11 +181,6 @@ private:
   uint8_t ror( uint8_t val );
   bool executeCommon( Opcode opcode, uint8_t value );
 
-
-
-  Request mReq;
-  Response mRes;
-
   struct Execute
   {
     struct promise_type;
@@ -209,6 +201,9 @@ private:
 
     handle coro;
   } mEx;
+
+  Request mReq;
+  Response mRes;
 
   Execute execute();
 

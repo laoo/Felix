@@ -45,10 +45,8 @@ bool isHiccup( Opcode op )
   }
 }
 
-CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, operand{}, mReq{}, mRes{ *this }, mEx{ execute() }
+CPU::CPU( Felix & felix ) : felix{ felix }, tick{}, interrupt{ I_RESET }, op{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, operand{}, mEx{ execute() }, mReq{}, mRes{ *this, mEx.coro }
 {
-  mRes.target = mEx.coro;
-  opint.interrupt = I_RESET;
 }
 
 CPU::Request & CPU::req()
@@ -67,9 +65,9 @@ bool CPU::CPUFetchOpcodeAwaiter::await_ready()
 
 void CPU::CPUFetchOpcodeAwaiter::await_resume()
 {
-  cpu.opint.tick = tick;
-  cpu.opint.interrupt = interrupt;
-  cpu.opint.op = ( Opcode )value;
+  cpu.tick = tick;
+  cpu.interrupt = interrupt;
+  cpu.op = ( Opcode )value;
 }
 
 void CPU::CPUFetchOpcodeAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
@@ -182,14 +180,14 @@ CPU::Execute CPU::execute()
     ea = 0;
     t = 0;
 
-    if ( opint.interrupt && ( !get<bitI>() || ( opint.interrupt & ~CPU::I_IRQ ) != 0 ) )
+    if ( interrupt && ( !get<bitI>() || ( interrupt & ~CPU::I_IRQ ) != 0 ) )
     {
-      opint.op = Opcode::BRK_BRK;
+      op = Opcode::BRK_BRK;
     }
 
     operand = eal = co_await fetchOperand( pc );
 
-    switch ( opint.op )
+    switch ( op )
     {
     case Opcode::RZP_AND:
     case Opcode::RZP_BIT:
@@ -203,13 +201,13 @@ CPU::Execute CPU::execute()
     case Opcode::RZP_ORA:
       ++pc;
       m1 = co_await read( ea );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RZP_ADC:
     case Opcode::RZP_SBC:
       ++pc;
       m1 = co_await read( ea );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( ea );
       }
@@ -389,14 +387,14 @@ CPU::Execute CPU::execute()
       co_await read( ++pc );
       eal += x;
       m1 = co_await read( ea );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RZX_ADC:
     case Opcode::RZX_SBC:
       co_await read( ++pc );
       eal += x;
       m1 = co_await read( ea );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( ea );
       }
@@ -479,7 +477,7 @@ CPU::Execute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       m1 = co_await read( t );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RIN_ADC:
     case Opcode::RIN_SBC:
@@ -487,7 +485,7 @@ CPU::Execute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       m1 = co_await read( t );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( t );
       }
@@ -508,7 +506,7 @@ CPU::Execute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       m1 = co_await read( t );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RIX_ADC:
     case Opcode::RIX_SBC:
@@ -517,7 +515,7 @@ CPU::Execute CPU::execute()
       tl = co_await read( ea++ );
       th = co_await read( ea );
       m1 = co_await read( t );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( t );
       }
@@ -545,7 +543,7 @@ CPU::Execute CPU::execute()
         co_await read( t );
       }
       m1 = co_await read( ea );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RIY_ADC:
     case Opcode::RIY_SBC:
@@ -560,7 +558,7 @@ CPU::Execute CPU::execute()
         co_await read( t );
       }
       m1 = co_await read( ea );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( t );
       }
@@ -588,14 +586,14 @@ CPU::Execute CPU::execute()
       ++pc;
       operand = eah = co_await fetchOperand( pc++ );
       m1 = co_await read( ea );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++pc;
       operand = eah = co_await fetchOperand( pc++ );
       m1 = co_await read( ea );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( ea );
       }
@@ -697,7 +695,7 @@ CPU::Execute CPU::execute()
         co_await read( ea );
       }
       m1 = co_await read( t );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
@@ -711,7 +709,7 @@ CPU::Execute CPU::execute()
         co_await read( ea );
       }
       m1 = co_await read( t );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( t );
       }
@@ -732,7 +730,7 @@ CPU::Execute CPU::execute()
         co_await read( ea );
       }
       m1 = co_await read( t );
-      executeCommon( opint.op, m1 );
+      executeCommon( op, m1 );
       break;
     case Opcode::RAY_ADC:
     case Opcode::RAY_SBC:
@@ -746,7 +744,7 @@ CPU::Execute CPU::execute()
         co_await read( ea );
       }
       m1 = co_await read( t );
-      if ( executeCommon( opint.op, m1 ) )
+      if ( executeCommon( op, m1 ) )
       {
         co_await read( t );
       }
@@ -965,12 +963,12 @@ CPU::Execute CPU::execute()
     case Opcode::IMM_LDY:
     case Opcode::IMM_ORA:
       ++pc;
-      executeCommon( opint.op, eal );
+      executeCommon( op, eal );
       break;
     case Opcode::IMM_ADC:
     case Opcode::IMM_SBC:
       ++pc;
-      if ( executeCommon( opint.op, eal ) )
+      if ( executeCommon( op, eal ) )
       {
         co_await read( pc );
       }
@@ -1298,7 +1296,7 @@ CPU::Execute CPU::execute()
       }
       break;
     case Opcode::BRK_BRK:
-      if ( opint.interrupt & CPU::I_RESET )
+      if ( interrupt & CPU::I_RESET )
       {
         co_await read( s );
         sl--;
@@ -1313,14 +1311,14 @@ CPU::Execute CPU::execute()
       {
         //on interrupt PC should point to interrupted instruction
         //on BRK should after past BRK argument
-        pc += opint.interrupt ? -1 : 1;
+        pc += interrupt ? -1 : 1;
         co_await write( s, pch );
         sl--;
         co_await write( s, pcl );
         sl--;
         co_await write( s, getP() );
         sl--;
-        if ( opint.interrupt & CPU::I_NMI )
+        if ( interrupt & CPU::I_NMI )
         {
           eal = co_await read( 0xfffa );
           eah = co_await read( 0xfffb );
@@ -1439,7 +1437,7 @@ CPU::Execute CPU::execute()
     do
     {
       co_await fetchOpcode( pc++ );
-    } while ( isHiccup( opint.op ) );
+    } while ( isHiccup( op ) );
   }
 
 }

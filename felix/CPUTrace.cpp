@@ -19,9 +19,9 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     uint8_t lo;
     uint8_t hi;
 
-    int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", cpu.opint.tick, (uint16_t)(cpu.pc-1), cpu.a, cpu.x, cpu.y, cpu.s, ( cpu.get<CPU::bitN>() ? 'N' : '-' ), ( cpu.get<CPU::bitV>() ? 'V' : '-' ), ( cpu.get<CPU::bitB>() ? 'B' : '-' ), ( cpu.get<CPU::bitD>() ? 'D' : '-' ), ( cpu.get<CPU::bitI>() ? 'I' : '-' ), ( cpu.get<CPU::bitZ>() ? 'Z' : '-' ), ( cpu.get<CPU::bitC>() ? 'C' : '-' ) );
+    int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", cpu.tick, (uint16_t)(cpu.pc-1), cpu.a, cpu.x, cpu.y, cpu.s, ( cpu.get<CPU::bitN>() ? 'N' : '-' ), ( cpu.get<CPU::bitV>() ? 'V' : '-' ), ( cpu.get<CPU::bitB>() ? 'B' : '-' ), ( cpu.get<CPU::bitD>() ? 'D' : '-' ), ( cpu.get<CPU::bitI>() ? 'I' : '-' ), ( cpu.get<CPU::bitZ>() ? 'Z' : '-' ), ( cpu.get<CPU::bitC>() ? 'C' : '-' ) );
 
-    switch ( cpu.opint.op )
+    switch ( cpu.op )
     {
     case Opcode::RZP_AND:
     case Opcode::RZX_AND:
@@ -414,15 +414,15 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
       off += sprintf( buf + off, "bbs7 " );
       break;
     case Opcode::BRK_BRK:
-      if ( ( cpu.opint.interrupt & CPU::I_RESET ) != 0 )
+      if ( ( cpu.interrupt & CPU::I_RESET ) != 0 )
       {
         off += sprintf( buf + off, "RESET\n" );
       }
-      else if ( ( cpu.opint.interrupt & CPU::I_NMI ) != 0 )
+      else if ( ( cpu.interrupt & CPU::I_NMI ) != 0 )
       {
         off += sprintf( buf + off, "NMI\n" );
       }
-      else if ( ( cpu.opint.interrupt & CPU::I_IRQ ) != 0 )
+      else if ( ( cpu.interrupt & CPU::I_IRQ ) != 0 )
       {
         off += sprintf( buf + off, "IRQ\n" );
       }
@@ -507,7 +507,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     }
 
 
-    switch ( cpu.opint.op )
+    switch ( cpu.op )
     {
     case Opcode::UND_1_03:
     case Opcode::UND_1_13:
@@ -839,7 +839,7 @@ CpuTrace cpuTrace( CPU & cpu, TraceRequest & req )
     }
 
     fout << buf;
-    fout.flush();
+    //fout.flush();
     //OutputDebugStringA( buf );
 
     co_await adf;
