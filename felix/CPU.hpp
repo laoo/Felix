@@ -92,6 +92,28 @@ private:
 
   uint8_t operand;
 
+  union
+  {
+    uint16_t ea{};
+    struct
+    {
+      uint8_t eal;
+      uint8_t eah;
+    };
+  };
+
+  union
+  {
+    uint16_t t;
+    struct
+    {
+      uint8_t tl;
+      uint8_t th;
+    };
+  };
+
+  uint8_t m1;
+  uint8_t m2;
 
 
   static constexpr int bitC = 0;
@@ -154,10 +176,10 @@ private:
     return ( p & ( 1 << bit ) ) != 0;
   }
 
-  void asl( uint8_t & val );
-  void lsr( uint8_t & val );
-  void rol( uint8_t & val );
-  void ror( uint8_t & val );
+  uint8_t asl( uint8_t val );
+  uint8_t lsr( uint8_t val );
+  uint8_t rol( uint8_t val );
+  uint8_t ror( uint8_t val );
   bool executeCommon( Opcode opcode, uint8_t value );
 
 
