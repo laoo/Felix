@@ -14,7 +14,6 @@
 
 Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
 mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
-  mDReq{}, mCpuTrace{ /*cpuTrace( *mCpu, mDReq )*/ },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}
 {
   //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
@@ -45,8 +44,6 @@ mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>(
   }
 
   mCpu->res().target();
-
-  mCpuTrace = cpuTrace( *mCpu, mDReq );
 }
 
 void Felix::injectFile( InputFile const & file )
@@ -188,13 +185,11 @@ void Felix::process( uint64_t ticks )
       mSequencedAccessAddress = req.address + 1;
       res.tick = mCurrentTick;
       res.target();
-      mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_RAM:
       res.value = mRAM[req.address];
       mSequencedAccessAddress = req.address + 1;
       res.target();
-      mDReq.resume();
       break;
     case Action::CPU_READ_RAM:
       res.value = mRAM[req.address];
@@ -211,13 +206,11 @@ void Felix::process( uint64_t ticks )
       mSequencedAccessAddress = req.address + 1;
       res.tick = mCurrentTick;
       res.target();
-      mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FE:
       res.value = mROM[req.address & 0x1ff];
       mSequencedAccessAddress = req.address + 1;
       res.target();
-      mDReq.resume();
       break;
     case Action::CPU_READ_FE:
       res.value = mROM[req.address & 0x1ff];
@@ -233,13 +226,11 @@ void Felix::process( uint64_t ticks )
       mSequencedAccessAddress = req.address + 1;
       res.tick = mCurrentTick;
       res.target();
-      mDReq.resume();
       break;
     case Action::CPU_FETCH_OPERAND_FF:
       res.value = readFF( req.address & 0xff );
       mSequencedAccessAddress = req.address + 1;
       res.target();
-      mDReq.resume();
       break;
     case Action::CPU_READ_FF:
       res.value = readFF( req.address & 0xff );

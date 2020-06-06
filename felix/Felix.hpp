@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include "CPUTrace.hpp"
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
 #include "Suzy.hpp"
@@ -88,8 +87,6 @@ private:
   std::shared_ptr<ComLynx> mComLynx;
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
-  TraceRequest mDReq;
-  CpuTrace mCpuTrace;
   MAPCTL mMapCtl;
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;

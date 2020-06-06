@@ -172,7 +172,6 @@
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ColOperator.cpp" />
     <ClCompile Include="ComLynx.cpp" />
-    <ClCompile Include="CPUTrace.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="ImageBIN.cpp" />
@@ -223,7 +222,6 @@
     <ClInclude Include="SuzyProcessCoro.hpp" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
-    <ClInclude Include="CPUTrace.hpp" />
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="Suzy.hpp" />

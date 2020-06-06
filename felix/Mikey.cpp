@@ -4,6 +4,7 @@
 #include "AudioChannel.hpp"
 #include "Felix.hpp"
 #include "Cartridge.hpp"
+#include "CPU.hpp"
 
 Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
 mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}

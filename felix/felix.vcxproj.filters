@@ -13,9 +13,6 @@
     <ClCompile Include="Suzy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CPUTrace.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ActionQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -106,9 +103,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Suzy.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CPUTrace.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ActionQueue.hpp">
