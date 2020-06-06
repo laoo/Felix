@@ -45,7 +45,7 @@ bool isHiccup( Opcode op )
   }
 }
 
-CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, P{}, operand{}, mReq{}, mRes{}, mEx{ execute() }
+CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, operand{}, mReq{}, mRes{}, mEx{ execute() }
 {
   mRes.target = mEx.coro;
   opint.interrupt = I_RESET;
@@ -1327,14 +1327,7 @@ CPU::Execute CPU::execute()
         sl--;
         co_await write( s, pcl );
         sl--;
-        if ( opint.interrupt )
-        {
-          co_await write( s, pirq() );
-        }
-        else
-        {
-          co_await write( s, p() );
-        }
+        co_await write( s, getP() );
         sl--;
         if ( opint.interrupt & CPU::I_NMI )
         {
@@ -1354,7 +1347,7 @@ CPU::Execute CPU::execute()
     case Opcode::RTI_RTI:
       ++pc;
       ++sl;
-      P = co_await read( s );
+      setP( co_await read( s ) );
       ++sl;
       eal = co_await read( s );
       ++sl;
@@ -1377,7 +1370,7 @@ CPU::Execute CPU::execute()
       sl--;
       break;
     case Opcode::PHR_PHP:
-      co_await write( s, p() );
+      co_await write( s, getP() );
       sl--;
       break;
     case Opcode::PHR_PHX:
@@ -1396,7 +1389,7 @@ CPU::Execute CPU::execute()
     case Opcode::PLR_PLP:
       co_await read( pc );
       ++sl;
-      P = co_await read( s );
+      setP( co_await read( s ) );
       break;
     case Opcode::PLR_PLX:
       co_await read( pc );

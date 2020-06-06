@@ -88,7 +88,7 @@ private:
   uint8_t a;
   uint8_t x;
   uint8_t y;
-  uint8_t P;
+  uint8_t p;
 
   uint8_t operand;
 
@@ -99,17 +99,18 @@ private:
   static constexpr int bitI = 2;
   static constexpr int bitD = 3;
   static constexpr int bitB = 4;
+  static constexpr int bit1 = 5;
   static constexpr int bitV = 6;
   static constexpr int bitN = 7;
 
-  uint8_t p() const
+  uint8_t getP() const
   {
-    return P | 0x30;
+    return p | ( 1 << bit1 ) | ( opint.interrupt != 0 ? 0 : ( 1 << bitB ) );
   }
 
-  uint8_t pirq() const
+  void setP( uint8_t value )
   {
-    return P | 0x20;
+    p = value;
   }
 
   void setnz( uint8_t v )
@@ -126,7 +127,7 @@ private:
   template<int bit>
   void set()
   {
-    P |= 1 << bit;
+    p |= 1 << bit;
   }
 
   template<int bit>
@@ -138,7 +139,7 @@ private:
   template<int bit>
   void clear()
   {
-    P &= ~( 1 << bit );
+    p &= ~( 1 << bit );
   }
 
   template<int bit>
@@ -150,7 +151,7 @@ private:
   template<int bit>
   bool get() const
   {
-    return ( P & ( 1 << bit ) ) != 0;
+    return ( p & ( 1 << bit ) ) != 0;
   }
 
   void asl( uint8_t & val );
