@@ -42,6 +42,8 @@ public:
 
   struct Response : private NonCopyable<Response>
   {
+    Response( CPU & cpu ) : cpu{ cpu }, tick{}, interrupt{}, value{}, target{} {}
+    CPU & cpu;
     uint64_t tick;
     int interrupt;
     uint8_t value;
@@ -213,7 +215,7 @@ private:
   struct CPUFetchOpcodeAwaiter : public Response
   {
     bool await_ready();
-    OpInt await_resume();
+    void await_resume();
     void await_suspend( std::experimental::coroutine_handle<> c );
   };
 

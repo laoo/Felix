@@ -45,7 +45,7 @@ bool isHiccup( Opcode op )
   }
 }
 
-CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, operand{}, mReq{}, mRes{}, mEx{ execute() }
+CPU::CPU( Felix & felix ) : felix{ felix }, opint{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, operand{}, mReq{}, mRes{ *this }, mEx{ execute() }
 {
   mRes.target = mEx.coro;
   opint.interrupt = I_RESET;
@@ -65,9 +65,11 @@ bool CPU::CPUFetchOpcodeAwaiter::await_ready()
   return false;
 }
 
-CPU::OpInt CPU::CPUFetchOpcodeAwaiter::await_resume()
+void CPU::CPUFetchOpcodeAwaiter::await_resume()
 {
-  return { tick, interrupt, (Opcode)value };
+  cpu.opint.tick = tick;
+  cpu.opint.interrupt = interrupt;
+  cpu.opint.op = ( Opcode )value;
 }
 
 void CPU::CPUFetchOpcodeAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
@@ -1436,7 +1438,7 @@ CPU::Execute CPU::execute()
 
     do
     {
-      opint = co_await fetchOpcode( pc++ );
+      co_await fetchOpcode( pc++ );
     } while ( isHiccup( opint.op ) );
   }
 
