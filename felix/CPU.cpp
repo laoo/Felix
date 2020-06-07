@@ -192,7 +192,7 @@ CPU::Execute CPU::execute()
       state.op = Opcode::BRK_BRK;
     }
 
-    operand = state.eal = co_await fetchOperand( state.pc );
+    state.eal = co_await fetchOperand( ++state.pc );
 
     switch ( state.op )
     {
@@ -652,7 +652,7 @@ CPU::Execute CPU::execute()
     case Opcode::RAB_LDY:
     case Opcode::RAB_ORA:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       executeCommon( state.op, state.m1 );
@@ -660,7 +660,7 @@ CPU::Execute CPU::execute()
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       if ( executeCommon( state.op, state.m1 ) )
@@ -670,31 +670,31 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::WAB_STA:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       trace( 3 );
       co_await write( state.ea, state.a );
       break;
     case Opcode::WAB_STX:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       trace( 3 );
       co_await write( state.ea, state.x );
       break;
     case Opcode::WAB_STY:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       trace( 3 );
       co_await write( state.ea, state.y );
       break;
     case Opcode::WAB_STZ:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       trace( 3 );
       co_await write( state.ea, 0x00 );
       break;
     case Opcode::MAB_ASL:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       state.m2 = asl( state.m1 );
@@ -702,7 +702,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAB_DEC:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       state.m2 = state.m1 - 1;
@@ -711,7 +711,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAB_INC:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       state.m2 = state.m1 + 1;
@@ -720,7 +720,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAB_LSR:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       state.m2 = lsr( state.m1 );
@@ -728,7 +728,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAB_ROL:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       state.m2 = rol( state.m1 );
@@ -736,7 +736,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAB_ROR:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       state.m2 = ror( state.m1 );
@@ -744,7 +744,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAB_TRB:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       setz( state.m1 & state.a );
@@ -753,7 +753,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAB_TSB:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
       trace( 3 );
       setz( state.m1 & state.a );
@@ -768,7 +768,7 @@ CPU::Execute CPU::execute()
     case Opcode::RAX_LDY:
     case Opcode::RAX_ORA:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.t += state.x;
       if ( state.th != state.eah )
@@ -783,7 +783,7 @@ CPU::Execute CPU::execute()
     case Opcode::RAX_ADC:
     case Opcode::RAX_SBC:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.t += state.x;
       if ( state.th != state.eah )
@@ -805,7 +805,7 @@ CPU::Execute CPU::execute()
     case Opcode::RAY_LDX:
     case Opcode::RAY_ORA:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.t += state.y;
       if ( state.th != state.eah )
@@ -820,7 +820,7 @@ CPU::Execute CPU::execute()
     case Opcode::RAY_ADC:
     case Opcode::RAY_SBC:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.t += state.y;
       if ( state.th != state.eah )
@@ -837,7 +837,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::WAX_STA:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -847,7 +847,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::WAX_STZ:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -857,7 +857,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::WAY_STA:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.y;
       state.t += state.y;
@@ -867,7 +867,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAX_ASL:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -879,7 +879,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAX_DEC:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -892,7 +892,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAX_INC:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -905,7 +905,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAX_LSR:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -917,7 +917,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAX_ROL:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -929,7 +929,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::MAX_ROR:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.t = state.ea;
       state.eal += state.x;
       state.t += state.x;
@@ -941,7 +941,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::JMA_JMP:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       trace( 3 );
       state.pc = state.ea;
       break;
@@ -952,13 +952,13 @@ CPU::Execute CPU::execute()
       state.sl--;
       co_await write( state.s, state.pcl );
       state.sl--;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       trace( 3 );
       state.pc = state.ea;
       break;
     case Opcode::JMX_JMP:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       co_await read( state.pc );
       state.fa = state.t = state.ea;
       state.eal += state.x;
@@ -971,7 +971,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::JMI_JMP:
       ++state.pc;
-      operand = state.eah = co_await fetchOperand( state.pc++ );
+      state.eah = co_await fetchOperand( state.pc++ );
       state.fa = state.tl = co_await read( state.ea );
       state.eal++;
       co_await read( state.ea );
@@ -1235,7 +1235,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBR1:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1247,7 +1247,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBR2:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1259,7 +1259,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBR3:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1271,7 +1271,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBR4:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1283,7 +1283,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBR5:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1295,7 +1295,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBR6:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1307,7 +1307,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBR7:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1319,7 +1319,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS0:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1331,7 +1331,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS1:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1343,7 +1343,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS2:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1355,7 +1355,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS3:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1367,7 +1367,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS4:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1379,7 +1379,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS5:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1391,7 +1391,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS6:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
@@ -1403,7 +1403,7 @@ CPU::Execute CPU::execute()
     case Opcode::BZR_BBS7:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      operand = state.tl = co_await fetchOperand( state.pc++ );
+      state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
       trace( 3 );
