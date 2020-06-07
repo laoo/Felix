@@ -1446,7 +1446,7 @@ CPU::Execute CPU::execute()
           state.eal = co_await read( 0xfffe );
           state.eah = co_await read( 0xffff );
         }
-        trace();
+        trace( 1, 3 );
         set<bitI>();
       }
       clear<bitD>();
@@ -1461,7 +1461,7 @@ CPU::Execute CPU::execute()
       ++state.sl;
       state.eah = co_await read( state.s );
       co_await read( state.pc );
-      trace();
+      trace( 2 );
       state.pc = state.ea;
       break;
     case Opcode::RTS_RTS:
@@ -1472,7 +1472,7 @@ CPU::Execute CPU::execute()
       state.eah = co_await read( state.s );
       co_await read( state.pc );
       ++state.ea;
-      trace();
+      trace( 2 );
       state.pc = state.ea;
       break;
     case Opcode::PHR_PHA:
@@ -1526,10 +1526,11 @@ CPU::Execute CPU::execute()
     case Opcode::UND_2_82:
     case Opcode::UND_2_C2:
     case Opcode::UND_2_E2:
-      ++state.pc;
       trace();
+      ++state.pc;
       break;
     case Opcode::UND_3_44:
+      trace();
       ++state.pc;
       co_await read( state.ea );
       break;
@@ -1538,8 +1539,8 @@ CPU::Execute CPU::execute()
     case Opcode::UND_4_f4:
       ++state.pc;
       co_await read( state.pc );
-      state.eal += state.x;
-      trace();
+      state.tl = state.eal + state.x;
+      trace( 2 );
       co_await read( state.ea );
       break;
     case Opcode::UND_4_dc:
@@ -1547,7 +1548,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await read( state.pc++ );
       co_await read( state.ea );
-      trace();
+      trace( 3 );
       break;
     case Opcode::UND_8_5c:
       //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opint.op_mapping.html
