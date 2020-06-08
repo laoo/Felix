@@ -12,6 +12,7 @@ TimerCore::TimerCore( int number, std::function<void( uint64_t, bool )> trigger 
 SequencedAction TimerCore::setBackup( uint64_t tick, uint8_t backup )
 {
   mBackup = backup;
+  mValue = 0;
   return computeAction( tick );
 }
 
@@ -128,7 +129,7 @@ SequencedAction TimerCore::computeAction( uint64_t tick )
   if ( !mEnableCount || mLinking || ( mTimerDone && !mEnableReload ) )
     return {};
 
-  if ( mEnableReload )
+  if ( mValue == 0 || mEnableReload )
   {
     mValue = mBackup;
   }
