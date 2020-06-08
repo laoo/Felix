@@ -128,7 +128,7 @@ SequencedAction TimerCore::computeAction( uint64_t tick )
   if ( !mEnableCount || mLinking || ( mTimerDone && !mEnableReload ) )
     return {};
 
-  if ( mValue == 0 && mEnableReload )
+  if ( mEnableReload )
   {
     mValue = mBackup;
   }
