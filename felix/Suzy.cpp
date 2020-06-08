@@ -156,7 +156,7 @@ uint8_t Suzy::read( uint16_t address )
       ( input.b ? JOYSTICK::A : 0 ) |
       ( input.a ? JOYSTICK::B : 0 );
 
-    if ( mLeftHand )
+    if ( !mLeftHand )
     {
       joystick |=
         ( input.down ? JOYSTICK::UP : 0 ) |
