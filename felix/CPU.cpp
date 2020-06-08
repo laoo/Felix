@@ -192,7 +192,7 @@ CPU::Execute CPU::execute()
       state.op = Opcode::BRK_BRK;
     }
 
-    state.eal = co_await fetchOperand( ++state.pc );
+    state.eal = co_await fetchOperand( state.pc );
 
     switch ( state.op )
     {
