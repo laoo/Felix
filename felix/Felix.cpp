@@ -258,8 +258,10 @@ void Felix::process( uint64_t ticks )
       switch ( auto mikeyAction = mMikey->write( req.address, req.value ) )
       {
       case Mikey::WriteAction::Type::START_SUZY:
-        mSuzyProcess = mSuzy->suzyProcess();
-        //mSuzyExecute = mSuzy->processSprites( mSuzyReq );
+        if ( !mSuzyProcess )
+        {
+          mSuzyProcess = mSuzy->suzyProcess();
+        }
         processSuzy();
         break;
       case Mikey::WriteAction::Type::ENQUEUE_ACTION:
@@ -426,6 +428,14 @@ void Felix::processSuzy()
     1, //VIDRMW,
     1  //XOR,
   };
+
+  auto & res = mCpu->res();
+
+  if ( res.interrupt != 0 )
+  {
+    res.target();
+    return;
+  }
 
   mSuzyProcessRequest = mSuzyProcess->advance();
   int op = ( int )mSuzyProcessRequest->type;
