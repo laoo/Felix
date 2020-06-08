@@ -11,6 +11,7 @@ mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDon
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
+    mTimers[0x2]->borrowIn( tick );
     uint8_t cnt = mTimers[0x02]->getCount( tick );
     if ( cnt == 101 )
     {
@@ -20,7 +21,6 @@ mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDon
     {
       mFelix.requestDisplayDMA( dma.tick, dma.address );
     }
-    mTimers[0x2]->borrowIn( tick );
     if ( interrupt )
     {
       setIRQ( 0x01 );
