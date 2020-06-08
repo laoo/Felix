@@ -21,7 +21,7 @@ void DisplayGenerator::dispCtl( bool dispColor, bool dispFlip, bool dmaEnable )
 void DisplayGenerator::setPBKUP( uint8_t value )
 {
   int h = (int)std::round( ( (int)value + 1.0 ) / 4.0 * 15.0 + 0.49 );
-  mDMAOffset = ( h - TICKS_PER_PIXEL * DMA_ITERATIONS ) * 16;
+  mDMAOffset = h * 16 - ROW_TICKS;
 }
 
 
@@ -45,17 +45,17 @@ DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
 
 DisplayGenerator::DMARequest DisplayGenerator::pushData( uint64_t tick, uint64_t data )
 {
-  mDMAData[mDMAIteration] = data;
-  flushDisplay( tick );
-  mDispAdr += ( 80 / DMA_ITERATIONS );
-  if ( ++mDMAIteration < 10 )
+  if ( mDMAIteration < 10 )
   {
-    return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), mDispAdr };
+    mDMAData[mDMAIteration] = data;
+    flushDisplay( tick );
+    mDispAdr += ( 80 / DMA_ITERATIONS );
+    if ( ++mDMAIteration < 10 )
+    {
+      return { mRowStartTick + mDMAIteration * ( ROW_TICKS / DMA_ITERATIONS ), mDispAdr };
+    }
   }
-  else
-  {
-    return {};
-  }
+  return {};
 }
 
 void DisplayGenerator::updatePalette( uint64_t tick, uint8_t reg, uint8_t value )
