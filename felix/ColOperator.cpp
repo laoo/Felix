@@ -48,7 +48,7 @@ ColOperator::ColOperator( Suzy::Sprite spriteType, uint8_t sprColl ) :
   mProcesStates{ makeProcessStates( std::make_integer_sequence<int, STATES_SIZE>{} ) },
   mSpriteCollideable{ makeSpriteCollideable( std::make_integer_sequence<int,8>{} ) },
   mDepositoryUpdatable{ makeDepositoryUpdatable( std::make_integer_sequence<int, 8>{} ) },
-  mSpriteType{ (int)spriteType * ColOperator::POSSIBLE_PIXELS },
+  mSpriteType{ (size_t)spriteType },
   mMask{}, mStoreAddr{}, mColAdr{}, mColl{ (uint8_t)( ( sprColl & 0xf ) | ( ( sprColl & 0xf ) << 4 ) ) }, mHiColl{}
 {
 }
