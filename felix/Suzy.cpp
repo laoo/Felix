@@ -4,8 +4,8 @@
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"
 
-Suzy::Suzy( Felix & felix, std::function<KeyInput()> const& inputProvider ) : mFelix{ felix }, mSCB {}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
-  mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
+Suzy::Suzy( Felix & felix, std::function<KeyInput()> const& inputProvider ) : mFelix{ felix }, mSCB{}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
+  mPalette{}, mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
   mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}
 {
