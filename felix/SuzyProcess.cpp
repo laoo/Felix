@@ -310,6 +310,7 @@ SubCoroutine SuzyProcess::renderSingleSprite()
                 break;
               }
               co_await readPen();
+              totalBits -= bpp;
               while ( --count >= 0 )
                 co_await duplicatePen();
             }
