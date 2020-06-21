@@ -41,7 +41,7 @@ bool CPU::isHiccup()
   case Opcode::UND_1_db:
   case Opcode::UND_1_eb:
   case Opcode::UND_1_fb:
-    trace();
+    trace2();
     return true;
   default:
     return false;
@@ -182,6 +182,8 @@ CPU::Execute::~Execute()
 
 CPU::Execute CPU::execute()
 {
+  trace1();
+
   for ( ;; )
   {
     state.ea = 0;
@@ -208,87 +210,72 @@ CPU::Execute CPU::execute()
     case Opcode::RZP_ORA:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RZP_ADC:
     case Opcode::RZP_SBC:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.ea );
       }
       break;
     case Opcode::WZP_STA:
-      trace();
       ++state.pc;
       co_await write( state.ea, state.a );
       break;
     case Opcode::WZP_STX:
-      trace();
       ++state.pc;
       co_await write( state.ea, state.x );
       break;
     case Opcode::WZP_STY:
-      trace();
       ++state.pc;
       co_await write( state.ea, state.y );
       break;
     case Opcode::WZP_STZ:
-      trace();
       ++state.pc;
       co_await write( state.ea, 0x00 );
       break;
     case Opcode::MZP_ASL:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = asl( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_DEC:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
-      state.m2 = state.m1 - 1;
-      setnz( state.m2 );
+      state.m2 = dec( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_INC:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
-      state.m2 = state.m1 + 1;
-      setnz( state.m2 );
+      state.m2 = inc( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_LSR:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = lsr( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_ROL:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = rol( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_ROR:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = ror( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_TRB:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       setz( state.m1 & state.a );
       state.m2 = state.m1 & ~state.a;
       co_await write( state.ea, state.m2 );
@@ -296,7 +283,6 @@ CPU::Execute CPU::execute()
     case Opcode::MZP_TSB:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       setz( state.m1 & state.a );
       state.m2 = state.m1 | state.a;
       co_await write( state.ea, state.m2 );
@@ -304,112 +290,96 @@ CPU::Execute CPU::execute()
     case Opcode::MZP_RMB0:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x01;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB1:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x02;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB2:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x04;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB3:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x08;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB4:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x10;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB5:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x20;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB6:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x40;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB7:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 & ~0x80;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB0:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x01;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB1:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x02;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB2:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x04;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB3:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x08;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB4:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x10;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB5:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x20;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB6:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x40;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB7:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       state.m2 = state.m1 | 0x80;
       co_await write( state.ea, state.m2 );
       break;
@@ -423,7 +393,6 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RZX_ADC:
@@ -431,7 +400,6 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.t );
@@ -441,38 +409,32 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.y;
       state.m1 = co_await read( state.t );
-      trace( 2 );
       setnz( state.x = state.m1 );
       break;
     case Opcode::WZX_STA:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
-      trace( 2 );
       co_await write( state.t, state.a );
       break;
     case Opcode::WZX_STY:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
-      trace( 2 );
       co_await write( state.t, state.y );
       break;
     case Opcode::WZX_STZ:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
-      trace( 2 );
       co_await write( state.t, 0x00 );
       break;
     case Opcode::WZY_STX:
       co_await read( ++state.pc );
       state.tl = state.eal + state.y;
-      trace( 2 );
       co_await write( state.t, state.x );
       break;
     case Opcode::MZX_ASL:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
       state.m2 = asl( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -480,25 +442,20 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
-      state.m2 = state.m1 - 1;
-      setnz( state.m2 );
+      state.m2 = dec( state.m1 );
       co_await write( state.t, state.m2 );
       break;
     case Opcode::MZX_INC:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
-      state.m2 = state.m1 + 1;
-      setnz( state.m2 );
+      state.m2 = inc( state.m1 );
       co_await write( state.t, state.m2 );
       break;
     case Opcode::MZX_LSR:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
       state.m2 = lsr( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -506,7 +463,6 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
       state.m2 = rol( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -514,7 +470,6 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      trace( 2 );
       state.m2 = ror( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -528,7 +483,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 2 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RIN_ADC:
@@ -538,7 +492,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 2 );
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.t );
@@ -549,7 +502,6 @@ CPU::Execute CPU::execute()
       state.fa = state.ea;
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
-      trace( 2 );
       co_await write( state.t, state.a );
       break;
     case Opcode::RIX_AND:
@@ -563,7 +515,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 2 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RIX_ADC:
@@ -574,7 +525,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 2 );
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.t );
@@ -586,7 +536,6 @@ CPU::Execute CPU::execute()
       state.eal += state.x;
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
-      trace( 2 );
       co_await write( state.t, state.a );
       break;
     case Opcode::RIY_AND:
@@ -606,7 +555,6 @@ CPU::Execute CPU::execute()
         co_await read( state.t );
       }
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RIY_ADC:
@@ -623,7 +571,6 @@ CPU::Execute CPU::execute()
         co_await read( state.t );
       }
       state.m1 = co_await read( state.ea );
-      trace( 2 );
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.t );
@@ -638,7 +585,6 @@ CPU::Execute CPU::execute()
       state.ea += state.y;
       state.tl += state.y;
       co_await read( state.t );
-      trace( 2 );
       co_await write( state.ea, state.a );
       break;
     case Opcode::RAB_AND:
@@ -654,15 +600,13 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RAB_ADC:
     case Opcode::RAB_SBC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.m1 = co_await read( state.ea );
-      trace( 3 );
+      state.m1 = co_await read( state.ea );      
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.ea );
@@ -671,32 +615,27 @@ CPU::Execute CPU::execute()
     case Opcode::WAB_STA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      trace( 3 );
       co_await write( state.ea, state.a );
       break;
     case Opcode::WAB_STX:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      trace( 3 );
       co_await write( state.ea, state.x );
       break;
     case Opcode::WAB_STY:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      trace( 3 );
       co_await write( state.ea, state.y );
       break;
     case Opcode::WAB_STZ:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      trace( 3 );
       co_await write( state.ea, 0x00 );
       break;
     case Opcode::MAB_ASL:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
       state.m2 = asl( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -704,25 +643,20 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
-      state.m2 = state.m1 - 1;
-      setnz( state.m2 );
+      state.m2 = dec( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAB_INC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
-      state.m2 = state.m1 + 1;
-      setnz( state.m2 );
+      state.m2 = inc( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAB_LSR:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
       state.m2 = lsr( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -730,7 +664,6 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
       state.m2 = rol( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -738,7 +671,6 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
       state.m2 = ror( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -746,7 +678,6 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
       setz( state.m1 & state.a );
       state.m2 = state.m1 & ~state.a;
       co_await write( state.ea, state.m2 );
@@ -755,7 +686,6 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
-      trace( 3 );
       setz( state.m1 & state.a );
       state.m2 = state.m1 | state.a;
       co_await write( state.ea, state.m2 );
@@ -777,7 +707,6 @@ CPU::Execute CPU::execute()
         co_await read( state.ea );
       }
       state.m1 = co_await read( state.t );
-      trace( 3 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RAX_ADC:
@@ -792,7 +721,6 @@ CPU::Execute CPU::execute()
         co_await read( state.ea );
       }
       state.m1 = co_await read( state.t );
-      trace( 3 );
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.t );
@@ -814,7 +742,6 @@ CPU::Execute CPU::execute()
         co_await read( state.ea );
       }
       state.m1 = co_await read( state.t );
-      trace( 3 );
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RAY_ADC:
@@ -829,7 +756,6 @@ CPU::Execute CPU::execute()
         co_await read( state.ea );
       }
       state.m1 = co_await read( state.t );
-      trace( 3 );
       if ( executeCommon( state.op, state.m1 ) )
       {
         co_await read( state.t );
@@ -842,7 +768,6 @@ CPU::Execute CPU::execute()
       state.eal += state.x;
       state.t += state.x;
       co_await read( state.ea );
-      trace( 3 );
       co_await write( state.t, state.a );
       break;
     case Opcode::WAX_STZ:
@@ -852,7 +777,6 @@ CPU::Execute CPU::execute()
       state.eal += state.x;
       state.t += state.x;
       co_await read( state.ea );
-      trace( 3 );
       co_await write( state.t, 0x00 );
       break;
     case Opcode::WAY_STA:
@@ -862,7 +786,6 @@ CPU::Execute CPU::execute()
       state.eal += state.y;
       state.t += state.y;
       co_await read( state.ea );
-      trace( 3 );
       co_await write( state.t, state.a );
       break;
     case Opcode::MAX_ASL:
@@ -873,7 +796,6 @@ CPU::Execute CPU::execute()
       state.t += state.x;
       co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 3 );
       state.m2 = asl( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -885,9 +807,7 @@ CPU::Execute CPU::execute()
       state.t += state.x;
       co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 3 );
-      state.m2 = state.m1 - 1;
-      setnz( state.m2 );
+      state.m2 = dec( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAX_INC:
@@ -898,9 +818,7 @@ CPU::Execute CPU::execute()
       state.t += state.x;
       co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 3 );
-      state.m2 = state.m1 + 1;
-      setnz( state.m2 );
+      state.m2 = inc( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAX_LSR:
@@ -911,7 +829,6 @@ CPU::Execute CPU::execute()
       state.t += state.x;
       co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 3 );
       state.m2 = lsr( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -923,7 +840,6 @@ CPU::Execute CPU::execute()
       state.t += state.x;
       co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 3 );
       state.m2 = rol( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -935,14 +851,12 @@ CPU::Execute CPU::execute()
       state.t += state.x;
       co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      trace( 3 );
       state.m2 = ror( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::JMA_JMP:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      trace( 3 );
       state.pc = state.ea;
       break;
     case Opcode::JSA_JSR:
@@ -953,7 +867,6 @@ CPU::Execute CPU::execute()
       co_await write( state.s, state.pcl );
       state.sl--;
       state.eah = co_await fetchOperand( state.pc++ );
-      trace( 3 );
       state.pc = state.ea;
       break;
     case Opcode::JMX_JMP:
@@ -965,8 +878,7 @@ CPU::Execute CPU::execute()
       co_await read( state.ea );
       state.t += state.x;
       state.eal = co_await read( state.t++ );
-      state.eah = co_await read( state.t );
-      trace( 3 );
+      state.eah = co_await read( state.t );      
       state.pc = state.ea;
       break;
     case Opcode::JMI_JMP:
@@ -977,102 +889,77 @@ CPU::Execute CPU::execute()
       co_await read( state.ea );
       state.eah += state.eal == 0 ? 1 : 0;
       state.th = co_await read( state.ea );
-      trace( 3 );
       state.pc = state.t;
       break;
     case Opcode::IMP_ASL:
-      trace();
       state.a = asl( state.a );
       break;
     case Opcode::IMP_CLC:
-      trace();
       clear<bitC>();
       break;
     case Opcode::IMP_CLD:
-      trace();
       clear<bitD>();
       break;
     case Opcode::IMP_CLI:
-      trace();
       clear<bitI>();
       break;
     case Opcode::IMP_CLV:
-      trace();
       clear<bitV>();
       break;
     case Opcode::IMP_DEC:
-      trace();
-      setnz( --state.a );
+      state.a = dec( state.a );
       break;
     case Opcode::IMP_DEX:
-      trace();
-      setnz( --state.x );
+      state.x = dec( state.x );
       break;
     case Opcode::IMP_DEY:
-      trace();
-      setnz( --state.y );
+      state.y = dec( state.y );
       break;
     case Opcode::IMP_INC:
-      trace();
-      setnz( ++state.a );
+      state.a = inc( state.a );
       break;
     case Opcode::IMP_INX:
-      trace();
-      setnz( ++state.x );
+      state.x = inc( state.x );
       break;
     case Opcode::IMP_INY:
-      trace();
-      setnz( ++state.y );
+      state.y = inc( state.y );
       break;
     case Opcode::IMP_LSR:
-      trace();
       state.a = lsr( state.a );
       break;
     case Opcode::IMP_NOP:
-      trace();
       break;
     case Opcode::IMP_ROL:
-      trace();
       state.a = rol( state.a );
       break;
     case Opcode::IMP_ROR:
-      trace();
       state.a = ror( state.a );
       break;
     case Opcode::IMP_SEC:
-      trace();
       set<bitC>();
       break;
     case Opcode::IMP_SED:
-      trace();
       set<bitD>();
       break;
     case Opcode::IMP_SEI:
-      trace();
       set<bitI>();
       break;
     case Opcode::IMP_TAX:
-      trace();
       setnz( state.x = state.a );
       break;
     case Opcode::IMP_TAY:
-      trace();
       setnz( state.y = state.a );
       break;
     case Opcode::IMP_TSX:
-      trace();
       setnz( state.x = state.sl );
       break;
     case Opcode::IMP_TXA:
-      trace();
       setnz( state.a = state.x );
       break;
     case Opcode::IMP_TXS:
-      trace();
       state.sl = state.x;
       break;
     case Opcode::IMP_TYA:
-      trace();
       setnz( state.a = state.y );
       break;
     case Opcode::IMM_AND:
@@ -1085,13 +972,11 @@ CPU::Execute CPU::execute()
     case Opcode::IMM_LDX:
     case Opcode::IMM_LDY:
     case Opcode::IMM_ORA:
-      trace();
       ++state.pc;
       executeCommon( state.op, state.eal );
       break;
     case Opcode::IMM_ADC:
     case Opcode::IMM_SBC:
-      trace();
       ++state.pc;
       if ( executeCommon( state.op, state.eal ) )
       {
@@ -1101,7 +986,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BCC:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( !get<bitC>() )
       {
         co_await read( state.pc );
@@ -1115,7 +999,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BCS:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( get<bitC>() )
       {
         co_await read( state.pc );
@@ -1129,7 +1012,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BEQ:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( get<bitZ>() )
       {
         co_await read( state.pc );
@@ -1143,7 +1025,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BMI:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( get<bitN>() )
       {
         co_await read( state.pc );
@@ -1157,7 +1038,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BNE:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( !get<bitZ>() )
       {
         co_await read( state.pc );
@@ -1171,7 +1051,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BPL:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( !get<bitN>() )
       {
         co_await read( state.pc );
@@ -1185,7 +1064,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BRA:
       co_await read( ++state.pc );
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( state.th != state.pch )
       {
         co_await read( state.pc );
@@ -1195,7 +1073,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BVC:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( !get<bitV>() )
       {
         co_await read( state.pc );
@@ -1209,7 +1086,6 @@ CPU::Execute CPU::execute()
     case Opcode::BRL_BVS:
       ++state.pc;
       state.t = state.pc + ( int8_t )state.eal;
-      trace( 2 );
       if ( get<bitV>() )
       {
         co_await read( state.pc );
@@ -1226,7 +1102,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x01 ) == 0 )
       {
         state.pc = state.t;
@@ -1238,7 +1113,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x02 ) == 0 )
       {
         state.pc = state.t;
@@ -1250,7 +1124,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x04 ) == 0 )
       {
         state.pc = state.t;
@@ -1262,7 +1135,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x08 ) == 0 )
       {
         state.pc = state.t;
@@ -1274,7 +1146,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x10 ) == 0 )
       {
         state.pc = state.t;
@@ -1286,7 +1157,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x20 ) == 0 )
       {
         state.pc = state.t;
@@ -1298,7 +1168,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x40 ) == 0 )
       {
         state.pc = state.t;
@@ -1310,7 +1179,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x80 ) == 0 )
       {
         state.pc = state.t;
@@ -1322,7 +1190,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x01 ) != 0 )
       {
         state.pc = state.t;
@@ -1334,7 +1201,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x02 ) != 0 )
       {
         state.pc = state.t;
@@ -1346,7 +1212,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x04 ) != 0 )
       {
         state.pc = state.t;
@@ -1358,7 +1223,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x08 ) != 0 )
       {
         state.pc = state.t;
@@ -1370,7 +1234,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x10 ) != 0 )
       {
         state.pc = state.t;
@@ -1382,7 +1245,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x20 ) != 0 )
       {
         state.pc = state.t;
@@ -1394,7 +1256,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x40 ) != 0 )
       {
         state.pc = state.t;
@@ -1406,7 +1267,6 @@ CPU::Execute CPU::execute()
       state.tl = co_await fetchOperand( state.pc++ );
       co_await read( state.ea );
       state.t = state.pc + ( int8_t )state.tl;
-      trace( 3 );
       if ( ( state.m1 & 0x80 ) != 0 )
       {
         state.pc = state.t;
@@ -1423,7 +1283,6 @@ CPU::Execute CPU::execute()
         state.sl--;
         state.eal = co_await read( 0xfffc );
         state.eah = co_await read( 0xfffd );
-        trace( 1, 3 );
       }
       else
       {
@@ -1446,7 +1305,6 @@ CPU::Execute CPU::execute()
           state.eal = co_await read( 0xfffe );
           state.eah = co_await read( 0xffff );
         }
-        trace( 1, 3 );
         set<bitI>();
       }
       clear<bitD>();
@@ -1461,7 +1319,6 @@ CPU::Execute CPU::execute()
       ++state.sl;
       state.eah = co_await read( state.s );
       co_await read( state.pc );
-      trace( 2 );
       state.pc = state.ea;
       break;
     case Opcode::RTS_RTS:
@@ -1472,49 +1329,40 @@ CPU::Execute CPU::execute()
       state.eah = co_await read( state.s );
       co_await read( state.pc );
       ++state.ea;
-      trace( 2 );
       state.pc = state.ea;
       break;
     case Opcode::PHR_PHA:
-      trace();
       co_await write( state.s, state.a );
       state.sl--;
       break;
     case Opcode::PHR_PHP:
-      trace();
       co_await write( state.s, getP() );
       state.sl--;
       break;
     case Opcode::PHR_PHX:
-      trace();
       co_await write( state.s, state.x );
       state.sl--;
       break;
     case Opcode::PHR_PHY:
-      trace();
       co_await write( state.s, state.y );
       state.sl--;
       break;
     case Opcode::PLR_PLA:
-      trace();
       co_await read( state.pc );
       ++state.sl;
       setnz( state.a = co_await read( state.s ) );
       break;
     case Opcode::PLR_PLP:
-      trace();
       co_await read( state.pc );
       ++state.sl;
       setP( co_await read( state.s ) );
       break;
     case Opcode::PLR_PLX:
-      trace();
       co_await read( state.pc );
       ++state.sl;
       setnz( state.x = co_await read( state.s ) );
       break;
     case Opcode::PLR_PLY:
-      trace();
       co_await read( state.pc );
       ++state.sl;
       setnz( state.y = co_await read( state.s ) );
@@ -1526,11 +1374,9 @@ CPU::Execute CPU::execute()
     case Opcode::UND_2_82:
     case Opcode::UND_2_C2:
     case Opcode::UND_2_E2:
-      trace();
       ++state.pc;
       break;
     case Opcode::UND_3_44:
-      trace();
       ++state.pc;
       co_await read( state.ea );
       break;
@@ -1540,7 +1386,6 @@ CPU::Execute CPU::execute()
       ++state.pc;
       co_await read( state.pc );
       state.tl = state.eal + state.x;
-      trace( 2 );
       co_await read( state.ea );
       break;
     case Opcode::UND_4_dc:
@@ -1548,7 +1393,6 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await read( state.pc++ );
       co_await read( state.ea );
-      trace( 3 );
       break;
     case Opcode::UND_8_5c:
       //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opint.op_mapping.html
@@ -1557,7 +1401,6 @@ CPU::Execute CPU::execute()
       ++state.pc;
       co_await read( state.pc++ );
       state.eah = 0xff;
-      trace();
       co_await read( state.ea );
       co_await read( 0xffff );
       co_await read( 0xffff );
@@ -1568,12 +1411,29 @@ CPU::Execute CPU::execute()
       break;
     }
 
+    trace2();
+
     do
     {
+      trace1();
       co_await fetchOpcode( state.pc++ );
     } while ( isHiccup() );
   }
 
+}
+
+uint8_t CPU::inc( uint8_t val )
+{
+  uint8_t result = val + 1;
+  setnz( result );
+  return result;
+}
+
+uint8_t CPU::dec( uint8_t val )
+{
+  uint8_t result = val - 1;
+  setnz( result );
+  return result;
 }
 
 uint8_t CPU::asl( uint8_t val )
@@ -1826,15 +1686,18 @@ bool CPU::executeCommon( Opcode op, uint8_t value )
   return false;
 }
 
-
-void CPU::trace( int pcoff, int soff )
+void CPU::trace1()
 {
   if ( !mTrace )
     return;
 
-  char buf[256];
+  off = sprintf( buf.data(), "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", state.tick, state.pc, state.a, state.x, state.y, state.s, ( CPU::get<CPU::bitN>( state.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( state.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( state.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( state.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( state.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( state.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( state.p ) ? 'C' : '-' ) );
+}
 
-  int off = sprintf( buf, "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", state.tick, ( uint16_t )( state.pc - pcoff ), state.a, state.x, state.y, state.s+soff, ( CPU::get<CPU::bitN>( state.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( state.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( state.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( state.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( state.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( state.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( state.p ) ? 'C' : '-' ) );
+void CPU::trace2()
+{
+  if ( !mTrace )
+    return;
 
   switch ( state.op )
   {
@@ -1847,14 +1710,14 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_AND:
   case Opcode::RAY_AND:
   case Opcode::IMM_AND:
-    off += sprintf( buf + off, "and " );
+    off += sprintf( buf.data() + off, "and " );
     break;
   case Opcode::RZP_BIT:
   case Opcode::RZX_BIT:
   case Opcode::RAB_BIT:
   case Opcode::RAX_BIT:
   case Opcode::IMM_BIT:
-    off += sprintf( buf + off, "bit " );
+    off += sprintf( buf.data() + off, "bit " );
     break;
   case Opcode::RZP_CMP:
   case Opcode::RZX_CMP:
@@ -1865,17 +1728,17 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_CMP:
   case Opcode::RAY_CMP:
   case Opcode::IMM_CMP:
-    off += sprintf( buf + off, "cmp " );
+    off += sprintf( buf.data() + off, "cmp " );
     break;
   case Opcode::RZP_CPX:
   case Opcode::RAB_CPX:
   case Opcode::IMM_CPX:
-    off += sprintf( buf + off, "cpx " );
+    off += sprintf( buf.data() + off, "cpx " );
     break;
   case Opcode::RZP_CPY:
   case Opcode::RAB_CPY:
   case Opcode::IMM_CPY:
-    off += sprintf( buf + off, "cpy " );
+    off += sprintf( buf.data() + off, "cpy " );
     break;
   case Opcode::RZP_EOR:
   case Opcode::RZX_EOR:
@@ -1886,7 +1749,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_EOR:
   case Opcode::RAY_EOR:
   case Opcode::IMM_EOR:
-    off += sprintf( buf + off, "eor " );
+    off += sprintf( buf.data() + off, "eor " );
     break;
   case Opcode::RZP_LDA:
   case Opcode::RZX_LDA:
@@ -1897,21 +1760,21 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_LDA:
   case Opcode::RAY_LDA:
   case Opcode::IMM_LDA:
-    off += sprintf( buf + off, "lda " );
+    off += sprintf( buf.data() + off, "lda " );
     break;
   case Opcode::RZP_LDX:
   case Opcode::RZY_LDX:
   case Opcode::RAB_LDX:
   case Opcode::RAY_LDX:
   case Opcode::IMM_LDX:
-    off += sprintf( buf + off, "ldx " );
+    off += sprintf( buf.data() + off, "ldx " );
     break;
   case Opcode::RZP_LDY:
   case Opcode::RZX_LDY:
   case Opcode::RAB_LDY:
   case Opcode::RAX_LDY:
   case Opcode::IMM_LDY:
-    off += sprintf( buf + off, "ldy " );
+    off += sprintf( buf.data() + off, "ldy " );
     break;
   case Opcode::RZP_ORA:
   case Opcode::RZX_ORA:
@@ -1922,7 +1785,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_ORA:
   case Opcode::RAY_ORA:
   case Opcode::IMM_ORA:
-    off += sprintf( buf + off, "ora " );
+    off += sprintf( buf.data() + off, "ora " );
     break;
   case Opcode::RZP_ADC:
   case Opcode::RZX_ADC:
@@ -1933,7 +1796,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_ADC:
   case Opcode::RAY_ADC:
   case Opcode::IMM_ADC:
-    off += sprintf( buf + off, "adc " );
+    off += sprintf( buf.data() + off, "adc " );
     break;
   case Opcode::RZP_SBC:
   case Opcode::RZX_SBC:
@@ -1944,7 +1807,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_SBC:
   case Opcode::RAY_SBC:
   case Opcode::IMM_SBC:
-    off += sprintf( buf + off, "sbc " );
+    off += sprintf( buf.data() + off, "sbc " );
     break;
   case Opcode::WZP_STA:
   case Opcode::WZX_STA:
@@ -1954,168 +1817,168 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::WAB_STA:
   case Opcode::WAX_STA:
   case Opcode::WAY_STA:
-    off += sprintf( buf + off, "sta " );
+    off += sprintf( buf.data() + off, "sta " );
     break;
   case Opcode::WZP_STX:
   case Opcode::WZY_STX:
   case Opcode::WAB_STX:
-    off += sprintf( buf + off, "stx " );
+    off += sprintf( buf.data() + off, "stx " );
     break;
   case Opcode::WZP_STY:
   case Opcode::WZX_STY:
   case Opcode::WAB_STY:
-    off += sprintf( buf + off, "sty " );
+    off += sprintf( buf.data() + off, "sty " );
     break;
   case Opcode::WZP_STZ:
   case Opcode::WZX_STZ:
   case Opcode::WAB_STZ:
   case Opcode::WAX_STZ:
-    off += sprintf( buf + off, "stz " );
+    off += sprintf( buf.data() + off, "stz " );
     break;
   case Opcode::MZP_ASL:
   case Opcode::MZX_ASL:
   case Opcode::MAB_ASL:
   case Opcode::MAX_ASL:
-    off += sprintf( buf + off, "asl " );
+    off += sprintf( buf.data() + off, "asl " );
     break;
   case Opcode::IMP_ASL:
-    off += sprintf( buf + off, "asl\n" );
+    off += sprintf( buf.data() + off, "asl\n" );
     break;
   case Opcode::MZP_DEC:
   case Opcode::MZX_DEC:
   case Opcode::MAB_DEC:
   case Opcode::MAX_DEC:
-    off += sprintf( buf + off, "dec " );
+    off += sprintf( buf.data() + off, "dec " );
     break;
   case Opcode::IMP_DEC:
-    off += sprintf( buf + off, "dec\n" );
+    off += sprintf( buf.data() + off, "dec\n" );
     break;
   case Opcode::MZP_INC:
   case Opcode::MZX_INC:
   case Opcode::MAB_INC:
   case Opcode::MAX_INC:
-    off += sprintf( buf + off, "inc " );
+    off += sprintf( buf.data() + off, "inc " );
     break;
   case Opcode::IMP_INC:
-    off += sprintf( buf + off, "inc\n" );
+    off += sprintf( buf.data() + off, "inc\n" );
     break;
   case Opcode::MZP_LSR:
   case Opcode::MZX_LSR:
   case Opcode::MAB_LSR:
   case Opcode::MAX_LSR:
-    off += sprintf( buf + off, "lsr " );
+    off += sprintf( buf.data() + off, "lsr " );
     break;
   case Opcode::IMP_LSR:
-    off += sprintf( buf + off, "lsr\n" );
+    off += sprintf( buf.data() + off, "lsr\n" );
     break;
   case Opcode::MZP_ROL:
   case Opcode::MZX_ROL:
   case Opcode::MAB_ROL:
   case Opcode::MAX_ROL:
-    off += sprintf( buf + off, "rol " );
+    off += sprintf( buf.data() + off, "rol " );
     break;
   case Opcode::IMP_ROL:
-    off += sprintf( buf + off, "rol\n" );
+    off += sprintf( buf.data() + off, "rol\n" );
     break;
   case Opcode::MZP_ROR:
   case Opcode::MZX_ROR:
   case Opcode::MAB_ROR:
   case Opcode::MAX_ROR:
-    off += sprintf( buf + off, "ror " );
+    off += sprintf( buf.data() + off, "ror " );
     break;
   case Opcode::IMP_ROR:
-    off += sprintf( buf + off, "ror\n" );
+    off += sprintf( buf.data() + off, "ror\n" );
     break;
   case Opcode::MZP_TRB:
   case Opcode::MAB_TRB:
-    off += sprintf( buf + off, "trb " );
+    off += sprintf( buf.data() + off, "trb " );
     break;
   case Opcode::MZP_TSB:
   case Opcode::MAB_TSB:
-    off += sprintf( buf + off, "tsb " );
+    off += sprintf( buf.data() + off, "tsb " );
     break;
   case Opcode::MZP_RMB0:
-    off += sprintf( buf + off, "rmb0 " );
+    off += sprintf( buf.data() + off, "rmb0 " );
     break;
   case Opcode::MZP_RMB1:
-    off += sprintf( buf + off, "rmb1 " );
+    off += sprintf( buf.data() + off, "rmb1 " );
     break;
   case Opcode::MZP_RMB2:
-    off += sprintf( buf + off, "rmb2 " );
+    off += sprintf( buf.data() + off, "rmb2 " );
     break;
   case Opcode::MZP_RMB3:
-    off += sprintf( buf + off, "rmb3 " );
+    off += sprintf( buf.data() + off, "rmb3 " );
     break;
   case Opcode::MZP_RMB4:
-    off += sprintf( buf + off, "rmb4 " );
+    off += sprintf( buf.data() + off, "rmb4 " );
     break;
   case Opcode::MZP_RMB5:
-    off += sprintf( buf + off, "rmb5 " );
+    off += sprintf( buf.data() + off, "rmb5 " );
     break;
   case Opcode::MZP_RMB6:
-    off += sprintf( buf + off, "rmb6 " );
+    off += sprintf( buf.data() + off, "rmb6 " );
     break;
   case Opcode::MZP_RMB7:
-    off += sprintf( buf + off, "rmb7 " );
+    off += sprintf( buf.data() + off, "rmb7 " );
     break;
   case Opcode::MZP_SMB0:
-    off += sprintf( buf + off, "smb0 " );
+    off += sprintf( buf.data() + off, "smb0 " );
     break;
   case Opcode::MZP_SMB1:
-    off += sprintf( buf + off, "smb1 " );
+    off += sprintf( buf.data() + off, "smb1 " );
     break;
   case Opcode::MZP_SMB2:
-    off += sprintf( buf + off, "smb2 " );
+    off += sprintf( buf.data() + off, "smb2 " );
     break;
   case Opcode::MZP_SMB3:
-    off += sprintf( buf + off, "smb3 " );
+    off += sprintf( buf.data() + off, "smb3 " );
     break;
   case Opcode::MZP_SMB4:
-    off += sprintf( buf + off, "smb4 " );
+    off += sprintf( buf.data() + off, "smb4 " );
     break;
   case Opcode::MZP_SMB5:
-    off += sprintf( buf + off, "smb5 " );
+    off += sprintf( buf.data() + off, "smb5 " );
     break;
   case Opcode::MZP_SMB6:
-    off += sprintf( buf + off, "smb6 " );
+    off += sprintf( buf.data() + off, "smb6 " );
     break;
   case Opcode::MZP_SMB7:
-    off += sprintf( buf + off, "smb7 " );
+    off += sprintf( buf.data() + off, "smb7 " );
     break;
   case Opcode::JMA_JMP:
   case Opcode::JMX_JMP:
   case Opcode::JMI_JMP:
-    off += sprintf( buf + off, "jmp " );
+    off += sprintf( buf.data() + off, "jmp " );
     break;
   case Opcode::JSA_JSR:
-    off += sprintf( buf + off, "jsr " );
+    off += sprintf( buf.data() + off, "jsr " );
     break;
   case Opcode::IMP_CLC:
-    off += sprintf( buf + off, "clc\n" );
+    off += sprintf( buf.data() + off, "clc\n" );
     break;
   case Opcode::IMP_CLD:
-    off += sprintf( buf + off, "cld\n" );
+    off += sprintf( buf.data() + off, "cld\n" );
     break;
   case Opcode::IMP_CLI:
-    off += sprintf( buf + off, "cli\n" );
+    off += sprintf( buf.data() + off, "cli\n" );
     break;
   case Opcode::IMP_CLV:
-    off += sprintf( buf + off, "clv\n" );
+    off += sprintf( buf.data() + off, "clv\n" );
     break;
   case Opcode::IMP_DEX:
-    off += sprintf( buf + off, "dex\n" );
+    off += sprintf( buf.data() + off, "dex\n" );
     break;
   case Opcode::IMP_DEY:
-    off += sprintf( buf + off, "dey\n" );
+    off += sprintf( buf.data() + off, "dey\n" );
     break;
   case Opcode::IMP_INX:
-    off += sprintf( buf + off, "inx\n" );
+    off += sprintf( buf.data() + off, "inx\n" );
     break;
   case Opcode::IMP_INY:
-    off += sprintf( buf + off, "iny\n" );
+    off += sprintf( buf.data() + off, "iny\n" );
     break;
   case Opcode::IMP_NOP:
-    off += sprintf( buf + off, "nop\n" );
+    off += sprintf( buf.data() + off, "nop\n" );
     break;
   case Opcode::UND_2_02:
   case Opcode::UND_2_22:
@@ -2124,157 +1987,157 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::UND_2_82:
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
-    off += sprintf( buf + off, "nop " );
+    off += sprintf( buf.data() + off, "nop " );
     break;
   case Opcode::IMP_SEC:
-    off += sprintf( buf + off, "sec\n" );
+    off += sprintf( buf.data() + off, "sec\n" );
     break;
   case Opcode::IMP_SED:
-    off += sprintf( buf + off, "sed\n" );
+    off += sprintf( buf.data() + off, "sed\n" );
     break;
   case Opcode::IMP_SEI:
-    off += sprintf( buf + off, "sei\n" );
+    off += sprintf( buf.data() + off, "sei\n" );
     break;
   case Opcode::IMP_TAX:
-    off += sprintf( buf + off, "tax\n" );
+    off += sprintf( buf.data() + off, "tax\n" );
     break;
   case Opcode::IMP_TAY:
-    off += sprintf( buf + off, "tay\n" );
+    off += sprintf( buf.data() + off, "tay\n" );
     break;
   case Opcode::IMP_TSX:
-    off += sprintf( buf + off, "tsx\n" );
+    off += sprintf( buf.data() + off, "tsx\n" );
     break;
   case Opcode::IMP_TXA:
-    off += sprintf( buf + off, "txa\n" );
+    off += sprintf( buf.data() + off, "txa\n" );
     break;
   case Opcode::IMP_TXS:
-    off += sprintf( buf + off, "txs\n" );
+    off += sprintf( buf.data() + off, "txs\n" );
     break;
   case Opcode::IMP_TYA:
-    off += sprintf( buf + off, "tya\n" );
+    off += sprintf( buf.data() + off, "tya\n" );
     break;
   case Opcode::BRL_BCC:
-    off += sprintf( buf + off, "bcc " );
+    off += sprintf( buf.data() + off, "bcc " );
     break;
   case Opcode::BRL_BCS:
-    off += sprintf( buf + off, "bcs " );
+    off += sprintf( buf.data() + off, "bcs " );
     break;
   case Opcode::BRL_BEQ:
-    off += sprintf( buf + off, "beq " );
+    off += sprintf( buf.data() + off, "beq " );
     break;
   case Opcode::BRL_BMI:
-    off += sprintf( buf + off, "bmi " );
+    off += sprintf( buf.data() + off, "bmi " );
     break;
   case Opcode::BRL_BNE:
-    off += sprintf( buf + off, "bne " );
+    off += sprintf( buf.data() + off, "bne " );
     break;
   case Opcode::BRL_BPL:
-    off += sprintf( buf + off, "bpl " );
+    off += sprintf( buf.data() + off, "bpl " );
     break;
   case Opcode::BRL_BRA:
-    off += sprintf( buf + off, "bra " );
+    off += sprintf( buf.data() + off, "bra " );
     break;
   case Opcode::BRL_BVC:
-    off += sprintf( buf + off, "bvc " );
+    off += sprintf( buf.data() + off, "bvc " );
     break;
   case Opcode::BRL_BVS:
-    off += sprintf( buf + off, "bvs " );
+    off += sprintf( buf.data() + off, "bvs " );
     break;
   case Opcode::BZR_BBR0:
-    off += sprintf( buf + off, "bbr0 " );
+    off += sprintf( buf.data() + off, "bbr0 " );
     break;
   case Opcode::BZR_BBR1:
-    off += sprintf( buf + off, "bbr1 " );
+    off += sprintf( buf.data() + off, "bbr1 " );
     break;
   case Opcode::BZR_BBR2:
-    off += sprintf( buf + off, "bbr2 " );
+    off += sprintf( buf.data() + off, "bbr2 " );
     break;
   case Opcode::BZR_BBR3:
-    off += sprintf( buf + off, "bbr3 " );
+    off += sprintf( buf.data() + off, "bbr3 " );
     break;
   case Opcode::BZR_BBR4:
-    off += sprintf( buf + off, "bbr4 " );
+    off += sprintf( buf.data() + off, "bbr4 " );
     break;
   case Opcode::BZR_BBR5:
-    off += sprintf( buf + off, "bbr5 " );
+    off += sprintf( buf.data() + off, "bbr5 " );
     break;
   case Opcode::BZR_BBR6:
-    off += sprintf( buf + off, "bbr6 " );
+    off += sprintf( buf.data() + off, "bbr6 " );
     break;
   case Opcode::BZR_BBR7:
-    off += sprintf( buf + off, "bbr7 " );
+    off += sprintf( buf.data() + off, "bbr7 " );
     break;
   case Opcode::BZR_BBS0:
-    off += sprintf( buf + off, "bbs0 " );
+    off += sprintf( buf.data() + off, "bbs0 " );
     break;
   case Opcode::BZR_BBS1:
-    off += sprintf( buf + off, "bbs1 " );
+    off += sprintf( buf.data() + off, "bbs1 " );
     break;
   case Opcode::BZR_BBS2:
-    off += sprintf( buf + off, "bbs2 " );
+    off += sprintf( buf.data() + off, "bbs2 " );
     break;
   case Opcode::BZR_BBS3:
-    off += sprintf( buf + off, "bbs3 " );
+    off += sprintf( buf.data() + off, "bbs3 " );
     break;
   case Opcode::BZR_BBS4:
-    off += sprintf( buf + off, "bbs4 " );
+    off += sprintf( buf.data() + off, "bbs4 " );
     break;
   case Opcode::BZR_BBS5:
-    off += sprintf( buf + off, "bbs5 " );
+    off += sprintf( buf.data() + off, "bbs5 " );
     break;
   case Opcode::BZR_BBS6:
-    off += sprintf( buf + off, "bbs6 " );
+    off += sprintf( buf.data() + off, "bbs6 " );
     break;
   case Opcode::BZR_BBS7:
-    off += sprintf( buf + off, "bbs7 " );
+    off += sprintf( buf.data() + off, "bbs7 " );
     break;
   case Opcode::BRK_BRK:
     if ( ( state.interrupt & CPU::I_RESET ) != 0 )
     {
-      off += sprintf( buf + off, "RESET\n" );
+      off += sprintf( buf.data() + off, "RESET\n" );
     }
     else if ( ( state.interrupt & CPU::I_NMI ) != 0 )
     {
-      off += sprintf( buf + off, "NMI\n" );
+      off += sprintf( buf.data() + off, "NMI\n" );
     }
     else if ( ( state.interrupt & CPU::I_IRQ ) != 0 )
     {
-      off += sprintf( buf + off, "IRQ\n" );
+      off += sprintf( buf.data() + off, "IRQ\n" );
     }
     else
     {
-      off += sprintf( buf + off, "brk\n" );
+      off += sprintf( buf.data() + off, "brk\n" );
     }
     break;
   case Opcode::RTI_RTI:
-    off += sprintf( buf + off, "rti\n" );
+    off += sprintf( buf.data() + off, "rti\n" );
     break;
   case Opcode::RTS_RTS:
-    off += sprintf( buf + off, "rts\n" );
+    off += sprintf( buf.data() + off, "rts\n" );
     break;
   case Opcode::PHR_PHA:
-    off += sprintf( buf + off, "pha\n" );
+    off += sprintf( buf.data() + off, "pha\n" );
     break;
   case Opcode::PHR_PHP:
-    off += sprintf( buf + off, "php\n" );
+    off += sprintf( buf.data() + off, "php\n" );
     break;
   case Opcode::PHR_PHX:
-    off += sprintf( buf + off, "phx\n" );
+    off += sprintf( buf.data() + off, "phx\n" );
     break;
   case Opcode::PHR_PHY:
-    off += sprintf( buf + off, "phy\n" );
+    off += sprintf( buf.data() + off, "phy\n" );
     break;
   case Opcode::PLR_PLA:
-    off += sprintf( buf + off, "pla\n" );
+    off += sprintf( buf.data() + off, "pla\n" );
     break;
   case Opcode::PLR_PLP:
-    off += sprintf( buf + off, "plp\n" );
+    off += sprintf( buf.data() + off, "plp\n" );
     break;
   case Opcode::PLR_PLX:
-    off += sprintf( buf + off, "plx\n" );
+    off += sprintf( buf.data() + off, "plx\n" );
     break;
   case Opcode::PLR_PLY:
-    off += sprintf( buf + off, "ply\n" );
+    off += sprintf( buf.data() + off, "ply\n" );
     break;
   case Opcode::UND_1_03:
   case Opcode::UND_1_13:
@@ -2308,7 +2171,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::UND_1_db:
   case Opcode::UND_1_eb:
   case Opcode::UND_1_fb:
-    off += sprintf( buf + off, "nop\n" );
+    off += sprintf( buf.data() + off, "nop\n" );
     break;
   case Opcode::UND_3_44:
   case Opcode::UND_4_54:
@@ -2317,7 +2180,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::UND_4_dc:
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
-    off += sprintf( buf + off, "nop " );
+    off += sprintf( buf.data() + off, "nop " );
     break;
   }
 
@@ -2369,6 +2232,8 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RZP_ORA:
   case Opcode::RZP_ADC:
   case Opcode::RZP_SBC:
+    sprintf( buf.data() + off, "$%02x\t;$%02x\n", state.eal, state.m1 );
+    break;
   case Opcode::MZP_ASL:
   case Opcode::MZP_DEC:
   case Opcode::MZP_INC:
@@ -2393,14 +2258,14 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::MZP_SMB5:
   case Opcode::MZP_SMB6:
   case Opcode::MZP_SMB7:
-    sprintf( buf + off, "$%02x\t;=$%02x\n", state.eal, state.m1 );
+    sprintf( buf.data() + off, "$%02x\t;$%02x->$%02x\n", state.eal, state.m1, state.m2 );
     break;
   case Opcode::WZP_STA:
   case Opcode::WZP_STX:
   case Opcode::WZP_STY:
   case Opcode::WZP_STZ:
   case Opcode::UND_3_44:
-    sprintf( buf + off, "$%02x\n", state.eal );
+    sprintf( buf.data() + off, "$%02x\n", state.eal );
     break;
   case Opcode::RZX_LDA:
   case Opcode::RZX_LDY:
@@ -2411,13 +2276,15 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RZX_ORA:
   case Opcode::RZX_ADC:
   case Opcode::RZX_SBC:
+    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x\n", state.eal, state.t, state.m1 );
+    break;
   case Opcode::MZX_ASL:
   case Opcode::MZX_DEC:
   case Opcode::MZX_INC:
   case Opcode::MZX_LSR:
   case Opcode::MZX_ROL:
   case Opcode::MZX_ROR:
-    sprintf( buf + off, "$%02x,x\t;[$%04x]=$%02x\n", state.eal, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x->$%02x\n", state.eal, state.t, state.m1, state.m2 );
     break;
   case Opcode::WZX_STA:
   case Opcode::WZX_STY:
@@ -2425,13 +2292,13 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::UND_4_54:
   case Opcode::UND_4_d4:
   case Opcode::UND_4_f4:
-    sprintf( buf + off, "$%02x,x\t;[$%04x]\n", state.eal, state.t );
+    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]\n", state.eal, state.t );
     break;
   case Opcode::RZY_LDX:
-    sprintf( buf + off, "$%02x,y\t;[$%04x]=$%02x\n", state.eal, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%02x,y\t;[$%04x]=$%02x\n", state.eal, state.t, state.m1 );
     break;
   case Opcode::WZY_STX:
-    sprintf( buf + off, "$%02x,y\t;[$%04x]\n", state.eal, state.t );
+    sprintf( buf.data() + off, "$%02x,y\t;[$%04x]\n", state.eal, state.t );
     break;
   case Opcode::RIN_LDA:
   case Opcode::RIN_AND:
@@ -2440,10 +2307,10 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RIN_ORA:
   case Opcode::RIN_ADC:
   case Opcode::RIN_SBC:
-    sprintf( buf + off, "($%02x)\t;($%04x)=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "($%02x)\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
     break;
   case Opcode::WIN_STA:
-    sprintf( buf + off, "($%02x)\t;($%04x)\n", state.eal, state.t );
+    sprintf( buf.data() + off, "($%02x)\t;[$%04x]\n", state.eal, state.t );
     break;
   case Opcode::RIX_AND:
   case Opcode::RIX_CMP:
@@ -2452,10 +2319,10 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RIX_ORA:
   case Opcode::RIX_ADC:
   case Opcode::RIX_SBC:
-    sprintf( buf + off, "($%02x,x)\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "($%02x,x)\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
     break;
   case Opcode::WIX_STA:
-    sprintf( buf + off, "($%02x,x)\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "($%02x,x)\t;[$%04x]\n", state.fa, state.t );
     break;
   case Opcode::RIY_AND:
   case Opcode::RIY_CMP:
@@ -2464,10 +2331,10 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RIY_ORA:
   case Opcode::RIY_ADC:
   case Opcode::RIY_SBC:
-    sprintf( buf + off, "($%02x),y\t;[$%04x]=$%02x\n", state.fa, state.ea, state.m1 );
+    sprintf( buf.data() + off, "($%02x),y\t;[$%04x]=$%02x\n", state.fa, state.ea, state.m1 );
     break;
   case Opcode::WIY_STA:
-    sprintf( buf + off, "($%02x),y\t;[$%04x]\n", state.fa, state.ea );
+    sprintf( buf.data() + off, "($%02x),y\t;[$%04x]\n", state.fa, state.ea );
     break;
   case Opcode::RAB_AND:
   case Opcode::RAB_BIT:
@@ -2481,6 +2348,8 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAB_ORA:
   case Opcode::RAB_ADC:
   case Opcode::RAB_SBC:
+    sprintf( buf.data() + off, "$%04x\t;=$%02x\n", state.ea, state.m1 );
+    break;
   case Opcode::MAB_ASL:
   case Opcode::MAB_DEC:
   case Opcode::MAB_INC:
@@ -2489,7 +2358,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::MAB_ROR:
   case Opcode::MAB_TRB:
   case Opcode::MAB_TSB:
-    sprintf( buf + off, "$%04x\t;=$%02x\n", state.ea, state.m1 );
+    sprintf( buf.data() + off, "$%04x\t;=$%02x->$%02x\n", state.ea, state.m1, state.m2 );
     break;
   case Opcode::WAB_STA:
   case Opcode::WAB_STX:
@@ -2500,7 +2369,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::UND_4_dc:
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
-    sprintf( buf + off, "$%04x\n", state.ea );
+    sprintf( buf.data() + off, "$%04x\n", state.ea );
     break;
   case Opcode::RAX_AND:
   case Opcode::RAX_BIT:
@@ -2511,17 +2380,19 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAX_ORA:
   case Opcode::RAX_ADC:
   case Opcode::RAX_SBC:
+    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    break;
   case Opcode::MAX_ASL:
   case Opcode::MAX_DEC:
   case Opcode::MAX_INC:
   case Opcode::MAX_LSR:
   case Opcode::MAX_ROL:
   case Opcode::MAX_ROR:
-    sprintf( buf + off, "$%04x,x\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]=$%02x->$%02x\n", state.fa, state.t, state.m1, state.m2 );
     break;
   case Opcode::WAX_STA:
   case Opcode::WAX_STZ:
-    sprintf( buf + off, "$%04x,x\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]\n", state.fa, state.t );
     break;
   case Opcode::RAY_AND:
   case Opcode::RAY_CMP:
@@ -2531,16 +2402,16 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::RAY_ORA:
   case Opcode::RAY_ADC:
   case Opcode::RAY_SBC:
-    sprintf( buf + off, "$%04x,y\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%04x,y\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
     break;
   case Opcode::WAY_STA:
-    sprintf( buf + off, "$%04x,y\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "$%04x,y\t;[$%04x]\n", state.fa, state.t );
     break;
   case Opcode::JMX_JMP:
-    sprintf( buf + off, "($%04x,x)\t;[$%04x]\n", state.fa, state.ea );
+    sprintf( buf.data() + off, "($%04x,x)\t;[$%04x]\n", state.fa, state.ea );
     break;
   case Opcode::JMI_JMP:
-    sprintf( buf + off, "($%04x)\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "($%04x)\t;[$%04x]\n", state.fa, state.t );
     break;
   case Opcode::IMP_ASL:
   case Opcode::IMP_CLC:
@@ -2597,7 +2468,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::UND_2_82:
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
-    sprintf( buf + off, "#$%02x\n", state.eal );
+    sprintf( buf.data() + off, "#$%02x\n", state.eal );
     break;
   case Opcode::BRL_BCC:
   case Opcode::BRL_BCS:
@@ -2608,7 +2479,7 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::BRL_BVC:
   case Opcode::BRL_BVS:
   case Opcode::BRL_BRA:
-    sprintf( buf + off, "$%04x\n", state.t );
+    sprintf( buf.data() + off, "$%04x\n", state.t );
     break;
   case Opcode::BZR_BBR0:
   case Opcode::BZR_BBR1:
@@ -2626,10 +2497,10 @@ void CPU::trace( int pcoff, int soff )
   case Opcode::BZR_BBS5:
   case Opcode::BZR_BBS6:
   case Opcode::BZR_BBS7:
-    sprintf( buf + off, "$%02x,$%04x\t;$%02x\n", state.eal, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%02x,$%04x\t;$%02x\n", state.eal, state.t, state.m1 );
     break;
   }
 
-  mFtrace << buf;
+  mFtrace << buf.data();
 
 }

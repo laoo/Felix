@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <experimental/coroutine>
 #include <fstream>
+#include <array>
 
 enum class Opcode : uint8_t;
 class Felix;
@@ -192,6 +193,8 @@ private:
     return ( p & ( 1 << bit ) ) != 0;
   }
 
+  uint8_t inc( uint8_t val );
+  uint8_t dec( uint8_t val );
   uint8_t asl( uint8_t val );
   uint8_t lsr( uint8_t val );
   uint8_t rol( uint8_t val );
@@ -260,7 +263,11 @@ private:
   CPUReadAwaiter & read( uint16_t address );
   CPUWriteAwaiter & write( uint16_t address, uint8_t value );
 
-  void trace( int pcoff = 1, int soff = 0 );
+  void trace1();
+  void trace2();
 
+private:
+  std::array<char, 256> buf;
+  int off;
 };
 
