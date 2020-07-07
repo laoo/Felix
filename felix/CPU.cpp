@@ -199,14 +199,50 @@ CPU::Execute CPU::execute()
     switch ( state.op )
     {
     case Opcode::RZP_AND:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_BIT:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_CMP:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_CPX:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_CPY:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_EOR:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_LDA:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_LDX:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_LDY:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZP_ORA:
       ++state.pc;
       state.m1 = co_await read( state.ea );
@@ -393,11 +429,41 @@ CPU::Execute CPU::execute()
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::RZX_AND:
+      co_await read( ++state.pc );
+      state.tl = state.eal + state.x;
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZX_BIT:
+      co_await read( ++state.pc );
+      state.tl = state.eal + state.x;
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZX_CMP:
+      co_await read( ++state.pc );
+      state.tl = state.eal + state.x;
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZX_EOR:
+      co_await read( ++state.pc );
+      state.tl = state.eal + state.x;
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZX_LDA:
+      co_await read( ++state.pc );
+      state.tl = state.eal + state.x;
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZX_LDY:
+      co_await read( ++state.pc );
+      state.tl = state.eal + state.x;
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RZX_ORA:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
@@ -493,9 +559,37 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.m2 );
       break;
     case Opcode::RIN_AND:
+      ++state.pc;
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIN_CMP:
+      ++state.pc;
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIN_EOR:
+      ++state.pc;
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIN_LDA:
+      ++state.pc;
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIN_ORA:
       ++state.pc;
       state.fa = state.ea;
@@ -505,13 +599,24 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RIN_ADC:
+      ++state.pc;
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.t );
+      }
+      break;
     case Opcode::RIN_SBC:
       ++state.pc;
       state.fa = state.ea;
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      executeCommon( state.op, state.m1 );
+      sbc( state.m1 );
       if ( get<bitD>() )
       {
         co_await read( state.t );
@@ -525,9 +630,41 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.a );
       break;
     case Opcode::RIX_AND:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.eal += state.x;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIX_CMP:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.eal += state.x;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIX_EOR:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.eal += state.x;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIX_LDA:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.eal += state.x;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIX_ORA:
       co_await read( ++state.pc );
       state.fa = state.ea;
@@ -572,9 +709,65 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.a );
       break;
     case Opcode::RIY_AND:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.ea = state.t;
+      state.ea += state.y;
+      if ( state.eah != state.th )
+      {
+        state.tl += state.y;
+        co_await read( state.t );
+      }
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIY_CMP:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.ea = state.t;
+      state.ea += state.y;
+      if ( state.eah != state.th )
+      {
+        state.tl += state.y;
+        co_await read( state.t );
+      }
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIY_EOR:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.ea = state.t;
+      state.ea += state.y;
+      if ( state.eah != state.th )
+      {
+        state.tl += state.y;
+        co_await read( state.t );
+      }
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIY_LDA:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.ea = state.t;
+      state.ea += state.y;
+      if ( state.eah != state.th )
+      {
+        state.tl += state.y;
+        co_await read( state.t );
+      }
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RIY_ORA:
       co_await read( ++state.pc );
       state.fa = state.ea;
@@ -640,14 +833,59 @@ CPU::Execute CPU::execute()
       co_await write( state.ea, state.a );
       break;
     case Opcode::RAB_AND:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_BIT:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_CMP:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_CPX:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_CPY:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_EOR:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_LDA:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_LDX:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_LDY:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAB_ORA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
@@ -753,11 +991,83 @@ CPU::Execute CPU::execute()
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::RAX_AND:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.x;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAX_BIT:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.x;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAX_CMP:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.x;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAX_EOR:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.x;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAX_LDA:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.x;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAX_LDY:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.x;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAX_ORA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
@@ -806,10 +1116,70 @@ CPU::Execute CPU::execute()
       }
       break;
     case Opcode::RAY_AND:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.y;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAY_CMP:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.y;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAY_EOR:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.y;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAY_LDA:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.y;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAY_LDX:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.y;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      executeCommon( state.op, state.m1 );
+      break;
     case Opcode::RAY_ORA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
@@ -1059,14 +1429,41 @@ CPU::Execute CPU::execute()
       setnz( state.a = state.y );
       break;
     case Opcode::IMM_AND:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_BIT:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_CMP:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_CPX:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_CPY:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_EOR:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_LDA:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_LDX:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_LDY:
+      ++state.pc;
+      executeCommon( state.op, state.eal );
+      break;
     case Opcode::IMM_ORA:
       ++state.pc;
       executeCommon( state.op, state.eal );
