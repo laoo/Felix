@@ -199,7 +199,9 @@ private:
   uint8_t lsr( uint8_t val );
   uint8_t rol( uint8_t val );
   uint8_t ror( uint8_t val );
-  bool executeCommon( Opcode opcode, uint8_t value );
+  void adc( uint8_t val );
+  void sbc( uint8_t val );
+  void executeCommon( Opcode opcode, uint8_t value );
 
   struct Execute
   {

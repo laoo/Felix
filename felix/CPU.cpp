@@ -213,10 +213,19 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RZP_ADC:
+      ++state.pc;
+      state.m1 = co_await read( state.ea );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.ea );
+      }
+      break;
     case Opcode::RZP_SBC:
       ++state.pc;
       state.m1 = co_await read( state.ea );
-      if ( executeCommon( state.op, state.m1 ) )
+      sbc( state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.ea );
       }
@@ -396,11 +405,21 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RZX_ADC:
+      co_await read( ++state.pc );
+      state.tl = state.eal + state.x;
+      state.m1 = co_await read( state.t );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.t );
+      }
+      break;
     case Opcode::RZX_SBC:
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
-      if ( executeCommon( state.op, state.m1 ) )
+      sbc( state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.t );
       }
@@ -492,7 +511,8 @@ CPU::Execute CPU::execute()
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      if ( executeCommon( state.op, state.m1 ) )
+      executeCommon( state.op, state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.t );
       }
@@ -518,6 +538,18 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RIX_ADC:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.eal += state.x;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.m1 = co_await read( state.t );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.t );
+      }
+      break;
     case Opcode::RIX_SBC:
       co_await read( ++state.pc );
       state.fa = state.ea;
@@ -525,7 +557,8 @@ CPU::Execute CPU::execute()
       state.tl = co_await read( state.ea++ );
       state.th = co_await read( state.ea );
       state.m1 = co_await read( state.t );
-      if ( executeCommon( state.op, state.m1 ) )
+      sbc( state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.t );
       }
@@ -558,6 +591,24 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RIY_ADC:
+      co_await read( ++state.pc );
+      state.fa = state.ea;
+      state.tl = co_await read( state.ea++ );
+      state.th = co_await read( state.ea );
+      state.ea = state.t;
+      state.ea += state.y;
+      if ( state.eah != state.th )
+      {
+        state.tl += state.y;
+        co_await read( state.t );
+      }
+      state.m1 = co_await read( state.ea );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.t );
+      }
+      break;
     case Opcode::RIY_SBC:
       co_await read( ++state.pc );
       state.fa = state.ea;
@@ -571,7 +622,8 @@ CPU::Execute CPU::execute()
         co_await read( state.t );
       }
       state.m1 = co_await read( state.ea );
-      if ( executeCommon( state.op, state.m1 ) )
+      sbc( state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.t );
       }
@@ -603,11 +655,21 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RAB_ADC:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.m1 = co_await read( state.ea );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.ea );
+      }
+      break;
     case Opcode::RAB_SBC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );      
-      if ( executeCommon( state.op, state.m1 ) )
+      sbc( state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.ea );
       }
@@ -710,6 +772,22 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RAX_ADC:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.x;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.t );
+      }
+      break;
     case Opcode::RAX_SBC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
@@ -721,7 +799,8 @@ CPU::Execute CPU::execute()
         co_await read( state.ea );
       }
       state.m1 = co_await read( state.t );
-      if ( executeCommon( state.op, state.m1 ) )
+      sbc( state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.t );
       }
@@ -745,6 +824,22 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.m1 );
       break;
     case Opcode::RAY_ADC:
+      ++state.pc;
+      state.eah = co_await fetchOperand( state.pc++ );
+      state.fa = state.t = state.ea;
+      state.t += state.y;
+      if ( state.th != state.eah )
+      {
+        state.eal += state.x;
+        co_await read( state.ea );
+      }
+      state.m1 = co_await read( state.t );
+      adc( state.m1 );
+      if ( get<bitD>() )
+      {
+        co_await read( state.t );
+      }
+      break;
     case Opcode::RAY_SBC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
@@ -756,7 +851,8 @@ CPU::Execute CPU::execute()
         co_await read( state.ea );
       }
       state.m1 = co_await read( state.t );
-      if ( executeCommon( state.op, state.m1 ) )
+      sbc( state.m1 );
+      if ( get<bitD>() )
       {
         co_await read( state.t );
       }
@@ -976,9 +1072,17 @@ CPU::Execute CPU::execute()
       executeCommon( state.op, state.eal );
       break;
     case Opcode::IMM_ADC:
+      ++state.pc;
+      adc( state.eal );
+      if ( get<bitD>() )
+      {
+        co_await read( state.pc );
+      }
+      break;
     case Opcode::IMM_SBC:
       ++state.pc;
-      if ( executeCommon( state.op, state.eal ) )
+      sbc( state.eal );
+      if ( get<bitD>() )
       {
         co_await read( state.pc );
       }
@@ -1470,63 +1574,108 @@ uint8_t CPU::ror( uint8_t val )
   return result;
 }
 
-bool CPU::executeCommon( Opcode op, uint8_t value )
+void CPU::adc( uint8_t value )
+{
+  if ( get<bitD>() )
+  {
+    int lo = ( state.a & 0x0f ) + ( value & 0x0f ) + ( get<bitC>() ? 0x01 : 0 );
+    int hi = ( state.a & 0xf0 ) + ( value & 0xf0 );
+    clear<bitV>();
+    clear<bitC>();
+    if ( lo > 0x09 )
+    {
+      hi += 0x10;
+      lo += 0x06;
+    }
+    if ( ~( state.a ^ value ) & ( state.a ^ hi ) & 0x80 )
+    {
+      set<bitV>();
+    }
+    if ( hi > 0x90 )
+    {
+      hi += 0x60;
+    }
+    if ( hi & 0xff00 )
+    {
+      set<bitC>();
+    }
+    state.a = ( lo & 0x0f ) + ( hi & 0xf0 );
+    setnz( state.a );
+  }
+  else
+  {
+    int sum = state.a + value + ( get<bitC>() ? 0x01 : 0 );
+    clear<bitV>();
+    clear<bitC>();
+    if ( ~( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
+    {
+      set<bitV>();
+    }
+    if ( sum & 0xff00 )
+    {
+      set<bitC>();
+    }
+    state.a = (uint8_t)sum;
+    setnz( state.a );
+  }
+}
+
+void CPU::sbc( uint8_t value )
+{
+  if ( get<bitD>() )
+  {
+    int c = get<bitC>() ? 0 : 1;
+    int sum = state.a - value - c;
+    int lo = ( state.a & 0x0f ) - ( value & 0x0f ) - c;
+    int hi = ( state.a & 0xf0 ) - ( value & 0xf0 );
+    clear<bitV>();
+    clear<bitC>();
+    if ( ( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
+    {
+      set<bitV>();
+    }
+    if ( lo & 0xf0 )
+    {
+      lo -= 6;
+    }
+    if ( lo & 0x80 )
+    {
+      hi -= 0x10;
+    }
+    if ( hi & 0x0f00 )
+    {
+      hi -= 0x60;
+    }
+    if ( ( sum & 0xff00 ) == 0 )
+    {
+      set<bitC>();
+    }
+    state.a = ( lo & 0x0f ) + ( hi & 0xf0 );
+    setnz( state.a );
+  }
+  else
+  {
+    int c = get<bitC>() ? 0 : 1;
+    int sum = state.a - value - c;
+    clear<bitV>();
+    clear<bitC>();
+    if ( ( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
+    {
+      set<bitV>();
+    }
+    if ( ( sum & 0xff00 ) == 0 )
+    {
+      set<bitC>();
+    }
+    state.a = (uint8_t)sum;
+    setnz( state.a );
+  }
+}
+
+void CPU::executeCommon( Opcode op, uint8_t value )
 {
   switch ( op )
   {
-  case Opcode::RZP_ADC:
-  case Opcode::RZX_ADC:
-  case Opcode::RIN_ADC:
-  case Opcode::RIX_ADC:
-  case Opcode::RIY_ADC:
-  case Opcode::RAB_ADC:
-  case Opcode::RAX_ADC:
-  case Opcode::RAY_ADC:
-  case Opcode::IMM_ADC:
-    if ( get<bitD>() )
-    {
-      int lo = ( state.a & 0x0f ) + ( value & 0x0f ) + ( get<bitC>() ? 0x01 : 0 );
-      int hi = ( state.a & 0xf0 ) + ( value & 0xf0 );
-      clear<bitV>();
-      clear<bitC>();
-      if ( lo > 0x09 )
-      {
-        hi += 0x10;
-        lo += 0x06;
-      }
-      if ( ~( state.a ^ value ) & ( state.a ^ hi ) & 0x80 )
-      {
-        set<bitV>();
-      }
-      if ( hi > 0x90 )
-      {
-        hi += 0x60;
-      }
-      if ( hi & 0xff00 )
-      {
-        set<bitC>();
-      }
-      state.a = ( lo & 0x0f ) + ( hi & 0xf0 );
-      setnz( state.a );
-      return true;
-    }
-    else
-    {
-      int sum = state.a + value + ( get<bitC>() ? 0x01 : 0 );
-      clear<bitV>();
-      clear<bitC>();
-      if ( ~( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
-      {
-        set<bitV>();
-      }
-      if ( sum & 0xff00 )
-      {
-        set<bitC>();
-      }
-      state.a = ( uint8_t )sum;
-      setnz( state.a );
-    }
-    break;
   case Opcode::RZP_AND:
   case Opcode::RZX_AND:
   case Opcode::RIN_AND:
@@ -1619,71 +1768,10 @@ bool CPU::executeCommon( Opcode op, uint8_t value )
   case Opcode::IMM_ORA:
     setnz( state.a |= value );
     break;
-  case Opcode::RZP_SBC:
-  case Opcode::RZX_SBC:
-  case Opcode::RIN_SBC:
-  case Opcode::RIX_SBC:
-  case Opcode::RIY_SBC:
-  case Opcode::RAB_SBC:
-  case Opcode::RAX_SBC:
-  case Opcode::RAY_SBC:
-  case Opcode::IMM_SBC:
-    if ( get<bitD>() )
-    {
-      int c = get<bitC>() ? 0 : 1;
-      int sum = state.a - value - c;
-      int lo = ( state.a & 0x0f ) - ( value & 0x0f ) - c;
-      int hi = ( state.a & 0xf0 ) - ( value & 0xf0 );
-      clear<bitV>();
-      clear<bitC>();
-      if ( ( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
-      {
-        set<bitV>();
-      }
-      if ( lo & 0xf0 )
-      {
-        lo -= 6;
-      }
-      if ( lo & 0x80 )
-      {
-        hi -= 0x10;
-      }
-      if ( hi & 0x0f00 )
-      {
-        hi -= 0x60;
-      }
-      if ( ( sum & 0xff00 ) == 0 )
-      {
-        set<bitC>();
-      }
-      state.a = ( lo & 0x0f ) + ( hi & 0xf0 );
-      setnz( state.a );
-      return true;
-    }
-    else
-    {
-      int c = get<bitC>() ? 0 : 1;
-      int sum = state.a - value - c;
-      clear<bitV>();
-      clear<bitC>();
-      if ( ( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
-      {
-        set<bitV>();
-      }
-      if ( ( sum & 0xff00 ) == 0 )
-      {
-        set<bitC>();
-      }
-      state.a = ( uint8_t )sum;
-      setnz( state.a );
-    }
-    break;
   default:
     assert( false );
     break;
   }
-
-  return false;
 }
 
 void CPU::trace1()
