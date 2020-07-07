@@ -201,7 +201,10 @@ private:
   uint8_t ror( uint8_t val );
   void adc( uint8_t val );
   void sbc( uint8_t val );
-  void executeCommon( Opcode opcode, uint8_t value );
+  void bit( uint8_t val );
+  void cmp( uint8_t val );
+  void cpx( uint8_t val );
+  void cpy( uint8_t val );
 
   struct Execute
   {
