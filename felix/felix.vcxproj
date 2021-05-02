@@ -187,7 +187,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="PenUnpacker.cpp" />
     <ClCompile Include="SuzyMath.cpp" />
     <ClCompile Include="SuzyProcess.cpp" />
     <ClCompile Include="VidOperator.cpp" />
@@ -218,7 +217,6 @@
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="ParallelPort.hpp" />
     <ClInclude Include="pch.hpp" />
-    <ClInclude Include="PenUnpacker.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="Shifter.hpp" />
     <ClInclude Include="SpriteTemplates.hpp" />
