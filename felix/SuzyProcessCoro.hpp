@@ -315,45 +315,6 @@ struct CoroutinePromise :
   using coro::promise::CallSubCoroutine::await_transform;
 };
 
-
-template<typename Coroutine>
-struct SubCoroutinePromise :
-  public coro::promise::Base<Coroutine, SubCoroutinePromise<Coroutine>>,
-  public coro::promise::initial::always,
-  public coro::promise::Return<SubCoroutinePromise<Coroutine>>,
-  public coro::promise::ret_void,
-  public coro::promise::Init<false>,
-  public coro::promise::Requests<SubCoroutinePromise<Coroutine>>
-{
-  using coro::promise::Init<false>::await_transform;
-  using coro::promise::Requests<SubCoroutinePromise<Coroutine>>::await_transform;
-
-};
-
-template<typename Coroutine, typename RET>
-struct SubCoroutinePromiseT :
-  public coro::promise::Base<Coroutine, SubCoroutinePromiseT<Coroutine, RET>>,
-  public coro::promise::initial::always,
-  public coro::promise::Return<SubCoroutinePromiseT<Coroutine, RET>>,
-  public coro::promise::ret_value<RET>,
-  public coro::promise::Init<false>,
-  public coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>
-{
-  using coro::promise::Init<false>::await_transform;
-  using coro::promise::Requests<SubCoroutinePromiseT<Coroutine, RET>>::await_transform;
-};
-
-
-struct SubCoroutine : public coro::Base<SubCoroutinePromise<SubCoroutine>>
-{
-};
-
-template<typename RET>
-struct SubCoroutineT : public coro::Base<SubCoroutinePromiseT<SubCoroutineT<RET>, RET>>
-{
-};
-
-
 struct ProcessCoroutine : public coro::Base<CoroutinePromise<ProcessCoroutine>>
 {
 };

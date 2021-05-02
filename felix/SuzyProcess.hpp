@@ -31,7 +31,6 @@ public:
 
 private:
   ProcessCoroutine process();
-  static SubCoroutine renderSingleSprite( SuzyProcess * self );
 
 private:
   Suzy & mSuzy;

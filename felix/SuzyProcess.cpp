@@ -160,7 +160,130 @@ ProcessCoroutine SuzyProcess::process()
 
     mSuzy.mFred = std::nullopt;
 
-    co_await renderSingleSprite( this );
+    {
+      auto & self = *this;
+
+      VidOperator vidOp{ self.mSuzy.mSpriteType };
+      ColOperator colOp{ self.mSuzy.mSpriteType, (uint8_t)(self.mSuzy.mSprColl & Suzy::SPRCOLL::NUMBER_MASK) };
+
+      self.mEveron = false;
+
+      auto const& quadCycle = self.mSuzy.mQuadrantOrder[(size_t)self.mSuzy.mStartingQuadrant];
+
+      for ( int quadrant = 0; quadrant < 4; ++quadrant )
+      {
+        self.left = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) == 0 ? 0 : 1;
+        int up = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) == 0 ? 0 : 1;
+        self.left ^= self.mSuzy.mHFlip ? 1 : 0;
+        up ^= self.mSuzy.mVFlip ? 1 : 0;
+        self.scb.tiltacum = 0;
+        self.scb.vsizacum = (up == 0) ? self.scb.vsizoff.w : 0;
+        self.scb.sprvpos = self.scb.vposstrt - self.scb.voff;
+        if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) != ((uint8_t)quadCycle[(size_t)self.mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_UP) )
+          self.scb.sprvpos += up ? -1 : 1;
+
+        for ( ;; )
+        {
+          self.scb.vsizacum.h = 0;
+          self.scb.vsizacum += self.scb.sprvsiz;
+          uint8_t pixelHeight = self.scb.vsizacum.h;
+          for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow, self.scb.sprvpos += up ? -1 : 1 )
+          {
+            self.scb.procadr = self.scb.sprdline;
+            self.mShifter = Shifter{};
+            self.mShifter.push( co_await SuzyRead4{ self.scb.procadr } );
+            self.scb.procadr += 4;
+            self.scb.sprdoff = self.mShifter.pull<8>();
+            SpriteLineParser slp{ self.mShifter, self.mSuzy.mLiteral, self.mSuzy.bpp(), (self.scb.sprdoff - 1) * 8 };
+            if ( up == 0 && self.scb.sprvpos >= Suzy::mScreenHeight || up == 1 && (int16_t)(self.scb.sprvpos) < 0 ) continue;
+            self.scb.vidadr = self.scb.vidbas + self.scb.sprvpos * Suzy::mScreenWidth / 2;
+            self.scb.colladr = self.scb.collbas + self.scb.sprvpos * Suzy::mScreenWidth / 2;
+            vidOp.newLine( self.scb.vidadr );
+            colOp.newLine( self.scb.colladr );
+            self.scb.hposstrt += self.scb.tiltacum.h;
+            self.scb.tiltacum.h = 0;
+            self.hsizacum = self.left == 0 ? self.scb.hsizoff.w : 0;
+            self.sprhpos = self.scb.hposstrt - self.scb.hoff;
+            if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) != ((uint8_t)quadCycle[(size_t)self.mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT) )
+              self.sprhpos += self.left ? -1 : 1;
+
+            while ( int const* pen = slp.getPen() )
+            {
+              if ( self.mShifter.size() < 24 && slp.totalBits() > self.mShifter.size() )
+              {
+                self.mShifter.push( co_await SuzyRead{ self.scb.procadr } );
+                self.scb.procadr += 1;
+              }
+
+              self.hsizacum += self.scb.sprhsiz;
+              uint8_t pixelWidth = self.hsizacum >> 8;
+              self.hsizacum &= 0xff;
+
+              for ( int h = 0; h < pixelWidth; h++ )
+              {
+                // Stop horizontal loop if outside of screen bounds
+                if ( self.sprhpos < Suzy::mScreenWidth )
+                {
+                  uint8_t pixel = self.mSuzy.mPalette[*pen];
+
+                  if ( !self.mSuzy.mDisableCollisions )
+                  {
+                    if ( auto memOp = colOp.process( self.sprhpos, pixel ) )
+                    {
+                      colOp.receiveHiColl( co_await SuzyColRMW{ memOp.mask, memOp.addr, memOp.value } );
+                    }
+                  }
+
+                  switch ( auto memOp = vidOp.process( self.sprhpos, pixel ) )
+                  {
+                  case VidOperator::MemOp::WRITE:
+                    co_await SuzyWrite{ memOp.addr, memOp.value };
+                    break;
+                  case VidOperator::MemOp::MODIFY:
+                  case VidOperator::MemOp::WRITE | VidOperator::MemOp::MODIFY:
+                    co_await SuzyVidRMW{ memOp.addr, memOp.value, memOp.mask() };
+                    break;
+                  case VidOperator::MemOp::XOR:
+                    co_await SuzyXOR{ memOp.addr, memOp.value };
+                    break;
+                  default:
+                    break;
+                  }
+
+                  self.mEveron = true;
+                }
+                self.sprhpos += self.left ? -1 : 1;
+              }
+            }
+
+            switch ( auto memOp = vidOp.flush() )
+            {
+            case VidOperator::MemOp::XOR:
+              co_await SuzyXOR{ memOp.addr, memOp.value };
+              break;
+            default:
+              co_await SuzyVidRMW{ memOp.addr, memOp.value, memOp.mask() };
+              break;
+            }
+            if ( !self.mSuzy.mDisableCollisions )
+            {
+              if ( auto memOp = colOp.flush() )
+              {
+                colOp.receiveHiColl( co_await SuzyColRMW{ memOp.mask, memOp.addr, memOp.value } );
+              }
+            }
+          }
+          self.scb.sprdline += self.scb.sprdoff;
+          if ( self.scb.sprdoff < 2 )
+            break;
+        }
+        if ( self.scb.sprdoff == 0 )
+          break;
+      }
+      auto fred = colOp.hiColl();
+      if ( !self.mSuzy.mDisableCollisions )
+        self.mSuzy.mFred = fred & 0x0f;
+    }
 
     if ( mSuzy.mEveron && mEveron )
     {
@@ -177,132 +300,4 @@ ProcessCoroutine SuzyProcess::process()
   }
 
   mSuzy.mSpriteWorking = false;
-}
-
-SubCoroutine SuzyProcess::renderSingleSprite( SuzyProcess * s )
-{
-  co_await s;
-
-  auto & self = *s;
-
-  VidOperator vidOp{ self.mSuzy.mSpriteType };
-  ColOperator colOp{ self.mSuzy.mSpriteType, (uint8_t)(self.mSuzy.mSprColl & Suzy::SPRCOLL::NUMBER_MASK) };
-
-  self.mEveron = false;
-
-  auto const& quadCycle = self.mSuzy.mQuadrantOrder[(size_t)self.mSuzy.mStartingQuadrant];
-
-  for ( int quadrant = 0; quadrant < 4; ++quadrant )
-  {
-    self.left = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) == 0 ? 0 : 1;
-    int up = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) == 0 ? 0 : 1;
-    self.left ^= self.mSuzy.mHFlip ? 1 : 0;
-    up ^= self.mSuzy.mVFlip ? 1 : 0;
-    self.scb.tiltacum = 0;
-    self.scb.vsizacum = (up == 0) ? self.scb.vsizoff.w : 0;
-    self.scb.sprvpos = self.scb.vposstrt - self.scb.voff;
-    if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) != ((uint8_t)quadCycle[(size_t)self.mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_UP) )
-      self.scb.sprvpos += up ? -1 : 1;
-
-    for ( ;; )
-    {
-      self.scb.vsizacum.h = 0;
-      self.scb.vsizacum += self.scb.sprvsiz;
-      uint8_t pixelHeight = self.scb.vsizacum.h;
-      for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow, self.scb.sprvpos += up ? -1 : 1 )
-      {
-        self.scb.procadr = self.scb.sprdline;
-        self.mShifter = Shifter{};
-        self.mShifter.push( co_await SuzyRead4{ self.scb.procadr } );
-        self.scb.procadr += 4;
-        self.scb.sprdoff = self.mShifter.pull<8>();
-        SpriteLineParser slp{ self.mShifter, self.mSuzy.mLiteral, self.mSuzy.bpp(), (self.scb.sprdoff - 1) * 8 };
-        if ( up == 0 && self.scb.sprvpos >= Suzy::mScreenHeight || up == 1 && (int16_t)(self.scb.sprvpos) < 0 ) continue;
-        self.scb.vidadr = self.scb.vidbas + self.scb.sprvpos * Suzy::mScreenWidth / 2;
-        self.scb.colladr = self.scb.collbas + self.scb.sprvpos * Suzy::mScreenWidth / 2;
-        vidOp.newLine( self.scb.vidadr );
-        colOp.newLine( self.scb.colladr );
-        self.scb.hposstrt += self.scb.tiltacum.h;
-        self.scb.tiltacum.h = 0;
-        self.hsizacum = self.left == 0 ? self.scb.hsizoff.w : 0;
-        self.sprhpos = self.scb.hposstrt - self.scb.hoff;
-        if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) != ((uint8_t)quadCycle[(size_t)self.mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT) )
-          self.sprhpos += self.left ? -1 : 1;
-
-        while ( int const* pen = slp.getPen() )
-        {
-          if ( self.mShifter.size() < 24 && slp.totalBits() > self.mShifter.size() )
-          {
-            self.mShifter.push( co_await SuzyRead{ self.scb.procadr } );
-            self.scb.procadr += 1;
-          }
-
-          self.hsizacum += self.scb.sprhsiz;
-          uint8_t pixelWidth = self.hsizacum >> 8;
-          self.hsizacum &= 0xff;
-
-          for ( int h = 0; h < pixelWidth; h++ )
-          {
-            // Stop horizontal loop if outside of screen bounds
-            if ( self.sprhpos < Suzy::mScreenWidth )
-            {
-              uint8_t pixel = self.mSuzy.mPalette[*pen];
-
-              if ( !self.mSuzy.mDisableCollisions )
-              {
-                if ( auto memOp = colOp.process( self.sprhpos, pixel ) )
-                {
-                  colOp.receiveHiColl( co_await SuzyColRMW{ memOp.mask, memOp.addr, memOp.value } );
-                }
-              }
-
-              switch ( auto memOp = vidOp.process( self.sprhpos, pixel ) )
-              {
-              case VidOperator::MemOp::WRITE:
-                co_await SuzyWrite{ memOp.addr, memOp.value };
-                break;
-              case VidOperator::MemOp::MODIFY:
-              case VidOperator::MemOp::WRITE | VidOperator::MemOp::MODIFY:
-                co_await SuzyVidRMW{ memOp.addr, memOp.value, memOp.mask() };
-                break;
-              case VidOperator::MemOp::XOR:
-                co_await SuzyXOR{ memOp.addr, memOp.value };
-                break;
-              default:
-                break;
-              }
-
-              self.mEveron = true;
-            }
-            self.sprhpos += self.left ? -1 : 1;
-          }
-        }
-
-        switch ( auto memOp = vidOp.flush() )
-        {
-        case VidOperator::MemOp::XOR:
-          co_await SuzyXOR{ memOp.addr, memOp.value };
-          break;
-        default:
-          co_await SuzyVidRMW{ memOp.addr, memOp.value, memOp.mask() };
-          break;
-        }
-        if ( !self.mSuzy.mDisableCollisions )
-        {
-          if ( auto memOp = colOp.flush() )
-          {
-            colOp.receiveHiColl( co_await SuzyColRMW{ memOp.mask, memOp.addr, memOp.value } );
-          }
-        }
-      }
-      self.scb.sprdline += self.scb.sprdoff;
-      if ( self.scb.sprdoff < 2 )
-        break;
-    }
-    if ( self.scb.sprdoff == 0 )
-      break;
-  }
-  auto fred = colOp.hiColl();
-  if ( !self.mSuzy.mDisableCollisions )
-    self.mSuzy.mFred = fred & 0x0f;
 }
