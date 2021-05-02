@@ -1,35 +1,18 @@
 #pragma once
 
 struct SuzyRead { uint16_t address; };
-struct SuzyRead4
-{
-  SuzyRead4( uint16_t adr ) : address{ adr }
-  {
-    if ( adr == 0xfffd )
-    {
-      int k = 42;
-    }
-  }
-  uint16_t address;
-};
+struct SuzyRead4 { uint16_t address; };
 struct SuzyWrite { uint16_t address; uint8_t value; };
 struct SuzyColRMW { uint32_t mask; uint16_t address;  uint8_t value; };
 struct SuzyVidRMW { uint16_t address; uint8_t value; uint8_t mask; };
 struct SuzyXOR { uint16_t address; uint8_t value; };
 
-
-
 template<typename Coroutine>
 struct CoroutinePromise
 {
-  CoroutinePromise() : mSuzyProcess{}
+  CoroutinePromise( SuzyProcess & suzyProcess ) : mSuzyProcess{ suzyProcess }
   {
-
-  }
-
-  CoroutinePromise( SuzyProcess & suzyProcess ) : mSuzyProcess{ &suzyProcess }
-  {
-    mSuzyProcess->setHandle( std::coroutine_handle<CoroutinePromise<Coroutine>>::from_promise( *this ) );
+    mSuzyProcess.setHandle( std::coroutine_handle<CoroutinePromise<Coroutine>>::from_promise( *this ) );
   }
 
   auto get_return_object() { return Coroutine{ std::coroutine_handle<CoroutinePromise<Coroutine>>::from_promise( *this ) }; }
@@ -37,7 +20,7 @@ struct CoroutinePromise
   auto initial_suspend() { return std::suspend_never{}; }
   std::suspend_always final_suspend() noexcept
   {
-    mSuzyProcess->setFinish();
+    mSuzyProcess.setFinish();
     return {};
   }
   void return_void()
@@ -49,77 +32,77 @@ struct CoroutinePromise
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      SuzyProcess & p;
       bool await_ready() { return false; }
-      uint8_t await_resume() { return p->getResponse().value; }
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+      uint8_t await_resume() { return p.getResponse().value; }
+      void await_suspend( std::coroutine_handle<> c ) {}
     };
-    mSuzyProcess->setRead( r.address );
+    mSuzyProcess.setRead( r.address );
     return Awaiter{ mSuzyProcess };
   }
   auto await_transform( SuzyRead4 r )
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      SuzyProcess & p;
       bool await_ready() { return false; }
-      uint32_t await_resume() { return p->getResponse().value; }
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+      uint32_t await_resume() { return p.getResponse().value; }
+      void await_suspend( std::coroutine_handle<> c ) {}
     };
-    mSuzyProcess->setRead4( r.address );
+    mSuzyProcess.setRead4( r.address );
     return Awaiter{ mSuzyProcess };
   }
   auto await_transform( SuzyWrite w )
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      SuzyProcess & p;
       bool await_ready() { return false; }
       void await_resume() {}
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) {}
     };
-    mSuzyProcess->setWrite( w.address, w.value );
+    mSuzyProcess.setWrite( w.address, w.value );
     return Awaiter{ mSuzyProcess };
   }
   auto await_transform( SuzyColRMW w )
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      SuzyProcess & p;
       bool await_ready() { return false; }
-      uint8_t await_resume() { return (uint8_t)p->getResponse().value; }
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+      uint8_t await_resume() { return (uint8_t)p.getResponse().value; }
+      void await_suspend( std::coroutine_handle<> c ) {}
     };
-    mSuzyProcess->setColRMW( w.address, w.mask, w.value );
+    mSuzyProcess.setColRMW( w.address, w.mask, w.value );
     return Awaiter{ mSuzyProcess };
   }
   auto await_transform( SuzyVidRMW rmw )
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      SuzyProcess & p;
       bool await_ready() { return false; }
       void await_resume() {}
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) {}
     };
-    mSuzyProcess->setVidRMW( rmw.address, rmw.value, rmw.mask );
+    mSuzyProcess.setVidRMW( rmw.address, rmw.value, rmw.mask );
     return Awaiter{ mSuzyProcess };
   }
   auto await_transform( SuzyXOR x )
   {
     struct Awaiter
     {
-      SuzyProcess * p;
+      SuzyProcess & p;
       bool await_ready() { return false; }
       void await_resume() {}
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) {}
     };
-    mSuzyProcess->setXor( x.address, x.value );
+    mSuzyProcess.setXor( x.address, x.value );
     return Awaiter{ mSuzyProcess };
   }
 
 private:
-  SuzyProcess * mSuzyProcess;
+  SuzyProcess & mSuzyProcess;
 };
 
 struct ProcessCoroutine
