@@ -68,7 +68,7 @@ void SuzyProcess::setHandle( std::coroutine_handle<> c )
   mCoro = c;
 }
 
-ProcessCoroutine SuzyProcess::process()
+SuzyProcess::ProcessCoroutine SuzyProcess::process()
 {
   while ( ( scb.scbnext & 0xff00 ) != 0 )
   {

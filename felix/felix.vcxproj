@@ -225,7 +225,6 @@
     <ClInclude Include="SpriteTemplates.hpp" />
     <ClInclude Include="SuzyMath.hpp" />
     <ClInclude Include="SuzyProcess.hpp" />
-    <ClInclude Include="SuzyProcessCoro.hpp" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="Mikey.hpp" />

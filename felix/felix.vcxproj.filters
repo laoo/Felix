@@ -123,9 +123,6 @@
     <ClInclude Include="SuzyProcess.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="SuzyProcessCoro.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Shifter.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
