@@ -18,58 +18,131 @@ struct SuzyVidRMW { uint16_t address; uint8_t value; uint8_t mask; };
 struct SuzyXOR { uint16_t address; uint8_t value; };
 
 
-//promise components
-namespace coro
-{
-namespace promise
-{
 
-template<typename Coro, typename Promise>
-struct Base
+template<typename Coroutine>
+struct CoroutinePromise
 {
+  CoroutinePromise() : mSuzyProcess{}
+  {
+
+  }
+
+  CoroutinePromise( SuzyProcess & suzyProcess ) : mSuzyProcess{ &suzyProcess }
+  {
+    mSuzyProcess->setHandle( std::coroutine_handle<CoroutinePromise<Coroutine>>::from_promise( *this ) );
+  }
+
+  auto get_return_object() { return Coroutine{ std::coroutine_handle<CoroutinePromise<Coroutine>>::from_promise( *this ) }; }
+
+  auto initial_suspend() { return std::suspend_never{}; }
+  std::suspend_always final_suspend() noexcept
+  {
+    mSuzyProcess->setFinish();
+    return {};
+  }
+  void return_void()
+  {
+  }
   void unhandled_exception() { std::terminate(); }
 
-  void setCaller( std::coroutine_handle<> c )
+  auto await_transform( SuzyRead r )
   {
-    mCaller = c;
+    struct Awaiter
+    {
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      uint8_t await_resume() { return p->getResponse().value; }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+    };
+    mSuzyProcess->setRead( r.address );
+    return Awaiter{ mSuzyProcess };
   }
-
-  std::coroutine_handle<> caller() noexcept
+  auto await_transform( SuzyRead4 r )
   {
-    return mCaller;
+    struct Awaiter
+    {
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      uint32_t await_resume() { return p->getResponse().value; }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+    };
+    mSuzyProcess->setRead4( r.address );
+    return Awaiter{ mSuzyProcess };
   }
-
-  auto get_return_object() { return Coro{ std::coroutine_handle<Promise>::from_promise( *(Promise*)this ) }; }
-
+  auto await_transform( SuzyWrite w )
+  {
+    struct Awaiter
+    {
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      void await_resume() {}
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+    };
+    mSuzyProcess->setWrite( w.address, w.value );
+    return Awaiter{ mSuzyProcess };
+  }
+  auto await_transform( SuzyColRMW w )
+  {
+    struct Awaiter
+    {
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      uint8_t await_resume() { return (uint8_t)p->getResponse().value; }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+    };
+    mSuzyProcess->setColRMW( w.address, w.mask, w.value );
+    return Awaiter{ mSuzyProcess };
+  }
+  auto await_transform( SuzyVidRMW rmw )
+  {
+    struct Awaiter
+    {
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      void await_resume() {}
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+    };
+    mSuzyProcess->setVidRMW( rmw.address, rmw.value, rmw.mask );
+    return Awaiter{ mSuzyProcess };
+  }
+  auto await_transform( SuzyXOR x )
+  {
+    struct Awaiter
+    {
+      SuzyProcess * p;
+      bool await_ready() { return false; }
+      void await_resume() {}
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
+    };
+    mSuzyProcess->setXor( x.address, x.value );
+    return Awaiter{ mSuzyProcess };
+  }
 
 private:
-  std::coroutine_handle<> mCaller;
+  SuzyProcess * mSuzyProcess;
 };
 
-}
-
-template<typename Promise>
-class Base
+struct ProcessCoroutine
 {
 public:
-  using promise_type = Promise;
+  using promise_type = CoroutinePromise<ProcessCoroutine>;
   using handle = std::coroutine_handle<promise_type>;
 
-  Base() : mCoro{} {}
-  Base( handle c ) : mCoro{ c } {}
-  Base( Base const& other ) = delete;
-  Base & operator=( Base const& other ) = delete;
-  Base( Base && other ) noexcept : mCoro{ std::move( other.mCoro ) }
+  ProcessCoroutine() : mCoro{} {}
+  ProcessCoroutine( handle c ) : mCoro{ c } {}
+  ProcessCoroutine( ProcessCoroutine const& other ) = delete;
+  ProcessCoroutine & operator=( ProcessCoroutine const& other ) = delete;
+  ProcessCoroutine( ProcessCoroutine && other ) noexcept : mCoro{ std::move( other.mCoro ) }
   {
     other.mCoro = nullptr;
   }
-  Base & operator=( Base && other ) noexcept
+  ProcessCoroutine & operator=( ProcessCoroutine && other ) noexcept
   {
     mCoro = std::move( other.mCoro );
     other.mCoro = nullptr;
     return *this;
   }
-  ~Base()
+  ~ProcessCoroutine()
   {
     if ( mCoro )
       mCoro.destroy();
@@ -88,125 +161,4 @@ public:
 
 private:
   handle mCoro;
-};
-
-}
-
-template<typename Coroutine>
-struct CoroutinePromise :
-  public coro::promise::Base<Coroutine, CoroutinePromise<Coroutine>>
-{
-  auto initial_suspend() { return std::suspend_never{}; }
-  std::suspend_always final_suspend() noexcept
-  {
-    SuzyProcess * p = static_cast<CoroutinePromise<Coroutine>*>(this)->suzyProcess();
-    p->setFinish();
-    return {};
-  }
-  void return_void()
-  {
-  }
-
-  auto await_transform( SuzyRead r )
-  {
-    struct Awaiter
-    {
-      SuzyProcess * p;
-      bool await_ready() { return false; }
-      uint8_t await_resume() { return p->getResponse().value; }
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
-    };
-    SuzyProcess * p = static_cast<CoroutinePromise<Coroutine>*>(this)->suzyProcess();
-    p->setRead( r.address );
-    return Awaiter{ p };
-  }
-  auto await_transform( SuzyRead4 r )
-  {
-    struct Awaiter
-    {
-      SuzyProcess * p;
-      bool await_ready() { return false; }
-      uint32_t await_resume() { return p->getResponse().value; }
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
-    };
-    SuzyProcess * p = static_cast<CoroutinePromise<Coroutine>*>(this)->suzyProcess();
-    p->setRead4( r.address );
-    return Awaiter{ p };
-  }
-  auto await_transform( SuzyWrite w )
-  {
-    struct Awaiter
-    {
-      SuzyProcess * p;
-      bool await_ready() { return false; }
-      void await_resume() {}
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
-    };
-    SuzyProcess * p = static_cast<CoroutinePromise<Coroutine>*>(this)->suzyProcess();
-    p->setWrite( w.address, w.value );
-    return Awaiter{ p };
-  }
-  auto await_transform( SuzyColRMW w )
-  {
-    struct Awaiter
-    {
-      SuzyProcess * p;
-      bool await_ready() { return false; }
-      uint8_t await_resume() { return (uint8_t)p->getResponse().value; }
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
-    };
-    SuzyProcess * p = static_cast<CoroutinePromise<Coroutine>*>(this)->suzyProcess();
-    p->setColRMW( w.address, w.mask, w.value );
-    return Awaiter{ p };
-  }
-  auto await_transform( SuzyVidRMW rmw )
-  {
-    struct Awaiter
-    {
-      SuzyProcess * p;
-      bool await_ready() { return false; }
-      void await_resume() {}
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
-    };
-    SuzyProcess * p = static_cast<CoroutinePromise<Coroutine>*>(this)->suzyProcess();
-    p->setVidRMW( rmw.address, rmw.value, rmw.mask );
-    return Awaiter{ p };
-  }
-  auto await_transform( SuzyXOR x )
-  {
-    struct Awaiter
-    {
-      SuzyProcess * p;
-      bool await_ready() { return false; }
-      void await_resume() {}
-      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
-    };
-    SuzyProcess * p = static_cast<CoroutinePromise<Coroutine>*>(this)->suzyProcess();
-    p->setXor( x.address, x.value );
-    return Awaiter{ p };
-  }
-  auto await_transform( SuzyProcess * suzyProcess )
-  {
-    struct Awaiter
-    {
-      SuzyProcess * suzyProcess;
-      bool await_ready() { return false; }
-      void await_resume() {}
-      void await_suspend( std::coroutine_handle<> c ) { suzyProcess->setHandle( c ); }
-    };
-    mSuzyProcess = suzyProcess;
-    return Awaiter{ suzyProcess };
-  }
-
-  SuzyProcess * suzyProcess()
-  {
-    return mSuzyProcess;
-  }
-
-private:
-  SuzyProcess * mSuzyProcess;
-};
-
-struct ProcessCoroutine : public coro::Base<CoroutinePromise<ProcessCoroutine>>
-{
 };

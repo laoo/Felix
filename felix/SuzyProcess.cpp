@@ -70,8 +70,6 @@ void SuzyProcess::setHandle( std::coroutine_handle<> c )
 
 ProcessCoroutine SuzyProcess::process()
 {
-  co_await this;
-
   while ( ( scb.scbnext & 0xff00 ) != 0 )
   {
     scb.scbadr = scb.scbnext;
