@@ -63,7 +63,7 @@ SuzyProcess::Response const& SuzyProcess::getResponse() const
   return response;
 }
 
-void SuzyProcess::setHandle( std::experimental::coroutine_handle<> c )
+void SuzyProcess::setHandle( std::coroutine_handle<> c )
 {
   mCoro = c;
 }
@@ -109,7 +109,7 @@ AssemblePen & SuzyProcess::getPen()
   return mAssembledPen;
 }
 
-void SuzyProcess::initPen( std::experimental::coroutine_handle<> handle )
+void SuzyProcess::initPen( std::coroutine_handle<> handle )
 {
   mAssembledPen.handle = handle;
 }

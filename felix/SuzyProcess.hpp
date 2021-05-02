@@ -27,7 +27,7 @@ public:
   void setVidRMW( uint16_t address, uint8_t value, uint8_t mask );
   void setXor( uint16_t address, uint8_t value );
   Response const& getResponse() const;
-  void setHandle( std::experimental::coroutine_handle<> c );
+  void setHandle( std::coroutine_handle<> c );
   AssemblePen & readPen();
   AssemblePen & readHeader();
   AssemblePen & duplicatePen();
@@ -35,7 +35,7 @@ public:
   AssemblePen & newLine();
   AssemblePen & finish();
   AssemblePen & getPen();
-  void initPen( std::experimental::coroutine_handle<> handle );
+  void initPen( std::coroutine_handle<> handle );
 
 private:
   ProcessCoroutine process();
@@ -59,7 +59,7 @@ private:
   };
 
   ProcessCoroutine mBaseCoroutine;
-  std::experimental::coroutine_handle<> mCoro;
+  std::coroutine_handle<> mCoro;
   AssemblePen mAssembledPen;
   Shifter mShifter;
   uint16_t sprhpos;

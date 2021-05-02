@@ -77,7 +77,7 @@ void CPU::CPUFetchOpcodeAwaiter::await_resume()
   state.op = ( Opcode )value;
 }
 
-void CPU::CPUFetchOpcodeAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+void CPU::CPUFetchOpcodeAwaiter::await_suspend( std::coroutine_handle<> c )
 {
 }
 
@@ -91,7 +91,7 @@ uint8_t CPU::CPUFetchOperandAwaiter::await_resume()
   return value;
 }
 
-void CPU::CPUFetchOperandAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+void CPU::CPUFetchOperandAwaiter::await_suspend( std::coroutine_handle<> c )
 {
 }
 
@@ -105,7 +105,7 @@ uint8_t CPU::CPUReadAwaiter::await_resume()
   return value;
 }
 
-void CPU::CPUReadAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+void CPU::CPUReadAwaiter::await_suspend( std::coroutine_handle<> c )
 {
 }
 
@@ -118,7 +118,7 @@ void CPU::CPUWriteAwaiter::await_resume()
 {
 }
 
-void CPU::CPUWriteAwaiter::await_suspend( std::experimental::coroutine_handle<> c )
+void CPU::CPUWriteAwaiter::await_suspend( std::coroutine_handle<> c )
 {
 }
 

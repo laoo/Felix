@@ -1,5 +1,4 @@
 #pragma once
-#include <experimental/coroutine>
 
 struct SuzyRead { uint16_t address; };
 struct SuzyRead4
@@ -28,11 +27,11 @@ namespace initial
 {
 struct always
 {
-  auto initial_suspend() { return std::experimental::suspend_always{}; }
+  auto initial_suspend() { return std::suspend_always{}; }
 };
 struct never
 {
-  auto initial_suspend() { return std::experimental::suspend_never{}; }
+  auto initial_suspend() { return std::suspend_never{}; }
 };
 }
 struct ret_void
@@ -66,7 +65,7 @@ struct Init
       SuzyProcess * suzyProcess;
       bool await_ready() { return !suspend; }
       void await_resume() {}
-      void await_suspend( std::experimental::coroutine_handle<> c ) { suzyProcess->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) { suzyProcess->setHandle( c ); }
     };
     mSuzyProcess = suzyProcess;
     return Awaiter{ suzyProcess };
@@ -83,7 +82,7 @@ private:
 template<typename T>
 struct Final
 {
-  std::experimental::suspend_always final_suspend() noexcept
+  std::suspend_always final_suspend() noexcept
   {
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
     p->setFinish();
@@ -99,10 +98,10 @@ struct Return
     auto caller = static_cast<T*>( this )->caller();
     struct Awaiter
     {
-      std::experimental::coroutine_handle<> caller;
-      bool await_ready() { return false; }
-      void await_resume() {}
-      auto await_suspend( std::experimental::coroutine_handle<> c ) { return caller; }
+      std::coroutine_handle<> caller;
+      bool await_ready() noexcept { return false; }
+      void await_resume() noexcept {}
+      auto await_suspend( std::coroutine_handle<> c ) noexcept { return caller; }
     };
     return Awaiter{ caller };
   }
@@ -118,7 +117,7 @@ struct Requests
       SuzyProcess * p;
       bool await_ready() { return false; }
       uint8_t await_resume() { return p->getResponse().value; }
-      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
     p->setRead( r.address );
@@ -131,7 +130,7 @@ struct Requests
       SuzyProcess * p;
       bool await_ready() { return false; }
       uint32_t await_resume() { return p->getResponse().value; }
-      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
     p->setRead4( r.address );
@@ -144,7 +143,7 @@ struct Requests
       SuzyProcess * p;
       bool await_ready() { return false; }
       void await_resume() {}
-      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
     p->setWrite( w.address, w.value );
@@ -157,7 +156,7 @@ struct Requests
       SuzyProcess * p;
       bool await_ready() { return false; }
       uint8_t await_resume() { return (uint8_t)p->getResponse().value; }
-      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
     p->setColRMW( w.address, w.mask, w.value );
@@ -170,7 +169,7 @@ struct Requests
       SuzyProcess * p;
       bool await_ready() { return false; }
       void await_resume() {}
-      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
     p->setVidRMW( rmw.address, rmw.value, rmw.mask );
@@ -183,7 +182,7 @@ struct Requests
       SuzyProcess * p;
       bool await_ready() { return false; }
       void await_resume() {}
-      void await_suspend( std::experimental::coroutine_handle<> c ) { p->setHandle( c ); }
+      void await_suspend( std::coroutine_handle<> c ) { p->setHandle( c ); }
     };
     SuzyProcess * p = static_cast<T*>( this )->suzyProcess();
     p->setXor( x.address, x.value );
@@ -202,7 +201,7 @@ struct CallSubCoroutine
       Awaiter( SUB && s ) : sub{ std::move( s ) } {}
       bool await_ready() { return false; }
       void await_resume() {}
-      auto await_suspend( std::experimental::coroutine_handle<> c )
+      auto await_suspend( std::coroutine_handle<> c )
       {
         sub.coro().promise().setCaller( c );
         return sub.coro();
@@ -223,7 +222,7 @@ struct CallSubCoroutine
       {
         return sub.coro().promise().getRetValue();
       }
-      auto await_suspend( std::experimental::coroutine_handle<> c )
+      auto await_suspend( std::coroutine_handle<> c )
       {
         sub.coro().promise().setCaller( c );
         return sub.coro();
@@ -238,21 +237,21 @@ struct Base
 {
   void unhandled_exception() { std::terminate(); }
 
-  void setCaller( std::experimental::coroutine_handle<> c )
+  void setCaller( std::coroutine_handle<> c )
   {
     mCaller = c;
   }
 
-  std::experimental::coroutine_handle<> caller() noexcept
+  std::coroutine_handle<> caller() noexcept
   {
     return mCaller;
   }
 
-  auto get_return_object() { return Coro{ std::experimental::coroutine_handle<Promise>::from_promise( *(Promise*)this ) }; }
+  auto get_return_object() { return Coro{ std::coroutine_handle<Promise>::from_promise( *(Promise*)this ) }; }
 
 
 private:
-  std::experimental::coroutine_handle<> mCaller;
+  std::coroutine_handle<> mCaller;
 };
 
 }
@@ -262,7 +261,7 @@ class Base
 {
 public:
   using promise_type = Promise;
-  using handle = std::experimental::coroutine_handle<promise_type>;
+  using handle = std::coroutine_handle<promise_type>;
 
   Base() : mCoro{} {}
   Base( handle c ) : mCoro{ c } {}
@@ -315,7 +314,7 @@ struct AssemblePen
   } op;
   int count;
   bool literal;
-  std::experimental::coroutine_handle<> handle;
+  std::coroutine_handle<> handle;
 };
 
 
@@ -340,7 +339,7 @@ public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
       AssemblePen & pen;
       bool await_ready() { return false; }
       AssemblePen & await_resume(){ return pen; }
-      auto await_suspend( std::experimental::coroutine_handle<> c )
+      auto await_suspend( std::coroutine_handle<> c )
       {
         std::swap( c, pen.handle );
         return c;
@@ -391,7 +390,7 @@ struct SubCoroutinePromise :
       SuzyProcess * p;
       bool await_ready() { return false; }
       PenAssemblerCoroutine await_resume() { return std::move( pac ); }
-      auto await_suspend( std::experimental::coroutine_handle<> c )
+      auto await_suspend( std::coroutine_handle<> c )
       {
         p->initPen( c );
         return pac.coro();
@@ -407,7 +406,7 @@ struct SubCoroutinePromise :
       AssemblePen & pen;
       bool await_ready() { return false; }
       std::pair<int, bool> await_resume() { return std::make_pair( pen.count, pen.literal ); }
-      auto await_suspend( std::experimental::coroutine_handle<> c )
+      auto await_suspend( std::coroutine_handle<> c )
       {
         std::swap( c, pen.handle );
         return c;

@@ -97,12 +97,12 @@ public:
 
   struct Response : private NonCopyable<Response>
   {
-    Response( State & state, std::experimental::coroutine_handle<> coro ) : state{ state }, tick{}, interrupt{}, value{}, target{ coro } {}
+    Response( State & state, std::coroutine_handle<> coro ) : state{ state }, tick{}, interrupt{}, value{}, target{ coro } {}
     State & state;
     uint64_t tick;
     int interrupt;
     uint8_t value;
-    std::experimental::coroutine_handle<> target;
+    std::coroutine_handle<> target;
   };
 
   static constexpr int I_NONE  = 0;
@@ -205,13 +205,13 @@ private:
   struct Execute
   {
     struct promise_type;
-    using handle = std::experimental::coroutine_handle<promise_type>;
+    using handle = std::coroutine_handle<promise_type>;
 
     struct promise_type
     {
       auto get_return_object() { return Execute{ handle::from_promise( *this ) }; }
-      auto initial_suspend() { return std::experimental::suspend_always{}; }
-      auto final_suspend() noexcept { return std::experimental::suspend_always{}; }
+      auto initial_suspend() { return std::suspend_always{}; }
+      auto final_suspend() noexcept { return std::suspend_always{}; }
       void return_void() {}
       void unhandled_exception() { std::terminate(); }
     };
@@ -235,28 +235,28 @@ private:
   {
     bool await_ready();
     void await_resume();
-    void await_suspend( std::experimental::coroutine_handle<> c );
+    void await_suspend( std::coroutine_handle<> c );
   };
 
   struct CPUFetchOperandAwaiter : public Response
   {
     bool await_ready();
     uint8_t await_resume();
-    void await_suspend( std::experimental::coroutine_handle<> c );
+    void await_suspend( std::coroutine_handle<> c );
   };
 
   struct CPUReadAwaiter : public Response
   {
     bool await_ready();
     uint8_t await_resume();
-    void await_suspend( std::experimental::coroutine_handle<> c );
+    void await_suspend( std::coroutine_handle<> c );
   };
 
   struct CPUWriteAwaiter : public Response
   {
     bool await_ready();
     void await_resume();
-    void await_suspend( std::experimental::coroutine_handle<> c );
+    void await_suspend( std::coroutine_handle<> c );
   };
 
   CPUFetchOpcodeAwaiter & fetchOpcode( uint16_t address );
