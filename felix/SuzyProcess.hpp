@@ -28,14 +28,6 @@ public:
   void setXor( uint16_t address, uint8_t value );
   Response const& getResponse() const;
   void setHandle( std::coroutine_handle<> c );
-  AssemblePen & readPen();
-  AssemblePen & readHeader();
-  AssemblePen & duplicatePen();
-  AssemblePen & flush();
-  AssemblePen & newLine();
-  AssemblePen & finish();
-  AssemblePen & getPen();
-  void initPen( std::coroutine_handle<> handle );
 
 private:
   ProcessCoroutine process();
@@ -60,7 +52,6 @@ private:
 
   ProcessCoroutine mBaseCoroutine;
   std::coroutine_handle<> mCoro;
-  AssemblePen mAssembledPen;
   Shifter mShifter;
   uint16_t sprhpos;
   uint16_t hsizacum;

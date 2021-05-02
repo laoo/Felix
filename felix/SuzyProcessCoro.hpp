@@ -300,60 +300,6 @@ private:
 
 }
 
-struct AssemblePen
-{ 
-  enum class Op
-  {
-    READ_PEN,
-    READ_HEADER,
-    DUPLICATE_PEN,
-    FLUSH,
-    NEW_LINE,
-    FINISH,
-    SIZE_
-  } op;
-  int count;
-  bool literal;
-  std::coroutine_handle<> handle;
-};
-
-
-template<typename Coroutine>
-struct PenAssemblerPromise :
-  public coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>,
-  public coro::promise::initial::always,
-  public coro::promise::Return<PenAssemblerPromise<Coroutine>>,
-  public coro::promise::ret_void,
-  public coro::promise::Init<false>,
-public coro::promise::Requests<PenAssemblerPromise<Coroutine>>
-{
-  using coro::promise::Init<false>::await_transform;
-  using coro::promise::Requests<PenAssemblerPromise<Coroutine>>::await_transform;
-  using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::caller;
-  using coro::promise::Base<Coroutine, PenAssemblerPromise<Coroutine>>::setCaller;
-
-  auto await_transform( AssemblePen & pen )
-  {
-    struct Awaiter
-    {
-      AssemblePen & pen;
-      bool await_ready() { return false; }
-      AssemblePen & await_resume(){ return pen; }
-      auto await_suspend( std::coroutine_handle<> c )
-      {
-        std::swap( c, pen.handle );
-        return c;
-      }
-    };
-    return Awaiter{ pen };
-  }
-
-};
-
-struct PenAssemblerCoroutine : public coro::Base<PenAssemblerPromise<PenAssemblerCoroutine>>
-{
-};
-
 template<typename Coroutine>
 struct CoroutinePromise :
   public coro::promise::Base<Coroutine, CoroutinePromise<Coroutine>>,
@@ -381,39 +327,6 @@ struct SubCoroutinePromise :
 {
   using coro::promise::Init<false>::await_transform;
   using coro::promise::Requests<SubCoroutinePromise<Coroutine>>::await_transform;
-
-  auto await_transform( PenAssemblerCoroutine && pac )
-  {
-    struct Awaiter
-    {
-      PenAssemblerCoroutine && pac;
-      SuzyProcess * p;
-      bool await_ready() { return false; }
-      PenAssemblerCoroutine await_resume() { return std::move( pac ); }
-      auto await_suspend( std::coroutine_handle<> c )
-      {
-        p->initPen( c );
-        return pac.coro();
-      }
-    };
-    return Awaiter{ std::move( pac ), suzyProcess() };
-  }
-
-  auto await_transform( AssemblePen & pen )
-  {
-    struct Awaiter
-    {
-      AssemblePen & pen;
-      bool await_ready() { return false; }
-      std::pair<int, bool> await_resume() { return std::make_pair( pen.count, pen.literal ); }
-      auto await_suspend( std::coroutine_handle<> c )
-      {
-        std::swap( c, pen.handle );
-        return c;
-      }
-    };
-    return Awaiter{ pen };
-  }
 
 };
 

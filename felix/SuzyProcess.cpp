@@ -68,52 +68,6 @@ void SuzyProcess::setHandle( std::coroutine_handle<> c )
   mCoro = c;
 }
 
-AssemblePen & SuzyProcess::readPen()
-{
-  mAssembledPen.op = AssemblePen::Op::READ_PEN;
-  return mAssembledPen;
-}
-
-AssemblePen & SuzyProcess::readHeader()
-{
-  mAssembledPen.op = AssemblePen::Op::READ_HEADER;
-  return mAssembledPen;
-}
-
-AssemblePen & SuzyProcess::duplicatePen()
-{
-  mAssembledPen.op = AssemblePen::Op::DUPLICATE_PEN;
-  return mAssembledPen;
-}
-
-AssemblePen & SuzyProcess::flush()
-{
-  mAssembledPen.op = AssemblePen::Op::FLUSH;
-  return mAssembledPen;
-}
-
-AssemblePen & SuzyProcess::newLine()
-{
-  mAssembledPen.op = AssemblePen::Op::NEW_LINE;
-  return mAssembledPen;
-}
-
-AssemblePen & SuzyProcess::finish()
-{
-  mAssembledPen.op = AssemblePen::Op::FINISH;
-  return mAssembledPen;
-}
-
-AssemblePen & SuzyProcess::getPen()
-{
-  return mAssembledPen;
-}
-
-void SuzyProcess::initPen( std::coroutine_handle<> handle )
-{
-  mAssembledPen.handle = handle;
-}
-
 ProcessCoroutine SuzyProcess::process()
 {
   co_await this;
