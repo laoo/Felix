@@ -221,6 +221,7 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="Shifter.hpp" />
+    <ClInclude Include="SpriteLineParser.hpp" />
     <ClInclude Include="SpriteTemplates.hpp" />
     <ClInclude Include="SuzyMath.hpp" />
     <ClInclude Include="SuzyProcess.hpp" />

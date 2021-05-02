@@ -39,8 +39,7 @@ public:
 
 private:
   ProcessCoroutine process();
-  SubCoroutine renderSingleSprite();
-  PenAssemblerCoroutine penAssembler();
+  static SubCoroutine renderSingleSprite( SuzyProcess * self );
 
 private:
   Suzy & mSuzy;

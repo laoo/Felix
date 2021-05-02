@@ -11,7 +11,7 @@
 #include "ImageBIN.hpp"
 
 Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-mCpu{ std::make_shared<CPU>( *this, true ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
+mCpu{ std::make_shared<CPU>( *this, false ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}
 {
   //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )

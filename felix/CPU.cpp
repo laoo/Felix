@@ -52,7 +52,7 @@ CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, state{}, operand{}, mEx{
 {
   if ( mTrace )
   {
-    mFtrace = std::ofstream{ "d:/trace.log" };
+    mFtrace = std::ofstream{ "trace.log" };
   }
 }
 
