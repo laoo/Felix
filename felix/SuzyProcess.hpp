@@ -39,7 +39,6 @@ public:
 
 private:
   ProcessCoroutine process();
-  SubCoroutine loadSCB();
   SubCoroutine renderSingleSprite();
   PenAssemblerCoroutine penAssembler();
 

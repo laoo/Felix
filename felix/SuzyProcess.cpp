@@ -121,7 +121,81 @@ ProcessCoroutine SuzyProcess::process()
     scb.scbadr = scb.scbnext;
     scb.tmpadr = scb.scbadr;
 
-    co_await loadSCB();
+    mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.tmpadr++ } );
+    mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.tmpadr++ } );
+    mSuzy.writeSPRCOLL( co_await SuzyRead{ scb.tmpadr++ } );
+    scb.scbnext.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.scbnext.h = co_await SuzyRead{ scb.tmpadr++ };
+
+    if ( mSuzy.mSkipSprite )
+      co_return;
+
+    scb.sprdline.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.sprdline.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.hposstrt.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.hposstrt.h = co_await SuzyRead{ scb.tmpadr++ };
+    scb.vposstrt.l = co_await SuzyRead{ scb.tmpadr++ };
+    scb.vposstrt.h = co_await SuzyRead{ scb.tmpadr++ };
+
+    scb.tilt = 0;
+    scb.stretch = 0;
+
+    switch ( mSuzy.mReload )
+    {
+    case Suzy::Reload::HVST:  //Reload hsize, vsize, stretch, tilt
+      scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+      scb.stretch.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.stretch.h = co_await SuzyRead{ scb.tmpadr++ };
+      scb.tilt.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.tilt.h = co_await SuzyRead{ scb.tmpadr++ };
+      break;
+    case Suzy::Reload::HVS:   //Reload hsize, vsize, stretch
+      scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+      scb.stretch.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.stretch.h = co_await SuzyRead{ scb.tmpadr++ };
+      break;
+    case Suzy::Reload::HV:    //Reload hsize, vsize
+      scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
+      scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
+      break;
+    case Suzy::Reload::NONE:  //Reload nothing
+      break;
+    }
+
+    if ( !mSuzy.mReusePalette )
+    {
+      union
+      {
+        std::array<uint8_t, 8> arr;
+        struct
+        {
+          uint32_t p0;
+          uint32_t p1;
+        };
+      };
+
+      p0 = co_await SuzyRead4{ scb.tmpadr };
+      scb.tmpadr += 4;
+      p1 = co_await SuzyRead4{ scb.tmpadr };
+      scb.tmpadr += 4;
+
+      //TODO: implement bug:
+      //The page break signal does not delay the end of the pen index palette loading.
+      for ( size_t i = 0; i < arr.size(); ++i )
+      {
+        uint8_t value = arr[i];
+        mSuzy.mPalette[2 * i] = (uint8_t)((value >> 4) & 0x0f);
+        mSuzy.mPalette[2 * i + 1] = (uint8_t)(value & 0x0f);
+      }
+    }
 
     mSuzy.mDisableCollisions = mSuzy.mNoCollide |
       ( ( mSuzy.mSprColl & Suzy::SPRCOLL::NO_COLLIDE ) == 1 ) |
@@ -147,87 +221,6 @@ ProcessCoroutine SuzyProcess::process()
   }
 
   mSuzy.mSpriteWorking = false;
-}
-
-SubCoroutine SuzyProcess::loadSCB()
-{
-  co_await this;
-
-  mSuzy.writeSPRCTL0( co_await SuzyRead{ scb.tmpadr++ } );
-  mSuzy.writeSPRCTL1( co_await SuzyRead{ scb.tmpadr++ } );
-  mSuzy.writeSPRCOLL( co_await SuzyRead{ scb.tmpadr++ } );
-  scb.scbnext.l = co_await SuzyRead{ scb.tmpadr++ };
-  scb.scbnext.h = co_await SuzyRead{ scb.tmpadr++ };
-
-  if ( mSuzy.mSkipSprite )
-    co_return;
-
-  scb.sprdline.l = co_await SuzyRead{ scb.tmpadr++ };
-  scb.sprdline.h = co_await SuzyRead{ scb.tmpadr++ };
-  scb.hposstrt.l = co_await SuzyRead{ scb.tmpadr++ };
-  scb.hposstrt.h = co_await SuzyRead{ scb.tmpadr++ };
-  scb.vposstrt.l = co_await SuzyRead{ scb.tmpadr++ };
-  scb.vposstrt.h = co_await SuzyRead{ scb.tmpadr++ };
-
-  scb.tilt = 0;
-  scb.stretch = 0;
-
-  switch ( mSuzy.mReload )
-  {
-  case Suzy::Reload::HVST:  //Reload hsize, vsize, stretch, tilt
-    scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
-    scb.stretch.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.stretch.h = co_await SuzyRead{ scb.tmpadr++ };
-    scb.tilt.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.tilt.h = co_await SuzyRead{ scb.tmpadr++ };
-    break;
-  case Suzy::Reload::HVS:   //Reload hsize, vsize, stretch
-    scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
-    scb.stretch.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.stretch.h = co_await SuzyRead{ scb.tmpadr++ };
-    break;
-  case Suzy::Reload::HV:    //Reload hsize, vsize
-    scb.sprhsiz.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprhsiz.h = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprvsiz.l = co_await SuzyRead{ scb.tmpadr++ };
-    scb.sprvsiz.h = co_await SuzyRead{ scb.tmpadr++ };
-    break;
-  case Suzy::Reload::NONE:  //Reload nothing
-    break;
-  }
-
-  if ( !mSuzy.mReusePalette )
-  {
-    union
-    {
-      std::array<uint8_t, 8> arr;
-      struct
-      {
-        uint32_t p0;
-        uint32_t p1;
-      };
-    };
-
-    p0 = co_await SuzyRead4{ scb.tmpadr };
-    scb.tmpadr += 4;
-    p1 = co_await SuzyRead4{ scb.tmpadr };
-    scb.tmpadr += 4;
-
-    //TODO: implement bug:
-    //The page break signal does not delay the end of the pen index palette loading.
-    for ( size_t i = 0; i < arr.size(); ++i )
-    {
-      uint8_t value = arr[i];
-      mSuzy.mPalette[2 * i] = ( uint8_t )( ( value >> 4 ) & 0x0f );
-      mSuzy.mPalette[2 * i + 1] = ( uint8_t )( value & 0x0f );
-    }
-  }
 }
 
 SubCoroutine SuzyProcess::renderSingleSprite()
