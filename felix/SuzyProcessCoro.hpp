@@ -1,8 +1,5 @@
 #pragma once
 #include <experimental/coroutine>
-#include <cassert>
-#include <type_traits>
-#include <optional>
 
 struct SuzyRead { uint16_t address; };
 struct SuzyRead4

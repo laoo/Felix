@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "ImageLnx.hpp"
 
 ImageLnx::ImageLnx( std::vector<uint8_t> data ) : ImageCart{ std::move( data ) }, mHeader{ ( Header const* )mData.data() }

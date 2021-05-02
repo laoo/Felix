@@ -1,5 +1,5 @@
+#include "pch.hpp"
 #include "ImageBS93.hpp"
-#include <algorithm>
 
 ImageBS93::ImageBS93( std::vector<uint8_t> data ) : mData{ std::move( data ) }
 {

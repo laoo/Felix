@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 static constexpr uint64_t TICK_PERIOD_LOG = 6;
 static constexpr uint64_t TICK_PERIOD = 1 << TICK_PERIOD_LOG;
 

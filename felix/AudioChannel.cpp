@@ -1,7 +1,6 @@
+#include "pch.hpp"
 #include "AudioChannel.hpp"
 #include "TimerCore.hpp"
-#include <bit>
-#include <algorithm>
 
 #ifdef __cpp_lib_bitops
 

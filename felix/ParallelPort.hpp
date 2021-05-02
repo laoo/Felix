@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 
 class Cartridge;
 class ComLynx;

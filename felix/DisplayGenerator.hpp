@@ -1,9 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <array>
-#include <functional>
-
 class DisplayGenerator
 {
 public:

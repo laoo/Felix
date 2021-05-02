@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "ComLynx.hpp"
 
 ComLynx::ComLynx()

@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "Cartridge.hpp"
 
 Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart ) : mCart{ std::move( cart ) },

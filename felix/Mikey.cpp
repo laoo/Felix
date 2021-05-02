@@ -1,5 +1,5 @@
+#include "pch.hpp"
 #include "Mikey.hpp"
-#include <cassert>
 #include "TimerCore.hpp"
 #include "AudioChannel.hpp"
 #include "Felix.hpp"

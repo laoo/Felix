@@ -1,6 +1,5 @@
 #pragma once
 #include "Suzy.hpp"
-#include <array>
 
 enum class Suzy::Sprite;
 

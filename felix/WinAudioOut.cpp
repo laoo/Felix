@@ -1,6 +1,5 @@
+#include "pch.hpp"
 #include "WinAudioOut.hpp"
-#include <stdexcept>
-#include <cassert>
 #include "Log.hpp"
 
 WinAudioOut::WinAudioOut( uint32_t audioBufferLengthMs )

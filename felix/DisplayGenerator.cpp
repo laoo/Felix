@@ -1,5 +1,5 @@
+#include "pch.hpp"
 #include "DisplayGenerator.hpp"
-#include <cmath>
 
 DisplayGenerator::DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mDMAData{}, mDisplayFun{ fun }, mRowStartTick{}, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
 mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}

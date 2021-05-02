@@ -1,5 +1,5 @@
+#include "pch.hpp"
 #include "CartBank.hpp"
-#include <cassert>
 
 namespace
 {

@@ -1,6 +1,6 @@
+#include "pch.hpp"
 #include "VidOperator.hpp"
 #include "SpriteTemplates.hpp"
-#include <utility>
 
 template<typename Type, int I>
 constexpr VidOperator::MemOp stateFun()

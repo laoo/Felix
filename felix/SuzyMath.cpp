@@ -1,7 +1,5 @@
+#include "pch.hpp"
 #include "SuzyMath.hpp"
-#include <algorithm>
-#include <cassert>
-#include <limits>
 
 
 namespace

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include "ImageCart.hpp"
 
 class ImageLnx : public ImageCart

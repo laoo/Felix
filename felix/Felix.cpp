@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "Felix.hpp"
 #include "CPU.hpp"
 #include "Cartridge.hpp"
@@ -8,9 +9,6 @@
 #include "ImageBIOS.hpp"
 #include "ImageCart.hpp"
 #include "ImageBIN.hpp"
-#include <fstream>
-#include <filesystem>
-#include <cassert>
 
 Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
 mCpu{ std::make_shared<CPU>( *this, true ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },

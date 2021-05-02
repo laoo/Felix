@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <functional>
 #include "ActionQueue.hpp"
 
 class TimerCore;

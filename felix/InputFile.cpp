@@ -1,5 +1,5 @@
+#include "pch.hpp"
 #include "InputFile.hpp"
-#include <fstream>
 #include "ImageBS93.hpp"
 #include "ImageBIOS.hpp"
 #include "ImageLyx.hpp"

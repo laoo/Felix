@@ -1,7 +1,7 @@
+#include "pch.hpp"
 #include "CPU.hpp"
 #include "Opcodes.hpp"
 #include "Felix.hpp"
-#include <cassert>
 
 
 

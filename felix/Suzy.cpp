@@ -1,5 +1,5 @@
+#include "pch.hpp"
 #include "Suzy.hpp"
-#include <cassert>
 #include "Felix.hpp"
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"

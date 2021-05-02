@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "ImageLyx.hpp"
 
 ImageLyx::ImageLyx( std::vector<uint8_t> data ) : ImageCart{ std::move( data ) }

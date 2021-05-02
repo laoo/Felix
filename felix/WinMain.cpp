@@ -1,9 +1,4 @@
-#include <windows.h>
-#include <cstdint>
-#include <string>
-#include <vector>
-#include <chrono>
-#include <experimental/coroutine>
+#include "pch.hpp"
 #include "WinRenderer.hpp"
 #include "Felix.hpp"
 #include "Mikey.hpp"

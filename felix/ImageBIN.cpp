@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "ImageBIN.hpp"
 
 ImageBIN::ImageBIN( std::vector<uint8_t> data ) : mData{ std::move( data ) }

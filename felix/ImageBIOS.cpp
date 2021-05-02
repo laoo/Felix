@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "ImageBIOS.hpp"
 
 ImageBIOS::ImageBIOS( std::vector<uint8_t> data ) : mData{ std::move( data ) }
