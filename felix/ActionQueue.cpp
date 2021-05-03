@@ -32,20 +32,28 @@ void ActionQueue::push( SequencedAction action )
 
 SequencedAction ActionQueue::pop()
 {
-  if ( mHeap.size() > 1 )
+  if ( !mHeap.empty() )
   {
     std::pop_heap( mHeap.begin(), mHeap.end() );
-  }
 
-  if ( mHeap.size() > 0 )
-  {
     auto result = mHeap.back();
     mHeap.pop_back();
     return result;
   }
   else
   {
-    return SequencedAction{};
+    return {};
   }
+}
 
+SequencedAction ActionQueue::head() const
+{
+  if ( !mHeap.empty() )
+  {
+    return mHeap.front();
+  }
+  else
+  {
+    return {};
+  }
 }

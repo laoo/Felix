@@ -89,6 +89,7 @@ public:
 
   void push( SequencedAction action );
   SequencedAction pop();
+  SequencedAction head() const;
 
 private:
 
