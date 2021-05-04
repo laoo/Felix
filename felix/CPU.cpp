@@ -48,7 +48,7 @@ bool CPU::isHiccup()
   }
 }
 
-CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState, mEx.coro }, mTrace{ trace }
+CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{ trace }
 {
   if ( mTrace )
   {
@@ -56,13 +56,36 @@ CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, mState{}, operand{}, mEx
   }
 }
 
-CPU::Request & CPU::req()
+CPU::Request const& CPU::advance()
 {
+  mEx.coro();
   return mReq;
 }
-CPU::Response & CPU::res()
+
+void CPU::respond( uint8_t value )
 {
-  return mRes;
+  mRes.value = value;
+}
+
+void CPU::assertInterrupt( int mask )
+{
+  mRes.interrupt |= mask;
+}
+
+bool CPU::interrupted() const
+{
+  return mRes.interrupt != 0;
+}
+
+void CPU::desertInterrupt( int mask )
+{
+  mRes.interrupt &= ~mask;
+}
+
+void CPU::respond( uint64_t tick, uint8_t value )
+{
+  mRes.tick = tick;
+  mRes.value = value;
 }
 
 bool CPU::CPUFetchOpcodeAwaiter::await_ready()

@@ -42,8 +42,6 @@ Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, 
         break;
     }
   }
-
-  mCpu->res().target();
 }
 
 void Felix::injectFile( InputFile const & file )
@@ -155,8 +153,6 @@ bool Felix::executeSequencedAction( SequencedAction seqAction )
   mCurrentTick = seqAction.getTick();
   auto action = seqAction.getAction();
 
-  auto & res = mCpu->res();
-
   switch ( action )
   {
   case Action::DISPLAY_DMA:
@@ -182,16 +178,16 @@ bool Felix::executeSequencedAction( SequencedAction seqAction )
     }
     break;
   case Action::ASSERT_IRQ:
-    res.interrupt |= CPU::I_IRQ;
+    mCpu->assertInterrupt( CPU::I_IRQ );
     break;
   case Action::ASSERT_RESET:
-    res.interrupt |= CPU::I_RESET;
+    mCpu->assertInterrupt( CPU::I_RESET );
     break;
   case Action::DESERT_IRQ:
-    res.interrupt &= ~CPU::I_IRQ;
+    mCpu->desertInterrupt( CPU::I_IRQ );
     break;
   case Action::DESERT_RESET:
-    res.interrupt &= ~CPU::I_RESET;
+    mCpu->desertInterrupt( CPU::I_RESET );
     break;
   case Action::END_FRAME:
     return true;
@@ -207,9 +203,7 @@ bool Felix::executeSuzyAction()
   if ( !mSuzyProcess || !mSuzyRunning )
     return true;
 
-  auto & res = mCpu->res();
-
-  if ( res.interrupt != 0 )
+  if ( mCpu->interrupted() )
   {
     mSuzyRunning = false;
     return true;
@@ -289,8 +283,7 @@ bool Felix::executeSuzyAction()
 
 void Felix::executeCPUAction()
 {
-  auto & req = mCpu->req();
-  auto & res = mCpu->res();
+  auto const& req = mCpu->advance();
 
   auto pageType = mPageTypes[req.address >> 8];
 
@@ -327,48 +320,41 @@ void Felix::executeCPUAction()
   case CPUAction::FETCH_OPERAND_RAM:
     [[fallthrough]];
   case CPUAction::READ_RAM:
-    res.value = mRAM[req.address];
-    res.tick = mCurrentTick;
+    mCpu->respond( mCurrentTick, mRAM[req.address] );
     mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
     mSequencedAccessAddress = req.address + 1;
-    res.target();
     break;
   case CPUAction::WRITE_RAM:
     mRAM[req.address] = req.value;
     mCurrentTick += 5;
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    res.target();
     break;
   case CPUAction::FETCH_OPCODE_FE:
     [[fallthrough]];
   case CPUAction::FETCH_OPERAND_FE:
     [[fallthrough]];
   case CPUAction::READ_FE:
-    res.value = mROM[req.address & 0x1ff];
+    mCpu->respond( mROM[req.address & 0x1ff] );
     mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
     mSequencedAccessAddress = req.address + 1;
-    res.target();
     break;
   case CPUAction::WRITE_FE:
     mCurrentTick += 5;
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    res.target();
     break;
   case CPUAction::FETCH_OPCODE_FF:
     [[fallthrough]];
   case CPUAction::FETCH_OPERAND_FF:
     [[fallthrough]];
   case CPUAction::READ_FF:
-    res.value = readFF( req.address & 0xff );
+    mCpu->respond( readFF( req.address & 0xff ) );
     mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
     mSequencedAccessAddress = req.address + 1;
-    res.target();
     break;
   case CPUAction::WRITE_FF:
     writeFF( req.address & 0xff, req.value );
     mCurrentTick += 5;
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    res.target();
     break;
   case CPUAction::FETCH_OPCODE_SUZY:
     [[fallthrough]];
@@ -376,16 +362,14 @@ void Felix::executeCPUAction()
     assert( false );
     [[fallthrough]];
   case CPUAction::READ_SUZY:
-    res.value = mSuzy->read( req.address );
+    mCpu->respond( mSuzy->read( req.address ) );
     mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    res.target();
     break;
   case CPUAction::WRITE_SUZY:
     mSuzy->write( req.address, req.value );
     mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    res.target();
     break;
   case CPUAction::FETCH_OPCODE_MIKEY:
     [[fallthrough]];
@@ -393,10 +377,9 @@ void Felix::executeCPUAction()
     assert( false );
     [[fallthrough]];
   case CPUAction::READ_MIKEY:
-    res.value = mMikey->read( req.address );
+    mCpu->respond( mMikey->read( req.address ) );
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    res.target();
     break;
   case CPUAction::WRITE_MIKEY:
     if ( auto mikeyAction = mMikey->write( req.address, req.value ) )
@@ -405,7 +388,6 @@ void Felix::executeCPUAction()
     }
     mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    res.target();
     break;
   }
 }
@@ -413,8 +395,6 @@ void Felix::executeCPUAction()
 void Felix::process( uint64_t ticks )
 {
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
-
-  auto & req = mCpu->req();
 
   for ( ;; )
   {

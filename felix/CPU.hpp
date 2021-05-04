@@ -85,12 +85,11 @@ public:
 
   struct Response : private NonCopyable
   {
-    Response( State & state, std::coroutine_handle<> coro ) : state{ state }, tick{}, interrupt{}, value{}, target{ coro } {}
+    Response( State & state ) : state{ state }, tick{}, interrupt{}, value{} {}
     State & state;
     uint64_t tick;
     int interrupt;
     uint8_t value;
-    std::coroutine_handle<> target;
   };
 
   static constexpr int I_NONE  = 0;
@@ -100,8 +99,13 @@ public:
 
   CPU( Felix & felix, bool trace );
 
-  Request & req();
-  Response & res();
+  Request const& advance();
+
+  void respond( uint8_t value );
+  void respond( uint64_t tick, uint8_t value );
+  void assertInterrupt( int mask );
+  void desertInterrupt( int mask );
+  bool interrupted() const;
 
 private:
   Felix & felix;
