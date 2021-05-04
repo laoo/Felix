@@ -5,7 +5,7 @@
 #include "Log.hpp"
 #include "SpriteLineParser.hpp"
 
-SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mScb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}, sprhpos{}, hsizacum{}, left{}, mEveron{}
+SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mScb{ mSuzy.mSCB }, mBaseCoroutine{}, mEveron{}
 {
   auto p = process();
   mBaseCoroutine = std::move( p );
@@ -172,9 +172,9 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
 
       for ( int quadrant = 0; quadrant < 4; ++quadrant )
       {
-        self.left = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) == 0 ? 0 : 1;
+        int left = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) == 0 ? 0 : 1;
         int up = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) == 0 ? 0 : 1;
-        self.left ^= self.mSuzy.mHFlip ? 1 : 0;
+        left ^= self.mSuzy.mHFlip ? 1 : 0;
         up ^= self.mSuzy.mVFlip ? 1 : 0;
         scb.tiltacum = 0;
         scb.vsizacum = (up == 0) ? scb.vsizoff.w : 0;
@@ -190,11 +190,11 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
           for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow, scb.sprvpos += up ? -1 : 1 )
           {
             scb.procadr = scb.sprdline;
-            self.mShifter = Shifter{};
-            self.mShifter.push( co_await SuzyRead4{ scb.procadr } );
+            Shifter shifter{};
+            shifter.push( co_await SuzyRead4{ scb.procadr } );
             scb.procadr += 4;
-            scb.sprdoff = self.mShifter.pull<8>();
-            SpriteLineParser slp{ self.mShifter, self.mSuzy.mLiteral, self.mSuzy.bpp(), (scb.sprdoff - 1) * 8 };
+            scb.sprdoff = shifter.pull<8>();
+            SpriteLineParser slp{ shifter, self.mSuzy.mLiteral, self.mSuzy.bpp(), (scb.sprdoff - 1) * 8 };
             if ( up == 0 && scb.sprvpos >= Suzy::mScreenHeight || up == 1 && (int16_t)(scb.sprvpos) < 0 ) continue;
             scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
             scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
@@ -202,39 +202,39 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
             colOp.newLine( scb.colladr );
             scb.hposstrt += scb.tiltacum.h;
             scb.tiltacum.h = 0;
-            self.hsizacum = self.left == 0 ? scb.hsizoff.w : 0;
-            self.sprhpos = scb.hposstrt - scb.hoff;
+            int hsizacum = left == 0 ? scb.hsizoff.w : 0;
+            int sprhpos = scb.hposstrt - scb.hoff;
             if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) != ((uint8_t)quadCycle[(size_t)self.mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT) )
-              self.sprhpos += self.left ? -1 : 1;
+              sprhpos += left ? -1 : 1;
 
             while ( int const* pen = slp.getPen() )
             {
-              if ( self.mShifter.size() < 24 && slp.totalBits() > self.mShifter.size() )
+              if ( shifter.size() < 24 && slp.totalBits() > shifter.size() )
               {
-                self.mShifter.push( co_await SuzyRead{ scb.procadr } );
+                shifter.push( co_await SuzyRead{ scb.procadr } );
                 scb.procadr += 1;
               }
 
-              self.hsizacum += scb.sprhsiz;
-              uint8_t pixelWidth = self.hsizacum >> 8;
-              self.hsizacum &= 0xff;
+              hsizacum += scb.sprhsiz;
+              uint8_t pixelWidth = hsizacum >> 8;
+              hsizacum &= 0xff;
 
               for ( int h = 0; h < pixelWidth; h++ )
               {
                 // Stop horizontal loop if outside of screen bounds
-                if ( self.sprhpos < Suzy::mScreenWidth )
+                if ( sprhpos < Suzy::mScreenWidth )
                 {
                   uint8_t pixel = self.mSuzy.mPalette[*pen];
 
                   if ( !self.mSuzy.mDisableCollisions )
                   {
-                    if ( auto memOp = colOp.process( self.sprhpos, pixel ) )
+                    if ( auto memOp = colOp.process( sprhpos, pixel ) )
                     {
                       colOp.receiveHiColl( co_await SuzyColRMW{ memOp.mask, memOp.addr, memOp.value } );
                     }
                   }
 
-                  switch ( auto memOp = vidOp.process( self.sprhpos, pixel ) )
+                  switch ( auto memOp = vidOp.process( sprhpos, pixel ) )
                   {
                   case VidOperator::MemOp::WRITE:
                     co_await SuzyWrite{ memOp.addr, memOp.value };
@@ -252,7 +252,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
 
                   self.mEveron = true;
                 }
-                self.sprhpos += self.left ? -1 : 1;
+                sprhpos += left ? -1 : 1;
               }
             }
 

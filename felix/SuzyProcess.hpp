@@ -198,9 +198,5 @@ private:
 
   ProcessCoroutine mBaseCoroutine;
   std::coroutine_handle<> mCoro;
-  Shifter mShifter;
-  uint16_t sprhpos;
-  uint16_t hsizacum;
-  int left;
   bool mEveron;
 };
