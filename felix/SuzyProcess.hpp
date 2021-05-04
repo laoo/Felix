@@ -30,7 +30,7 @@ private:
     {
       uint8_t await_resume() { return (uint8_t)value; }
     };
-    requestRead = ISuzyProcess::RequestRead{ address };
+    request = { Request::READ, address };
     return static_cast<SuzyReadResponse &>( response );
   }
 
@@ -40,7 +40,7 @@ private:
     {
       uint32_t await_resume() { return value; }
     };
-    requestRead4 = ISuzyProcess::RequestRead4{ address };
+    request = { Request::READ4, address };
     return static_cast<SuzyRead4Response &>( response );
   }
 
@@ -50,7 +50,7 @@ private:
     {
       void await_resume() {}
     };
-    requestWrite = ISuzyProcess::RequestWrite{ address, value };
+    request = { Request::WRITE,  address, value };
     return static_cast<SuzyWriteResponse &>( response );
   }
 
@@ -60,7 +60,7 @@ private:
     {
       uint8_t await_resume() { return (uint8_t)value; }
     };
-    requestWrite4 = ISuzyProcess::RequestColRMW{ address, mask, value };
+    request = { Request::COLRMW, address, value, mask };
     return static_cast<SuzyColRMWResponse &>( response );
   }
 
@@ -70,7 +70,7 @@ private:
     {
       void await_resume() {}
     };
-    requestVidRMW = ISuzyProcess::RequestVidRMW{ address, value, mask };
+    request = { Request::VIDRMW, address, value, mask };
     return static_cast<SuzyVidRMWResponse &>( response );
   }
 
@@ -80,7 +80,7 @@ private:
     {
       void await_resume() {}
     };
-    requestXOR = ISuzyProcess::RequestXOR{ address, value };
+    request = { Request::XOR, address, value };
     return static_cast<SuzyXORResponse &>( response );
   }
 
@@ -132,18 +132,7 @@ private:
   Suzy & mSuzy;
   Suzy::SCB & mScb;
 
-  union
-  {
-    Request request;
-    RequestFinish requestFinish;
-    RequestRead requestRead;
-    RequestRead4 requestRead4;
-    RequestWrite requestWrite;
-    RequestColRMW requestWrite4;
-    RequestVidRMW requestVidRMW;
-    RequestXOR requestXOR;
-  };
-
+  Request request;
   Response response;
 
   bool mEveron;

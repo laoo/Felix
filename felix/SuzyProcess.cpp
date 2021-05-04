@@ -5,7 +5,7 @@
 #include "Log.hpp"
 #include "SpriteLineParser.hpp"
 
-SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mScb{ mSuzy.mSCB }, mProcessCoroutine{ process() }, mEveron{}
+SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mScb{ mSuzy.mSCB }, mProcessCoroutine{ process() }, request{}, response{}, mEveron{}
 {
 }
 
@@ -23,7 +23,7 @@ void SuzyProcess::respond( uint32_t value )
 void SuzyProcess::setFinish()
 {
   mSuzy.mSpriteWorking = false;
-  requestFinish = ISuzyProcess::RequestFinish{};
+  request = { Request::FINISH };
 }
 
 SuzyProcess::ProcessCoroutine SuzyProcess::process()

@@ -11,6 +11,9 @@ public:
 
   struct Request
   {
+    uint32_t mask;
+    uint16_t addr;
+    uint8_t value;
     enum Type
     {
       FINISH,
@@ -23,7 +26,7 @@ public:
       _SIZE
     } type;
 
-    Request( Type t ) : type{ t } {}
+    Request( Type type = FINISH, uint16_t addr = 0, uint8_t value = 0, uint32_t mask = 0 ) : mask{ mask }, addr{ addr }, value{ value }, type{ type } {}
   };
 
 
@@ -39,40 +42,27 @@ public:
   };
   struct RequestRead : public Request
   {
-    uint16_t addr;
-
-    RequestRead( uint16_t addr ) : Request{ READ }, addr{ addr } {}
+    RequestRead( uint16_t addr ) : Request{ READ, addr } {}
   };
   struct RequestRead4 : public Request
   {
-    uint16_t addr;
-    RequestRead4( uint16_t addr ) : Request{ READ4 }, addr{ addr } {}
+    RequestRead4( uint16_t addr ) : Request{ READ4, addr } {}
   };
   struct RequestWrite : public Request
   {
-    uint16_t addr;
-    uint8_t value;
-    RequestWrite( uint16_t addr, uint8_t value ) : Request{ WRITE }, addr{ addr }, value{ value } {}
+    RequestWrite( uint16_t addr, uint8_t value ) : Request{ WRITE, addr, value } {}
   };
   struct RequestColRMW : public Request
   {
-    uint32_t mask;
-    uint16_t addr;
-    uint8_t value;
-    RequestColRMW( uint16_t addr, uint32_t mask, uint8_t value ) : Request{ COLRMW }, mask{ mask }, addr{ addr }, value{ value } {}
+    RequestColRMW( uint16_t addr, uint32_t mask, uint8_t value ) : Request{ COLRMW, addr, value, mask } {}
   };
   struct RequestVidRMW : public Request
   {
-    uint16_t addr;
-    uint8_t value;
-    uint8_t mask;
-    RequestVidRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ VIDRMW }, addr{ addr }, value{ value }, mask{ mask } {}
+    RequestVidRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ VIDRMW, addr, value, mask } {}
   };
   struct RequestXOR : public Request
   {
-    uint16_t addr;
-    uint8_t value;
-    RequestXOR( uint16_t addr, uint8_t value ) : Request{ XOR }, addr{ addr }, value{ value } {}
+    RequestXOR( uint16_t addr, uint8_t value ) : Request{ XOR, addr, value } {}
   };
 };
 
