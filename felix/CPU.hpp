@@ -68,7 +68,7 @@ public:
 
   };
 
-  struct Request : private NonCopyable<Request>
+  struct Request : private NonCopyable
   {
     enum class Type : uint8_t
     {
@@ -83,7 +83,7 @@ public:
     Type type;
   };
 
-  struct Response : private NonCopyable<Response>
+  struct Response : private NonCopyable
   {
     Response( State & state, std::coroutine_handle<> coro ) : state{ state }, tick{}, interrupt{}, value{}, target{ coro } {}
     State & state;
@@ -190,7 +190,7 @@ private:
   void cpx( uint8_t val );
   void cpy( uint8_t val );
 
-  struct Execute : private NonCopyable<Response>
+  struct Execute : private NonCopyable
   {
     struct promise_type;
     using handle = std::coroutine_handle<promise_type>;

@@ -1,11 +1,10 @@
 #pragma once
 
-template <class T>
 class NonCopyable
 {
 public:
-  NonCopyable( const NonCopyable & ) = delete;
-  T & operator = ( const T & ) = delete;
+  NonCopyable( NonCopyable const& ) = delete;
+  NonCopyable& operator= (  NonCopyable const& ) = delete;
 
 protected:
   NonCopyable() = default;

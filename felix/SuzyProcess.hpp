@@ -84,7 +84,7 @@ private:
     return static_cast<SuzyXORResponse &>( response );
   }
 
-  struct ProcessCoroutine : private NonCopyable<Response>
+  struct ProcessCoroutine : private NonCopyable
   {
   public:
     struct promise_type;
