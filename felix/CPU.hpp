@@ -22,22 +22,6 @@ class CPU
 
 public:
 
-  struct Request : private NonCopyable<Request>
-  {
-    enum class Type : uint8_t
-    {
-      NONE,
-      FETCH_OPCODE,
-      FETCH_OPERAND,
-      READ,
-      WRITE,
-    };
-
-    uint16_t address;
-    uint8_t value;
-    Type type;
-  };
-
   struct State
   {
     State() : tick{}, interrupt{ I_RESET }, op{}, pc{}, s{ 0x1ff }, a{}, x{}, y{}, p{}, ea{}, fa{}, t{}, m1{}, m2{} {}
@@ -93,6 +77,22 @@ public:
     uint8_t m1;
     uint8_t m2;
 
+  };
+
+  struct Request : private NonCopyable<Request>
+  {
+    enum class Type : uint8_t
+    {
+      NONE,
+      FETCH_OPCODE,
+      FETCH_OPERAND,
+      READ,
+      WRITE,
+    };
+
+    uint16_t address;
+    uint8_t value;
+    Type type;
   };
 
   struct Response : private NonCopyable<Response>
@@ -202,7 +202,7 @@ private:
   void cpx( uint8_t val );
   void cpy( uint8_t val );
 
-  struct Execute
+  struct Execute : private NonCopyable<Response>
   {
     struct promise_type;
     using handle = std::coroutine_handle<promise_type>;
@@ -221,7 +221,7 @@ private:
     ~Execute();
 
     handle coro;
-  } mEx;
+  } const mEx;
 
   Request mReq;
   Response mRes;
