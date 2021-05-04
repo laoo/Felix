@@ -181,7 +181,7 @@ private:
 
 private:
   Suzy & mSuzy;
-  Suzy::SCB & scb;
+  Suzy::SCB & mScb;
 
   union
   {

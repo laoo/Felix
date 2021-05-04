@@ -5,7 +5,7 @@
 #include "Log.hpp"
 #include "SpriteLineParser.hpp"
 
-SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, scb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}, sprhpos{}, hsizacum{}, left{}, mEveron{}
+SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mScb{ mSuzy.mSCB }, mBaseCoroutine{}, mShifter{}, sprhpos{}, hsizacum{}, left{}, mEveron{}
 {
   auto p = process();
   mBaseCoroutine = std::move( p );
@@ -70,6 +70,8 @@ void SuzyProcess::setHandle( std::coroutine_handle<> c )
 
 SuzyProcess::ProcessCoroutine SuzyProcess::process()
 {
+  auto & scb = mScb;
+
   while ( ( scb.scbnext & 0xff00 ) != 0 )
   {
     scb.scbadr = scb.scbnext;
@@ -174,34 +176,34 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
         int up = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) == 0 ? 0 : 1;
         self.left ^= self.mSuzy.mHFlip ? 1 : 0;
         up ^= self.mSuzy.mVFlip ? 1 : 0;
-        self.scb.tiltacum = 0;
-        self.scb.vsizacum = (up == 0) ? self.scb.vsizoff.w : 0;
-        self.scb.sprvpos = self.scb.vposstrt - self.scb.voff;
+        scb.tiltacum = 0;
+        scb.vsizacum = (up == 0) ? scb.vsizoff.w : 0;
+        scb.sprvpos = scb.vposstrt - scb.voff;
         if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) != ((uint8_t)quadCycle[(size_t)self.mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_UP) )
-          self.scb.sprvpos += up ? -1 : 1;
+          scb.sprvpos += up ? -1 : 1;
 
         for ( ;; )
         {
-          self.scb.vsizacum.h = 0;
-          self.scb.vsizacum += self.scb.sprvsiz;
-          uint8_t pixelHeight = self.scb.vsizacum.h;
-          for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow, self.scb.sprvpos += up ? -1 : 1 )
+          scb.vsizacum.h = 0;
+          scb.vsizacum += scb.sprvsiz;
+          uint8_t pixelHeight = scb.vsizacum.h;
+          for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow, scb.sprvpos += up ? -1 : 1 )
           {
-            self.scb.procadr = self.scb.sprdline;
+            scb.procadr = scb.sprdline;
             self.mShifter = Shifter{};
-            self.mShifter.push( co_await SuzyRead4{ self.scb.procadr } );
-            self.scb.procadr += 4;
-            self.scb.sprdoff = self.mShifter.pull<8>();
-            SpriteLineParser slp{ self.mShifter, self.mSuzy.mLiteral, self.mSuzy.bpp(), (self.scb.sprdoff - 1) * 8 };
-            if ( up == 0 && self.scb.sprvpos >= Suzy::mScreenHeight || up == 1 && (int16_t)(self.scb.sprvpos) < 0 ) continue;
-            self.scb.vidadr = self.scb.vidbas + self.scb.sprvpos * Suzy::mScreenWidth / 2;
-            self.scb.colladr = self.scb.collbas + self.scb.sprvpos * Suzy::mScreenWidth / 2;
-            vidOp.newLine( self.scb.vidadr );
-            colOp.newLine( self.scb.colladr );
-            self.scb.hposstrt += self.scb.tiltacum.h;
-            self.scb.tiltacum.h = 0;
-            self.hsizacum = self.left == 0 ? self.scb.hsizoff.w : 0;
-            self.sprhpos = self.scb.hposstrt - self.scb.hoff;
+            self.mShifter.push( co_await SuzyRead4{ scb.procadr } );
+            scb.procadr += 4;
+            scb.sprdoff = self.mShifter.pull<8>();
+            SpriteLineParser slp{ self.mShifter, self.mSuzy.mLiteral, self.mSuzy.bpp(), (scb.sprdoff - 1) * 8 };
+            if ( up == 0 && scb.sprvpos >= Suzy::mScreenHeight || up == 1 && (int16_t)(scb.sprvpos) < 0 ) continue;
+            scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+            scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+            vidOp.newLine( scb.vidadr );
+            colOp.newLine( scb.colladr );
+            scb.hposstrt += scb.tiltacum.h;
+            scb.tiltacum.h = 0;
+            self.hsizacum = self.left == 0 ? scb.hsizoff.w : 0;
+            self.sprhpos = scb.hposstrt - scb.hoff;
             if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) != ((uint8_t)quadCycle[(size_t)self.mSuzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT) )
               self.sprhpos += self.left ? -1 : 1;
 
@@ -209,11 +211,11 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
             {
               if ( self.mShifter.size() < 24 && slp.totalBits() > self.mShifter.size() )
               {
-                self.mShifter.push( co_await SuzyRead{ self.scb.procadr } );
-                self.scb.procadr += 1;
+                self.mShifter.push( co_await SuzyRead{ scb.procadr } );
+                scb.procadr += 1;
               }
 
-              self.hsizacum += self.scb.sprhsiz;
+              self.hsizacum += scb.sprhsiz;
               uint8_t pixelWidth = self.hsizacum >> 8;
               self.hsizacum &= 0xff;
 
@@ -271,11 +273,11 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
               }
             }
           }
-          self.scb.sprdline += self.scb.sprdoff;
-          if ( self.scb.sprdoff < 2 )
+          scb.sprdline += scb.sprdoff;
+          if ( scb.sprdoff < 2 )
             break;
         }
-        if ( self.scb.sprdoff == 0 )
+        if ( scb.sprdoff == 0 )
           break;
       }
       auto fred = colOp.hiColl();
