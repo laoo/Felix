@@ -107,7 +107,7 @@ public:
 private:
   Felix & felix;
 
-  State state;
+  State mState;
   uint8_t operand;
 
   static constexpr size_t ss = sizeof( State );
@@ -123,12 +123,12 @@ private:
 
   uint8_t getP() const
   {
-    return state.p | ( 1 << bit1 ) | ( state.interrupt != 0 ? 0 : ( 1 << bitB ) );
+    return mState.p | ( 1 << bit1 ) | ( mState.interrupt != 0 ? 0 : ( 1 << bitB ) );
   }
 
   void setP( uint8_t value )
   {
-    state.p = value;
+    mState.p = value;
   }
 
   void setnz( uint8_t v )
@@ -145,7 +145,7 @@ private:
   template<int bit>
   void set()
   {
-    state.p |= 1 << bit;
+    mState.p |= 1 << bit;
   }
 
   template<int bit>
@@ -157,7 +157,7 @@ private:
   template<int bit>
   void clear()
   {
-    state.p &= ~( 1 << bit );
+    mState.p &= ~( 1 << bit );
   }
 
   template<int bit>
@@ -169,7 +169,7 @@ private:
   template<int bit>
   bool get() const
   {
-    return ( state.p & ( 1 << bit ) ) != 0;
+    return ( mState.p & ( 1 << bit ) ) != 0;
   }
 
   template<int bit>

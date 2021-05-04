@@ -7,7 +7,7 @@
 
 bool CPU::isHiccup()
 {
-  switch ( state.op )
+  switch ( mState.op )
   {
   case Opcode::UND_1_03:
   case Opcode::UND_1_13:
@@ -48,7 +48,7 @@ bool CPU::isHiccup()
   }
 }
 
-CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, state{}, operand{}, mEx{ execute() }, mReq{}, mRes{ state, mEx.coro }, mTrace{ trace }
+CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState, mEx.coro }, mTrace{ trace }
 {
   if ( mTrace )
   {
@@ -183,6 +183,8 @@ CPU::Execute::~Execute()
 CPU::Execute CPU::execute()
 {
   trace1();
+
+  auto & state = mState;
 
   for ( ;; )
   {
@@ -1975,8 +1977,8 @@ void CPU::adc( uint8_t value )
 {
   if ( get<bitD>() )
   {
-    int lo = ( state.a & 0x0f ) + ( value & 0x0f ) + ( get<bitC>() ? 0x01 : 0 );
-    int hi = ( state.a & 0xf0 ) + ( value & 0xf0 );
+    int lo = ( mState.a & 0x0f ) + ( value & 0x0f ) + ( get<bitC>() ? 0x01 : 0 );
+    int hi = ( mState.a & 0xf0 ) + ( value & 0xf0 );
     clear<bitV>();
     clear<bitC>();
     if ( lo > 0x09 )
@@ -1984,7 +1986,7 @@ void CPU::adc( uint8_t value )
       hi += 0x10;
       lo += 0x06;
     }
-    if ( ~( state.a ^ value ) & ( state.a ^ hi ) & 0x80 )
+    if ( ~( mState.a ^ value ) & ( mState.a ^ hi ) & 0x80 )
     {
       set<bitV>();
     }
@@ -1996,15 +1998,15 @@ void CPU::adc( uint8_t value )
     {
       set<bitC>();
     }
-    state.a = ( lo & 0x0f ) + ( hi & 0xf0 );
-    setnz( state.a );
+    mState.a = ( lo & 0x0f ) + ( hi & 0xf0 );
+    setnz( mState.a );
   }
   else
   {
-    int sum = state.a + value + ( get<bitC>() ? 0x01 : 0 );
+    int sum = mState.a + value + ( get<bitC>() ? 0x01 : 0 );
     clear<bitV>();
     clear<bitC>();
-    if ( ~( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
+    if ( ~( mState.a ^ value ) & ( mState.a ^ sum ) & 0x80 )
     {
       set<bitV>();
     }
@@ -2012,8 +2014,8 @@ void CPU::adc( uint8_t value )
     {
       set<bitC>();
     }
-    state.a = (uint8_t)sum;
-    setnz( state.a );
+    mState.a = (uint8_t)sum;
+    setnz( mState.a );
   }
 }
 
@@ -2022,12 +2024,12 @@ void CPU::sbc( uint8_t value )
   if ( get<bitD>() )
   {
     int c = get<bitC>() ? 0 : 1;
-    int sum = state.a - value - c;
-    int lo = ( state.a & 0x0f ) - ( value & 0x0f ) - c;
-    int hi = ( state.a & 0xf0 ) - ( value & 0xf0 );
+    int sum = mState.a - value - c;
+    int lo = ( mState.a & 0x0f ) - ( value & 0x0f ) - c;
+    int hi = ( mState.a & 0xf0 ) - ( value & 0xf0 );
     clear<bitV>();
     clear<bitC>();
-    if ( ( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
+    if ( ( mState.a ^ value ) & ( mState.a ^ sum ) & 0x80 )
     {
       set<bitV>();
     }
@@ -2047,16 +2049,16 @@ void CPU::sbc( uint8_t value )
     {
       set<bitC>();
     }
-    state.a = ( lo & 0x0f ) + ( hi & 0xf0 );
-    setnz( state.a );
+    mState.a = ( lo & 0x0f ) + ( hi & 0xf0 );
+    setnz( mState.a );
   }
   else
   {
     int c = get<bitC>() ? 0 : 1;
-    int sum = state.a - value - c;
+    int sum = mState.a - value - c;
     clear<bitV>();
     clear<bitC>();
-    if ( ( state.a ^ value ) & ( state.a ^ sum ) & 0x80 )
+    if ( ( mState.a ^ value ) & ( mState.a ^ sum ) & 0x80 )
     {
       set<bitV>();
     }
@@ -2064,34 +2066,34 @@ void CPU::sbc( uint8_t value )
     {
       set<bitC>();
     }
-    state.a = (uint8_t)sum;
-    setnz( state.a );
+    mState.a = (uint8_t)sum;
+    setnz( mState.a );
   }
 }
 
 void CPU::bit( uint8_t value )
 {
-  setz( state.a & value );
+  setz( mState.a & value );
   set<bitN>( ( value & 0x80 ) != 0x00 );
   set<bitV>( ( value & 0x40 ) != 0x00 );
 }
 
 void CPU::cmp( uint8_t value )
 {
-  set<bitC>( state.a >= value );
-  setnz( state.a - value );;
+  set<bitC>( mState.a >= value );
+  setnz( mState.a - value );;
 }
 
 void CPU::cpx( uint8_t value )
 {
-  set<bitC>( state.x >= value );
-  setnz( state.x - value );
+  set<bitC>( mState.x >= value );
+  setnz( mState.x - value );
 }
 
 void CPU::cpy( uint8_t value )
 {
-  set<bitC>( state.y >= value );
-  setnz( state.y - value );
+  set<bitC>( mState.y >= value );
+  setnz( mState.y - value );
 }
 
 void CPU::trace1()
@@ -2099,7 +2101,7 @@ void CPU::trace1()
   if ( !mTrace )
     return;
 
-  off = sprintf( buf.data(), "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", state.tick, state.pc, state.a, state.x, state.y, state.s, ( CPU::get<CPU::bitN>( state.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( state.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( state.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( state.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( state.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( state.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( state.p ) ? 'C' : '-' ) );
+  off = sprintf( buf.data(), "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", mState.tick, mState.pc, mState.a, mState.x, mState.y, mState.s, ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' ) );
 }
 
 void CPU::trace2()
@@ -2107,7 +2109,7 @@ void CPU::trace2()
   if ( !mTrace )
     return;
 
-  switch ( state.op )
+  switch ( mState.op )
   {
   case Opcode::RZP_AND:
   case Opcode::RZX_AND:
@@ -2500,15 +2502,15 @@ void CPU::trace2()
     off += sprintf( buf.data() + off, "bbs7 " );
     break;
   case Opcode::BRK_BRK:
-    if ( ( state.interrupt & CPU::I_RESET ) != 0 )
+    if ( ( mState.interrupt & CPU::I_RESET ) != 0 )
     {
       off += sprintf( buf.data() + off, "RESET\n" );
     }
-    else if ( ( state.interrupt & CPU::I_NMI ) != 0 )
+    else if ( ( mState.interrupt & CPU::I_NMI ) != 0 )
     {
       off += sprintf( buf.data() + off, "NMI\n" );
     }
-    else if ( ( state.interrupt & CPU::I_IRQ ) != 0 )
+    else if ( ( mState.interrupt & CPU::I_IRQ ) != 0 )
     {
       off += sprintf( buf.data() + off, "IRQ\n" );
     }
@@ -2593,7 +2595,7 @@ void CPU::trace2()
   }
 
 
-  switch ( state.op )
+  switch ( mState.op )
   {
   case Opcode::UND_1_03:
   case Opcode::UND_1_13:
@@ -2640,7 +2642,7 @@ void CPU::trace2()
   case Opcode::RZP_ORA:
   case Opcode::RZP_ADC:
   case Opcode::RZP_SBC:
-    sprintf( buf.data() + off, "$%02x\t;$%02x\n", state.eal, state.m1 );
+    sprintf( buf.data() + off, "$%02x\t;$%02x\n", mState.eal, mState.m1 );
     break;
   case Opcode::MZP_ASL:
   case Opcode::MZP_DEC:
@@ -2666,14 +2668,14 @@ void CPU::trace2()
   case Opcode::MZP_SMB5:
   case Opcode::MZP_SMB6:
   case Opcode::MZP_SMB7:
-    sprintf( buf.data() + off, "$%02x\t;$%02x->$%02x\n", state.eal, state.m1, state.m2 );
+    sprintf( buf.data() + off, "$%02x\t;$%02x->$%02x\n", mState.eal, mState.m1, mState.m2 );
     break;
   case Opcode::WZP_STA:
   case Opcode::WZP_STX:
   case Opcode::WZP_STY:
   case Opcode::WZP_STZ:
   case Opcode::UND_3_44:
-    sprintf( buf.data() + off, "$%02x\n", state.eal );
+    sprintf( buf.data() + off, "$%02x\n", mState.eal );
     break;
   case Opcode::RZX_LDA:
   case Opcode::RZX_LDY:
@@ -2684,7 +2686,7 @@ void CPU::trace2()
   case Opcode::RZX_ORA:
   case Opcode::RZX_ADC:
   case Opcode::RZX_SBC:
-    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x\n", state.eal, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x\n", mState.eal, mState.t, mState.m1 );
     break;
   case Opcode::MZX_ASL:
   case Opcode::MZX_DEC:
@@ -2692,7 +2694,7 @@ void CPU::trace2()
   case Opcode::MZX_LSR:
   case Opcode::MZX_ROL:
   case Opcode::MZX_ROR:
-    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x->$%02x\n", state.eal, state.t, state.m1, state.m2 );
+    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x->$%02x\n", mState.eal, mState.t, mState.m1, mState.m2 );
     break;
   case Opcode::WZX_STA:
   case Opcode::WZX_STY:
@@ -2700,13 +2702,13 @@ void CPU::trace2()
   case Opcode::UND_4_54:
   case Opcode::UND_4_d4:
   case Opcode::UND_4_f4:
-    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]\n", state.eal, state.t );
+    sprintf( buf.data() + off, "$%02x,x\t;[$%04x]\n", mState.eal, mState.t );
     break;
   case Opcode::RZY_LDX:
-    sprintf( buf.data() + off, "$%02x,y\t;[$%04x]=$%02x\n", state.eal, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%02x,y\t;[$%04x]=$%02x\n", mState.eal, mState.t, mState.m1 );
     break;
   case Opcode::WZY_STX:
-    sprintf( buf.data() + off, "$%02x,y\t;[$%04x]\n", state.eal, state.t );
+    sprintf( buf.data() + off, "$%02x,y\t;[$%04x]\n", mState.eal, mState.t );
     break;
   case Opcode::RIN_LDA:
   case Opcode::RIN_AND:
@@ -2715,10 +2717,10 @@ void CPU::trace2()
   case Opcode::RIN_ORA:
   case Opcode::RIN_ADC:
   case Opcode::RIN_SBC:
-    sprintf( buf.data() + off, "($%02x)\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "($%02x)\t;[$%04x]=$%02x\n", mState.fa, mState.t, mState.m1 );
     break;
   case Opcode::WIN_STA:
-    sprintf( buf.data() + off, "($%02x)\t;[$%04x]\n", state.eal, state.t );
+    sprintf( buf.data() + off, "($%02x)\t;[$%04x]\n", mState.eal, mState.t );
     break;
   case Opcode::RIX_AND:
   case Opcode::RIX_CMP:
@@ -2727,10 +2729,10 @@ void CPU::trace2()
   case Opcode::RIX_ORA:
   case Opcode::RIX_ADC:
   case Opcode::RIX_SBC:
-    sprintf( buf.data() + off, "($%02x,x)\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "($%02x,x)\t;[$%04x]=$%02x\n", mState.fa, mState.t, mState.m1 );
     break;
   case Opcode::WIX_STA:
-    sprintf( buf.data() + off, "($%02x,x)\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "($%02x,x)\t;[$%04x]\n", mState.fa, mState.t );
     break;
   case Opcode::RIY_AND:
   case Opcode::RIY_CMP:
@@ -2739,10 +2741,10 @@ void CPU::trace2()
   case Opcode::RIY_ORA:
   case Opcode::RIY_ADC:
   case Opcode::RIY_SBC:
-    sprintf( buf.data() + off, "($%02x),y\t;[$%04x]=$%02x\n", state.fa, state.ea, state.m1 );
+    sprintf( buf.data() + off, "($%02x),y\t;[$%04x]=$%02x\n", mState.fa, mState.ea, mState.m1 );
     break;
   case Opcode::WIY_STA:
-    sprintf( buf.data() + off, "($%02x),y\t;[$%04x]\n", state.fa, state.ea );
+    sprintf( buf.data() + off, "($%02x),y\t;[$%04x]\n", mState.fa, mState.ea );
     break;
   case Opcode::RAB_AND:
   case Opcode::RAB_BIT:
@@ -2756,7 +2758,7 @@ void CPU::trace2()
   case Opcode::RAB_ORA:
   case Opcode::RAB_ADC:
   case Opcode::RAB_SBC:
-    sprintf( buf.data() + off, "$%04x\t;=$%02x\n", state.ea, state.m1 );
+    sprintf( buf.data() + off, "$%04x\t;=$%02x\n", mState.ea, mState.m1 );
     break;
   case Opcode::MAB_ASL:
   case Opcode::MAB_DEC:
@@ -2766,7 +2768,7 @@ void CPU::trace2()
   case Opcode::MAB_ROR:
   case Opcode::MAB_TRB:
   case Opcode::MAB_TSB:
-    sprintf( buf.data() + off, "$%04x\t;=$%02x->$%02x\n", state.ea, state.m1, state.m2 );
+    sprintf( buf.data() + off, "$%04x\t;=$%02x->$%02x\n", mState.ea, mState.m1, mState.m2 );
     break;
   case Opcode::WAB_STA:
   case Opcode::WAB_STX:
@@ -2777,7 +2779,7 @@ void CPU::trace2()
   case Opcode::UND_4_dc:
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
-    sprintf( buf.data() + off, "$%04x\n", state.ea );
+    sprintf( buf.data() + off, "$%04x\n", mState.ea );
     break;
   case Opcode::RAX_AND:
   case Opcode::RAX_BIT:
@@ -2788,7 +2790,7 @@ void CPU::trace2()
   case Opcode::RAX_ORA:
   case Opcode::RAX_ADC:
   case Opcode::RAX_SBC:
-    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]=$%02x\n", mState.fa, mState.t, mState.m1 );
     break;
   case Opcode::MAX_ASL:
   case Opcode::MAX_DEC:
@@ -2796,11 +2798,11 @@ void CPU::trace2()
   case Opcode::MAX_LSR:
   case Opcode::MAX_ROL:
   case Opcode::MAX_ROR:
-    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]=$%02x->$%02x\n", state.fa, state.t, state.m1, state.m2 );
+    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]=$%02x->$%02x\n", mState.fa, mState.t, mState.m1, mState.m2 );
     break;
   case Opcode::WAX_STA:
   case Opcode::WAX_STZ:
-    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "$%04x,x\t;[$%04x]\n", mState.fa, mState.t );
     break;
   case Opcode::RAY_AND:
   case Opcode::RAY_CMP:
@@ -2810,16 +2812,16 @@ void CPU::trace2()
   case Opcode::RAY_ORA:
   case Opcode::RAY_ADC:
   case Opcode::RAY_SBC:
-    sprintf( buf.data() + off, "$%04x,y\t;[$%04x]=$%02x\n", state.fa, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%04x,y\t;[$%04x]=$%02x\n", mState.fa, mState.t, mState.m1 );
     break;
   case Opcode::WAY_STA:
-    sprintf( buf.data() + off, "$%04x,y\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "$%04x,y\t;[$%04x]\n", mState.fa, mState.t );
     break;
   case Opcode::JMX_JMP:
-    sprintf( buf.data() + off, "($%04x,x)\t;[$%04x]\n", state.fa, state.ea );
+    sprintf( buf.data() + off, "($%04x,x)\t;[$%04x]\n", mState.fa, mState.ea );
     break;
   case Opcode::JMI_JMP:
-    sprintf( buf.data() + off, "($%04x)\t;[$%04x]\n", state.fa, state.t );
+    sprintf( buf.data() + off, "($%04x)\t;[$%04x]\n", mState.fa, mState.t );
     break;
   case Opcode::IMP_ASL:
   case Opcode::IMP_CLC:
@@ -2876,7 +2878,7 @@ void CPU::trace2()
   case Opcode::UND_2_82:
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
-    sprintf( buf.data() + off, "#$%02x\n", state.eal );
+    sprintf( buf.data() + off, "#$%02x\n", mState.eal );
     break;
   case Opcode::BRL_BCC:
   case Opcode::BRL_BCS:
@@ -2887,7 +2889,7 @@ void CPU::trace2()
   case Opcode::BRL_BVC:
   case Opcode::BRL_BVS:
   case Opcode::BRL_BRA:
-    sprintf( buf.data() + off, "$%04x\n", state.t );
+    sprintf( buf.data() + off, "$%04x\n", mState.t );
     break;
   case Opcode::BZR_BBR0:
   case Opcode::BZR_BBR1:
@@ -2905,7 +2907,7 @@ void CPU::trace2()
   case Opcode::BZR_BBS5:
   case Opcode::BZR_BBS6:
   case Opcode::BZR_BBS7:
-    sprintf( buf.data() + off, "$%02x,$%04x\t;$%02x\n", state.eal, state.t, state.m1 );
+    sprintf( buf.data() + off, "$%02x,$%04x\t;$%02x\n", mState.eal, mState.t, mState.m1 );
     break;
   }
 
