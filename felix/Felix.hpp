@@ -54,12 +54,12 @@ private:
     bool suzyDisable;
   };
 
-  void suzyRead( ISuzyProcess::RequestRead const* req );
-  void suzyRead4( ISuzyProcess::RequestRead4 const* req );
-  void suzyWrite( ISuzyProcess::RequestWrite const* req );
-  void suzyColRMW( ISuzyProcess::RequestColRMW const* req );
-  void suzyVidRMW( ISuzyProcess::RequestVidRMW const* req );
-  void suzyXor( ISuzyProcess::RequestXOR const* req );
+  void suzyRead();
+  void suzyRead4();
+  void suzyWrite();
+  void suzyColRMW();
+  void suzyVidRMW();
+  void suzyXor();
 
   void processSuzy();
 

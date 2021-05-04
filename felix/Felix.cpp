@@ -281,27 +281,27 @@ void Felix::process( uint64_t ticks )
       res.target();
       break;
     case Action::SUZY_READ:
-      suzyRead( ( ISuzyProcess::RequestRead const* )mSuzyProcessRequest );
+      suzyRead();
       processSuzy();
       break;
     case Action::SUZY_READ4:
-      suzyRead4( ( ISuzyProcess::RequestRead4 const* )mSuzyProcessRequest );
+      suzyRead4();
       processSuzy();
       break;
     case Action::SUZY_WRITE:
-      suzyWrite( ( ISuzyProcess::RequestWrite const* )mSuzyProcessRequest );
+      suzyWrite();
       processSuzy();
       break;
     case Action::SUZY_COLRMW:
-      suzyColRMW( ( ISuzyProcess::RequestColRMW const* )mSuzyProcessRequest );
+      suzyColRMW();
       processSuzy();
       break;
     case Action::SUZY_VIDRMW:
-      suzyVidRMW( ( ISuzyProcess::RequestVidRMW const* )mSuzyProcessRequest );
+      suzyVidRMW();
       processSuzy();
       break;
     case Action::SUZY_XOR:
-      suzyXor( ( ISuzyProcess::RequestXOR const* )mSuzyProcessRequest );
+      suzyXor();
       processSuzy();
       break;
     case Action::ASSERT_IRQ:
@@ -361,38 +361,38 @@ ComLynx & Felix::getComLynx()
   return *mComLynx;
 }
 
-void Felix::suzyRead( ISuzyProcess::RequestRead const * req )
+void Felix::suzyRead()
 {
-  auto value = mRAM[req->addr];
+  auto value = mRAM[mSuzyProcessRequest->addr];
   mSuzyProcess->respond( value );
 }
 
-void Felix::suzyRead4( ISuzyProcess::RequestRead4 const* req )
+void Felix::suzyRead4()
 {
-  assert( req->addr <= 0xfffc );
-  auto value = *( ( uint32_t const* )( mRAM.data() + req->addr ) );
+  assert( mSuzyProcessRequest->addr <= 0xfffc );
+  auto value = *( ( uint32_t const* )( mRAM.data() + mSuzyProcessRequest->addr ) );
   mSuzyProcess->respond( value );
 }
 
-void Felix::suzyWrite( ISuzyProcess::RequestWrite const * req )
+void Felix::suzyWrite()
 {
-  mRAM[req->addr] = req->value;
+  mRAM[mSuzyProcessRequest->addr] = mSuzyProcessRequest->value;
 }
 
-void Felix::suzyColRMW( ISuzyProcess::RequestColRMW const * req )
+void Felix::suzyColRMW()
 {
-  assert( req->addr <= 0xfffc );
-  const uint32_t value = *( (uint32_t const*)( mRAM.data() + req->addr ) );
+  assert( mSuzyProcessRequest->addr <= 0xfffc );
+  const uint32_t value = *( (uint32_t const*)( mRAM.data() + mSuzyProcessRequest->addr ) );
 
   //broadcast
-  const uint8_t u8 = req->value;
-  const uint16_t u16 = req->value | ( req->value << 8 );
+  const uint8_t u8 = mSuzyProcessRequest->value;
+  const uint16_t u16 = mSuzyProcessRequest->value | ( mSuzyProcessRequest->value << 8 );
   const uint32_t u32 = u16 | ( u16 << 16 );
 
-  const uint32_t rmwvaleu = ( value & ~req->mask ) | ( u32 & req->mask );
-  *( (uint32_t*)( mRAM.data() + req->addr ) ) =  rmwvaleu;
+  const uint32_t rmwvaleu = ( value & ~mSuzyProcessRequest->mask ) | ( u32 & mSuzyProcessRequest->mask );
+  *( (uint32_t*)( mRAM.data() + mSuzyProcessRequest->addr ) ) =  rmwvaleu;
 
-  const uint32_t resvalue = value & req->mask;
+  const uint32_t resvalue = value & mSuzyProcessRequest->mask;
   uint8_t result{};
 
   //horizontal max
@@ -403,16 +403,16 @@ void Felix::suzyColRMW( ISuzyProcess::RequestColRMW const * req )
   mSuzyProcess->respond( result );
 }
 
-void Felix::suzyVidRMW( ISuzyProcess::RequestVidRMW const* req )
+void Felix::suzyVidRMW()
 {
-  auto value = mRAM[req->addr] & req->mask | req->value;
-  mRAM[req->addr] = ( uint8_t )value;
+  auto value = mRAM[mSuzyProcessRequest->addr] & mSuzyProcessRequest->mask | mSuzyProcessRequest->value;
+  mRAM[mSuzyProcessRequest->addr] = ( uint8_t )value;
 }
 
-void Felix::suzyXor( ISuzyProcess::RequestXOR const* req )
+void Felix::suzyXor()
 {
-  auto value = mRAM[req->addr] ^ req->value;
-  mRAM[req->addr] = ( uint8_t )value;
+  auto value = mRAM[mSuzyProcessRequest->addr] ^ mSuzyProcessRequest->value;
+  mRAM[mSuzyProcessRequest->addr] = ( uint8_t )value;
 }
 
 void Felix::processSuzy()
