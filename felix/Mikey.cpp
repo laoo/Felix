@@ -247,9 +247,8 @@ uint8_t Mikey::read( uint16_t address )
   return uint8_t();
 }
 
-Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
+SequencedAction Mikey::write( uint16_t address, uint8_t value )
 {
-  SequencedAction result;
   address &= 0xff;
 
   if ( address < 0x20 )
@@ -257,17 +256,13 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     switch ( address & 0x3 )
     {
     case TIMER::BACKUP:
-      result = mTimers[(address >> 2) & 7]->setBackup( mAccessTick, value );
-      break;
+      return mTimers[(address >> 2) & 7]->setBackup( mAccessTick, value );
     case TIMER::CONTROLA:
-      result = mTimers[( address >> 2 ) & 7]->setControlA( mAccessTick, value );
-      break;
+      return mTimers[( address >> 2 ) & 7]->setControlA( mAccessTick, value );
     case TIMER::COUNT:
-      result = mTimers[( address >> 2 ) & 7]->setCount( mAccessTick, value );
-      break;
+      return mTimers[( address >> 2 ) & 7]->setCount( mAccessTick, value );
     case TIMER::CONTROLB:
-      result = mTimers[( address >> 2 ) & 7]->setControlB( mAccessTick, value );
-      break;
+      return mTimers[( address >> 2 ) & 7]->setControlB( mAccessTick, value );
     }
   }
   else if ( address < 0x40 )
@@ -275,29 +270,21 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     switch ( address & 0x7 )
     {
     case AUDIO::VOLCNTRL:
-      result = mAudioChannels[( address >> 3 ) & 3]->setVolume( (int8_t)value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setVolume( (int8_t)value );
     case AUDIO::FEEDBACK:
-      result = mAudioChannels[( address >> 3 ) & 3]->setFeedback( value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setFeedback( value );
     case AUDIO::OUTPUT:
-      result = mAudioChannels[( address >> 3 ) & 3]->setOutput( value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setOutput( value );
     case AUDIO::SHIFT:
-      result = mAudioChannels[( address >> 3 ) & 3]->setShift( value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setShift( value );
     case AUDIO::BACKUP:
-      result = mAudioChannels[( address >> 3 ) & 3]->setBackup( mAccessTick, value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setBackup( mAccessTick, value );
     case AUDIO::CONTROL:
-      result = mAudioChannels[( address >> 3 ) & 3]->setControl( mAccessTick, value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setControl( mAccessTick, value );
     case AUDIO::COUNTER:
-      result = mAudioChannels[( address >> 3 ) & 3]->setCounter( mAccessTick, value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setCounter( mAccessTick, value );
     case AUDIO::OTHER:
-      result = mAudioChannels[( address >> 3 ) & 3]->setOther( mAccessTick, value );
-      break;
+      return mAudioChannels[( address >> 3 ) & 3]->setOther( mAccessTick, value );
     }
   }
   else switch ( address )
@@ -357,9 +344,7 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     //will prevent the CPU from going to sleep, and thus prevent Suzy from functioning.
     //So if sprites stop working, unintentional interrupt bits can be the hidden cause.
     if ( !mSuzyDone && mIRQ == 0 )
-    {
-      return { WriteAction::Type::START_SUZY };
-    }
+      mFelix.runSuzy();
     break;
   case DISPCTL:
     mDisplayRegs.dispColor = ( value & DISPCTL::DISP_COLOR ) != 0;
@@ -428,14 +413,7 @@ Mikey::WriteAction Mikey::write( uint16_t address, uint8_t value )
     break;
   }
 
-  if ( result )
-  {
-    return { WriteAction::Type::ENQUEUE_ACTION, result };
-  }
-  else
-  {
-    return {};
-  }
+  return {};
 }
 
 SequencedAction Mikey::fireTimer( uint64_t tick, uint32_t timer )

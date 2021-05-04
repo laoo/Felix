@@ -10,9 +10,11 @@
 #include "ImageCart.hpp"
 #include "ImageBIN.hpp"
 
-Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mBusReservationTick{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-mCpu{ std::make_shared<CPU>( *this, false ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
-  mMapCtl{}, mSequencedAccessAddress{ ~0u }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}
+static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
+
+Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
+  mCpu{ std::make_shared<CPU>( *this, false ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
+  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
   //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
   //{
@@ -105,6 +107,13 @@ void Felix::requestDisplayDMA( uint64_t tick, uint16_t address )
   mActionQueue.push( { Action::DISPLAY_DMA, tick } );
 }
 
+void Felix::runSuzy()
+{
+  mSuzyRunning = true;
+  if ( !mSuzyProcess )
+    mSuzyProcess = mSuzy->suzyProcess();
+}
+
 void Felix::assertInterrupt( int mask, std::optional<uint64_t> tick )
 {
   if ( ( mask & CPU::I_IRQ ) != 0 )
@@ -141,191 +150,285 @@ void Felix::desertInterrupt( int mask, std::optional<uint64_t> tick )
   }
 }
 
+bool Felix::executeSequencedAction( SequencedAction seqAction )
+{
+  mCurrentTick = seqAction.getTick();
+  auto action = seqAction.getAction();
+
+  auto & res = mCpu->res();
+
+  switch ( action )
+  {
+  case Action::DISPLAY_DMA:
+    mMikey->setDMAData( mCurrentTick, *(uint64_t *)( mRAM.data() + mDMAAddress ) );
+    mCurrentTick += 6 * mFastCycleTick + 2 * 5;
+    break;
+  case Action::FIRE_TIMER0:
+  case Action::FIRE_TIMER1:
+  case Action::FIRE_TIMER2:
+  case Action::FIRE_TIMER3:
+  case Action::FIRE_TIMER4:
+  case Action::FIRE_TIMER5:
+  case Action::FIRE_TIMER6:
+  case Action::FIRE_TIMER7:
+  case Action::FIRE_TIMER8:
+  case Action::FIRE_TIMER9:
+  case Action::FIRE_TIMERA:
+  case Action::FIRE_TIMERB:
+  case Action::FIRE_TIMERC:
+    if ( auto newAction = mMikey->fireTimer( mCurrentTick, (int)action - (int)Action::FIRE_TIMER0 ) )
+    {
+      mActionQueue.push( newAction );
+    }
+    break;
+  case Action::ASSERT_IRQ:
+    res.interrupt |= CPU::I_IRQ;
+    break;
+  case Action::ASSERT_RESET:
+    res.interrupt |= CPU::I_RESET;
+    break;
+  case Action::DESERT_IRQ:
+    res.interrupt &= ~CPU::I_IRQ;
+    break;
+  case Action::DESERT_RESET:
+    res.interrupt &= ~CPU::I_RESET;
+    break;
+  case Action::END_FRAME:
+    return true;
+  default:
+    assert( false );
+    break;
+  }
+  return false;
+}
+
+bool Felix::executeSuzyAction()
+{
+  if ( !mSuzyProcess || !mSuzyRunning )
+    return true;
+
+  auto & res = mCpu->res();
+
+  if ( res.interrupt != 0 )
+  {
+    mSuzyRunning = false;
+    return true;
+  }
+
+  mSuzyProcessRequest = mSuzyProcess->advance();
+
+  switch ( mSuzyProcessRequest->type )
+  {
+  case ISuzyProcess::Request::FINISH:
+    mSuzyRunning = false;
+    mMikey->suzyDone();
+    mSuzyProcess.reset();
+    //workaround to problem with resetting during Suzy activity
+    if ( mResetRequestDuringSpriteRendering )
+    {
+      mResetRequestDuringSpriteRendering = false;
+      pulseReset();
+    }
+    break;
+  case ISuzyProcess::Request::READ:
+    mSuzyProcess->respond( mRAM[mSuzyProcessRequest->addr] );
+    mCurrentTick += 5ull; //read byte
+    break;
+  case ISuzyProcess::Request::READ4:
+    if ( mSuzyProcessRequest->addr <= 0xfffc )
+      mSuzyProcess->respond( *( (uint32_t const *)( mRAM.data() + mSuzyProcessRequest->addr ) ) );
+    mCurrentTick += 5ull + 3 * mFastCycleTick;  //read 4 bytes
+    break;
+  case ISuzyProcess::Request::WRITE:
+    mRAM[mSuzyProcessRequest->addr] = mSuzyProcessRequest->value;
+    mCurrentTick += 5ull; //write byte
+    break;
+  case ISuzyProcess::Request::COLRMW:
+    {
+      assert( mSuzyProcessRequest->addr <= 0xfffc );
+      const uint32_t value = *( (uint32_t const *)( mRAM.data() + mSuzyProcessRequest->addr ) );
+
+      //broadcast
+      const uint8_t u8 = mSuzyProcessRequest->value;
+      const uint16_t u16 = mSuzyProcessRequest->value | ( mSuzyProcessRequest->value << 8 );
+      const uint32_t u32 = u16 | ( u16 << 16 );
+
+      const uint32_t rmwvalue = ( value & ~mSuzyProcessRequest->mask ) | ( u32 & mSuzyProcessRequest->mask );
+      *( (uint32_t *)( mRAM.data() + mSuzyProcessRequest->addr ) ) = rmwvalue;
+
+      const uint32_t resvalue = value & mSuzyProcessRequest->mask;
+      uint8_t result{};
+
+      //horizontal max
+      for ( int i = 0; i < 8; ++i )
+      {
+        result = std::max( result, (uint8_t)( resvalue >> ( i * 4 ) & 0x0f ) );
+      }
+      mSuzyProcess->respond( result );
+    }
+    mCurrentTick += 5ull + 7 * mFastCycleTick;  //read 4 bytes & write 4 bytes
+    break;
+  case ISuzyProcess::Request::VIDRMW:
+    {
+      auto value = mRAM[mSuzyProcessRequest->addr] & mSuzyProcessRequest->mask | mSuzyProcessRequest->value;
+      mRAM[mSuzyProcessRequest->addr] = (uint8_t)value;
+    }
+    mCurrentTick += 5ull + mFastCycleTick;  //read & write byte
+    break;
+  case ISuzyProcess::Request::XOR:
+    {
+      auto value = mRAM[mSuzyProcessRequest->addr] ^ mSuzyProcessRequest->value;
+      mRAM[mSuzyProcessRequest->addr] = (uint8_t)value;
+    }
+    mCurrentTick += 5ull + mFastCycleTick; //read & write byte
+    break;
+  }
+
+  return false;
+}
+
+void Felix::executeCPUAction()
+{
+  auto & req = mCpu->req();
+  auto & res = mCpu->res();
+
+  auto pageType = mPageTypes[req.address >> 8];
+
+  enum class CPUAction
+  {
+    FETCH_OPCODE_RAM = 0,
+    FETCH_OPERAND_RAM,
+    READ_RAM,
+    WRITE_RAM,
+    FETCH_OPCODE_SUZY,
+    FETCH_OPERAND_SUZY,
+    READ_SUZY,
+    WRITE_SUZY,
+    FETCH_OPCODE_MIKEY,
+    FETCH_OPERAND_MIKEY,
+    READ_MIKEY,
+    WRITE_MIKEY,
+    FETCH_OPCODE_FE,
+    FETCH_OPERAND_FE,
+    READ_FE,
+    WRITE_FE,
+    FETCH_OPCODE_FF,
+    FETCH_OPERAND_FF,
+    READ_FF,
+    WRITE_FF
+  };
+  
+  CPUAction action = (CPUAction)( (int)req.type + (int)pageType );
+
+  switch ( action )
+  {
+  case CPUAction::FETCH_OPCODE_RAM:
+    [[fallthrough]];
+  case CPUAction::FETCH_OPERAND_RAM:
+    [[fallthrough]];
+  case CPUAction::READ_RAM:
+    res.value = mRAM[req.address];
+    res.tick = mCurrentTick;
+    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mSequencedAccessAddress = req.address + 1;
+    res.target();
+    break;
+  case CPUAction::WRITE_RAM:
+    mRAM[req.address] = req.value;
+    mCurrentTick += 5;
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    res.target();
+    break;
+  case CPUAction::FETCH_OPCODE_FE:
+    [[fallthrough]];
+  case CPUAction::FETCH_OPERAND_FE:
+    [[fallthrough]];
+  case CPUAction::READ_FE:
+    res.value = mROM[req.address & 0x1ff];
+    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mSequencedAccessAddress = req.address + 1;
+    res.target();
+    break;
+  case CPUAction::WRITE_FE:
+    mCurrentTick += 5;
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    res.target();
+    break;
+  case CPUAction::FETCH_OPCODE_FF:
+    [[fallthrough]];
+  case CPUAction::FETCH_OPERAND_FF:
+    [[fallthrough]];
+  case CPUAction::READ_FF:
+    res.value = readFF( req.address & 0xff );
+    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mSequencedAccessAddress = req.address + 1;
+    res.target();
+    break;
+  case CPUAction::WRITE_FF:
+    writeFF( req.address & 0xff, req.value );
+    mCurrentTick += 5;
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    res.target();
+    break;
+  case CPUAction::FETCH_OPCODE_SUZY:
+    [[fallthrough]];
+  case CPUAction::FETCH_OPERAND_SUZY:
+    assert( false );
+    [[fallthrough]];
+  case CPUAction::READ_SUZY:
+    res.value = mSuzy->read( req.address );
+    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    res.target();
+    break;
+  case CPUAction::WRITE_SUZY:
+    mSuzy->write( req.address, req.value );
+    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    res.target();
+    break;
+  case CPUAction::FETCH_OPCODE_MIKEY:
+    [[fallthrough]];
+  case CPUAction::FETCH_OPERAND_MIKEY:
+    assert( false );
+    [[fallthrough]];
+  case CPUAction::READ_MIKEY:
+    res.value = mMikey->read( req.address );
+    mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    res.target();
+    break;
+  case CPUAction::WRITE_MIKEY:
+    if ( auto mikeyAction = mMikey->write( req.address, req.value ) )
+    {
+      mActionQueue.push( mikeyAction );
+    }
+    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    res.target();
+    break;
+  }
+}
+
 void Felix::process( uint64_t ticks )
 {
   mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
 
   auto & req = mCpu->req();
-  auto & res = mCpu->res();
 
   for ( ;; )
   {
-    auto seqAction = mActionQueue.pop();
-    mCurrentTick = seqAction.getTick();
-    auto action = seqAction.getAction();
-
-    switch ( action )
+    if ( mActionQueue.head().getTick() <= mCurrentTick )
     {
-      case Action::DISPLAY_DMA:
-        mMikey->setDMAData( mCurrentTick, *(uint64_t*)( mRAM.data() + mDMAAddress ) );
-        mBusReservationTick += 6 * mFastCycleTick + 2 * 5;
-        break;
-      case Action::FIRE_TIMER0:
-      case Action::FIRE_TIMER1:
-      case Action::FIRE_TIMER2:
-      case Action::FIRE_TIMER3:
-      case Action::FIRE_TIMER4:
-      case Action::FIRE_TIMER5:
-      case Action::FIRE_TIMER6:
-      case Action::FIRE_TIMER7:
-      case Action::FIRE_TIMER8:
-      case Action::FIRE_TIMER9:
-      case Action::FIRE_TIMERA:
-      case Action::FIRE_TIMERB:
-      case Action::FIRE_TIMERC:
-      if ( auto newAction = mMikey->fireTimer( mCurrentTick, ( int )action - ( int )Action::FIRE_TIMER0 ) )
+      if ( executeSequencedAction( mActionQueue.pop() ) )
+        return;
+    }
+    else
+    {
+      if ( executeSuzyAction() )
       {
-        mActionQueue.push( newAction );
+        executeCPUAction();
       }
-      break;
-    case Action::CPU_FETCH_OPCODE_RAM:
-      res.value = mRAM[req.address];
-      mSequencedAccessAddress = req.address + 1;
-      res.tick = mCurrentTick;
-      res.target();
-      break;
-    case Action::CPU_FETCH_OPERAND_RAM:
-      res.value = mRAM[req.address];
-      mSequencedAccessAddress = req.address + 1;
-      res.target();
-      break;
-    case Action::CPU_READ_RAM:
-      res.value = mRAM[req.address];
-      mSequencedAccessAddress = req.address + 1;
-      res.target();
-      break;
-    case Action::CPU_WRITE_RAM:
-      mRAM[req.address] = req.value;
-      mSequencedAccessAddress = ~0;
-      res.target();
-      break;
-    case Action::CPU_FETCH_OPCODE_FE:
-      res.value = mROM[req.address & 0x1ff];
-      mSequencedAccessAddress = req.address + 1;
-      res.tick = mCurrentTick;
-      res.target();
-      break;
-    case Action::CPU_FETCH_OPERAND_FE:
-      res.value = mROM[req.address & 0x1ff];
-      mSequencedAccessAddress = req.address + 1;
-      res.target();
-      break;
-    case Action::CPU_READ_FE:
-      res.value = mROM[req.address & 0x1ff];
-      mSequencedAccessAddress = req.address + 1;
-      res.target();
-      break;
-    case Action::CPU_WRITE_FE:
-      mSequencedAccessAddress = ~0;
-      res.target();
-      break;
-    case Action::CPU_FETCH_OPCODE_FF:
-      res.value = readFF( req.address & 0xff );
-      mSequencedAccessAddress = req.address + 1;
-      res.tick = mCurrentTick;
-      res.target();
-      break;
-    case Action::CPU_FETCH_OPERAND_FF:
-      res.value = readFF( req.address & 0xff );
-      mSequencedAccessAddress = req.address + 1;
-      res.target();
-      break;
-    case Action::CPU_READ_FF:
-      res.value = readFF( req.address & 0xff );
-      mSequencedAccessAddress = req.address + 1;
-      res.target();
-      break;
-    case Action::CPU_WRITE_FF:
-      writeFF( req.address & 0xff, req.value );
-      mSequencedAccessAddress = ~0;
-      res.target();
-      break;
-    case Action::CPU_READ_SUZY:
-      res.value = mSuzy->read( req.address );
-      res.target();
-      break;
-    case Action::CPU_WRITE_SUZY:
-      mSuzy->write( req.address, req.value );
-      res.target();
-      break;
-    case Action::CPU_READ_MIKEY:
-      res.value = mMikey->read( req.address );
-      res.target();
-      break;
-    case Action::CPU_WRITE_MIKEY:
-      switch ( auto mikeyAction = mMikey->write( req.address, req.value ) )
-      {
-      case Mikey::WriteAction::Type::START_SUZY:
-        if ( !mSuzyProcess )
-        {
-          mSuzyProcess = mSuzy->suzyProcess();
-        }
-        processSuzy();
-        break;
-      case Mikey::WriteAction::Type::ENQUEUE_ACTION:
-        mActionQueue.push( mikeyAction.action );
-        [[fallthrough]];
-      case Mikey::WriteAction::Type::NONE:
-        res.target();
-        break;
-      }
-      break;
-    case Action::SUZY_NONE:
-      mSuzyProcess.reset();
-      //workaround to problem with resetting during Suzy activity
-      if ( mResetRequestDuringSpriteRendering )
-      {
-        mResetRequestDuringSpriteRendering = false;
-        pulseReset();
-      }
-      res.target();
-      break;
-    case Action::SUZY_READ:
-      suzyRead();
-      processSuzy();
-      break;
-    case Action::SUZY_READ4:
-      suzyRead4();
-      processSuzy();
-      break;
-    case Action::SUZY_WRITE:
-      suzyWrite();
-      processSuzy();
-      break;
-    case Action::SUZY_COLRMW:
-      suzyColRMW();
-      processSuzy();
-      break;
-    case Action::SUZY_VIDRMW:
-      suzyVidRMW();
-      processSuzy();
-      break;
-    case Action::SUZY_XOR:
-      suzyXor();
-      processSuzy();
-      break;
-    case Action::ASSERT_IRQ:
-      res.interrupt |= CPU::I_IRQ;
-      break;
-    case Action::ASSERT_RESET:
-      res.interrupt |= CPU::I_RESET;
-      break;
-    case Action::DESERT_IRQ:
-      res.interrupt &= ~CPU::I_IRQ;
-      break;
-    case Action::DESERT_RESET:
-      res.interrupt &= ~CPU::I_RESET;
-      break;
-    case Action::END_FRAME:
-      return;
-    case Action::CPU_FETCH_OPCODE_SUZY:
-    case Action::CPU_FETCH_OPCODE_MIKEY:
-    case Action::CPU_FETCH_OPERAND_SUZY:
-    case Action::CPU_FETCH_OPERAND_MIKEY:
-      assert( false );
-      break;
-    default:
-      break;
     }
   }
 }
@@ -359,139 +462,6 @@ ComLynx & Felix::getComLynx()
 {
   assert( mComLynx );
   return *mComLynx;
-}
-
-void Felix::suzyRead()
-{
-  auto value = mRAM[mSuzyProcessRequest->addr];
-  mSuzyProcess->respond( value );
-}
-
-void Felix::suzyRead4()
-{
-  assert( mSuzyProcessRequest->addr <= 0xfffc );
-  auto value = *( ( uint32_t const* )( mRAM.data() + mSuzyProcessRequest->addr ) );
-  mSuzyProcess->respond( value );
-}
-
-void Felix::suzyWrite()
-{
-  mRAM[mSuzyProcessRequest->addr] = mSuzyProcessRequest->value;
-}
-
-void Felix::suzyColRMW()
-{
-  assert( mSuzyProcessRequest->addr <= 0xfffc );
-  const uint32_t value = *( (uint32_t const*)( mRAM.data() + mSuzyProcessRequest->addr ) );
-
-  //broadcast
-  const uint8_t u8 = mSuzyProcessRequest->value;
-  const uint16_t u16 = mSuzyProcessRequest->value | ( mSuzyProcessRequest->value << 8 );
-  const uint32_t u32 = u16 | ( u16 << 16 );
-
-  const uint32_t rmwvaleu = ( value & ~mSuzyProcessRequest->mask ) | ( u32 & mSuzyProcessRequest->mask );
-  *( (uint32_t*)( mRAM.data() + mSuzyProcessRequest->addr ) ) =  rmwvaleu;
-
-  const uint32_t resvalue = value & mSuzyProcessRequest->mask;
-  uint8_t result{};
-
-  //horizontal max
-  for ( int i = 0; i < 8; ++i )
-  {
-    result = std::max( result, (uint8_t)( resvalue >> ( i * 4 ) & 0x0f ) );
-  }
-  mSuzyProcess->respond( result );
-}
-
-void Felix::suzyVidRMW()
-{
-  auto value = mRAM[mSuzyProcessRequest->addr] & mSuzyProcessRequest->mask | mSuzyProcessRequest->value;
-  mRAM[mSuzyProcessRequest->addr] = ( uint8_t )value;
-}
-
-void Felix::suzyXor()
-{
-  auto value = mRAM[mSuzyProcessRequest->addr] ^ mSuzyProcessRequest->value;
-  mRAM[mSuzyProcessRequest->addr] = ( uint8_t )value;
-}
-
-void Felix::processSuzy()
-{
-  static constexpr std::array<int, ( int )ISuzyProcess::Request::Type::_SIZE> requestCost ={
-    0, //NONE,
-    0, //READ,
-    3, //READ4,
-    0, //WRITE,
-    7, //COLRMW,
-    1, //VIDRMW,
-    1  //XOR,
-  };
-
-  auto & res = mCpu->res();
-
-  if ( res.interrupt != 0 )
-  {
-    res.target();
-    return;
-  }
-
-  mSuzyProcessRequest = mSuzyProcess->advance();
-  int op = ( int )mSuzyProcessRequest->type;
-  mActionQueue.push( { ( Action )( ( int )Action::SUZY_NONE + op ), mBusReservationTick } );
-  if ( op )
-  {
-    mBusReservationTick += 5ull + requestCost[op] * mFastCycleTick;
-  }
-}
-
-void Felix::processCPU()
-{
-  static constexpr std::array<Action, 25> requestToAction = {
-    Action::NONE,
-    Action::CPU_FETCH_OPCODE_RAM,
-    Action::CPU_FETCH_OPERAND_RAM,
-    Action::CPU_READ_RAM,
-    Action::CPU_WRITE_RAM,
-    Action::NONE_FE,
-    Action::CPU_FETCH_OPCODE_FE,
-    Action::CPU_FETCH_OPERAND_FE,
-    Action::CPU_READ_FE,
-    Action::CPU_WRITE_FE,
-    Action::NONE_FF,
-    Action::CPU_FETCH_OPCODE_FF,
-    Action::CPU_FETCH_OPERAND_FF,
-    Action::CPU_READ_FF,
-    Action::CPU_WRITE_FF,
-    Action::NONE_MIKEY,
-    Action::CPU_FETCH_OPCODE_MIKEY,
-    Action::CPU_FETCH_OPERAND_MIKEY,
-    Action::CPU_READ_MIKEY,
-    Action::CPU_WRITE_MIKEY,
-    Action::NONE_SUZY,
-    Action::CPU_FETCH_OPCODE_SUZY,
-    Action::CPU_FETCH_OPERAND_SUZY,
-    Action::CPU_READ_SUZY,
-    Action::CPU_WRITE_SUZY
-  };
-
-  auto & req = mCpu->req();
-
-  auto pageType = mPageTypes[req.address >> 8];
-  mActionQueue.push( { requestToAction[( size_t )req.type + ( size_t )pageType], mBusReservationTick } );
-  switch ( pageType )
-  {
-    case PageType::RAM:
-    case PageType::FE:
-    case PageType::FF:
-      mBusReservationTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
-      break;
-    case PageType::MIKEY:
-      mBusReservationTick = mMikey->requestAccess( mBusReservationTick, req.address );
-      break;
-    case PageType::SUZY:
-      mBusReservationTick = mSuzy->requestAccess( mBusReservationTick, req.address );
-      break;
-  }
 }
 
 uint8_t Felix::readFF( uint16_t address )

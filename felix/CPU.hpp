@@ -72,7 +72,6 @@ public:
   {
     enum class Type : uint8_t
     {
-      NONE,
       FETCH_OPCODE,
       FETCH_OPERAND,
       READ,

@@ -127,9 +127,6 @@ CPU::CPUFetchOpcodeAwaiter & CPU::fetchOpcode( uint16_t address )
 {
   mReq.type = Request::Type::FETCH_OPCODE;
   mReq.address = address;
-
-  felix.processCPU();
-
   return static_cast<CPU::CPUFetchOpcodeAwaiter &>( mRes );
 }
 
@@ -137,9 +134,6 @@ CPU::CPUFetchOperandAwaiter & CPU::fetchOperand( uint16_t address )
 {
   mReq.type = Request::Type::FETCH_OPERAND;
   mReq.address = address;
-
-  felix.processCPU();
-
   return static_cast<CPU::CPUFetchOperandAwaiter &>( mRes );
 }
 
@@ -147,9 +141,6 @@ CPU::CPUReadAwaiter & CPU::read( uint16_t address )
 {
   mReq.type = Request::Type::READ;
   mReq.address = address;
-
-  felix.processCPU();
-
   return static_cast<CPU::CPUReadAwaiter &>( mRes );
 }
 
@@ -158,9 +149,6 @@ CPU::CPUWriteAwaiter & CPU::write( uint16_t address, uint8_t value )
   mReq.type = Request::Type::WRITE;
   mReq.address = address;
   mReq.value = value;
-
-  felix.processCPU();
-
   return static_cast<CPU::CPUWriteAwaiter &>( mRes );
 }
 

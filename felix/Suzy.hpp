@@ -22,8 +22,7 @@ public:
       WRITE,
       COLRMW,
       VIDRMW,
-      XOR,
-      _SIZE
+      XOR
     } type;
 
     Request( Type type = FINISH, uint16_t addr = 0, uint8_t value = 0, uint32_t mask = 0 ) : mask{ mask }, addr{ addr }, value{ value }, type{ type } {}

@@ -20,6 +20,7 @@ public:
   ~Felix();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );
+  void runSuzy();
   void assertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
   void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
 
@@ -32,17 +33,16 @@ public:
 
   Cartridge & getCartridge();
   ComLynx & getComLynx();
-  void processCPU();
 
 private:
 
   enum class PageType
   {
     RAM = 0,
-    FE = 5,
-    FF = 10,
-    MIKEY = 15,
-    SUZY = 20
+    SUZY = 4,
+    MIKEY = 8,
+    FE = 12,
+    FF = 16
   };
 
   struct MAPCTL
@@ -54,14 +54,9 @@ private:
     bool suzyDisable;
   };
 
-  void suzyRead();
-  void suzyRead4();
-  void suzyWrite();
-  void suzyColRMW();
-  void suzyVidRMW();
-  void suzyXor();
-
-  void processSuzy();
+  bool executeSequencedAction( SequencedAction );
+  bool executeSuzyAction();
+  void executeCPUAction();
 
   uint8_t readFF( uint16_t address );
   void writeFF( uint16_t address, uint8_t value );
@@ -73,7 +68,6 @@ private:
   std::array<uint8_t,65536> mRAM;
   std::array<uint8_t, 512> mROM;
   std::array<PageType, 256> mPageTypes;
-  uint64_t mBusReservationTick;
   uint64_t mCurrentTick;
   int mSamplesRemainder;
   ActionQueue mActionQueue;
@@ -89,4 +83,5 @@ private:
   std::shared_ptr<ISuzyProcess> mSuzyProcess;
   ISuzyProcess::Request const* mSuzyProcessRequest;
   bool mResetRequestDuringSpriteRendering;
+  bool mSuzyRunning;
 };

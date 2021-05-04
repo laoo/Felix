@@ -15,26 +15,9 @@ public:
   Mikey( Felix & felix, std::function<void( DisplayGenerator::Pixel const* )> const& fun );
   ~Mikey();
 
-  struct WriteAction
-  {
-    enum class Type
-    {
-      NONE,
-      ENQUEUE_ACTION,
-      START_SUZY,
-    } type;
-
-    SequencedAction action;
-
-    operator Type()
-    {
-      return type;
-    }
-  };
-
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
-  WriteAction write( uint16_t address, uint8_t value );
+  SequencedAction write( uint16_t address, uint8_t value );
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
   void setDMAData( uint64_t tick, uint64_t data );
   void suzyDone();
