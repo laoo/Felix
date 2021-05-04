@@ -195,6 +195,9 @@
     <ClInclude Include="SpriteLineParser.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utility.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh">

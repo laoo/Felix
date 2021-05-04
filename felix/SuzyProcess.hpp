@@ -1,6 +1,7 @@
 #pragma once
 #include "Suzy.hpp"
 #include "Shifter.hpp"
+#include "Utility.hpp"
 
 class SuzyProcess : public ISuzyProcess
 {
@@ -83,7 +84,7 @@ private:
     return static_cast<SuzyXORResponse &>( response );
   }
 
-  struct ProcessCoroutine
+  struct ProcessCoroutine : private NonCopyable<Response>
   {
   public:
     struct promise_type;
@@ -91,62 +92,38 @@ private:
 
     struct promise_type
     {
-      promise_type( SuzyProcess & suzyProcess ) : mSuzyProcess{ suzyProcess }
-      {
-      }
-
+      promise_type( SuzyProcess & suzyProcess ) : mSuzyProcess{ suzyProcess } {}
       auto get_return_object() { return ProcessCoroutine{ std::coroutine_handle<promise_type>::from_promise( *this ) }; }
+      std::suspend_always initial_suspend() { return {}; }
+      void return_void() {}
+      void unhandled_exception() { std::terminate(); }
 
-      auto initial_suspend() { return std::suspend_always{}; }
       std::suspend_always final_suspend() noexcept
       {
         mSuzyProcess.setFinish();
         return {};
       }
-      void return_void()
-      {
-      }
-      void unhandled_exception() { std::terminate(); }
 
     private:
       SuzyProcess & mSuzyProcess;
     };
 
-
-    ProcessCoroutine() : mCoro{} {}
     ProcessCoroutine( handle c ) : mCoro{ c } {}
-    ProcessCoroutine( ProcessCoroutine const& other ) = delete;
-    ProcessCoroutine & operator=( ProcessCoroutine const& other ) = delete;
-    ProcessCoroutine( ProcessCoroutine && other ) noexcept : mCoro{ std::move( other.mCoro ) }
-    {
-      other.mCoro = nullptr;
-    }
-    ProcessCoroutine & operator=( ProcessCoroutine && other ) noexcept
-    {
-      mCoro = std::move( other.mCoro );
-      other.mCoro = nullptr;
-      return *this;
-    }
     ~ProcessCoroutine()
     {
       if ( mCoro )
         mCoro.destroy();
     }
 
-    void resume()
+    void resume() const
     {
       assert( !mCoro.done() );
       mCoro();
     }
 
-    handle coro()
-    {
-      return mCoro;
-    }
-
   private:
     handle mCoro;
-  };
+  } const mProcessCoroutine;
 
 private:
   ProcessCoroutine process();
@@ -169,6 +146,5 @@ private:
 
   Response response;
 
-  ProcessCoroutine mProcessCoroutine;
   bool mEveron;
 };

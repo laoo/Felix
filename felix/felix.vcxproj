@@ -228,6 +228,7 @@
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="Suzy.hpp" />
+    <ClInclude Include="Utility.hpp" />
     <ClInclude Include="version.hpp" />
     <ClInclude Include="VidOperator.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Utility.hpp"
+
 enum class Opcode : uint8_t;
 class Felix;
 struct CpuTrace;
@@ -7,19 +9,6 @@ struct TraceRequest;
 
 class CPU
 {
-
-  template <class T>
-  class NonCopyable
-  {
-  public:
-    NonCopyable( const NonCopyable & ) = delete;
-    T & operator = ( const T & ) = delete;
-
-  protected:
-    NonCopyable() = default;
-    ~NonCopyable() = default;
-  };
-
 public:
 
   struct State
