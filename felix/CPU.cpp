@@ -1806,7 +1806,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::UND_3_44:
       ++state.pc;
-      co_await read( state.ea );
+      co_await discardRead( state.ea );
       break;
     case Opcode::UND_4_54:
     case Opcode::UND_4_d4:
@@ -1814,26 +1814,26 @@ CPU::Execute CPU::execute()
       ++state.pc;
       co_await read( state.pc );
       state.tl = state.eal + state.x;
-      co_await read( state.ea );
+      co_await discardRead( state.ea );
       break;
     case Opcode::UND_4_dc:
     case Opcode::UND_4_fc:
       ++state.pc;
       state.eah = co_await read( state.pc++ );
-      co_await read( state.ea );
+      co_await discardRead( state.ea );
       break;
     case Opcode::UND_8_5c:
-      //http://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opint.op_mapping.html
+      //https://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opcode_mapping.html
       //state.op - code 5C consumes 3 bytes and 8 cycles but conforms to no known address mode; it remains interesting but useless.
       //I tested the instruction "5C 1234h" ( stored little - endian as 5Ch 34h 12h ) as an example, and observed the following : 3 cycles fetching the instruction, 1 cycle reading FF34, then 4 cycles reading FFFF.
       ++state.pc;
       co_await read( state.pc++ );
       state.eah = 0xff;
-      co_await read( state.ea );
-      co_await read( 0xffff );
-      co_await read( 0xffff );
-      co_await read( 0xffff );
-      co_await read( 0xffff );
+      co_await discardRead( state.ea );
+      co_await discardRead( 0xffff );
+      co_await discardRead( 0xffff );
+      co_await discardRead( 0xffff );
+      co_await discardRead( 0xffff );
       break;
     default:  //for UND_1_xx
       break;

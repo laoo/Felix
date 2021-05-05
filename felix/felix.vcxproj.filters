@@ -198,6 +198,9 @@
     <ClInclude Include="Utility.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="IPatch.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh">

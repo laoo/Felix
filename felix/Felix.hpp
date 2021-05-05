@@ -12,6 +12,7 @@ class InputFile;
 class ImageBS93;
 class ImageBIOS;
 class ImageCart;
+class IPatch;
 
 class Felix
 {
@@ -38,10 +39,10 @@ private:
 
   enum class PageType
   {
-    RAM = 0,
-    SUZY = 4,
-    MIKEY = 8,
-    KERNEL = 12
+    RAM = 0 * 5,
+    SUZY = 1 * 5,
+    MIKEY = 2 * 5,
+    KERNEL = 3 * 5
   };
 
   struct MAPCTL
@@ -56,6 +57,7 @@ private:
   bool executeSequencedAction( SequencedAction );
   bool executeSuzyAction();
   void executeCPUAction();
+  void handlePatch( uint16_t address );
 
   uint8_t readKernel( uint16_t address );
   void writeKernel( uint16_t address, uint8_t value );
@@ -67,6 +69,7 @@ private:
   std::array<uint8_t,65536> mRAM;
   std::array<uint8_t, 512> mROM;
   std::array<PageType, 256> mPageTypes;
+  std::array<std::shared_ptr<IPatch>, 16> mPatches;
   uint64_t mCurrentTick;
   int mSamplesRemainder;
   ActionQueue mActionQueue;
@@ -79,6 +82,7 @@ private:
   uint32_t mSequencedAccessAddress;
   uint16_t mDMAAddress;
   uint64_t mFastCycleTick;
+  uint64_t mPatchMagickCodeAccumulator;
   std::shared_ptr<ISuzyProcess> mSuzyProcess;
   ISuzyProcess::Request const* mSuzyProcessRequest;
   bool mResetRequestDuringSpriteRendering;

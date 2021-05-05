@@ -213,6 +213,7 @@
     <ClInclude Include="ImageLnx.hpp" />
     <ClInclude Include="ImageLyx.hpp" />
     <ClInclude Include="InputFile.hpp" />
+    <ClInclude Include="IPatch.hpp" />
     <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="ParallelPort.hpp" />

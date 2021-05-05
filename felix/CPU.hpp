@@ -76,6 +76,7 @@ public:
       FETCH_OPERAND,
       READ,
       WRITE,
+      DISCARD_READ
     };
 
     uint16_t address;
@@ -230,15 +231,15 @@ private:
 
   auto & fetchOpcode( uint16_t address )
   {
-  struct CPUFetchOpcodeAwaiter : public Response
-  {
+    struct CPUFetchOpcodeAwaiter : public Response
+    {
       void await_resume()
       {
         state.tick = tick;
         state.interrupt = interrupt;
         state.op = (Opcode)value;
       }
-  };
+    };
 
     mReq.type = Request::Type::FETCH_OPCODE;
     mReq.address = address;
@@ -247,13 +248,13 @@ private:
 
   auto & fetchOperand( uint16_t address )
   {
-  struct CPUFetchOperandAwaiter : public Response
-  {
+    struct CPUFetchOperandAwaiter : public Response
+    {
       uint8_t await_resume()
       {
         return value;
       }
-  };
+    };
 
     mReq.type = Request::Type::FETCH_OPERAND;
     mReq.address = address;
@@ -263,13 +264,13 @@ private:
 
   auto & read( uint16_t address )
   {
-  struct CPUReadAwaiter : public Response
-  {
+    struct CPUReadAwaiter : public Response
+    {
       uint8_t await_resume()
       {
         return value;
       }
-  };
+    };
 
     mReq.type = Request::Type::READ;
     mReq.address = address;
@@ -278,8 +279,8 @@ private:
 
   auto & write( uint16_t address, uint8_t value )
   {
-  struct CPUWriteAwaiter : public Response
-  {
+    struct CPUWriteAwaiter : public Response
+    {
       void await_resume()
       {
       }
@@ -290,8 +291,21 @@ private:
     mReq.value = value;
     return static_cast<CPUWriteAwaiter &>( mRes );
   }
-  };
 
+  auto & discardRead( uint16_t address )
+  {
+    struct CPUDiscardReadAwaiter : public Response
+    {
+      uint8_t await_resume()
+      {
+        return 0;
+      }
+    };
+
+    mReq.type = Request::Type::DISCARD_READ;
+    mReq.address = address;
+    return static_cast<CPUDiscardReadAwaiter &>( mRes );
+  }
 
   void trace1();
   void trace2();

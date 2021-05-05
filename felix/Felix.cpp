@@ -9,12 +9,14 @@
 #include "ImageBIOS.hpp"
 #include "ImageCart.hpp"
 #include "ImageBIN.hpp"
+#include "IPatch.hpp"
+#include "Log.hpp"
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
-Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, std::function<KeyInput()> const& inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
+Felix::Felix( std::function<void( DisplayGenerator::Pixel const * )> const & fun, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mPatches{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
   mCpu{ std::make_shared<CPU>( *this, false ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
-  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
+  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
   //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
   //{
@@ -294,18 +296,22 @@ void Felix::executeCPUAction()
     FETCH_OPERAND_RAM,
     READ_RAM,
     WRITE_RAM,
+    DISCARD_READ_RAM,
     FETCH_OPCODE_SUZY,
     FETCH_OPERAND_SUZY,
     READ_SUZY,
     WRITE_SUZY,
+    DISCARD_READ_SUZY,
     FETCH_OPCODE_MIKEY,
     FETCH_OPERAND_MIKEY,
     READ_MIKEY,
     WRITE_MIKEY,
+    DISCARD_READ_MIKEY,
     FETCH_OPCODE_KENREL,
     FETCH_OPERAND_KENREL,
     READ_KENREL,
-    WRITE_KENREL
+    WRITE_KENREL,
+    DISCARD_READ_KERNEL
   };
   
   CPUAction action = (CPUAction)( (int)req.type + (int)pageType );
@@ -317,13 +323,13 @@ void Felix::executeCPUAction()
   case CPUAction::FETCH_OPERAND_RAM:
     [[fallthrough]];
   case CPUAction::READ_RAM:
-    mCpu->respond( mCurrentTick, mRAM[req.address] );
     mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCpu->respond( mCurrentTick, mRAM[req.address] );
     mSequencedAccessAddress = req.address + 1;
     break;
   case CPUAction::WRITE_RAM:
-    mRAM[req.address] = req.value;
     mCurrentTick += 5;
+    mRAM[req.address] = req.value;
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_KENREL:
@@ -331,13 +337,13 @@ void Felix::executeCPUAction()
   case CPUAction::FETCH_OPERAND_KENREL:
     [[fallthrough]];
   case CPUAction::READ_KENREL:
-    mCpu->respond( readKernel( req.address & 0x1ff ) );
     mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCpu->respond( readKernel( req.address & 0x1ff ) );
     mSequencedAccessAddress = req.address + 1;
     break;
   case CPUAction::WRITE_KENREL:
-    writeKernel( req.address & 0x1ff, req.value );
     mCurrentTick += 5;
+    writeKernel( req.address & 0x1ff, req.value );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_SUZY:
@@ -346,13 +352,13 @@ void Felix::executeCPUAction()
     assert( false );
     [[fallthrough]];
   case CPUAction::READ_SUZY:
-    mCpu->respond( mSuzy->read( req.address ) );
     mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mCpu->respond( mSuzy->read( req.address ) );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::WRITE_SUZY:
-    mSuzy->write( req.address, req.value );
     mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mSuzy->write( req.address, req.value );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_MIKEY:
@@ -361,20 +367,102 @@ void Felix::executeCPUAction()
     assert( false );
     [[fallthrough]];
   case CPUAction::READ_MIKEY:
-    mCpu->respond( mMikey->read( req.address ) );
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
+    mCpu->respond( mMikey->read( req.address ) );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::WRITE_MIKEY:
+    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
     if ( auto mikeyAction = mMikey->write( req.address, req.value ) )
     {
       mActionQueue.push( mikeyAction );
     }
-    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    break;
+  case CPUAction::DISCARD_READ_RAM:
+    [[fallthrough]];
+  case CPUAction::DISCARD_READ_SUZY:
+    [[fallthrough]];
+  case CPUAction::DISCARD_READ_MIKEY:
+    [[fallthrough]];
+  case CPUAction::DISCARD_READ_KERNEL:
+    mCurrentTick += 5;
+    handlePatch( req.address );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   }
 }
+
+void Felix::handlePatch( uint16_t address )
+{
+  mPatchMagickCodeAccumulator <<= 16;
+  mPatchMagickCodeAccumulator |= address;
+
+  if ( mPatchMagickCodeAccumulator >> 12 == 0xc0ffeaa2ab1ca )
+  {
+    int selector = address >> 12;
+    if ( mPatches[selector] )
+    {
+      struct RAMAccessor : public IPatch::IAccessor
+      {
+        RAMAccessor( std::array<uint8_t, 65536> & ram ) : ram{ ram } {}
+
+        std::array<uint8_t, 65536> & ram;
+        uint8_t read( uint16_t address ) const override
+        {
+          return ram[address];
+        }
+        void write( uint16_t address, uint8_t value ) override
+        {
+          ram[address] = value;
+        }
+      } ram{ mRAM };
+
+      struct MikeyAccessor : public IPatch::IAccessor
+      {
+        MikeyAccessor( Mikey & mikey, uint64_t currentTick ) : currentTick{ currentTick }, mikey { mikey } {}
+
+        uint64_t currentTick;
+        Mikey & mikey;
+        uint8_t read( uint16_t address ) const override
+        {
+          mikey.requestAccess( currentTick, address );
+          return mikey.read( address );
+        }
+        void write( uint16_t address, uint8_t value ) override
+        {
+          mikey.requestAccess( currentTick, address );
+          mikey.write( address, value );
+        }
+      } mikey{ *mMikey, mCurrentTick };
+
+      struct SuzyAccessor : public IPatch::IAccessor
+      {
+        SuzyAccessor( Suzy & suzy, uint64_t currentTick ) : currentTick{ currentTick }, suzy{ suzy } {}
+
+        uint64_t currentTick;
+        Suzy & suzy;
+        uint8_t read( uint16_t address ) const override
+        {
+          suzy.requestAccess( currentTick, address );
+          return suzy.read( address );
+        }
+        void write( uint16_t address, uint8_t value ) override
+        {
+          suzy.requestAccess( currentTick, address );
+          suzy.write( address, value );
+        }
+      } suzy{ *mSuzy, mCurrentTick };
+
+      mPatches[selector]->call( address & 0xff, ram, mikey, suzy );
+    }
+    else
+    {
+      L_WARNING << "Called empty patch " << selector << " with argument " << ( address & 0xff );
+    }
+  }
+}
+
 
 void Felix::process( uint64_t ticks )
 {
