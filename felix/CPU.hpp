@@ -90,6 +90,10 @@ public:
     uint64_t tick;
     int interrupt;
     uint8_t value;
+
+    bool await_ready() { return false; }
+    void await_suspend( std::coroutine_handle<> c ) {}
+
   };
 
   static constexpr int I_NONE  = 0;
@@ -223,38 +227,71 @@ private:
   Execute execute();
   bool isHiccup();
 
+
+  auto & fetchOpcode( uint16_t address )
+  {
   struct CPUFetchOpcodeAwaiter : public Response
   {
-    bool await_ready();
-    void await_resume();
-    void await_suspend( std::coroutine_handle<> c );
+      void await_resume()
+      {
+        state.tick = tick;
+        state.interrupt = interrupt;
+        state.op = (Opcode)value;
+      }
   };
 
+    mReq.type = Request::Type::FETCH_OPCODE;
+    mReq.address = address;
+    return static_cast<CPUFetchOpcodeAwaiter &>( mRes );
+  }
+
+  auto & fetchOperand( uint16_t address )
+  {
   struct CPUFetchOperandAwaiter : public Response
   {
-    bool await_ready();
-    uint8_t await_resume();
-    void await_suspend( std::coroutine_handle<> c );
+      uint8_t await_resume()
+      {
+        return value;
+      }
   };
 
+    mReq.type = Request::Type::FETCH_OPERAND;
+    mReq.address = address;
+    return static_cast<CPUFetchOperandAwaiter &>( mRes );
+  }
+
+
+  auto & read( uint16_t address )
+  {
   struct CPUReadAwaiter : public Response
   {
-    bool await_ready();
-    uint8_t await_resume();
-    void await_suspend( std::coroutine_handle<> c );
+      uint8_t await_resume()
+      {
+        return value;
+      }
   };
 
+    mReq.type = Request::Type::READ;
+    mReq.address = address;
+    return static_cast<CPUReadAwaiter &>( mRes );
+  }
+
+  auto & write( uint16_t address, uint8_t value )
+  {
   struct CPUWriteAwaiter : public Response
   {
-    bool await_ready();
-    void await_resume();
-    void await_suspend( std::coroutine_handle<> c );
+      void await_resume()
+      {
+      }
+    };
+
+    mReq.type = Request::Type::WRITE;
+    mReq.address = address;
+    mReq.value = value;
+    return static_cast<CPUWriteAwaiter &>( mRes );
+  }
   };
 
-  CPUFetchOpcodeAwaiter & fetchOpcode( uint16_t address );
-  CPUFetchOperandAwaiter & fetchOperand( uint16_t address );
-  CPUReadAwaiter & read( uint16_t address );
-  CPUWriteAwaiter & write( uint16_t address, uint8_t value );
 
   void trace1();
   void trace2();
