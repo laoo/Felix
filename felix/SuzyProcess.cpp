@@ -36,21 +36,21 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
     scb.scbadr = scb.scbnext;
     scb.tmpadr = scb.scbadr;
 
-    suzy.writeSPRCTL0( co_await suzyRead( scb.tmpadr++ ) );
-    suzy.writeSPRCTL1( co_await suzyRead( scb.tmpadr++ ) );
-    suzy.writeSPRCOLL( co_await suzyRead( scb.tmpadr++ ) );
-    scb.scbnext.l = co_await suzyRead( scb.tmpadr++ );
-    scb.scbnext.h = co_await suzyRead( scb.tmpadr++ );
+    suzy.writeSPRCTL0( co_await suzyFetchSCB( scb.tmpadr++ ) );
+    suzy.writeSPRCTL1( co_await suzyFetchSCB( scb.tmpadr++ ) );
+    suzy.writeSPRCOLL( co_await suzyFetchSCB( scb.tmpadr++ ) );
+    scb.scbnext.l = co_await suzyFetchSCB( scb.tmpadr++ );
+    scb.scbnext.h = co_await suzyFetchSCB( scb.tmpadr++ );
 
     if ( suzy.mSkipSprite )
       co_return;
 
-    scb.sprdline.l = co_await suzyRead( scb.tmpadr++ );
-    scb.sprdline.h = co_await suzyRead( scb.tmpadr++ );
-    scb.hposstrt.l = co_await suzyRead( scb.tmpadr++ );
-    scb.hposstrt.h = co_await suzyRead( scb.tmpadr++ );
-    scb.vposstrt.l = co_await suzyRead( scb.tmpadr++ );
-    scb.vposstrt.h = co_await suzyRead( scb.tmpadr++ );
+    scb.sprdline.l = co_await suzyFetchSCB( scb.tmpadr++ );
+    scb.sprdline.h = co_await suzyFetchSCB( scb.tmpadr++ );
+    scb.hposstrt.l = co_await suzyFetchSCB( scb.tmpadr++ );
+    scb.hposstrt.h = co_await suzyFetchSCB( scb.tmpadr++ );
+    scb.vposstrt.l = co_await suzyFetchSCB( scb.tmpadr++ );
+    scb.vposstrt.h = co_await suzyFetchSCB( scb.tmpadr++ );
 
     scb.tilt = 0;
     scb.stretch = 0;
@@ -58,28 +58,28 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
     switch ( suzy.mReload )
     {
     case Suzy::Reload::HVST:  //Reload hsize, vsize, stretch, tilt
-      scb.sprhsiz.l = co_await suzyRead( scb.tmpadr++ );
-      scb.sprhsiz.h = co_await suzyRead( scb.tmpadr++ );
-      scb.sprvsiz.l = co_await suzyRead( scb.tmpadr++ );
-      scb.sprvsiz.h = co_await suzyRead( scb.tmpadr++ );
-      scb.stretch.l = co_await suzyRead( scb.tmpadr++ );
-      scb.stretch.h = co_await suzyRead( scb.tmpadr++ );
-      scb.tilt.l = co_await suzyRead( scb.tmpadr++ );
-      scb.tilt.h = co_await suzyRead( scb.tmpadr++ );
+      scb.sprhsiz.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprhsiz.h = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprvsiz.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprvsiz.h = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.stretch.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.stretch.h = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.tilt.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.tilt.h = co_await suzyFetchSCB( scb.tmpadr++ );
       break;
     case Suzy::Reload::HVS:   //Reload hsize, vsize, stretch
-      scb.sprhsiz.l = co_await suzyRead( scb.tmpadr++ );
-      scb.sprhsiz.h = co_await suzyRead( scb.tmpadr++ );
-      scb.sprvsiz.l = co_await suzyRead( scb.tmpadr++ );
-      scb.sprvsiz.h = co_await suzyRead( scb.tmpadr++ );
-      scb.stretch.l = co_await suzyRead( scb.tmpadr++ );
-      scb.stretch.h = co_await suzyRead( scb.tmpadr++ );
+      scb.sprhsiz.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprhsiz.h = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprvsiz.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprvsiz.h = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.stretch.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.stretch.h = co_await suzyFetchSCB( scb.tmpadr++ );
       break;
     case Suzy::Reload::HV:    //Reload hsize, vsize
-      scb.sprhsiz.l = co_await suzyRead( scb.tmpadr++ );
-      scb.sprhsiz.h = co_await suzyRead( scb.tmpadr++ );
-      scb.sprvsiz.l = co_await suzyRead( scb.tmpadr++ );
-      scb.sprvsiz.h = co_await suzyRead( scb.tmpadr++ );
+      scb.sprhsiz.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprhsiz.h = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprvsiz.l = co_await suzyFetchSCB( scb.tmpadr++ );
+      scb.sprvsiz.h = co_await suzyFetchSCB( scb.tmpadr++ );
       break;
     case Suzy::Reload::NONE:  //Reload nothing
       break;
@@ -97,9 +97,9 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
         };
       };
 
-      p0 = co_await suzyRead4( scb.tmpadr );
+      p0 = co_await suzyReadPal( scb.tmpadr );
       scb.tmpadr += 4;
-      p1 = co_await suzyRead4( scb.tmpadr );
+      p1 = co_await suzyReadPal( scb.tmpadr );
       scb.tmpadr += 4;
 
       //TODO: implement bug:
@@ -250,7 +250,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
 
     if ( suzy.mFred )
     {
-      co_await suzyWrite( (uint16_t)( scb.scbadr + scb.colloff ), *suzy.mFred );
+      co_await suzyWriteFred( (uint16_t)( scb.scbadr + scb.colloff ), *suzy.mFred );
     }
 
     if ( suzy.mSpriteStop )

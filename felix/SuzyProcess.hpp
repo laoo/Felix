@@ -34,6 +34,16 @@ private:
     return static_cast<SuzyReadResponse &>( response );
   }
 
+  auto & suzyFetchSCB( uint16_t address )
+  {
+    struct SuzyFetchSCBResponse : public Response
+    {
+      uint8_t await_resume() { return (uint8_t)value; }
+    };
+    request = { Request::FETCHSCB, address };
+    return static_cast<SuzyFetchSCBResponse &>( response );
+  }
+
   auto & suzyRead4( uint16_t address )
   {
     struct SuzyRead4Response : public Response
@@ -44,6 +54,16 @@ private:
     return static_cast<SuzyRead4Response &>( response );
   }
 
+  auto & suzyReadPal( uint16_t address )
+  {
+    struct SuzyReadPalResponse : public Response
+    {
+      uint32_t await_resume() { return value; }
+    };
+    request = { Request::READPAL, address };
+    return static_cast<SuzyReadPalResponse &>( response );
+  }
+
   auto & suzyWrite( uint16_t address, uint8_t value )
   {
     struct SuzyWriteResponse : public Response
@@ -51,6 +71,16 @@ private:
       void await_resume() {}
     };
     request = { Request::WRITE,  address, value };
+    return static_cast<SuzyWriteResponse &>( response );
+  }
+
+  auto & suzyWriteFred( uint16_t address, uint8_t value )
+  {
+    struct SuzyWriteResponse : public Response
+    {
+      void await_resume() {}
+    };
+    request = { Request::WRITEFRED,  address, value };
     return static_cast<SuzyWriteResponse &>( response );
   }
 

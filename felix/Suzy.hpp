@@ -17,9 +17,12 @@ public:
     enum Type
     {
       FINISH,
+      FETCHSCB,
       READ,
       READ4,
+      READPAL,
       WRITE,
+      WRITEFRED,
       COLRMW,
       VIDRMW,
       XOR
@@ -34,35 +37,6 @@ public:
   virtual ~ISuzyProcess() = default;
   virtual Request const* advance() = 0;
   virtual void respond( uint32_t value ) = 0;
-
-  struct RequestFinish : public Request
-  {
-    RequestFinish() : Request{ FINISH } {}
-  };
-  struct RequestRead : public Request
-  {
-    RequestRead( uint16_t addr ) : Request{ READ, addr } {}
-  };
-  struct RequestRead4 : public Request
-  {
-    RequestRead4( uint16_t addr ) : Request{ READ4, addr } {}
-  };
-  struct RequestWrite : public Request
-  {
-    RequestWrite( uint16_t addr, uint8_t value ) : Request{ WRITE, addr, value } {}
-  };
-  struct RequestColRMW : public Request
-  {
-    RequestColRMW( uint16_t addr, uint32_t mask, uint8_t value ) : Request{ COLRMW, addr, value, mask } {}
-  };
-  struct RequestVidRMW : public Request
-  {
-    RequestVidRMW( uint16_t addr, uint8_t value, uint8_t mask ) : Request{ VIDRMW, addr, value, mask } {}
-  };
-  struct RequestXOR : public Request
-  {
-    RequestXOR( uint16_t addr, uint8_t value ) : Request{ XOR, addr, value } {}
-  };
 };
 
 class Suzy

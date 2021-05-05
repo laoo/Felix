@@ -225,15 +225,18 @@ bool Felix::executeSuzyAction()
     }
     break;
   case ISuzyProcess::Request::READ:
+  case ISuzyProcess::Request::FETCHSCB:
     mSuzyProcess->respond( mRAM[mSuzyProcessRequest->addr] );
     mCurrentTick += 5ull; //read byte
     break;
   case ISuzyProcess::Request::READ4:
+  case ISuzyProcess::Request::READPAL:
     if ( mSuzyProcessRequest->addr <= 0xfffc )
       mSuzyProcess->respond( *( (uint32_t const *)( mRAM.data() + mSuzyProcessRequest->addr ) ) );
     mCurrentTick += 5ull + 3 * mFastCycleTick;  //read 4 bytes
     break;
   case ISuzyProcess::Request::WRITE:
+  case ISuzyProcess::Request::WRITEFRED:
     mRAM[mSuzyProcessRequest->addr] = mSuzyProcessRequest->value;
     mCurrentTick += 5ull; //write byte
     break;
