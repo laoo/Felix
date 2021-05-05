@@ -41,8 +41,7 @@ private:
     RAM = 0,
     SUZY = 4,
     MIKEY = 8,
-    FE = 12,
-    FF = 16
+    KERNEL = 12
   };
 
   struct MAPCTL
@@ -58,8 +57,8 @@ private:
   bool executeSuzyAction();
   void executeCPUAction();
 
-  uint8_t readFF( uint16_t address );
-  void writeFF( uint16_t address, uint8_t value );
+  uint8_t readKernel( uint16_t address );
+  void writeKernel( uint16_t address, uint8_t value );
 
   void pulseReset( std::optional<uint16_t> resetAddress = std::nullopt );
   void writeMAPCTL( uint8_t value );

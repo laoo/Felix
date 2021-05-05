@@ -26,10 +26,8 @@ Felix::Felix( std::function<void( DisplayGenerator::Pixel const* )> const& fun, 
     switch ( i )
     {
       case 0xff:
-        mPageTypes[i] = PageType::FF;
-        break;
       case 0xfe:
-        mPageTypes[i] = PageType::FE;
+        mPageTypes[i] = PageType::KERNEL;
         break;
       case 0xfd:
         mPageTypes[i] = PageType::MIKEY;
@@ -304,14 +302,10 @@ void Felix::executeCPUAction()
     FETCH_OPERAND_MIKEY,
     READ_MIKEY,
     WRITE_MIKEY,
-    FETCH_OPCODE_FE,
-    FETCH_OPERAND_FE,
-    READ_FE,
-    WRITE_FE,
-    FETCH_OPCODE_FF,
-    FETCH_OPERAND_FF,
-    READ_FF,
-    WRITE_FF
+    FETCH_OPCODE_KENREL,
+    FETCH_OPERAND_KENREL,
+    READ_KENREL,
+    WRITE_KENREL
   };
   
   CPUAction action = (CPUAction)( (int)req.type + (int)pageType );
@@ -332,30 +326,17 @@ void Felix::executeCPUAction()
     mCurrentTick += 5;
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
-  case CPUAction::FETCH_OPCODE_FE:
+  case CPUAction::FETCH_OPCODE_KENREL:
     [[fallthrough]];
-  case CPUAction::FETCH_OPERAND_FE:
+  case CPUAction::FETCH_OPERAND_KENREL:
     [[fallthrough]];
-  case CPUAction::READ_FE:
-    mCpu->respond( mROM[req.address & 0x1ff] );
+  case CPUAction::READ_KENREL:
+    mCpu->respond( readKernel( req.address & 0x1ff ) );
     mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
     mSequencedAccessAddress = req.address + 1;
     break;
-  case CPUAction::WRITE_FE:
-    mCurrentTick += 5;
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
-    break;
-  case CPUAction::FETCH_OPCODE_FF:
-    [[fallthrough]];
-  case CPUAction::FETCH_OPERAND_FF:
-    [[fallthrough]];
-  case CPUAction::READ_FF:
-    mCpu->respond( readFF( req.address & 0xff ) );
-    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
-    mSequencedAccessAddress = req.address + 1;
-    break;
-  case CPUAction::WRITE_FF:
-    writeFF( req.address & 0xff, req.value );
+  case CPUAction::WRITE_KENREL:
+    writeKernel( req.address & 0x1ff, req.value );
     mCurrentTick += 5;
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
@@ -447,19 +428,19 @@ ComLynx & Felix::getComLynx()
   return *mComLynx;
 }
 
-uint8_t Felix::readFF( uint16_t address )
+uint8_t Felix::readKernel( uint16_t address )
 {
-  if ( address >= 0xfa )
+  if ( address >= 0x1fa )
   {
-    uint8_t * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xff00 ) : ( mROM.data() + 0x100 );
+    uint8_t * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
     return ptr[address];
   }
-  else if ( address < 0xf8 )
+  else if ( address < 0x1f8 )
   {
-    uint8_t * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xff00 ) : ( mROM.data() + 0x100 );
+    uint8_t * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
     return ptr[address];
   }
-  else if ( address == 0xf9 )
+  else if ( address == 0x1f9 )
   {
     return 0xf0 | //high nibble of MAPCTL is set
       ( mMapCtl.vectorSpaceDisable ? 0x08 : 0x00 ) |
@@ -470,23 +451,23 @@ uint8_t Felix::readFF( uint16_t address )
   else
   {
     //there is always RAM at 0xfff8
-    return mRAM[0xff00 + address];
+    return mRAM[0xfe00 + address];
   }
 }
 
-void Felix::writeFF( uint16_t address, uint8_t value )
+void Felix::writeKernel( uint16_t address, uint8_t value )
 {
-  if ( address >= 0xfa && mMapCtl.vectorSpaceDisable || address < 0xf8 && mMapCtl.kernelDisable || address == 0xf8 )
+  if ( address >= 0x1fa && mMapCtl.vectorSpaceDisable || address < 0x1f8 && mMapCtl.kernelDisable || address == 0x1f8 )
   {
-    mRAM[0xff00 + address] = value;
+    mRAM[0xfe00 + address] = value;
   }
-  else if ( address == 0xf9 )
+  else if ( address == 0x1f9 )
   {
     writeMAPCTL( value );
   }
   else
   {
-    //ignore write to ROM
+    return; //ignore write to ROM
   }
 }
 
@@ -499,7 +480,7 @@ void Felix::writeMAPCTL( uint8_t value )
   mMapCtl.suzyDisable = ( value & 0x01 ) != 0;
 
   mFastCycleTick = mMapCtl.sequentialDisable ? 5 : 4;
-  mPageTypes[0xfe] = mMapCtl.kernelDisable ? PageType::RAM : PageType::FE;
+  mPageTypes[0xfe] = mMapCtl.kernelDisable ? PageType::RAM : PageType::KERNEL;
   mPageTypes[0xfd] = mMapCtl.mikeyDisable ? PageType::RAM : PageType::MIKEY;
   mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
 }
