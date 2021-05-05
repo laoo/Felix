@@ -200,6 +200,7 @@
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
+    <ClInclude Include="DefaultROM.hpp" />
     <ClInclude Include="Felix.hpp" />
     <ClInclude Include="CartBank.hpp" />
     <ClInclude Include="Cartridge.hpp" />

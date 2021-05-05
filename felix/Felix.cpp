@@ -11,6 +11,7 @@
 #include "ImageBIN.hpp"
 #include "IPatch.hpp"
 #include "Log.hpp"
+#include "DefaultROM.hpp"
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
@@ -18,10 +19,7 @@ Felix::Felix( std::function<void( DisplayGenerator::Pixel const * )> const & fun
   mCpu{ std::make_shared<CPU>( *this, false ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
-  //for ( auto it = mRAM.begin(); it != mRAM.end(); ++it )
-  //{
-  //  *it = (uint8_t)rand();
-  //}
+  std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
   {
@@ -400,7 +398,7 @@ void Felix::handlePatch( uint16_t address )
 
   if ( mPatchMagickCodeAccumulator >> 12 == 0xc0ffeaa2ab1ca )
   {
-    int selector = address >> 12;
+    int selector = ( address >> 8 ) & 0xf;
     if ( mPatches[selector] )
     {
       struct RAMAccessor : public IPatch::IAccessor
