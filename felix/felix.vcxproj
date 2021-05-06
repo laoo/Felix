@@ -111,6 +111,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -152,6 +153,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -181,6 +183,7 @@
     <ClCompile Include="ImageLnx.cpp" />
     <ClCompile Include="ImageLyx.cpp" />
     <ClCompile Include="InputFile.cpp" />
+    <ClCompile Include="KernelEscape.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
     <ClCompile Include="pch.cpp">
@@ -200,6 +203,7 @@
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
+    <ClInclude Include="CPUState.hpp" />
     <ClInclude Include="DefaultROM.hpp" />
     <ClInclude Include="Felix.hpp" />
     <ClInclude Include="CartBank.hpp" />
@@ -214,7 +218,8 @@
     <ClInclude Include="ImageLnx.hpp" />
     <ClInclude Include="ImageLyx.hpp" />
     <ClInclude Include="InputFile.hpp" />
-    <ClInclude Include="IPatch.hpp" />
+    <ClInclude Include="IEscape.hpp" />
+    <ClInclude Include="KernelEscape.hpp" />
     <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="ParallelPort.hpp" />

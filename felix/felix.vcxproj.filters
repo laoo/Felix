@@ -91,6 +91,9 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="KernelEscape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -198,10 +201,16 @@
     <ClInclude Include="Utility.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="IPatch.hpp">
+    <ClInclude Include="IEscape.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DefaultROM.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KernelEscape.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CPUState.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

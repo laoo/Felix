@@ -12,7 +12,7 @@ class InputFile;
 class ImageBS93;
 class ImageBIOS;
 class ImageCart;
-class IPatch;
+class IEscape;
 
 class Felix
 {
@@ -69,7 +69,7 @@ private:
   std::array<uint8_t,65536> mRAM;
   std::array<uint8_t, 512> mROM;
   std::array<PageType, 256> mPageTypes;
-  std::array<std::shared_ptr<IPatch>, 16> mPatches;
+  std::array<std::shared_ptr<IEscape>, 16> mEscapes;
   uint64_t mCurrentTick;
   int mSamplesRemainder;
   ActionQueue mActionQueue;

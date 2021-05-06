@@ -9,17 +9,20 @@
 #include "ImageBIOS.hpp"
 #include "ImageCart.hpp"
 #include "ImageBIN.hpp"
-#include "IPatch.hpp"
+#include "IEscape.hpp"
 #include "Log.hpp"
 #include "DefaultROM.hpp"
+#include "KernelEscape.hpp"
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
-Felix::Felix( std::function<void( DisplayGenerator::Pixel const * )> const & fun, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mPatches{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
+Felix::Felix( std::function<void( DisplayGenerator::Pixel const * )> const & fun, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
   mCpu{ std::make_shared<CPU>( *this, false ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
+
+  mEscapes[0xf] = std::make_shared<KernelEscape>();
 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
   {
@@ -88,8 +91,8 @@ void Felix::pulseReset( std::optional<uint16_t> resetAddress )
   }
   else
   {
-    assertInterrupt( CPU::I_RESET, mCurrentTick );
-    desertInterrupt( CPU::I_RESET, mCurrentTick + 5 * 10 );  //asserting RESET for 10 cycles to make sure none will miss it
+    assertInterrupt( CPUState::I_RESET, mCurrentTick );
+    desertInterrupt( CPUState::I_RESET, mCurrentTick + 5 * 10 );  //asserting RESET for 10 cycles to make sure none will miss it
   }
 }
 
@@ -112,12 +115,12 @@ void Felix::runSuzy()
 
 void Felix::assertInterrupt( int mask, std::optional<uint64_t> tick )
 {
-  if ( ( mask & CPU::I_IRQ ) != 0 )
+  if ( ( mask & CPUState::I_IRQ ) != 0 )
   {
     mActionQueue.push( { Action::ASSERT_IRQ, tick.value_or( mCurrentTick ) } );
     return;
   }
-  else if ( ( mask & CPU::I_RESET ) != 0 )
+  else if ( ( mask & CPUState::I_RESET ) != 0 )
   {
     mActionQueue.push( { Action::ASSERT_RESET, tick.value_or( mCurrentTick ) } );
     return;
@@ -130,12 +133,12 @@ void Felix::assertInterrupt( int mask, std::optional<uint64_t> tick )
 
 void Felix::desertInterrupt( int mask, std::optional<uint64_t> tick )
 {
-  if ( ( mask & CPU::I_IRQ ) != 0 )
+  if ( ( mask & CPUState::I_IRQ ) != 0 )
   {
     mActionQueue.push( { Action::DESERT_IRQ, tick.value_or( mCurrentTick ) } );
     return;
   }
-  else if ( ( mask & CPU::I_RESET ) != 0 )
+  else if ( ( mask & CPUState::I_RESET ) != 0 )
   {
     mActionQueue.push( { Action::DESERT_RESET, tick.value_or( mCurrentTick ) } );
     return;
@@ -176,16 +179,16 @@ bool Felix::executeSequencedAction( SequencedAction seqAction )
     }
     break;
   case Action::ASSERT_IRQ:
-    mCpu->assertInterrupt( CPU::I_IRQ );
+    mCpu->assertInterrupt( CPUState::I_IRQ );
     break;
   case Action::ASSERT_RESET:
-    mCpu->assertInterrupt( CPU::I_RESET );
+    mCpu->assertInterrupt( CPUState::I_RESET );
     break;
   case Action::DESERT_IRQ:
-    mCpu->desertInterrupt( CPU::I_IRQ );
+    mCpu->desertInterrupt( CPUState::I_IRQ );
     break;
   case Action::DESERT_RESET:
-    mCpu->desertInterrupt( CPU::I_RESET );
+    mCpu->desertInterrupt( CPUState::I_RESET );
     break;
   case Action::END_FRAME:
     return true;
@@ -317,12 +320,15 @@ void Felix::executeCPUAction()
   switch ( action )
   {
   case CPUAction::FETCH_OPCODE_RAM:
-    [[fallthrough]];
+    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCpu->respond( mCurrentTick, mRAM[req.address] );
+    mSequencedAccessAddress = req.address + 1;
+    break;
   case CPUAction::FETCH_OPERAND_RAM:
     [[fallthrough]];
   case CPUAction::READ_RAM:
     mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
-    mCpu->respond( mCurrentTick, mRAM[req.address] );
+    mCpu->respond( mRAM[req.address] );
     mSequencedAccessAddress = req.address + 1;
     break;
   case CPUAction::WRITE_RAM:
@@ -331,7 +337,10 @@ void Felix::executeCPUAction()
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_KENREL:
-    [[fallthrough]];
+    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCpu->respond( mCurrentTick, readKernel( req.address & 0x1ff ) );
+    mSequencedAccessAddress = req.address + 1;
+    break;
   case CPUAction::FETCH_OPERAND_KENREL:
     [[fallthrough]];
   case CPUAction::READ_KENREL:
@@ -345,9 +354,11 @@ void Felix::executeCPUAction()
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_SUZY:
-    [[fallthrough]];
+    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mCpu->respond( mCurrentTick, mSuzy->read( req.address ) );
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    break;
   case CPUAction::FETCH_OPERAND_SUZY:
-    assert( false );
     [[fallthrough]];
   case CPUAction::READ_SUZY:
     mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
@@ -360,9 +371,11 @@ void Felix::executeCPUAction()
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_MIKEY:
-    [[fallthrough]];
+    mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
+    mCpu->respond( mCurrentTick, mMikey->read( req.address ) );
+    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
+    break;
   case CPUAction::FETCH_OPERAND_MIKEY:
-    assert( false );
     [[fallthrough]];
   case CPUAction::READ_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
@@ -399,60 +412,58 @@ void Felix::handlePatch( uint16_t address )
   if ( mPatchMagickCodeAccumulator >> 12 == 0xc0ffeaa2ab1ca )
   {
     int selector = ( address >> 8 ) & 0xf;
-    if ( mPatches[selector] )
+    if ( mEscapes[selector] )
     {
-      struct RAMAccessor : public IPatch::IAccessor
+      struct Accessor : public IEscape::IAccessor
       {
-        RAMAccessor( std::array<uint8_t, 65536> & ram ) : ram{ ram } {}
+        Accessor( std::array<uint8_t, 65536> & ram, Mikey & mikey, Suzy & suzy, CPUState & state, ActionQueue & actionQueue, uint64_t currentTick ) : currentTick{ currentTick }, ram{ ram }, mikey{ mikey }, suzy{ suzy }, s{ state }, actionQueue{ actionQueue }{}
 
+        uint64_t currentTick;
         std::array<uint8_t, 65536> & ram;
-        uint8_t read( uint16_t address ) const override
+        Mikey & mikey;
+        Suzy & suzy;
+        CPUState & s;
+        ActionQueue & actionQueue;
+        uint8_t readRAM( uint16_t address ) const override
         {
           return ram[address];
         }
-        void write( uint16_t address, uint8_t value ) override
+        void writeRAM( uint16_t address, uint8_t value ) override
         {
           ram[address] = value;
         }
-      } ram{ mRAM };
 
-      struct MikeyAccessor : public IPatch::IAccessor
-      {
-        MikeyAccessor( Mikey & mikey, uint64_t currentTick ) : currentTick{ currentTick }, mikey { mikey } {}
-
-        uint64_t currentTick;
-        Mikey & mikey;
-        uint8_t read( uint16_t address ) const override
+        uint8_t readMikey( uint16_t address ) const override
         {
           mikey.requestAccess( currentTick, address );
           return mikey.read( address );
         }
-        void write( uint16_t address, uint8_t value ) override
+        void writeMikey( uint16_t address, uint8_t value ) override
         {
           mikey.requestAccess( currentTick, address );
-          mikey.write( address, value );
+          if ( auto mikeyAction = mikey.write( address, value ) )
+          {
+            actionQueue.push( mikeyAction );
+          }
         }
-      } mikey{ *mMikey, mCurrentTick };
-
-      struct SuzyAccessor : public IPatch::IAccessor
-      {
-        SuzyAccessor( Suzy & suzy, uint64_t currentTick ) : currentTick{ currentTick }, suzy{ suzy } {}
-
-        uint64_t currentTick;
-        Suzy & suzy;
-        uint8_t read( uint16_t address ) const override
+        uint8_t readSuzy( uint16_t address ) const override
         {
           suzy.requestAccess( currentTick, address );
           return suzy.read( address );
         }
-        void write( uint16_t address, uint8_t value ) override
+        void writeSuzy( uint16_t address, uint8_t value ) override
         {
           suzy.requestAccess( currentTick, address );
           suzy.write( address, value );
         }
-      } suzy{ *mSuzy, mCurrentTick };
 
-      mPatches[selector]->call( address & 0xff, ram, mikey, suzy );
+        CPUState & state() override
+        {
+          return s;
+        }
+      } acc{ mRAM, *mMikey, *mSuzy, mCpu->state(), mActionQueue, mCurrentTick };
+
+      mEscapes[selector]->call( address & 0xff, acc );
     }
     else
     {

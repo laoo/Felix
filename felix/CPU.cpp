@@ -3,8 +3,6 @@
 #include "Opcodes.hpp"
 #include "Felix.hpp"
 
-
-
 bool CPU::isHiccup()
 {
   switch ( mState.op )
@@ -46,6 +44,11 @@ bool CPU::isHiccup()
   default:
     return false;
   }
+}
+
+CPUState & CPU::state()
+{
+  return mState;
 }
 
 CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{ trace }
@@ -116,7 +119,7 @@ CPU::Execute CPU::execute()
     state.ea = 0;
     state.t = 0;
 
-    if ( state.interrupt && ( !get<bitI>() || ( state.interrupt & ~CPU::I_IRQ ) != 0 ) )
+    if ( state.interrupt && ( !get<bitI>() || ( state.interrupt & ~CPUState::I_IRQ ) != 0 ) )
     {
       state.op = Opcode::BRK_BRK;
     }
@@ -1701,7 +1704,7 @@ CPU::Execute CPU::execute()
       }
       break;
     case Opcode::BRK_BRK:
-      if ( state.interrupt & CPU::I_RESET )
+      if ( state.interrupt & CPUState::I_RESET )
       {
         co_await read( state.s );
         state.sl--;
@@ -1723,7 +1726,7 @@ CPU::Execute CPU::execute()
         state.sl--;
         co_await write( state.s, getP() );
         state.sl--;
-        if ( state.interrupt & CPU::I_NMI )
+        if ( state.interrupt & CPUState::I_NMI )
         {
           state.eal = co_await read( 0xfffa );
           state.eah = co_await read( 0xfffb );
@@ -2427,15 +2430,15 @@ void CPU::trace2()
     off += sprintf( buf.data() + off, "bbs7 " );
     break;
   case Opcode::BRK_BRK:
-    if ( ( mState.interrupt & CPU::I_RESET ) != 0 )
+    if ( ( mState.interrupt & CPUState::I_RESET ) != 0 )
     {
       off += sprintf( buf.data() + off, "RESET\n" );
     }
-    else if ( ( mState.interrupt & CPU::I_NMI ) != 0 )
+    else if ( ( mState.interrupt & CPUState::I_NMI ) != 0 )
     {
       off += sprintf( buf.data() + off, "NMI\n" );
     }
-    else if ( ( mState.interrupt & CPU::I_IRQ ) != 0 )
+    else if ( ( mState.interrupt & CPUState::I_IRQ ) != 0 )
     {
       off += sprintf( buf.data() + off, "IRQ\n" );
     }

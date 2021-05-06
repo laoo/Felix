@@ -474,7 +474,7 @@ void Mikey::setIRQ( uint8_t mask )
   mIRQ |= mask;
   if ( mIRQ != 0 )
   {
-    mFelix.assertInterrupt( CPU::I_IRQ );
+    mFelix.assertInterrupt( CPUState::I_IRQ );
   }
 }
 
@@ -483,7 +483,7 @@ void Mikey::resetIRQ( uint8_t mask )
   mIRQ &= ~mask;
   if ( mIRQ == 0 )
   {
-    mFelix.desertInterrupt( CPU::I_IRQ );
+    mFelix.desertInterrupt( CPUState::I_IRQ );
   }
 }
 
