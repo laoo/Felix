@@ -46,7 +46,7 @@ int countl_zero( uint16_t value )
 
 }
 
-SuzyMath::SuzyMath() : mArea{}
+SuzyMath::SuzyMath() : mArea{}, mFinishTick{}, mSignAB{}, mSignCD{}, mOp{}, mUnsafeAccess{}, mSignMath{}, mAccumulate{}, mMathWarning{}, mMathCarry{}
 {
   std::fill( mArea.begin(), mArea.end(), 0xff );
 }
@@ -111,7 +111,7 @@ uint8_t SuzyMath::peek( uint64_t tick, uint8_t offset )
 
 void SuzyMath::mul( uint64_t tick )
 {
-  mFinishTick = tick + ( mSignMath && mAccumulate ) ? 54 : 44;
+  mFinishTick = tick + ( ( mSignMath && mAccumulate ) ? 54 : 44 );
   mOp = Op::MULTIPLY;
 }
 
@@ -199,9 +199,9 @@ bool SuzyMath::accumulate() const
   return mAccumulate;
 }
 
-bool SuzyMath::working() const
+bool SuzyMath::working( uint64_t tick ) const
 {
-  return mOp != Op::NONE;
+  return mOp != Op::NONE && tick < mFinishTick;
 }
 
 bool SuzyMath::warning() const

@@ -15,7 +15,7 @@ public:
 
   bool signMath() const;
   bool accumulate() const;
-  bool working() const;
+  bool working( uint64_t tick ) const;
   bool warning() const;
   bool carry() const;
   bool unsafeAccess() const;

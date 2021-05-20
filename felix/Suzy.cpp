@@ -138,7 +138,7 @@ uint8_t Suzy::read( uint16_t address )
     return 0x01;
   case SPRSYS:
     return
-      ( mMath.working() ? SPRSYS::MATHWORKING : 0 ) |
+      ( mMath.working( mAccessTick ) ? SPRSYS::MATHWORKING : 0 ) |
       ( mMath.warning() ? SPRSYS::MATHWARNING : 0 ) |
       ( mMath.carry() ? SPRSYS::MATHCARRY : 0 ) |
       ( mVStretch ? SPRSYS::VSTRETCHING : 0 ) |
