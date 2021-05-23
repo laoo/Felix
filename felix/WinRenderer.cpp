@@ -26,7 +26,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
 #else
     0,
 #endif
-    &featureLevelsRequested, numFeatureLevelsRequested, D3D11_SDK_VERSION, &mD3DDevice, &featureLevelsSupported, &mImmediateContext );
+    &featureLevelsRequested, numFeatureLevelsRequested, D3D11_SDK_VERSION, mD3DDevice.ReleaseAndGetAddressOf(), &featureLevelsSupported, mImmediateContext.ReleaseAndGetAddressOf() );
 
   V_THROW( hr );
 
@@ -44,27 +44,27 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
   sd.SampleDesc.Quality = 0;
   sd.Windowed = TRUE;
 
-  ATL::CComPtr<IDXGIDevice> pDXGIDevice;
-  V_THROW( mD3DDevice->QueryInterface( __uuidof( IDXGIDevice ), (void **)&pDXGIDevice ) );
+  ComPtr<IDXGIDevice> pDXGIDevice;
+  V_THROW( mD3DDevice.As( &pDXGIDevice ) );
 
-  ATL::CComPtr<IDXGIAdapter> pDXGIAdapter;
-  V_THROW( pDXGIDevice->GetParent( __uuidof( IDXGIAdapter ), (void **)&pDXGIAdapter ) );
+  ComPtr<IDXGIAdapter> pDXGIAdapter;
+  V_THROW( pDXGIDevice->GetParent( __uuidof( IDXGIAdapter ), (void **)pDXGIAdapter.ReleaseAndGetAddressOf() ) );
 
-  ATL::CComPtr<IDXGIFactory> pIDXGIFactory;
-  V_THROW( pDXGIAdapter->GetParent( __uuidof( IDXGIFactory ), (void **)&pIDXGIFactory ) );
+  ComPtr<IDXGIFactory> pIDXGIFactory;
+  V_THROW( pDXGIAdapter->GetParent( __uuidof( IDXGIFactory ), (void **)pIDXGIFactory.ReleaseAndGetAddressOf() ) );
 
-  ATL::CComPtr<IDXGISwapChain> pSwapChain;
-  V_THROW( pIDXGIFactory->CreateSwapChain( mD3DDevice, &sd, &pSwapChain ) );
+  ComPtr<IDXGISwapChain> pSwapChain;
+  V_THROW( pIDXGIFactory->CreateSwapChain( mD3DDevice.Get(), &sd, pSwapChain.ReleaseAndGetAddressOf() ) );
 
   mSwapChain = std::move( pSwapChain );
 
-  V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, &mRendererCS ) );
+  V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, mRendererCS.ReleaseAndGetAddressOf() ) );
 
   D3D11_BUFFER_DESC bd ={};
   bd.ByteWidth = sizeof( CBPosSize );
   bd.Usage = D3D11_USAGE_DEFAULT;
   bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-  V_THROW( mD3DDevice->CreateBuffer( &bd, NULL, &mPosSizeCB ) );
+  V_THROW( mD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
 
 }
 
@@ -83,10 +83,10 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   desc.CPUAccessFlags = 0;
   desc.MiscFlags = 0;
   D3D11_SUBRESOURCE_DATA sda{ surface, 160 * 4, 0 };
-  ATL::CComPtr<ID3D11Texture2D> tex;
-  mD3DDevice->CreateTexture2D( &desc, &sda, &tex );
-  ATL::CComPtr<ID3D11ShaderResourceView> texSRV;
-  V_THROW( mD3DDevice->CreateShaderResourceView( tex, NULL, &texSRV.p ) );
+  ComPtr<ID3D11Texture2D> tex;
+  mD3DDevice->CreateTexture2D( &desc, &sda, tex.ReleaseAndGetAddressOf() );
+  ComPtr<ID3D11ShaderResourceView> texSRV;
+  V_THROW( mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, texSRV.ReleaseAndGetAddressOf() ) );
 
   
   RECT r;
@@ -102,13 +102,13 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
       return;
     }
 
-    mBackBuffer.Release();
-    mBackBufferUAV.Release();
+    mBackBufferUAV.Reset();
 
     mSwapChain->ResizeBuffers( 0, theWinWidth, theWinHeight, DXGI_FORMAT_UNKNOWN, 0 );
 
-    V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)&mBackBuffer ) );
-    V_THROW( mD3DDevice->CreateUnorderedAccessView( mBackBuffer, nullptr, &mBackBufferUAV ) );
+    ComPtr<ID3D11Texture2D> backBuffer;
+    V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
+    V_THROW( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
 
     D3D11_VIEWPORT vp;
     vp.Width = (FLOAT)theWinWidth;
@@ -125,13 +125,13 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   int s = (std::min)( sx, sy );
 
   CBPosSize cbPosSize{ ( theWinWidth - 160 * s ) / 2, ( theWinHeight - 102 * s ) / 2, s, s };
-  mImmediateContext->UpdateSubresource( mPosSizeCB, 0, NULL, &cbPosSize, 0, 0 );
-  mImmediateContext->CSSetConstantBuffers( 0, 1, &mPosSizeCB.p );
-  mImmediateContext->CSSetShaderResources( 0, 1, &texSRV.p );
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &mBackBufferUAV.p, nullptr );
-  mImmediateContext->CSSetShader( mRendererCS, nullptr, 0 );
+  mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
+  mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
+  mImmediateContext->CSSetShaderResources( 0, 1, texSRV.GetAddressOf() );
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, mBackBufferUAV.GetAddressOf(), nullptr );
+  mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
   UINT v[4]= { 255, 255, 255, 255 };
-  mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV, v );
+  mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
   mImmediateContext->Dispatch( 10, 102, 1 );
   mSwapChain->Present( 1, 0 );
 }

@@ -21,13 +21,12 @@ private:
 
 private:
   HWND mHWnd;
-  ATL::CComPtr<ID3D11Device>              mD3DDevice;
-  ATL::CComPtr<ID3D11DeviceContext>       mImmediateContext;
-  ATL::CComPtr<IDXGISwapChain>            mSwapChain;
-  ATL::CComPtr<ID3D11ComputeShader>       mRendererCS;
-  ATL::CComPtr<ID3D11Buffer>              mPosSizeCB;
-  ATL::CComPtr<ID3D11Texture2D>           mBackBuffer;
-  ATL::CComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
+  ComPtr<ID3D11Device>              mD3DDevice;
+  ComPtr<ID3D11DeviceContext>       mImmediateContext;
+  ComPtr<IDXGISwapChain>            mSwapChain;
+  ComPtr<ID3D11ComputeShader>       mRendererCS;
+  ComPtr<ID3D11Buffer>              mPosSizeCB;
+  ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
   int theWinWidth;
   int theWinHeight;
 

@@ -24,11 +24,10 @@ public:
 
 private:
 
-  ATL::CComPtr<IMMDeviceEnumerator> mDeviceEnumerator;
-  ATL::CComPtr<IMMDevice> mDevice;
-  ATL::CComPtr<IAudioClient> mAudioClient;
-  ATL::CComPtr<IAudioRenderClient> mRenderClient;
-  ATL::CComPtr<IAudioClock> mAudioClock;
+  ComPtr<IMMDeviceEnumerator> mDeviceEnumerator;
+  ComPtr<IMMDevice> mDevice;
+  ComPtr<IAudioClient> mAudioClient;
+  ComPtr<IAudioRenderClient> mRenderClient;
   uint32_t mBufferSize;
 
   WAVEFORMATEX * mMixFormat;
