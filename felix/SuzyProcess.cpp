@@ -161,7 +161,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
             scb.hposstrt += scb.tiltacum.h;
             scb.tiltacum.h = 0;
             int hsizacum = left == 0 ? scb.hsizoff.w : 0;
-            int sprhpos = scb.hposstrt - scb.hoff;
+            uint16_t sprhpos = scb.hposstrt - scb.hoff;
             if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) != ((uint8_t)quadCycle[(size_t)suzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT) )
               sprhpos += left ? -1 : 1;
 
