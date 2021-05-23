@@ -27,6 +27,8 @@ private:
   ComPtr<ID3D11ComputeShader>       mRendererCS;
   ComPtr<ID3D11Buffer>              mPosSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
+  ComPtr<ID3D11Texture2D>           mSource;
+  ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
   int theWinWidth;
   int theWinHeight;
 

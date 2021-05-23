@@ -66,10 +66,6 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
   bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   V_THROW( mD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
 
-}
-
-void WinRenderer::render( DisplayGenerator::Pixel const * surface )
-{
   D3D11_TEXTURE2D_DESC desc{};
   desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
   desc.Width = 160;
@@ -78,17 +74,29 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   desc.ArraySize = 1;
   desc.SampleDesc.Count = 1;
   desc.SampleDesc.Quality = 0;
-  desc.Usage = D3D11_USAGE_IMMUTABLE;
+  desc.Usage = D3D11_USAGE_DYNAMIC;
   desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-  desc.CPUAccessFlags = 0;
+  desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
   desc.MiscFlags = 0;
-  D3D11_SUBRESOURCE_DATA sda{ surface, 160 * 4, 0 };
-  ComPtr<ID3D11Texture2D> tex;
-  mD3DDevice->CreateTexture2D( &desc, &sda, tex.ReleaseAndGetAddressOf() );
-  ComPtr<ID3D11ShaderResourceView> texSRV;
-  V_THROW( mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, texSRV.ReleaseAndGetAddressOf() ) );
+  mD3DDevice->CreateTexture2D( &desc, nullptr, mSource.ReleaseAndGetAddressOf() );
+  V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
-  
+}
+
+void WinRenderer::render( DisplayGenerator::Pixel const * surface )
+{
+  D3D11_MAPPED_SUBRESOURCE map;
+  mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
+  DisplayGenerator::Pixel * dst = (DisplayGenerator::Pixel *)map.pData;
+  size_t pitch = map.RowPitch / sizeof( DisplayGenerator::Pixel );
+  for ( int y = 0; y < 102; ++y )
+  {
+    std::copy_n( surface, 160, dst );
+    surface += 160;
+    dst += pitch;
+  }
+  mImmediateContext->Unmap( mSource.Get(), 0 );
+
   RECT r;
   ::GetClientRect( mHWnd, &r );
 
@@ -127,7 +135,7 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   CBPosSize cbPosSize{ ( theWinWidth - 160 * s ) / 2, ( theWinHeight - 102 * s ) / 2, s, s };
   mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
   mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-  mImmediateContext->CSSetShaderResources( 0, 1, texSRV.GetAddressOf() );
+  mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, mBackBufferUAV.GetAddressOf(), nullptr );
   mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
   UINT v[4]= { 255, 255, 255, 255 };
