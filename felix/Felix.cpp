@@ -117,13 +117,14 @@ void Felix::assertInterrupt( int mask, std::optional<uint64_t> tick )
 {
   if ( ( mask & CPUState::I_IRQ ) != 0 )
   {
-    mActionQueue.push( { Action::ASSERT_IRQ, tick.value_or( mCurrentTick ) } );
-    return;
+    if ( ( mCpu->interruptedMask() & CPUState::I_IRQ ) == 0 )
+    {
+      mActionQueue.push( { Action::ASSERT_IRQ, tick.value_or( mCurrentTick ) } );
+    }
   }
   else if ( ( mask & CPUState::I_RESET ) != 0 )
   {
     mActionQueue.push( { Action::ASSERT_RESET, tick.value_or( mCurrentTick ) } );
-    return;
   }
   else
   {
@@ -204,7 +205,7 @@ bool Felix::executeSuzyAction()
   if ( !mSuzyProcess || !mSuzyRunning )
     return true;
 
-  if ( mCpu->interrupted() )
+  if ( mCpu->interruptedMask() != 0 )
   {
     mSuzyRunning = false;
     return true;

@@ -62,6 +62,7 @@ public:
   static constexpr uint16_t IODIR        = 0x8a;
   static constexpr uint16_t IODAT        = 0x8b;
   static constexpr uint16_t SERCTL       = 0x8c;
+  static constexpr uint16_t SERDAT       = 0x8d;
   static constexpr uint16_t SDONEACK     = 0x90;
   static constexpr uint16_t CPUSLEEP     = 0x91;
   static constexpr uint16_t DISPCTL      = 0x92;
@@ -87,28 +88,6 @@ public:
     static constexpr uint8_t DMA_ENABLE   = 0b00000001; //1 = enable video DMA, 0 = disable.must be set to 1 ( set by kernel )
   };
 
-  struct SERCTL
-  {
-    //write
-    static constexpr uint8_t TXINTEN  = 0x80;   //transmitter interrupt enable
-    static constexpr uint8_t RXINTEN  = 0x40;   //receive interrupt enable
-    static constexpr uint8_t PAREN    = 0x10;   //xmit parity enable( if 0, PAREVEN is the bit sent )
-    static constexpr uint8_t RESETERR = 0x08;   //reset all errors
-    static constexpr uint8_t TXOPEN   = 0x04;   //1 open collector driver, 0 = TTL driver
-    static constexpr uint8_t TXBRK    = 0x02;   //send a break ( for as long as the bit is set )
-    static constexpr uint8_t PAREVEN  = 0x01;   //send / rcv even parity
-
-    //read
-    static constexpr uint8_t TXRDY    = 0x80; //transmitter buffer empty
-    static constexpr uint8_t RXRDY    = 0x80; //receive character ready
-    static constexpr uint8_t TXEMPTY  = 0x80; //transmitter totaiy done
-    static constexpr uint8_t PARERR   = 0x80; //received parity error
-    static constexpr uint8_t OVERRUN  = 0x80; //received overrun error
-    static constexpr uint8_t FRAMERR  = 0x80; //received framing error
-    static constexpr uint8_t RXBRK    = 0x80; //break recieved( 24 bit periods )
-    static constexpr uint8_t PARBIT   = 0x80; //9th bit
-  };
-
 private:
   Felix & mFelix;
   uint64_t mAccessTick;
@@ -131,23 +110,6 @@ private:
     bool DMAEnable;
   } mDisplayRegs;
 
-  struct SerCtl
-  {
-    bool txinten;
-    bool rxinten;
-    bool paren;
-    bool txopen;
-    bool txbrk;
-    bool pareven;
-    bool txrdy;
-    bool rxrdy;
-    bool txempty;
-    bool parerr;
-    bool overrun;
-    bool framerr;
-    bool rxbrk;
-    bool parbit;
-  } mSerCtl;
 
   bool mSuzyDone;
 

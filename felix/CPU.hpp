@@ -50,7 +50,7 @@ public:
   void respond( uint64_t tick, uint8_t value );
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
-  bool interrupted() const;
+  int interruptedMask() const;
 
   CPUState & state();
 

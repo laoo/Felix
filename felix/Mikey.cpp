@@ -5,9 +5,10 @@
 #include "Felix.hpp"
 #include "Cartridge.hpp"
 #include "CPU.hpp"
+#include "ComLynx.hpp"
 
 Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
-mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
+mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -51,8 +52,12 @@ mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSerCtl{}, mSuzyDon
       setIRQ( 0x08 );
     }
   } );  //timer 3 -> timer 5
-  mTimers[0x4] = std::make_unique<TimerCore>( 0x4, [this]( uint64_t tick, bool interrupt )
+  mTimers[0x4] = std::make_unique<TimerCore>( 0x4, [this, &comlynx = mFelix.getComLynx()]( uint64_t tick, bool interrupt )
   {
+    if ( comlynx.pulse() )
+    {
+      setIRQ( 0x10 );
+    }
   } );  //timer 4
   mTimers[0x5] = std::make_unique<TimerCore>( 0x5, [this]( uint64_t tick, bool interrupt )
   {
@@ -197,15 +202,9 @@ uint8_t Mikey::read( uint16_t address )
   case MIKEYHREV:
     return 0x01;
   case SERCTL:
-    return
-      ( mSerCtl.txrdy ? 0x80 : 0x00 ) |
-      ( mSerCtl.rxrdy ? 0x40 : 0x00 ) |
-      ( mSerCtl.txempty ? 0x20 : 0x00 ) |
-      ( mSerCtl.parerr ? 0x10 : 0x00 ) |
-      ( mSerCtl.overrun ? 0x08 : 0x00 ) |
-      ( mSerCtl.framerr ? 0x04 : 0x00 ) |
-      ( mSerCtl.rxbrk ? 0x02 : 0x00 ) |
-      ( mSerCtl.parbit ? 0x01 : 0x00 );
+    return mFelix.getComLynx().getCtrl();
+  case SERDAT:
+    return mFelix.getComLynx().getData();
   case GREEN + 0x00:
   case GREEN + 0x01:
   case GREEN + 0x02:
@@ -327,14 +326,10 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     mParallelPort.setData( value );
     break;
   case SERCTL:
-    mSerCtl.txinten = ( value & 0x80 ) != 0;
-    mSerCtl.rxinten = ( value & 0x40 ) != 0;
-    mSerCtl.paren = ( value & 0x10 ) != 0;
-    mSerCtl.txopen = ( value & 0x04 ) != 0;
-    mSerCtl.txbrk = ( value & 0x02 ) != 0;
-    mSerCtl.pareven = ( value & 0x01 ) != 0;
-    if ( ( value & 0x08 ) != 0 )
-      mSerCtl.parerr = mSerCtl.overrun = mSerCtl.framerr = false;
+    mFelix.getComLynx().setCtrl( value );
+    break;
+  case SERDAT:
+    mFelix.getComLynx().setData( value );
     break;
   case SDONEACK:
     mSuzyDone = false;

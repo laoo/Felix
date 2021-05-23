@@ -75,9 +75,9 @@ void CPU::assertInterrupt( int mask )
   mRes.interrupt |= mask;
 }
 
-bool CPU::interrupted() const
+int CPU::interruptedMask() const
 {
-  return mRes.interrupt != 0;
+  return mRes.interrupt;
 }
 
 void CPU::desertInterrupt( int mask )
