@@ -133,107 +133,121 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
         int left = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) == 0 ? 0 : 1;
         int up = ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) == 0 ? 0 : 1;
         left ^= suzy.mHFlip ? 1 : 0;
+        const int dx = left ? -1 : 1;
         up ^= suzy.mVFlip ? 1 : 0;
+        const int dy = up ? -1 : 1;
         scb.tiltacum = 0;
-        scb.vsizacum = (up == 0) ? scb.vsizoff.w : 0;
+        scb.vsizacum = up ? 0 : scb.vsizoff.w;
         scb.sprvpos = scb.vposstrt - scb.voff;
         if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) != ((uint8_t)quadCycle[(size_t)suzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_UP) )
-          scb.sprvpos += up ? -1 : 1;
+          scb.sprvpos += dy;
 
         for ( ;; )
         {
-          scb.vsizacum.h = 0;
           scb.vsizacum += scb.sprvsiz;
-          uint8_t pixelHeight = scb.vsizacum.h;
-          for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow, scb.sprvpos += up ? -1 : 1 )
+          int pixelHeight = scb.vsizacum.h;
+          scb.vsizacum.h = 0;
+          scb.sprdoff = co_await suzyRead( scb.sprdline );
+          if ( scb.sprdoff == 0 )
+            break;
+          scb.sprdline += 1;
+          for ( int pixelRow = 0; pixelRow < pixelHeight; ++pixelRow )
           {
             scb.procadr = scb.sprdline;
             Shifter shifter{};
             shifter.push( co_await suzyRead4( scb.procadr ) );
             scb.procadr += 4;
-            scb.sprdoff = shifter.pull<8>();
             SpriteLineParser slp{ shifter, suzy.mLiteral, suzy.bpp(), (scb.sprdoff - 1) * 8 };
-            if ( up == 0 && scb.sprvpos >= Suzy::mScreenHeight || up == 1 && (int16_t)(scb.sprvpos) < 0 ) continue;
-            scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
-            scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
-            vidOp.newLine( scb.vidadr );
-            colOp.newLine( scb.colladr );
-            scb.hposstrt += scb.tiltacum.h;
-            scb.tiltacum.h = 0;
-            int hsizacum = left == 0 ? scb.hsizoff.w : 0;
-            uint16_t sprhpos = scb.hposstrt - scb.hoff;
-            if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT) != ((uint8_t)quadCycle[(size_t)suzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT) )
-              sprhpos += left ? -1 : 1;
-
-            while ( int const* pen = slp.getPen() )
+            if ( !up && (int16_t)scb.sprvpos >= Suzy::mScreenHeight || up && (int16_t) scb.sprvpos < 0 )
+              break;
+            if ( (int16_t)scb.sprvpos < Suzy::mScreenHeight && (int16_t)scb.sprvpos >= 0 )
             {
-              if ( shifter.size() < 24 && slp.totalBits() > shifter.size() )
-              {
-                shifter.push( co_await suzyRead( scb.procadr ) );
-                scb.procadr += 1;
-              }
+              scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+              scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+              vidOp.newLine( scb.vidadr );
+              colOp.newLine( scb.colladr );
+              scb.hposstrt += (int8_t)scb.tiltacum.h;
+              scb.tiltacum.h = 0;
+              int hsizacum = left ? 0 : scb.hsizoff.w;
+              int sprhpos = (int16_t)( scb.hposstrt - scb.hoff );
+              if ( ( (uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT ) != ( (uint8_t)quadCycle[(size_t)suzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT ) )
+                sprhpos += dx;
 
-              hsizacum += scb.sprhsiz;
-              uint8_t pixelWidth = hsizacum >> 8;
-              hsizacum &= 0xff;
-
-              for ( int h = 0; h < pixelWidth; h++ )
+              while ( int const * pen = slp.getPen() )
               {
-                // Stop horizontal loop if outside of screen bounds
-                if ( sprhpos < Suzy::mScreenWidth )
+                if ( shifter.size() < 24 && slp.totalBits() > shifter.size() )
                 {
-                  uint8_t pixel = suzy.mPalette[*pen];
-
-                  if ( !suzy.mDisableCollisions )
-                  {
-                    if ( auto memOp = colOp.process( sprhpos, pixel ) )
-                    {
-                      colOp.receiveHiColl( co_await suzyColRMW( memOp.mask, memOp.addr, memOp.value ) );
-                    }
-                  }
-
-                  switch ( auto memOp = vidOp.process( sprhpos, pixel ) )
-                  {
-                  case VidOperator::MemOp::WRITE:
-                    co_await suzyWrite( memOp.addr, memOp.value );
-                    break;
-                  case VidOperator::MemOp::MODIFY:
-                  case VidOperator::MemOp::WRITE | VidOperator::MemOp::MODIFY:
-                    co_await suzyVidRMW( memOp.addr, memOp.value, memOp.mask() );
-                    break;
-                  case VidOperator::MemOp::XOR:
-                    co_await suzyXOR( memOp.addr, memOp.value );
-                    break;
-                  default:
-                    break;
-                  }
-
-                  mEveron = true;
+                  shifter.push( co_await suzyRead( scb.procadr ) );
+                  scb.procadr += 1;
                 }
-                sprhpos += left ? -1 : 1;
-              }
-            }
 
-            switch ( auto memOp = vidOp.flush() )
-            {
-            case VidOperator::MemOp::XOR:
-              co_await suzyXOR( memOp.addr, memOp.value );
-              break;
-            default:
-              co_await suzyVidRMW( memOp.addr, memOp.value, memOp.mask() );
-              break;
-            }
-            if ( !suzy.mDisableCollisions )
-            {
-              if ( auto memOp = colOp.flush() )
+                hsizacum += scb.sprhsiz;
+                uint8_t pixelWidth = hsizacum >> 8;
+                hsizacum &= 0xff;
+
+                for ( int pixelCol = 0; pixelCol < pixelWidth; pixelCol++ )
+                {
+                  // Stop horizontal loop if outside of screen bounds
+                  if ( sprhpos >= 0 && sprhpos < Suzy::mScreenWidth )
+                  {
+                    uint8_t pixel = suzy.mPalette[*pen];
+
+                    if ( !suzy.mDisableCollisions )
+                    {
+                      if ( auto memOp = colOp.process( sprhpos, pixel ) )
+                      {
+                        colOp.receiveHiColl( co_await suzyColRMW( memOp.mask, memOp.addr, memOp.value ) );
+                      }
+                    }
+
+                    switch ( auto memOp = vidOp.process( sprhpos, pixel ) )
+                    {
+                    case VidOperator::MemOp::WRITE:
+                      co_await suzyWrite( memOp.addr, memOp.value );
+                      break;
+                    case VidOperator::MemOp::MODIFY:
+                    case VidOperator::MemOp::WRITE | VidOperator::MemOp::MODIFY:
+                      co_await suzyVidRMW( memOp.addr, memOp.value, memOp.mask() );
+                      break;
+                    case VidOperator::MemOp::XOR:
+                      co_await suzyXOR( memOp.addr, memOp.value );
+                      break;
+                    default:
+                      break;
+                    }
+
+                    mEveron = true;
+                  }
+                  sprhpos += dx;
+                }
+              }
+
+              switch ( auto memOp = vidOp.flush() )
               {
-                colOp.receiveHiColl( co_await suzyColRMW( memOp.mask, memOp.addr, memOp.value ) );
+              case VidOperator::MemOp::XOR:
+                co_await suzyXOR( memOp.addr, memOp.value );
+                break;
+              default:
+                co_await suzyVidRMW( memOp.addr, memOp.value, memOp.mask() );
+                break;
+              }
+              if ( !suzy.mDisableCollisions )
+              {
+                if ( auto memOp = colOp.flush() )
+                {
+                  colOp.receiveHiColl( co_await suzyColRMW( memOp.mask, memOp.addr, memOp.value ) );
+                }
               }
             }
+            scb.sprvpos += dy;
+            scb.sprhsiz += scb.stretch;
+            scb.tiltacum += scb.tilt;
           }
-          scb.sprdline += scb.sprdoff;
           if ( scb.sprdoff < 2 )
             break;
+          scb.sprdline += scb.sprdoff - 1;
+          if ( suzy.mVStretch )
+            scb.sprvsiz += scb.stretch * pixelHeight;
         }
         if ( scb.sprdoff == 0 )
           break;
