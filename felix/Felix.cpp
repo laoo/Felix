@@ -384,7 +384,7 @@ void Felix::executeCPUAction()
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::WRITE_MIKEY:
-    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     if ( auto mikeyAction = mMikey->write( req.address, req.value ) )
     {
       mActionQueue.push( mikeyAction );
