@@ -94,6 +94,9 @@
     <ClCompile Include="KernelEscape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AddressMapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -211,6 +214,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="CPUState.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AddressMapper.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

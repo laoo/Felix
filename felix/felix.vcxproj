@@ -168,6 +168,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ActionQueue.cpp" />
+    <ClCompile Include="AddressMapper.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="Felix.cpp" />
     <ClCompile Include="CartBank.cpp" />
@@ -202,6 +203,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
+    <ClInclude Include="AddressMapper.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="CPUState.hpp" />
     <ClInclude Include="DefaultROM.hpp" />
