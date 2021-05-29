@@ -17,7 +17,7 @@
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
 Felix::Felix( std::function<void( DisplayGenerator::Pixel const * )> const & fun, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-  mCpu{ std::make_shared<CPU>( *this, false ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
+  mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, fun ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
@@ -70,6 +70,11 @@ void Felix::injectFile( InputFile const & file )
   default:
     break;
   }
+}
+
+void Felix::setLog( std::filesystem::path const & path )
+{
+  mCpu->setLog( path );
 }
 
 void Felix::pulseReset( std::optional<uint16_t> resetAddress )
@@ -315,7 +320,7 @@ void Felix::executeCPUAction()
     WRITE_KENREL,
     DISCARD_READ_KERNEL
   };
-  
+
   CPUAction action = (CPUAction)( (int)req.type + (int)pageType );
 
   switch ( action )

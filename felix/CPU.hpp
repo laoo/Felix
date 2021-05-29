@@ -42,7 +42,7 @@ public:
   };
 
 
-  CPU( Felix & felix, bool trace );
+  CPU( Felix & felix );
 
   Request const& advance();
 
@@ -51,6 +51,7 @@ public:
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
   int interruptedMask() const;
+  void setLog( std::filesystem::path const & path );
 
   CPUState & state();
 

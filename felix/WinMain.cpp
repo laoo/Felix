@@ -173,6 +173,14 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     for ( auto const& arg : args )
     {
+      {
+        std::filesystem::path path{ arg };
+        if ( path.has_extension() && path.extension() == ".log" )
+        {
+          felix.setLog( arg );
+        }
+      }
+
       InputFile file{ arg };
       if ( file.valid() )
       {

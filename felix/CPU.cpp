@@ -46,17 +46,19 @@ bool CPU::isHiccup()
   }
 }
 
+void CPU::setLog( std::filesystem::path const & path )
+{
+  mTrace = true;
+  mFtrace = std::ofstream{ path };
+}
+
 CPUState & CPU::state()
 {
   return mState;
 }
 
-CPU::CPU( Felix & felix, bool trace ) : felix{ felix }, mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{ trace }
+CPU::CPU( Felix & felix ) : felix{ felix }, mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{ false }
 {
-  if ( mTrace )
-  {
-    mFtrace = std::ofstream{ "trace.log" };
-  }
 }
 
 CPU::Request const& CPU::advance()

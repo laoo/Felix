@@ -29,6 +29,7 @@ public:
   std::pair<float, float> getSample( int sps );
 
   void injectFile( InputFile const& file );
+  void setLog( std::filesystem::path const & path );
 
   void enterMonitor();
 
