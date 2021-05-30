@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/multiprecision/cpp_int.hpp>
 
 #ifdef _WIN32
 #define NOMINMAX

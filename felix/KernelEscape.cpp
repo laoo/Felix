@@ -1,7 +1,8 @@
 #include "pch.hpp"
 #include "KernelEscape.hpp"
 #include "CPUState.hpp"
-#include <boost/multiprecision/cpp_int.hpp>
+#include "Encryption.hpp"
+#include "Log.hpp"
 
 KernelEscape::KernelEscape()
 {
@@ -18,7 +19,7 @@ void KernelEscape::call( uint8_t data, IAccessor & acc )
     clear( acc );
     [[fallthrough]];
   case 0xfe:
-    decrypt( acc );
+    decryptCartridge( acc );
     break;
   case 0xfc:
     shift( acc );
@@ -64,24 +65,25 @@ void KernelEscape::clear( IAccessor & acc )
   shift( acc );
 }
 
-void KernelEscape::decrypt( IAccessor & acc )
+void KernelEscape::decryptCartridge( IAccessor & acc )
 {
   uint16_t addr = acc.readRAM( 5 ) + ( (uint16_t)acc.readRAM( 6 ) << 8 );
 
-  std::array<uint8_t, 256> enc;
+  size_t blockcount = 0x100 - acc.readSuzy( 0xb2 );
 
-  enc[0] = acc.readSuzy( 0xb2 );
-
-  if ( enc[0] < 0xfb )
-    return;
-
-  size_t blockcount = 0x100 - enc[0];
-  for ( size_t i = 1; i < 1 + 51 * blockcount; ++i )
+  if ( blockcount > 5 )
   {
-    enc[i] = acc.readSuzy( 0xb2 );
+    L_ERROR << "Bad number of encrypted blocks: " << blockcount;
+    return;
   }
 
-  auto plain = decrypt( blockcount, std::span<uint8_t const>{ enc.data() + 1, 255 } );
+  std::vector<uint8_t> enc;
+  for ( size_t i = 0; i < 51 * blockcount; ++i )
+  {
+    enc.push_back( acc.readSuzy( 0xb2 ) );
+  }
+
+  auto plain = decrypt( blockcount, std::span<uint8_t const>{ enc.data(), enc.size() } );
 
   assert( plain.size() <= 50 * blockcount );
 
@@ -97,38 +99,5 @@ void KernelEscape::reset( IAccessor & acc )
 {
   acc.writeMikey( 0x8b, 2 );  //IODAT
   acc.writeMikey( 0x8a, 3 );  //IODIR
-}
-
-std::vector<uint8_t> KernelEscape::decrypt( size_t blockcount, std::span<uint8_t const> encrypted )
-{
-  std::vector<uint8_t> result;
-  int accumulator = 0;
-  for ( size_t i = 0; i < blockcount; ++i )
-  {
-    decrypt( std::span<uint8_t const>{ encrypted.data() + 51 * i, 51 }, accumulator, result );
-  }
-
-  return result;
-}
-
-void KernelEscape::decrypt( std::span<uint8_t const> encrypted, int & accumulator, std::vector<uint8_t> & result )
-{
-  using namespace boost::multiprecision;
-  using namespace boost::multiprecision::literals;
-
-  uint512_t constexpr lynxpubmod = 0x35b5a3942806d8a22695d771b23cfd561c4a19b6a3b02600365a306e3c4d63381bd41c136489364cf2ba2a58f4fee1fdac7e79_cppui512;
-  uint512_t constexpr lynxprvexp = 0x23ce6d0d7004906c19b93a4bcc28a8e412dc11246d2019557987ab5ca818a3d3c8e3276d4270cb8021d6bda4296d47b1e5e2a3_cppui512;
-  uint512_t constexpr lynxpubexp = 3;
-  uint512_t enc;
-  import_bits( enc, encrypted.begin(), encrypted.end(), 8, false );
-  uint512_t decr = powm( enc, lynxpubexp, lynxpubmod );
-  std::vector<uint8_t> decrv;
-  export_bits( decr, std::back_inserter( decrv ), 8, false );
-
-  for ( size_t i = 0; i < decrv.size() - 1; ++i ) //skipping last byte
-  {
-    accumulator += decrv[i];
-    result.push_back( accumulator );
-  }
 }
 

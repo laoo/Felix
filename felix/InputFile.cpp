@@ -5,6 +5,8 @@
 #include "ImageLyx.hpp"
 #include "ImageLnx.hpp"
 #include "ImageBIN.hpp"
+#include "Encryption.hpp"
+#include "Log.hpp"
 
 InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
 {
@@ -138,11 +140,19 @@ std::shared_ptr<ImageBIN const> InputFile::checkBIN( std::vector<uint8_t>&& data
 std::shared_ptr<ImageCart const> InputFile::checkLyx( std::vector<uint8_t>&& data ) const
 {
   // First byte of loader has two's complement of number of blocks in first frame. 
-  // If value is less than 0xFB it is not a correct header
-  if ( data[0] < 0xfb )
-    return {};
+  size_t blockcount = 0x100 - data[0];
 
-  //TODO perform decrytion and validate result
+  // If value is greater than 5 it is not a correct header
+  if ( blockcount > 5 )
+  {
+    L_ERROR << "Bad number of encrypted blocks: " << blockcount;
+    return {};
+  }
+
+  auto plain = decrypt( blockcount, std::span<uint8_t const>{ data.data() + 1, 51 * blockcount } );
+
+  if ( plain.empty() )
+    return {}; //not a valid cartridge image if decryption failed
 
   switch ( data.size() )
   {

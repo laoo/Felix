@@ -97,6 +97,9 @@
     <ClCompile Include="AddressMapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Encryption.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -217,6 +220,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="AddressMapper.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Encryption.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
