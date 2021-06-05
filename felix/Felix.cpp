@@ -157,7 +157,6 @@ void Felix::desertInterrupt( int mask, std::optional<uint64_t> tick )
 
 bool Felix::executeSequencedAction( SequencedAction seqAction )
 {
-  mCurrentTick = seqAction.getTick();
   auto action = seqAction.getAction();
 
   switch ( action )
@@ -179,7 +178,7 @@ bool Felix::executeSequencedAction( SequencedAction seqAction )
   case Action::FIRE_TIMERA:
   case Action::FIRE_TIMERB:
   case Action::FIRE_TIMERC:
-    if ( auto newAction = mMikey->fireTimer( mCurrentTick, (int)action - (int)Action::FIRE_TIMER0 ) )
+    if ( auto newAction = mMikey->fireTimer( seqAction.getTick(), (int)action - (int)Action::FIRE_TIMER0 ) )
     {
       mActionQueue.push( newAction );
     }
