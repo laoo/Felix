@@ -8,12 +8,12 @@ WinAudioOut::WinAudioOut( uint32_t audioBufferLengthMs )
 
   HRESULT hr;
 
-
-  hr = CoCreateInstance( __uuidof( MMDeviceEnumerator ), NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS( mDeviceEnumerator.ReleaseAndGetAddressOf() ) );
+  ComPtr<IMMDeviceEnumerator> deviceEnumerator;
+  hr = CoCreateInstance( __uuidof( MMDeviceEnumerator ), NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS( deviceEnumerator.ReleaseAndGetAddressOf() ) );
   if ( FAILED( hr ) )
     throw std::exception{};
 
-  hr = mDeviceEnumerator->GetDefaultAudioEndpoint( eRender, eMultimedia, mDevice.ReleaseAndGetAddressOf() );
+  hr = deviceEnumerator->GetDefaultAudioEndpoint( eRender, eMultimedia, mDevice.ReleaseAndGetAddressOf() );
   if ( FAILED( hr ) )
     throw std::exception{};
 
@@ -34,6 +34,14 @@ WinAudioOut::WinAudioOut( uint32_t audioBufferLengthMs )
     throw std::exception{};
 
   hr = mAudioClient->GetService( __uuidof( IAudioRenderClient ), reinterpret_cast<void **>( mRenderClient.ReleaseAndGetAddressOf() ) );
+  if ( FAILED( hr ) )
+    throw std::exception{};
+
+  hr = mAudioClient->GetService( __uuidof( IAudioClock ), reinterpret_cast<void **>( mAudioClock.ReleaseAndGetAddressOf() ) );
+  if ( FAILED( hr ) )
+    throw std::exception{};
+
+  hr = mAudioClock->GetFrequency( &mDeviceFrequency );
   if ( FAILED( hr ) )
     throw std::exception{};
 

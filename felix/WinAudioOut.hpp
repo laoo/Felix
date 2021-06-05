@@ -24,10 +24,12 @@ public:
 
 private:
 
-  ComPtr<IMMDeviceEnumerator> mDeviceEnumerator;
   ComPtr<IMMDevice> mDevice;
   ComPtr<IAudioClient> mAudioClient;
   ComPtr<IAudioRenderClient> mRenderClient;
+  ComPtr<IAudioClock> mAudioClock;
+
+  UINT64 mDeviceFrequency;
   uint32_t mBufferSize;
 
   WAVEFORMATEX * mMixFormat;
