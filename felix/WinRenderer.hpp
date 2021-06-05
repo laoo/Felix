@@ -31,6 +31,6 @@ private:
   ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
   int theWinWidth;
   int theWinHeight;
-
+  boost::rational<int32_t> mRefreshRate;
 
 };

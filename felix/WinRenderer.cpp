@@ -1,11 +1,12 @@
 #include "pch.hpp"
 #include "WinRenderer.hpp"
 #include "renderer.hxx"
+#include "Log.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
 
-WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}
+WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}
 {
   typedef HRESULT( WINAPI * LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE  s_DynamicD3D11CreateDevice = nullptr;
@@ -36,27 +37,34 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
   sd.BufferDesc.Width = 0;
   sd.BufferDesc.Height = 0;
   sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-  sd.BufferDesc.RefreshRate.Numerator = 60;
+  sd.BufferDesc.RefreshRate.Numerator = 0;
   sd.BufferDesc.RefreshRate.Denominator = 1;
   sd.BufferUsage = DXGI_USAGE_UNORDERED_ACCESS;
   sd.OutputWindow = mHWnd;
   sd.SampleDesc.Count = 1;
   sd.SampleDesc.Quality = 0;
   sd.Windowed = TRUE;
+  sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
   ComPtr<IDXGIDevice> pDXGIDevice;
   V_THROW( mD3DDevice.As( &pDXGIDevice ) );
 
   ComPtr<IDXGIAdapter> pDXGIAdapter;
-  V_THROW( pDXGIDevice->GetParent( __uuidof( IDXGIAdapter ), (void **)pDXGIAdapter.ReleaseAndGetAddressOf() ) );
+  V_THROW( pDXGIDevice->GetAdapter( pDXGIAdapter.ReleaseAndGetAddressOf() ) );
 
   ComPtr<IDXGIFactory> pIDXGIFactory;
   V_THROW( pDXGIAdapter->GetParent( __uuidof( IDXGIFactory ), (void **)pIDXGIFactory.ReleaseAndGetAddressOf() ) );
 
-  ComPtr<IDXGISwapChain> pSwapChain;
-  V_THROW( pIDXGIFactory->CreateSwapChain( mD3DDevice.Get(), &sd, pSwapChain.ReleaseAndGetAddressOf() ) );
+  V_THROW( pIDXGIFactory->CreateSwapChain( mD3DDevice.Get(), &sd, mSwapChain.ReleaseAndGetAddressOf() ) );
 
-  mSwapChain = std::move( pSwapChain );
+  ComPtr<IDXGIOutput> pIDXGIOutput;
+  V_THROW( mSwapChain->GetContainingOutput( pIDXGIOutput.ReleaseAndGetAddressOf() ) );
+  
+  DXGI_MODE_DESC md;
+  V_THROW( pIDXGIOutput->FindClosestMatchingMode( &sd.BufferDesc, &md, mD3DDevice.Get() ) );
+  mRefreshRate = { md.RefreshRate.Numerator, md.RefreshRate.Denominator };
+
+  L_INFO << "Refresh Rate: " << mRefreshRate << " = " << ( (double)mRefreshRate.numerator() / (double)mRefreshRate.denominator() );
 
   V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, mRendererCS.ReleaseAndGetAddressOf() ) );
 
