@@ -159,3 +159,12 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   mPerfCount = cnt;
 }
 
+DisplayLine * WinRenderer::getNextLine( int32_t displayRow )
+{
+  return nullptr;
+}
+
+void WinRenderer::updateColorReg( uint8_t value, uint8_t reg )
+{
+}
+

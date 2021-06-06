@@ -1,13 +1,19 @@
 #pragma once
 
+#include "IVideoSink.hpp"
 #include "DisplayGenerator.hpp"
 
-class WinRenderer
+class WinRenderer : public IVideoSink
 {
 public:
 
   WinRenderer( HWND hWnd );
+  ~WinRenderer() override = default;
+
   void render( DisplayGenerator::Pixel const* surface );
+
+  DisplayLine * getNextLine( int32_t displayRow ) override;
+  void updateColorReg( uint8_t value, uint8_t reg ) override;
 
 
 private:

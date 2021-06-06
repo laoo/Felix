@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IVideoSink.hpp"
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
 #include "Suzy.hpp"

@@ -225,6 +225,12 @@
     <ClInclude Include="Encryption.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="IVideoSink.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayLine.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh">
