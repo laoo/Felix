@@ -6,8 +6,10 @@
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
 
-WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}
+WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}
 {
+  QueryPerformanceFrequency( (LARGE_INTEGER*)&mPerfFreq );
+
   typedef HRESULT( WINAPI * LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE  s_DynamicD3D11CreateDevice = nullptr;
   HMODULE hModD3D11 = ::LoadLibrary( L"d3d11.dll" );
@@ -150,5 +152,10 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
   mImmediateContext->Dispatch( 10, 102, 1 );
   mSwapChain->Present( 1, 0 );
+  int64_t cnt = 0;
+  QueryPerformanceCounter( (LARGE_INTEGER*)&cnt );
+  int64_t diff = cnt - mPerfCount;
+  L_TRACE << diff << "\t" << (double)mPerfFreq / (double)diff;
+  mPerfCount = cnt;
 }
 

@@ -440,11 +440,11 @@ std::pair<float, float> Mikey::sampleAudio() const
     {
       if ( ( mPan & ( (uint8_t)0x01 << i ) ) != 0 )
       {
-        result.first += ( (int8_t)mAudioChannels[i]->getOutput() * ( mAttenuation[i] & 0x0f ) ) / 16;
+        result.first += (float)mAudioChannels[i]->getOutput() * ( (float)( mAttenuation[i] & 0x0f ) / 16.0f );
       }
       else
       {
-        result.first += (int8_t)mAudioChannels[i]->getOutput();
+        result.first += (float)mAudioChannels[i]->getOutput();
       }
     }
 
@@ -452,11 +452,11 @@ std::pair<float, float> Mikey::sampleAudio() const
     {
       if ( ( mPan & ( (uint8_t)0x10 << i ) ) != 0 )
       {
-        result.second += ( (int8_t)mAudioChannels[i]->getOutput() * ( mAttenuation[i] & 0xf0 ) ) / ( 16 * 16 );
+        result.second += (float)mAudioChannels[i]->getOutput() * ( (float)( mAttenuation[i] & 0xf0 ) / ( 16.0f * 16.0f ) );
       }
       else
       {
-        result.second += (int8_t)mAudioChannels[i]->getOutput();
+        result.second += (float)mAudioChannels[i]->getOutput();
       }
     }
   }

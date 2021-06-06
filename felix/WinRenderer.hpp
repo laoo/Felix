@@ -32,5 +32,7 @@ private:
   int theWinWidth;
   int theWinHeight;
   boost::rational<int32_t> mRefreshRate;
+  int64_t mPerfFreq;
+  int64_t mPerfCount;
 
 };
