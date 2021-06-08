@@ -54,9 +54,9 @@ SequencedAction AudioChannel::setOther( uint64_t tick, uint8_t value )
   return mTimer.setControlB( tick, value & 0b0000'1111 );
 }
 
-uint8_t AudioChannel::getVolume()
+int8_t AudioChannel::getVolume()
 {
-  return (uint8_t)mVolume;
+  return mVolume;
 }
 
 uint8_t AudioChannel::getFeedback()
@@ -64,7 +64,7 @@ uint8_t AudioChannel::getFeedback()
   return mTapSelector & 0b0000'0011'1111 | ( ( mTapSelector & 0b1100'0000'0000 ) >> 10 );
 }
 
-uint8_t AudioChannel::getOutput()
+int8_t AudioChannel::getOutput()
 {
   return mOutput;
 }
@@ -109,11 +109,11 @@ void AudioChannel::trigger()
   
   if ( mEnableIntegrate )
   {
-    int32_t temp = mOutput + ( ( newShift & 1 ) ? mVolume : -mVolume );
-    mOutput = (int8_t)std::clamp( temp, -128, 127 );
+    int32_t temp = mOutput + ( ( newShift & 1 ) ? mVolume : ~mVolume );
+    mOutput = (int8_t)std::clamp( temp, (int32_t)std::numeric_limits<int8_t>::min(), (int32_t)std::numeric_limits<int8_t>::max() );
   }
   else
   {
-    mOutput = ( newShift & 1 ) ? mVolume : -mVolume;
+    mOutput = ( newShift & 1 ) ? mVolume : ~mVolume;
   }
 }

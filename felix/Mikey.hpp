@@ -96,6 +96,8 @@ private:
   std::array<std::unique_ptr<AudioChannel>, 4> mAudioChannels;
   std::array<uint8_t, 32> mPalette;
   std::array<uint8_t, 4> mAttenuation;
+  std::array<int16_t, 4> mAttenuationLeft;
+  std::array<int16_t, 4> mAttenuationRight;
 
   std::unique_ptr<DisplayGenerator> mDisplayGenerator;
 

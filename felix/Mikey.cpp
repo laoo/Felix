@@ -7,8 +7,9 @@
 #include "CPU.hpp"
 #include "ComLynx.hpp"
 
-Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{}, mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
-mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
+Mikey::Mikey( Felix & busMaster, std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
+  mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mAttenuationLeft{ 0x3c, 0x3c, 0x3c, 0x3c }, mAttenuationRight{ 0x3c, 0x3c, 0x3c, 0x3c }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( fun ) },
+  mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -161,11 +162,11 @@ uint8_t Mikey::read( uint16_t address )
     switch ( address & 0x7 )
     {
     case AUDIO::VOLCNTRL:
-      return mAudioChannels[( address >> 3 ) & 3]->getVolume();
+      return std::bit_cast<uint8_t>( mAudioChannels[( address >> 3 ) & 3]->getVolume() );
     case AUDIO::FEEDBACK:
       return mAudioChannels[( address >> 3 ) & 3]->getFeedback();
     case AUDIO::OUTPUT:
-      return mAudioChannels[( address >> 3 ) & 3]->getOutput();
+      return std::bit_cast<uint8_t>( mAudioChannels[( address >> 3 ) & 3]->getOutput() );
     case AUDIO::SHIFT:
       return mAudioChannels[( address >> 3 ) & 3]->getShift();
     case AUDIO::BACKUP:
@@ -290,15 +291,23 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   {
   case ATTENREG0:
     mAttenuation[0] = value;
+    mAttenuationLeft[0] = ( value & 0x0f ) << 2;
+    mAttenuationRight[0] = ( value & 0xf0 ) >> 2;
     break;
   case ATTENREG1:
     mAttenuation[1] = value;
+    mAttenuationLeft[1] = ( value & 0x0f ) << 2;
+    mAttenuationRight[1] = ( value & 0xf0 ) >> 2;
     break;
   case ATTENREG2:
     mAttenuation[2] = value;
+    mAttenuationLeft[2] = ( value & 0x0f ) << 2;
+    mAttenuationRight[2] = ( value & 0xf0 ) >> 2;
     break;
   case ATTENREG3:
     mAttenuation[3] = value;
+    mAttenuationLeft[3] = ( value & 0x0f ) << 2;
+    mAttenuationRight[3] = ( value & 0xf0 ) >> 2;
     break;
   case MPAN:
     mPan = value;
@@ -432,6 +441,8 @@ void Mikey::suzyDone()
 
 std::pair<float, float> Mikey::sampleAudio() const
 {
+  int16_t left{};
+  int16_t right{};
   std::pair<float, float> result{};
 
   for ( size_t i = 0; i < 4; ++i )
@@ -440,11 +451,11 @@ std::pair<float, float> Mikey::sampleAudio() const
     {
       if ( ( mPan & ( (uint8_t)0x01 << i ) ) != 0 )
       {
-        result.first += (float)mAudioChannels[i]->getOutput() * ( (float)( mAttenuation[i] & 0x0f ) / 16.0f );
+        left += mAudioChannels[i]->getOutput() * mAttenuationLeft[i];
       }
       else
       {
-        result.first += (float)mAudioChannels[i]->getOutput();
+        left += mAudioChannels[i]->getOutput() * 0x3c;
       }
     }
 
@@ -452,16 +463,16 @@ std::pair<float, float> Mikey::sampleAudio() const
     {
       if ( ( mPan & ( (uint8_t)0x10 << i ) ) != 0 )
       {
-        result.second += (float)mAudioChannels[i]->getOutput() * ( (float)( mAttenuation[i] & 0xf0 ) / ( 16.0f * 16.0f ) );
+        right += mAudioChannels[i]->getOutput() * mAttenuationRight[i];
       }
       else
       {
-        result.second += (float)mAudioChannels[i]->getOutput();
+        right += mAudioChannels[i]->getOutput() * 0x3c;
       }
     }
   }
 
-  return { result.first / ( 4.0f * 128.0f ), result.second / ( 4.0f * 128.0f ) };
+  return { (float)left / 32768.0f, (float)right / 32768.0f };
 }
 
 void Mikey::setIRQ( uint8_t mask )

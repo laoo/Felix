@@ -18,9 +18,9 @@ public:
   SequencedAction setCounter( uint64_t tick, uint8_t );
   SequencedAction setOther( uint64_t tick, uint8_t );
 
-  uint8_t getVolume();
+  int8_t getVolume();
   uint8_t getFeedback();
-  uint8_t getOutput();
+  int8_t getOutput();
   uint8_t getShift();
   uint8_t getBackup( uint64_t tick );
   uint8_t getControl( uint64_t tick );
