@@ -439,7 +439,7 @@ void Mikey::suzyDone()
   mSuzyDone = true;
 }
 
-std::pair<float, float> Mikey::sampleAudio() const
+Mikey::AudioSample Mikey::sampleAudio() const
 {
   int16_t left{};
   int16_t right{};
@@ -449,30 +449,18 @@ std::pair<float, float> Mikey::sampleAudio() const
   {
     if ( ( mStereo & ( (uint8_t)0x01 << i ) ) == 0 )
     {
-      if ( ( mPan & ( (uint8_t)0x01 << i ) ) != 0 )
-      {
-        left += mAudioChannels[i]->getOutput() * mAttenuationLeft[i];
-      }
-      else
-      {
-        left += mAudioChannels[i]->getOutput() * 0x3c;
-      }
+      const int attenuation = ( mPan & ( (uint8_t)0x01 << i ) ) != 0 ? mAttenuationLeft[i] : 0x3c;
+      left += mAudioChannels[i]->getOutput() * attenuation;
     }
 
     if ( ( mStereo & ( (uint8_t)0x10 << i ) ) == 0 )
     {
-      if ( ( mPan & ( (uint8_t)0x10 << i ) ) != 0 )
-      {
-        right += mAudioChannels[i]->getOutput() * mAttenuationRight[i];
-      }
-      else
-      {
-        right += mAudioChannels[i]->getOutput() * 0x3c;
-      }
+      const int attenuation = ( mPan & ( (uint8_t)0x01 << i ) ) != 0 ? mAttenuationRight[i] : 0x3c;
+      right += mAudioChannels[i]->getOutput() * attenuation;
     }
   }
 
-  return { (float)left / 32768.0f, (float)right / 32768.0f };
+  return { left, right };
 }
 
 void Mikey::setIRQ( uint8_t mask )

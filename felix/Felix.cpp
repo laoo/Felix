@@ -511,7 +511,9 @@ std::pair<float, float> Felix::getSample( int sps )
 
   process( cnt );
 
-  return mMikey->sampleAudio();
+  auto audioSample = mMikey->sampleAudio();
+
+  return { (float)audioSample.left / 32768.0f, (float)audioSample.right / 32768.0f };
 }
 
 void Felix::enterMonitor()
