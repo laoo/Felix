@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ActionQueue.hpp"
-#include "DisplayGenerator.hpp"
 #include "ParallelPort.hpp"
+#include "DisplayGenerator.hpp"
 
 class Felix;
 class TimerCore;

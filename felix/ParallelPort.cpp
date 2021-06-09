@@ -2,11 +2,10 @@
 #include "ParallelPort.hpp"
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
-#include "DisplayGenerator.hpp"
 #include "Felix.hpp"
 
 
-ParallelPort::ParallelPort( Felix & felix, DisplayGenerator const& displayGenerator ) : mFelix{ felix }, mDisplayGenerator{ displayGenerator },
+ParallelPort::ParallelPort( Felix & felix, RestProvider const& restProvider ) : mFelix{ felix }, mRestProvider{ restProvider },
   mOutputMask{}, mData{}
 {
 }
@@ -52,7 +51,7 @@ uint8_t ParallelPort::getData() const
 
   if ( ( mOutputMask & Mask::RESTLESS ) == 0 )
   {
-    result |= ( ( mData & Mask::RESTLESS ) == 0 ) && !mDisplayGenerator.rest() ? Mask::RESTLESS : 0;
+    result |= ( ( mData & Mask::RESTLESS ) == 0 ) && !mRestProvider.rest() ? Mask::RESTLESS : 0;
   }
   else
   {

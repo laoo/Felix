@@ -1,6 +1,8 @@
 #pragma once
 
-class DisplayGenerator
+#include "ParallelPort.hpp"
+
+class DisplayGenerator : public RestProvider
 {
 public:
 
@@ -26,6 +28,7 @@ public:
   };
 
   DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun );
+  ~DisplayGenerator() override = default;
   void dispCtl( bool dispColor, bool dispFlip, bool dmaEnable );
   void setPBKUP( uint8_t value );
 
@@ -37,7 +40,7 @@ public:
   void vblank( uint64_t tick );
   Pixel const* getSrface() const;
 
-  bool rest() const;
+  bool rest() const override;
 
 private:
   void flushDisplay( uint64_t tick );

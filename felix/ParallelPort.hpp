@@ -2,14 +2,20 @@
 
 class Cartridge;
 class ComLynx;
-class DisplayGenerator;
 class Felix;
+
+class RestProvider
+{
+public:
+  virtual ~RestProvider() = default;
+  virtual bool rest() const = 0;
+};
 
 class ParallelPort
 {
 public:
 
-  ParallelPort( Felix & felix, DisplayGenerator const& displayGenerator );
+  ParallelPort( Felix & felix, RestProvider const& restProvider );
 
   void setDirection( uint8_t value );
   uint8_t getDirection() const;
@@ -31,7 +37,7 @@ public:
 
 private:
   Felix & mFelix;
-  DisplayGenerator const& mDisplayGenerator;
+  RestProvider const& mRestProvider;
   uint8_t mOutputMask;
   uint8_t mData;
 };
