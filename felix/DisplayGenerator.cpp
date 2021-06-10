@@ -75,6 +75,7 @@ void DisplayGenerator::updateDispAddr( uint16_t dispAdr )
 void DisplayGenerator::vblank( uint64_t tick )
 {
   flushDisplay( tick );
+  mVideoSink->endFrame();
   mVideoSink->render();
 }
 

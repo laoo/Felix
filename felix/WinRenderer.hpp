@@ -3,6 +3,8 @@
 #include "IVideoSink.hpp"
 #include "DisplayGenerator.hpp"
 
+struct RenderFrame;
+
 class WinRenderer : public IVideoSink
 {
 public:
@@ -14,7 +16,8 @@ public:
 
   void startNewFrame() override;
   void emitScreenData( std::span<uint8_t const> data ) override;
-  void updateColorReg( uint16_t reg, uint8_t value ) override;
+  void updateColorReg( uint8_t reg, uint8_t value ) override;
+  void endFrame() override;
 
 
 private:
@@ -41,9 +44,15 @@ private:
   };
 
 
+  void updatePalette( uint16_t reg, uint8_t value );
+  void updateSourceTexture( std::shared_ptr<RenderFrame> frame );
+  std::shared_ptr<RenderFrame> pullNextFrame();
+
 private:
-  std::array<DPixel, 80 * 102> mSurface;
   std::array<DPixel, 256> mPalette;
+  std::shared_ptr<RenderFrame> mActiveFrame;
+  std::shared_ptr<RenderFrame> mFinishedFrame;
+  mutable std::mutex mQueueMutex;
   uint32_t mIdx;
   HWND mHWnd;
   ComPtr<ID3D11Device>              mD3DDevice;

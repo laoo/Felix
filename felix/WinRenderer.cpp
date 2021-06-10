@@ -6,7 +6,31 @@
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
 
-WinRenderer::WinRenderer( HWND hWnd ) : mIdx{}, mHWnd { hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}
+struct RenderFrame
+{
+  static constexpr size_t DISPLAY_BYTES = 80;
+  static constexpr size_t MAX_COLOR_CHANGES = 256;
+  static constexpr size_t LINE_BUFFER_SIZE = DISPLAY_BYTES + MAX_COLOR_CHANGES;
+
+  RenderFrame() : idx{} {}
+
+  uint64_t idx;
+  std::array<uint16_t, LINE_BUFFER_SIZE * 102> frameBuffer;
+
+  void pushColorChage( uint8_t reg, uint8_t value )
+  {
+    frameBuffer[idx++] = ( reg << 8 ) | value;
+  }
+  void pushScreenBytes( std::span<uint8_t const> data )
+  {
+    for ( uint8_t byte : data )
+    {
+      frameBuffer[idx++] = 0xff00 | (uint16_t)byte;
+    }
+  }
+};
+
+WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrame{}, mQueueMutex{}, mIdx{}, mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}
 {
   QueryPerformanceFrequency( (LARGE_INTEGER*)&mPerfFreq );
 
@@ -99,16 +123,10 @@ WinRenderer::WinRenderer( HWND hWnd ) : mIdx{}, mHWnd { hWnd }, theWinWidth{}, t
 
 void WinRenderer::render()
 {
-  D3D11_MAPPED_SUBRESOURCE map;
-  mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
-  DPixel * dst = (DPixel *)map.pData;
-  size_t pitch = map.RowPitch / sizeof( DPixel );
-  for ( int y = 0; y < 102; ++y )
+  if ( auto frame = pullNextFrame() )
   {
-    std::copy_n( mSurface.data() + 80 * y, 80, dst );
-    dst += pitch;
+    updateSourceTexture( std::move( frame ) );
   }
-  mImmediateContext->Unmap( mSource.Get(), 0 );
 
   RECT r;
   ::GetClientRect( mHWnd, &r );
@@ -165,17 +183,25 @@ void WinRenderer::render()
 void WinRenderer::startNewFrame()
 {
   mIdx = 0;
-}
-
-void WinRenderer::emitScreenData( std::span<uint8_t const> data )
-{
-  for ( uint8_t byte : data )
+  if ( mActiveFrame )
   {
-    mSurface[mIdx++] = mPalette[byte];
+    std::scoped_lock<std::mutex> lock( mQueueMutex );
+    mFinishedFrame = std::move( mActiveFrame );
   }
+  mActiveFrame = std::make_shared<RenderFrame>();
 }
 
-void WinRenderer::updateColorReg( uint16_t reg, uint8_t value )
+void WinRenderer::endFrame()
+{
+  if ( mActiveFrame )
+  {
+    std::scoped_lock<std::mutex> lock( mQueueMutex );
+    mFinishedFrame = std::move( mActiveFrame );
+  }
+  mActiveFrame.reset();
+}
+
+void WinRenderer::updatePalette( uint16_t reg, uint8_t value )
 {
   reg &= 0xff;
 
@@ -188,11 +214,11 @@ void WinRenderer::updateColorReg( uint16_t reg, uint8_t value )
     uint8_t g = ( value << 4 ) | ( value & 0x0f );
 
     for ( uint32_t i = regHi; i < regHi + 16; ++i )
-      {
+    {
       mPalette[i].left.g = g;
-      }
+    }
     for ( uint32_t i = regLo; i < 256; i += 16 )
-      {
+    {
       mPalette[i].right.g = g;
     }
   }
@@ -207,15 +233,68 @@ void WinRenderer::updateColorReg( uint16_t reg, uint8_t value )
     uint8_t r = ( value << 4 ) | ( value & 0x0f );
 
     for ( uint32_t i = regHi; i < regHi + 16; ++i )
-      {
+    {
       mPalette[i].left.b = b;
       mPalette[i].left.r = r;
-      }
+    }
     for ( uint32_t i = regLo; i < 256; i += 16 )
-      {
+    {
       mPalette[i].right.b = b;
       mPalette[i].right.r = r;
     }
+  }
+}
+
+void WinRenderer::updateSourceTexture( std::shared_ptr<RenderFrame> frame )
+{
+  assert( frame );
+  D3D11_MAPPED_SUBRESOURCE map;
+  mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
+  DPixel * dst = (DPixel *)map.pData;
+  assert( map.RowPitch / sizeof( DPixel ) == 80 );
+  for ( size_t i = 0; i < frame->idx; ++i )
+  {
+    uint16_t v = frame->frameBuffer[i];
+    if ( std::bit_cast<int16_t>( v ) < 0 )
+    {
+      *dst++ = mPalette[(uint8_t)v];
+    }
+    else
+    {
+      updatePalette( v >> 8, (uint8_t)v );
+    }
+  }
+  mImmediateContext->Unmap( mSource.Get(), 0 );
+}
+
+std::shared_ptr<RenderFrame> WinRenderer::pullNextFrame()
+{
+  std::shared_ptr<RenderFrame> result{};
+
+  std::scoped_lock<std::mutex> lock( mQueueMutex );
+  if ( mFinishedFrame )
+  {
+    std::swap( result, mFinishedFrame );
+  }
+
+  return result;
+}
+
+void WinRenderer::emitScreenData( std::span<uint8_t const> data )
+{
+  if ( mActiveFrame )
+    mActiveFrame->pushScreenBytes( data );
+}
+
+void WinRenderer::updateColorReg( uint8_t reg, uint8_t value )
+{
+  if ( mActiveFrame )
+  {
+    mActiveFrame->pushColorChage( reg, value );
+  }
+  else
+  {
+    updatePalette( reg, value );
   }
 }
 
