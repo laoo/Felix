@@ -10,10 +10,11 @@ public:
   WinRenderer( HWND hWnd );
   ~WinRenderer() override = default;
 
-  void render( DisplayGenerator::Pixel const* surface );
+  void render() override;
 
-  DisplayLine * getNextLine( int32_t displayRow ) override;
-  void updateColorReg( uint8_t value, uint8_t reg ) override;
+  void startNewFrame() override;
+  void emitScreenData( std::span<uint8_t const> data ) override;
+  void updateColorReg( uint16_t reg, uint8_t value ) override;
 
 
 private:
@@ -25,7 +26,20 @@ private:
     int32_t scaley;
   };
 
+  struct Pixel
+  {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t x;
+  };
+
+
 private:
+  std::array<Pixel, 160 * 102> mSurface;
+  std::array<Pixel, 256> mLeftNibblePalette;
+  std::array<Pixel, 256> mRightNibblePalette;
+  uint32_t mIdx;
   HWND mHWnd;
   ComPtr<ID3D11Device>              mD3DDevice;
   ComPtr<ID3D11DeviceContext>       mImmediateContext;
@@ -40,5 +54,7 @@ private:
   boost::rational<int32_t> mRefreshRate;
   int64_t mPerfFreq;
   int64_t mPerfCount;
+
+
 
 };

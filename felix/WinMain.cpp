@@ -151,7 +151,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   MSG msg;
   try
   {
-    WinRenderer renderer{ hwnd };
+    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( hwnd );
     WinAudioOut audioOut{ (uint32_t)( 1000 / 45 ) };
 
     ShowWindow( hwnd, nCmdShow );
@@ -162,10 +162,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     L_SET_LOGLEVEL( Log::LL_TRACE );
 
     gKeyInput = KeyInput{};
-    Felix felix{ [&]( DisplayGenerator::Pixel const* surface )
-    {
-      renderer.render( surface );
-    },
+    Felix felix{ renderer,
     []()
     {
       return gKeyInput;

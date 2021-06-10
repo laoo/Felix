@@ -79,7 +79,7 @@ public:
   };
 
 
-  Mikey( Felix & felix, std::function<void( DisplayGenerator::Pixel const* )> const& fun );
+  Mikey( Felix & felix, std::shared_ptr<IVideoSink> videoSink );
   ~Mikey();
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
@@ -93,8 +93,6 @@ public:
   void setIRQ( uint8_t mask );
   void resetIRQ( uint8_t mask );
 
-
-  DisplayGenerator::Pixel const* getSrface() const;
 
 private:
   Felix & mFelix;

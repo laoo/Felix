@@ -6,7 +6,7 @@
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
 
-WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}
+WinRenderer::WinRenderer( HWND hWnd ) : mIdx{}, mHWnd { hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}
 {
   QueryPerformanceFrequency( (LARGE_INTEGER*)&mPerfFreq );
 
@@ -91,18 +91,22 @@ WinRenderer::WinRenderer( HWND hWnd ) : mHWnd{ hWnd }, theWinWidth{}, theWinHeig
   mD3DDevice->CreateTexture2D( &desc, nullptr, mSource.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
+  for ( uint32_t i = 0; i < 256; ++i )
+  {
+    mLeftNibblePalette[i] = Pixel{ 0, 0, 0, 255 };
+    mRightNibblePalette[i] = Pixel{ 0, 0, 0, 255 };
+  }
 }
 
-void WinRenderer::render( DisplayGenerator::Pixel const * surface )
+void WinRenderer::render()
 {
   D3D11_MAPPED_SUBRESOURCE map;
   mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
-  DisplayGenerator::Pixel * dst = (DisplayGenerator::Pixel *)map.pData;
-  size_t pitch = map.RowPitch / sizeof( DisplayGenerator::Pixel );
+  Pixel * dst = (Pixel *)map.pData;
+  size_t pitch = map.RowPitch / sizeof( Pixel );
   for ( int y = 0; y < 102; ++y )
   {
-    std::copy_n( surface, 160, dst );
-    surface += 160;
+    std::copy_n( mSurface.data() + 160 * y, 160, dst );
     dst += pitch;
   }
   mImmediateContext->Unmap( mSource.Get(), 0 );
@@ -159,12 +163,68 @@ void WinRenderer::render( DisplayGenerator::Pixel const * surface )
   mPerfCount = cnt;
 }
 
-DisplayLine * WinRenderer::getNextLine( int32_t displayRow )
+void WinRenderer::startNewFrame()
 {
-  return nullptr;
+  mIdx = 0;
 }
 
-void WinRenderer::updateColorReg( uint8_t value, uint8_t reg )
+void WinRenderer::emitScreenData( std::span<uint8_t const> data )
 {
+  for ( uint8_t byte : data )
+  {
+    mSurface[mIdx++] = mLeftNibblePalette[byte];
+    mSurface[mIdx++] = mRightNibblePalette[byte];
+
+  }
+}
+
+void WinRenderer::updateColorReg( uint16_t reg, uint8_t value )
+{
+  reg &= 0xff;
+
+  if ( reg < 16 )
+  {
+    uint32_t regLo = reg;
+    uint32_t regHi = reg << 4;
+
+    //green
+    uint8_t g = ( value << 4 ) | ( value & 0x0f );
+
+    for ( uint32_t i = 0; i < 256; ++i )
+    {
+      if ( ( i & 0xf0 ) == regHi )
+      {
+        mLeftNibblePalette[i].g = g;
+      }
+      if ( ( i & 0x0f ) == regLo )
+      {
+        mRightNibblePalette[i].g = g;
+      }
+    }
+  }
+  else
+  {
+    uint32_t regLo = reg & 0x0f;
+    uint32_t regHi = regLo << 4;
+
+    //blue
+    uint8_t b = ( value >> 4 ) | ( value & 0xf0 );
+    //red
+    uint8_t r = ( value << 4 ) | ( value & 0x0f );
+
+    for ( uint32_t i = 0; i < 256; ++i )
+    {
+      if ( ( i & 0xf0 ) == regHi )
+      {
+        mLeftNibblePalette[i].b = b;
+        mLeftNibblePalette[i].r = r;
+      }
+      if ( ( i & 0x0f ) == regLo )
+      {
+        mRightNibblePalette[i].b = b;
+        mRightNibblePalette[i].r = r;
+      }
+    }
+  }
 }
 

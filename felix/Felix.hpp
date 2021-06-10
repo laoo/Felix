@@ -18,7 +18,7 @@ class IEscape;
 class Felix
 {
 public:
-  Felix( std::function<void( DisplayGenerator::Pixel const* )> const& dispFun, std::function<KeyInput()> const& inputProvider );
+  Felix( std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const& inputProvider );
   ~Felix();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );

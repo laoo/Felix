@@ -2,17 +2,12 @@
 
 #include "ParallelPort.hpp"
 
+class IVideoSink;
+
 class DisplayGenerator : public RestProvider
 {
 public:
 
-  struct Pixel
-  {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t x;
-  };
 
 public:
 
@@ -27,7 +22,7 @@ public:
     }
   };
 
-  DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun );
+  DisplayGenerator( std::shared_ptr<IVideoSink> videoSink );
   ~DisplayGenerator() override = default;
   void dispCtl( bool dispColor, bool dispFlip, bool dmaEnable );
   void setPBKUP( uint8_t value );
@@ -38,7 +33,6 @@ public:
   void updateDispAddr( uint16_t dispAdr );
 
   void vblank( uint64_t tick );
-  Pixel const* getSrface() const;
 
   bool rest() const override;
 
@@ -47,14 +41,11 @@ private:
 
 private:
   std::array<uint64_t,10> mDMAData;
-  std::function<void( DisplayGenerator::Pixel const* )> const mDisplayFun;
+  std::shared_ptr<IVideoSink> mVideoSink;
   uint64_t mRowStartTick;
   uint32_t mDMAIteration;
   int32_t mDisplayRow;
-  uint32_t mDisplayedPixels;
-  std::array<Pixel, 160 * 102> mSurface;
-  std::array<Pixel, 256> mLeftNibblePalette;
-  std::array<Pixel, 256> mRightNibblePalette;
+  uint32_t mEmitedScreenBytes;
   uint16_t mDispAdr;
   bool mDispColor;
   bool mDispFlip;
@@ -63,6 +54,7 @@ private:
 
   static constexpr uint64_t DMA_ITERATIONS = 10;
   static constexpr uint64_t TICKS_PER_PIXEL = 12;
+  static constexpr uint64_t TICKS_PER_BYTE = TICKS_PER_PIXEL * 2;
   static constexpr uint64_t ROW_TICKS = TICKS_PER_PIXEL * 160;
 
 
