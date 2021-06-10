@@ -43,7 +43,7 @@ public:
   bool rest() const override;
 
 private:
-  void flushDisplay( uint64_t tick );
+  bool flushDisplay( uint64_t tick );
 
 private:
   std::array<uint64_t,10> mDMAData;

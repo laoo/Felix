@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "DisplayGenerator.hpp"
 
-DisplayGenerator::DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mDMAData{}, mDisplayFun{ fun }, mRowStartTick{}, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
+DisplayGenerator::DisplayGenerator( std::function<void( DisplayGenerator::Pixel const* )> const& fun ) : mDMAData{}, mDisplayFun{ fun }, mRowStartTick{ std::numeric_limits<uint64_t>::max() }, mDMAIteration{}, mDisplayRow{}, mDisplayedPixels{},
 mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
 {
   for ( uint32_t i = 0; i < 256; ++i )
@@ -28,19 +28,23 @@ void DisplayGenerator::setPBKUP( uint8_t value )
 DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
 {
   flushDisplay( tick );
+  mDisplayedPixels = 0;
+  mDMAIteration = 0;
   mDisplayRow = 101 - row;
-  if ( mDisplayRow >= 0 && mDMAEnable )
+  if ( mDisplayRow >= 0 && mDMAOffset > 0 )
   {
     mRowStartTick = tick + mDMAOffset;
-    mDMAIteration = 0;
-    mDisplayedPixels = 0;
-    return { mRowStartTick, mDispAdr };
+    if ( mDMAEnable )
+    {
+      return { mRowStartTick, mDispAdr };
+    }
   }
   else
   {
-    mRowStartTick = 0;
-    return {};
+    mRowStartTick = std::numeric_limits<uint64_t>::max();
   }
+
+  return {};
 }
 
 DisplayGenerator::DMARequest DisplayGenerator::pushData( uint64_t tick, uint64_t data )
@@ -120,14 +124,19 @@ void DisplayGenerator::vblank( uint64_t tick )
     mDisplayFun( mSurface.data() );
 }
 
-void DisplayGenerator::flushDisplay( uint64_t tick )
+bool DisplayGenerator::flushDisplay( uint64_t tick )
 {
-  if ( mRowStartTick == 0 || tick < mRowStartTick )
-    return;
+  if ( !mDMAEnable )
+    return false;
+
+  if ( tick <= mRowStartTick )
+    return false;
 
   uint32_t limit = (std::min)( 160u, ( uint32_t )( tick - mRowStartTick ) / ( uint32_t )TICKS_PER_PIXEL );
 
   uint8_t const* lineData = reinterpret_cast<uint8_t const*>( mDMAData.data() );
+
+  const bool result = limit == 160 && mDisplayedPixels < 160;
 
   while ( mDisplayedPixels < limit )
   {
@@ -135,6 +144,8 @@ void DisplayGenerator::flushDisplay( uint64_t tick )
     mSurface[( uint32_t )( mDisplayRow * 160 + mDisplayedPixels )] = mDisplayedPixels & 1 ? mRightNibblePalette[b] : mLeftNibblePalette[b];
     mDisplayedPixels += 1;
   }
+
+  return result;
 }
 
 DisplayGenerator::Pixel const * DisplayGenerator::getSrface() const
