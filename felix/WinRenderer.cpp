@@ -93,8 +93,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mIdx{}, mHWnd { hWnd }, theWinWidth{}, t
 
   for ( uint32_t i = 0; i < 256; ++i )
   {
-    mLeftNibblePalette[i] = Pixel{ 0, 0, 0, 255 };
-    mRightNibblePalette[i] = Pixel{ 0, 0, 0, 255 };
+    mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
   }
 }
 
@@ -102,11 +101,11 @@ void WinRenderer::render()
 {
   D3D11_MAPPED_SUBRESOURCE map;
   mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
-  Pixel * dst = (Pixel *)map.pData;
-  size_t pitch = map.RowPitch / sizeof( Pixel );
+  DPixel * dst = (DPixel *)map.pData;
+  size_t pitch = map.RowPitch / sizeof( DPixel );
   for ( int y = 0; y < 102; ++y )
   {
-    std::copy_n( mSurface.data() + 160 * y, 160, dst );
+    std::copy_n( mSurface.data() + 80 * y, 80, dst );
     dst += pitch;
   }
   mImmediateContext->Unmap( mSource.Get(), 0 );
@@ -172,9 +171,7 @@ void WinRenderer::emitScreenData( std::span<uint8_t const> data )
 {
   for ( uint8_t byte : data )
   {
-    mSurface[mIdx++] = mLeftNibblePalette[byte];
-    mSurface[mIdx++] = mRightNibblePalette[byte];
-
+    mSurface[mIdx++] = mPalette[byte];
   }
 }
 
@@ -190,16 +187,13 @@ void WinRenderer::updateColorReg( uint16_t reg, uint8_t value )
     //green
     uint8_t g = ( value << 4 ) | ( value & 0x0f );
 
-    for ( uint32_t i = 0; i < 256; ++i )
-    {
-      if ( ( i & 0xf0 ) == regHi )
+    for ( uint32_t i = regHi; i < regHi + 16; ++i )
       {
-        mLeftNibblePalette[i].g = g;
+      mPalette[i].left.g = g;
       }
-      if ( ( i & 0x0f ) == regLo )
+    for ( uint32_t i = regLo; i < 256; i += 16 )
       {
-        mRightNibblePalette[i].g = g;
-      }
+      mPalette[i].right.g = g;
     }
   }
   else
@@ -212,18 +206,15 @@ void WinRenderer::updateColorReg( uint16_t reg, uint8_t value )
     //red
     uint8_t r = ( value << 4 ) | ( value & 0x0f );
 
-    for ( uint32_t i = 0; i < 256; ++i )
-    {
-      if ( ( i & 0xf0 ) == regHi )
+    for ( uint32_t i = regHi; i < regHi + 16; ++i )
       {
-        mLeftNibblePalette[i].b = b;
-        mLeftNibblePalette[i].r = r;
+      mPalette[i].left.b = b;
+      mPalette[i].left.r = r;
       }
-      if ( ( i & 0x0f ) == regLo )
+    for ( uint32_t i = regLo; i < 256; i += 16 )
       {
-        mRightNibblePalette[i].b = b;
-        mRightNibblePalette[i].r = r;
-      }
+      mPalette[i].right.b = b;
+      mPalette[i].right.r = r;
     }
   }
 }

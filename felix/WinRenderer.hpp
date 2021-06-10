@@ -34,11 +34,16 @@ private:
     uint8_t x;
   };
 
+  struct DPixel
+  {
+    Pixel left;
+    Pixel right;
+  };
+
 
 private:
-  std::array<Pixel, 160 * 102> mSurface;
-  std::array<Pixel, 256> mLeftNibblePalette;
-  std::array<Pixel, 256> mRightNibblePalette;
+  std::array<DPixel, 80 * 102> mSurface;
+  std::array<DPixel, 256> mPalette;
   uint32_t mIdx;
   HWND mHWnd;
   ComPtr<ID3D11Device>              mD3DDevice;
