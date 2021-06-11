@@ -208,16 +208,15 @@ void WinRenderer::endFrame( uint64_t tick )
   mFrameTicks = tick - mBeginTick;
   if ( mActiveFrame )
   {
+    std::scoped_lock<std::mutex> lock( mQueueMutex );
     if ( mFinishedFrame )
     {
       L_TRACE << "Ready " << mActiveFrame->id << " dropped " << mFinishedFrame->id;
-      std::scoped_lock<std::mutex> lock( mQueueMutex );
       mFinishedFrame = std::move( mActiveFrame );
     }
     else
     {
       L_TRACE << "Ready " << mActiveFrame->id;
-      std::scoped_lock<std::mutex> lock( mQueueMutex );
       mFinishedFrame = std::move( mActiveFrame );
     }
   }
