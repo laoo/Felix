@@ -149,14 +149,14 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   }
 
   std::thread renderThread;
-  std::thread AudioThread;
+  std::thread audioThread;
   std::atomic_bool doProcess = true;
 
   MSG msg;
   try
   {
     std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( hwnd );
-    WinAudioOut audioOut{ (uint32_t)( 1000 / 45 ) };
+    std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>( (uint32_t)( 1000 / 45 ) );
 
     renderThread = std::thread{ [&,renderer]
     {
@@ -174,12 +174,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     L_SET_LOGLEVEL( Log::LL_TRACE );
 
-    gKeyInput = KeyInput{};
-    Felix felix{ renderer,
-    []()
-    {
-      return gKeyInput;
-    } };
+    std::shared_ptr<Felix> felix = std::make_shared<Felix>( renderer, []{ return gKeyInput; } );
 
     for ( auto const& arg : args )
     {
@@ -187,21 +182,29 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
         std::filesystem::path path{ arg };
         if ( path.has_extension() && path.extension() == ".log" )
         {
-          felix.setLog( arg );
+          felix->setLog( arg );
         }
       }
 
       InputFile file{ arg };
       if ( file.valid() )
       {
-        felix.injectFile( file );
+        felix->injectFile( file );
       }
     }
 
-    std::function<std::pair<float, float>( int sps )> sampleSource = [&]( int sps ) ->std::pair<float, float>
+    audioThread = std::thread{ [&,audioOut,felix]
     {
-      return felix.getSample( sps );
-    };
+      std::function<std::pair<float, float>( int sps )> sampleSource = [=]( int sps ) ->std::pair<float, float>
+      {
+        return felix->getSample( sps );
+      };
+
+      while ( doProcess.load() )
+      {
+        audioOut->fillBuffer( sampleSource );
+      }
+    } };
  
     for ( ;; )
     {
@@ -225,17 +228,14 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
           InputFile file{ arg };
           if ( file.valid() )
           {
-            felix.injectFile( file );
+            felix->injectFile( file );
           }
         }
 
         gDroppedFiles.clear();
       }
 
-      audioOut.fillBuffer( sampleSource );
-      //std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-      //felix.process( 10000 );
-
+      std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
   }
   catch ( std::runtime_error const& )
@@ -243,7 +243,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return -1;
   }
 
-  //doProcess.store( false );
+  doProcess.store( false );
+  if ( audioThread.joinable() )
+    audioThread.join();
   if ( renderThread.joinable() )
     renderThread.join();
 
