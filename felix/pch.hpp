@@ -16,6 +16,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <span>
 #include <sstream>
 #include <string>

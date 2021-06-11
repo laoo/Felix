@@ -51,7 +51,7 @@ private:
 private:
   std::array<DPixel, 256> mPalette;
   std::shared_ptr<RenderFrame> mActiveFrame;
-  std::shared_ptr<RenderFrame> mFinishedFrame;
+  std::queue<std::shared_ptr<RenderFrame>> mFinishedFrames;
   mutable std::mutex mQueueMutex;
   uint32_t mIdx;
   HWND mHWnd;

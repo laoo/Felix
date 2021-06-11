@@ -35,7 +35,7 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrame{}, mQueueMutex{}, mIdx{}, mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}, mFrameTicks{ ~0ull }
+WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}, mFrameTicks{ ~0ull }
 {
   QueryPerformanceFrequency( (LARGE_INTEGER*)&mPerfFreq );
 
@@ -196,8 +196,7 @@ void WinRenderer::startNewFrame( uint64_t tick )
   if ( mActiveFrame )
   {
     L_TRACE << "Dropped " << mActiveFrame->id;
-    std::scoped_lock<std::mutex> lock( mQueueMutex );
-    mFinishedFrame = std::move( mActiveFrame );
+    mActiveFrame.reset();
   }
   mActiveFrame = std::make_shared<RenderFrame>();
 }
@@ -209,22 +208,19 @@ void WinRenderer::endFrame( uint64_t tick )
   if ( mActiveFrame )
   {
     std::scoped_lock<std::mutex> lock( mQueueMutex );
-    if ( mFinishedFrame )
+    if ( mFinishedFrames.size() > 1 )
     {
-      L_TRACE << "Ready " << mActiveFrame->id << " dropped " << mFinishedFrame->id;
-      mFinishedFrame = std::move( mActiveFrame );
+      L_TRACE << "Dropping " << mFinishedFrames.front()->id;
+      mFinishedFrames.pop();
     }
-    else
-    {
-      L_TRACE << "Ready " << mActiveFrame->id;
-      mFinishedFrame = std::move( mActiveFrame );
-    }
+    L_TRACE << "Ready " << mActiveFrame->id << " at " << mFinishedFrames.size();
+    mFinishedFrames.push( std::move( mActiveFrame ) );
+    mActiveFrame.reset();
   }
   else
   {
     L_TRACE << "Not Ready";
   }
-  mActiveFrame.reset();
 }
 
 void WinRenderer::updatePalette( uint16_t reg, uint8_t value )
@@ -298,9 +294,10 @@ std::shared_ptr<RenderFrame> WinRenderer::pullNextFrame()
   std::shared_ptr<RenderFrame> result{};
 
   std::scoped_lock<std::mutex> lock( mQueueMutex );
-  if ( mFinishedFrame )
+  if ( !mFinishedFrames.empty() )
   {
-    std::swap( result, mFinishedFrame );
+    result = mFinishedFrames.front();
+    mFinishedFrames.pop();
     L_TRACE << "Rendering " << result->id << " " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
   }
   else
