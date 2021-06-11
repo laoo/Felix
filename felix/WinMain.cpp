@@ -148,11 +148,22 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return 0;
   }
 
+  std::thread renderThread;
+  std::atomic_bool doRender = true;
+
   MSG msg;
   try
   {
     std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( hwnd );
     WinAudioOut audioOut{ (uint32_t)( 1000 / 45 ) };
+
+    renderThread = std::thread{ [&,renderer]
+    {
+      while ( doRender.load() )
+      {
+        renderer->render();
+      }
+    } };
 
     ShowWindow( hwnd, nCmdShow );
     UpdateWindow( hwnd );
@@ -222,6 +233,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       audioOut.fillBuffer( sampleSource );
       //std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
       //felix.process( 10000 );
+
     }
   }
   catch ( std::runtime_error const& )
@@ -229,6 +241,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return -1;
   }
 
-  return (int)msg.wParam;
+  doRender.store( false );
+  if ( renderThread.joinable() )
+    renderThread.join();
 
+  return (int)msg.wParam;
 }

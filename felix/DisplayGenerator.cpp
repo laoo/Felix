@@ -66,17 +66,16 @@ void DisplayGenerator::updatePalette( uint64_t tick, uint8_t reg, uint8_t value 
   mVideoSink->updateColorReg( reg, value );
 }
 
-void DisplayGenerator::updateDispAddr( uint16_t dispAdr )
+void DisplayGenerator::updateDispAddr( uint64_t tick, uint16_t dispAdr )
 {
   mDispAdr = dispAdr;
-  mVideoSink->startNewFrame();
+  mVideoSink->startNewFrame( tick );
 }
 
 void DisplayGenerator::vblank( uint64_t tick )
 {
   flushDisplay( tick );
-  mVideoSink->endFrame();
-  mVideoSink->render();
+  mVideoSink->endFrame( tick );
 }
 
 bool DisplayGenerator::flushDisplay( uint64_t tick )
@@ -94,7 +93,7 @@ bool DisplayGenerator::flushDisplay( uint64_t tick )
   bool const result = limit == 80 && mEmitedScreenBytes < 80;
   size_t bytesToEmit = limit - mEmitedScreenBytes;
   //NOTICE - pixels are processed in byte pairs, so in this implementation it is not possible to alter color register between nibbles of a screen byte
-  mVideoSink->emitScreenData( std::span<uint8_t const>( lineData + mEmitedScreenBytes, bytesToEmit ) );
+  mVideoSink->emitScreenData( tick, std::span<uint8_t const>( lineData + mEmitedScreenBytes, bytesToEmit ) );
   mEmitedScreenBytes = limit;
 
   return result;

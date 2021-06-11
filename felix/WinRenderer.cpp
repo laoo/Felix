@@ -12,9 +12,10 @@ struct RenderFrame
   static constexpr size_t MAX_COLOR_CHANGES = 256;
   static constexpr size_t LINE_BUFFER_SIZE = DISPLAY_BYTES + MAX_COLOR_CHANGES;
 
-  RenderFrame() : idx{} {}
+  RenderFrame() : idx{}, id{ sId++ } {}
 
   uint64_t idx;
+  uint32_t id;
   std::array<uint16_t, LINE_BUFFER_SIZE * 102> frameBuffer;
 
   void pushColorChage( uint8_t reg, uint8_t value )
@@ -28,9 +29,13 @@ struct RenderFrame
       frameBuffer[idx++] = 0xff00 | (uint16_t)byte;
     }
   }
+
+  static uint32_t sId;
 };
 
-WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrame{}, mQueueMutex{}, mIdx{}, mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}
+uint32_t RenderFrame::sId = 0;
+
+WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrame{}, mQueueMutex{}, mIdx{}, mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}, mFrameTicks{ ~0ull }
 {
   QueryPerformanceFrequency( (LARGE_INTEGER*)&mPerfFreq );
 
@@ -176,27 +181,46 @@ void WinRenderer::render()
   int64_t cnt = 0;
   QueryPerformanceCounter( (LARGE_INTEGER*)&cnt );
   int64_t diff = cnt - mPerfCount;
-  L_TRACE << diff << "\t" << (double)mPerfFreq / (double)diff;
+  //L_TRACE << diff << "\t" << (double)mPerfFreq / (double)diff;
   mPerfCount = cnt;
 }
 
-void WinRenderer::startNewFrame()
+void WinRenderer::startNewFrame( uint64_t tick )
 {
+  mBeginTick = tick;
+  mLastTick = tick;
   mIdx = 0;
   if ( mActiveFrame )
   {
+    L_TRACE << "Dropped " << mActiveFrame->id;
     std::scoped_lock<std::mutex> lock( mQueueMutex );
     mFinishedFrame = std::move( mActiveFrame );
   }
   mActiveFrame = std::make_shared<RenderFrame>();
 }
 
-void WinRenderer::endFrame()
+void WinRenderer::endFrame( uint64_t tick )
 {
+  mLastTick = tick;
+  mFrameTicks = tick - mBeginTick;
   if ( mActiveFrame )
   {
-    std::scoped_lock<std::mutex> lock( mQueueMutex );
-    mFinishedFrame = std::move( mActiveFrame );
+    if ( mFinishedFrame )
+    {
+      L_TRACE << "Ready " << mActiveFrame->id << " dropped " << mFinishedFrame->id;
+      std::scoped_lock<std::mutex> lock( mQueueMutex );
+      mFinishedFrame = std::move( mActiveFrame );
+    }
+    else
+    {
+      L_TRACE << "Ready " << mActiveFrame->id;
+      std::scoped_lock<std::mutex> lock( mQueueMutex );
+      mFinishedFrame = std::move( mActiveFrame );
+    }
+  }
+  else
+  {
+    L_TRACE << "Not Ready";
   }
   mActiveFrame.reset();
 }
@@ -275,13 +299,19 @@ std::shared_ptr<RenderFrame> WinRenderer::pullNextFrame()
   if ( mFinishedFrame )
   {
     std::swap( result, mFinishedFrame );
+    L_TRACE << "Rendering " << result->id << " " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
+  }
+  else
+  {
+    L_TRACE << "Noop " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
   }
 
   return result;
 }
 
-void WinRenderer::emitScreenData( std::span<uint8_t const> data )
+void WinRenderer::emitScreenData( uint64_t tick, std::span<uint8_t const> data )
 {
+  mLastTick = tick;
   if ( mActiveFrame )
     mActiveFrame->pushScreenBytes( data );
 }

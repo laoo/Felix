@@ -17,7 +17,7 @@ Mikey::Mikey( Felix & busMaster, std::shared_ptr<IVideoSink> videoSink ) : mFeli
     uint8_t cnt = mTimers[0x02]->getCount( tick );
     if ( cnt == 101 )
     {
-      mDisplayGenerator->updateDispAddr( mDisplayRegs.dispAdr );
+      mDisplayGenerator->updateDispAddr( tick, mDisplayRegs.dispAdr );
     }
     if ( auto dma = mDisplayGenerator->hblank( tick, cnt ) )
     {
@@ -375,7 +375,7 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     break;
   case MTEST2:
     if ( ( value & 0x01 ) != 0 )
-      mDisplayGenerator->updateDispAddr( mDisplayRegs.dispAdr );
+      mDisplayGenerator->updateDispAddr( mAccessTick, mDisplayRegs.dispAdr );
     break;
   case GREEN + 0x00:
   case GREEN + 0x01:

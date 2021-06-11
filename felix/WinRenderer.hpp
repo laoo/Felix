@@ -14,10 +14,10 @@ public:
 
   void render() override;
 
-  void startNewFrame() override;
-  void emitScreenData( std::span<uint8_t const> data ) override;
+  void startNewFrame( uint64_t cycle ) override;
+  void emitScreenData( uint64_t cycle, std::span<uint8_t const> data ) override;
   void updateColorReg( uint8_t reg, uint8_t value ) override;
-  void endFrame() override;
+  void endFrame( uint64_t cycle ) override;
 
 
 private:
@@ -68,6 +68,9 @@ private:
   boost::rational<int32_t> mRefreshRate;
   int64_t mPerfFreq;
   int64_t mPerfCount;
+  uint64_t mBeginTick;
+  uint64_t mLastTick;
+  uint64_t mFrameTicks;
 
 
 
