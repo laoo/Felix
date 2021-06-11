@@ -28,6 +28,7 @@ private:
   ComPtr<IAudioClient> mAudioClient;
   ComPtr<IAudioRenderClient> mRenderClient;
   ComPtr<IAudioClock> mAudioClock;
+  HANDLE mEvent;
 
   UINT64 mDeviceFrequency;
   uint32_t mBufferSize;

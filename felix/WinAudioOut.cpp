@@ -25,7 +25,15 @@ WinAudioOut::WinAudioOut( uint32_t audioBufferLengthMs )
   if ( FAILED( hr ) )
     throw std::exception{};
 
-  hr = mAudioClient->Initialize( AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST, audioBufferLengthMs * 10000, 0, mMixFormat, nullptr );
+  hr = mAudioClient->Initialize( AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, 0, 0, mMixFormat, nullptr );
+  if ( FAILED( hr ) )
+    throw std::exception{};
+
+  mEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
+  if ( mEvent == NULL )
+    throw std::exception{};
+
+  mAudioClient->SetEventHandle( mEvent );
   if ( FAILED( hr ) )
     throw std::exception{};
 
@@ -52,6 +60,12 @@ WinAudioOut::~WinAudioOut()
 {
   mAudioClient->Stop();
 
+  if ( mEvent )
+  {
+    CloseHandle( mEvent );
+    mEvent = NULL;
+  }
+
   CoUninitialize();
 
   if ( mMixFormat )
@@ -63,11 +77,15 @@ WinAudioOut::~WinAudioOut()
 
 void WinAudioOut::fillBuffer( std::function<std::pair<float, float>( int sps )> & fun )
 {
-  HRESULT hr;
+  DWORD retval = WaitForSingleObject( mEvent, 2000 );
+  if ( retval != WAIT_OBJECT_0 )
+    return;
 
+  HRESULT hr;
   uint32_t padding{};
   hr = mAudioClient->GetCurrentPadding( &padding );
   uint32_t framesAvailable = mBufferSize - padding;
+  L_TRACE << "AUD " << mBufferSize << " - " << padding << " = " << framesAvailable;
   if ( framesAvailable > 0 )
   {
     BYTE *pData;
