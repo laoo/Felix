@@ -149,7 +149,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   }
 
   std::thread renderThread;
-  std::atomic_bool doRender = true;
+  std::thread AudioThread;
+  std::atomic_bool doProcess = true;
 
   MSG msg;
   try
@@ -159,9 +160,10 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     renderThread = std::thread{ [&,renderer]
     {
-      while ( doRender.load() )
+      while ( doProcess.load() )
       {
-        renderer->render();
+        if ( !renderer->render() )
+          break;
       }
     } };
 
@@ -241,7 +243,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return -1;
   }
 
-  doRender.store( false );
+  //doProcess.store( false );
   if ( renderThread.joinable() )
     renderThread.join();
 

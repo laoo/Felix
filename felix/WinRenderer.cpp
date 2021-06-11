@@ -126,7 +126,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrame{}, mQueue
   }
 }
 
-void WinRenderer::render()
+bool WinRenderer::render()
 {
   if ( auto frame = pullNextFrame() )
   {
@@ -134,7 +134,8 @@ void WinRenderer::render()
   }
 
   RECT r;
-  ::GetClientRect( mHWnd, &r );
+  if ( ::GetClientRect( mHWnd, &r ) == 0 )
+    return false;
 
   if ( theWinHeight != ( r.bottom - r.top ) || ( theWinWidth != r.right - r.left ) )
   {
@@ -143,7 +144,7 @@ void WinRenderer::render()
 
     if ( theWinHeight == 0 || theWinWidth == 0 )
     {
-      return;
+      return false;
     }
 
     mBackBufferUAV.Reset();
@@ -183,6 +184,8 @@ void WinRenderer::render()
   int64_t diff = cnt - mPerfCount;
   //L_TRACE << diff << "\t" << (double)mPerfFreq / (double)diff;
   mPerfCount = cnt;
+
+  return true;
 }
 
 void WinRenderer::startNewFrame( uint64_t tick )

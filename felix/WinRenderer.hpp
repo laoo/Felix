@@ -12,7 +12,7 @@ public:
   WinRenderer( HWND hWnd );
   ~WinRenderer() override = default;
 
-  void render() override;
+  bool render();
 
   void startNewFrame( uint64_t cycle ) override;
   void emitScreenData( uint64_t cycle, std::span<uint8_t const> data ) override;
