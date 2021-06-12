@@ -13,24 +13,46 @@ struct RenderFrame
 {
   static constexpr size_t DISPLAY_BYTES = 80;
   static constexpr size_t MAX_COLOR_CHANGES = 256;
-  static constexpr size_t LINE_BUFFER_SIZE = DISPLAY_BYTES + MAX_COLOR_CHANGES;
+  static constexpr size_t LINE_BUFFER_SIZE = 512;
+  static_assert( DISPLAY_BYTES + MAX_COLOR_CHANGES <= LINE_BUFFER_SIZE );
 
-  RenderFrame() : idx{}, id{ sId++ } {}
+  struct Row
+  {
+    std::array<uint16_t, LINE_BUFFER_SIZE> lineBuffer;
+  };
 
-  uint64_t idx;
+  RenderFrame() : id{ sId++ }, currentRow{} {}
+
+  std::array<int, 105> sizes;
+  std::array<Row, 105> rows;
   uint32_t id;
-  std::array<uint16_t, LINE_BUFFER_SIZE * 102> frameBuffer;
+  Row * currentRow;
+  int * size;
+
+  void newRow( int row )
+  {
+    int idx = 104 - std::clamp( row, 0, 104 );
+    currentRow = &rows[ idx ];
+    size = &sizes[ idx ];
+    *size = 0;
+  }
 
   void pushColorChage( uint8_t reg, uint8_t value )
   {
-    frameBuffer[idx++] = ( reg << 8 ) | value;
+    int idx = *size;
+    currentRow->lineBuffer[idx++] = ( reg << 8 ) | value;
+    
+    *size = idx & ( LINE_BUFFER_SIZE - 1 );
   }
+
   void pushScreenBytes( std::span<uint8_t const> data )
   {
+    int idx = *size;
     for ( uint8_t byte : data )
     {
-      frameBuffer[idx++] = 0xff00 | (uint16_t)byte;
+      currentRow->lineBuffer[idx++] = 0xff00 | (uint16_t)byte;
     }
+    *size = idx & ( LINE_BUFFER_SIZE - 1 );
   }
 
   static uint32_t sId;
@@ -227,7 +249,7 @@ void WinRenderer::render( Felix & felix )
   mPerfCount = cnt;
 }
 
-void WinRenderer::startNewFrame( uint64_t tick )
+void WinRenderer::newFrame( uint64_t tick )
 {
   mFrameTicks = tick - mBeginTick;
   mBeginTick = tick;
@@ -243,6 +265,11 @@ void WinRenderer::startNewFrame( uint64_t tick )
     mActiveFrame.reset();
   }
   mActiveFrame = std::make_shared<RenderFrame>();
+}
+
+void WinRenderer::newRow( uint64_t tick, int row )
+{
+  mActiveFrame->newRow( row );
 }
 
 void WinRenderer::updatePalette( uint16_t reg, uint8_t value )
@@ -294,20 +321,28 @@ void WinRenderer::updateSourceTexture( std::shared_ptr<RenderFrame> frame )
   assert( frame );
   D3D11_MAPPED_SUBRESOURCE map;
   mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
-  DPixel * dst = (DPixel *)map.pData;
-  assert( map.RowPitch / sizeof( DPixel ) == 80 );
-  for ( size_t i = 0; i < frame->idx; ++i )
+  size_t pitch = map.RowPitch / sizeof( DPixel );
+
+  for ( int i = 0; i < (int)frame->rows.size(); ++i )
   {
-    uint16_t v = frame->frameBuffer[i];
-    if ( std::bit_cast<int16_t>( v ) < 0 )
+    auto const &row = frame->rows[i];
+    int size = frame->sizes[i];
+    DPixel * dst = (DPixel *)map.pData + std::max( 0, ( i - 3 ) ) * pitch;
+
+    for ( int j = 0; j < size; ++j )
     {
-      *dst++ = mPalette[(uint8_t)v];
-    }
-    else
-    {
-      updatePalette( v >> 8, (uint8_t)v );
+      uint16_t v = row.lineBuffer[j];
+      if ( std::bit_cast<int16_t>( v ) < 0 )
+      {
+        *dst++ = mPalette[(uint8_t)v];
+      }
+      else
+      {
+        updatePalette( v >> 8, (uint8_t)v );
+      }
     }
   }
+
   mImmediateContext->Unmap( mSource.Get(), 0 );
 }
 

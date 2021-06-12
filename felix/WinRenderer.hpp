@@ -17,7 +17,8 @@ public:
 
   void render( Felix & felix );
 
-  void startNewFrame( uint64_t tick ) override;
+  void newFrame( uint64_t tick ) override;
+  void newRow( uint64_t tick, int row ) override;
   void emitScreenData( std::span<uint8_t const> data ) override;
   void updateColorReg( uint8_t reg, uint8_t value ) override;
 

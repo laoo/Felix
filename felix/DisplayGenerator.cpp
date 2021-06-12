@@ -29,6 +29,11 @@ DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
   mEmitedScreenBytes = 0;
   mDMAIteration = 0;
   mDisplayRow = 101 - row;
+  if ( mDisplayRow == -3 )
+  {
+    mVideoSink->newFrame( tick );
+  }
+  mVideoSink->newRow( tick, row );
   if ( mDisplayRow >= 0 && mDMAOffset > 0 )
   {
     mRowStartTick = tick + mDMAOffset;
@@ -69,7 +74,6 @@ void DisplayGenerator::updatePalette( uint64_t tick, uint8_t reg, uint8_t value 
 void DisplayGenerator::updateDispAddr( uint64_t tick, uint16_t dispAdr )
 {
   mDispAdr = dispAdr;
-  mVideoSink->startNewFrame( tick );
 }
 
 void DisplayGenerator::vblank( uint64_t tick )
