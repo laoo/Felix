@@ -137,7 +137,7 @@ void WinRenderer::initialize( HWND hWnd )
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext } );
 }
 
-bool WinRenderer::render( std::shared_ptr<Felix> felix )
+void WinRenderer::render( std::shared_ptr<Felix> felix )
 {
   if ( auto frame = pullNextFrame() )
   {
@@ -146,7 +146,7 @@ bool WinRenderer::render( std::shared_ptr<Felix> felix )
 
   RECT r;
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
-    return false;
+    return;
 
   if ( theWinHeight != ( r.bottom - r.top ) || ( theWinWidth != r.right - r.left ) )
   {
@@ -155,7 +155,7 @@ bool WinRenderer::render( std::shared_ptr<Felix> felix )
 
     if ( theWinHeight == 0 || theWinWidth == 0 )
     {
-      return false;
+      return;
     }
 
     mBackBufferUAV.Reset();
@@ -225,8 +225,6 @@ bool WinRenderer::render( std::shared_ptr<Felix> felix )
   int64_t diff = cnt - mPerfCount;
   //L_TRACE << diff << "\t" << (double)mPerfFreq / (double)diff;
   mPerfCount = cnt;
-
-  return true;
 }
 
 void WinRenderer::startNewFrame( uint64_t tick )

@@ -208,8 +208,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     {
       while ( doProcess.load() )
       {
-        if ( !renderer->render( felix ) )
-          break;
+        renderer->render( felix );
       }
     } };
 
