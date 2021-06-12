@@ -229,20 +229,9 @@ void WinRenderer::render( Felix & felix )
 
 void WinRenderer::startNewFrame( uint64_t tick )
 {
-  mBeginTick = tick;
-  mLastTick = tick;
-  mIdx = 0;
-  if ( mActiveFrame )
-  {
-    mActiveFrame.reset();
-  }
-  mActiveFrame = std::make_shared<RenderFrame>();
-}
-
-void WinRenderer::endFrame( uint64_t tick )
-{
-  mLastTick = tick;
   mFrameTicks = tick - mBeginTick;
+  mBeginTick = tick;
+  mIdx = 0;
   if ( mActiveFrame )
   {
     std::scoped_lock<std::mutex> lock( mQueueMutex );
@@ -253,6 +242,7 @@ void WinRenderer::endFrame( uint64_t tick )
     mFinishedFrames.push( std::move( mActiveFrame ) );
     mActiveFrame.reset();
   }
+  mActiveFrame = std::make_shared<RenderFrame>();
 }
 
 void WinRenderer::updatePalette( uint16_t reg, uint8_t value )
