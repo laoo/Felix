@@ -17,10 +17,10 @@ public:
 
   void render( Felix & felix );
 
-  void startNewFrame( uint64_t cycle ) override;
-  void emitScreenData( uint64_t cycle, std::span<uint8_t const> data ) override;
+  void startNewFrame( uint64_t tick ) override;
+  void emitScreenData( std::span<uint8_t const> data ) override;
   void updateColorReg( uint8_t reg, uint8_t value ) override;
-  void endFrame( uint64_t cycle ) override;
+  void endFrame( uint64_t tick ) override;
 
 private:
   struct CBPosSize

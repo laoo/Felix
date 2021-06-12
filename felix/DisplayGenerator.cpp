@@ -93,7 +93,7 @@ bool DisplayGenerator::flushDisplay( uint64_t tick )
   bool const result = limit == 80 && mEmitedScreenBytes < 80;
   size_t bytesToEmit = limit - mEmitedScreenBytes;
   //NOTICE - pixels are processed in byte pairs, so in this implementation it is not possible to alter color register between nibbles of a screen byte
-  mVideoSink->emitScreenData( tick, std::span<uint8_t const>( lineData + mEmitedScreenBytes, bytesToEmit ) );
+  mVideoSink->emitScreenData( std::span<uint8_t const>( lineData + mEmitedScreenBytes, bytesToEmit ) );
   mEmitedScreenBytes = limit;
 
   return result;

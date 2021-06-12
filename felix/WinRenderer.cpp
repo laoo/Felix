@@ -234,7 +234,6 @@ void WinRenderer::startNewFrame( uint64_t tick )
   mIdx = 0;
   if ( mActiveFrame )
   {
-    //L_TRACE << "Dropped " << mActiveFrame->id;
     mActiveFrame.reset();
   }
   mActiveFrame = std::make_shared<RenderFrame>();
@@ -249,16 +248,10 @@ void WinRenderer::endFrame( uint64_t tick )
     std::scoped_lock<std::mutex> lock( mQueueMutex );
     if ( mFinishedFrames.size() > 1 )
     {
-      //L_TRACE << "Dropping " << mFinishedFrames.front()->id;
       mFinishedFrames.pop();
     }
-    //L_TRACE << "Ready " << mActiveFrame->id << " at " << mFinishedFrames.size();
     mFinishedFrames.push( std::move( mActiveFrame ) );
     mActiveFrame.reset();
-  }
-  else
-  {
-   // L_TRACE << "Not Ready";
   }
 }
 
@@ -337,11 +330,6 @@ std::shared_ptr<RenderFrame> WinRenderer::pullNextFrame()
   {
     result = mFinishedFrames.front();
     mFinishedFrames.pop();
-    //L_TRACE << "Rendering " << result->id << " " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
-  }
-  else
-  {
-   // L_TRACE << "Noop " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
   }
 
   return result;
@@ -392,9 +380,8 @@ bool WinRenderer::sizing( RECT & rect )
   return true;
 }
 
-void WinRenderer::emitScreenData( uint64_t tick, std::span<uint8_t const> data )
+void WinRenderer::emitScreenData( std::span<uint8_t const> data )
 {
-  mLastTick = tick;
   if ( mActiveFrame )
     mActiveFrame->pushScreenBytes( data );
 }
