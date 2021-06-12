@@ -52,6 +52,7 @@ private:
 
   friend LRESULT CALLBACK WndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
   bool win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+  bool sizing( RECT & rect );
 
 private:
   std::array<DPixel, 256> mPalette;

@@ -351,7 +351,47 @@ std::shared_ptr<RenderFrame> WinRenderer::pullNextFrame()
 
 bool WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-  return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  switch ( msg )
+  {
+  case WM_SIZING:
+    return sizing( *(RECT *)lParam );
+  case WM_SIZE:
+    break;
+  default:
+    return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  }
+
+  return false;
+}
+
+bool WinRenderer::sizing( RECT & rect )
+{
+  RECT wRect, cRect;
+  GetWindowRect( mHWnd, &wRect );
+  GetClientRect( mHWnd, &cRect );
+
+  int lastW = wRect.right - wRect.left;
+  int lastH = wRect.bottom - wRect.top;
+  int newW = rect.right - rect.left;
+  int newH = rect.bottom - rect.top;
+  int dW = newW - lastW;
+  int dH = newH - lastH;
+
+  int cW = cRect.right - cRect.left + dW;
+  int cH = cRect.bottom - cRect.top + dH;
+
+  if ( cW < 160 )
+  {
+    rect.left = wRect.left;
+    rect.right = wRect.right;
+  }
+  if ( cH < 102 )
+  {
+    rect.top = wRect.top;
+    rect.bottom = wRect.bottom;
+  }
+
+  return true;
 }
 
 void WinRenderer::emitScreenData( uint64_t tick, std::span<uint8_t const> data )
