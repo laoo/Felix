@@ -31,7 +31,9 @@ public:
 
   void injectFile( InputFile const& file );
   void setLog( std::filesystem::path const & path );
+  void drawGui( int left, int top, int right, int bottom );
 
+  bool running() const;
   void enterMonitor();
 
   Cartridge & getCartridge();
@@ -89,4 +91,5 @@ private:
   ISuzyProcess::Request const* mSuzyProcessRequest;
   bool mResetRequestDuringSpriteRendering;
   bool mSuzyRunning;
+  bool mEmulationRunning;
 };

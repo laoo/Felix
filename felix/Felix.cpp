@@ -13,12 +13,13 @@
 #include "Log.hpp"
 #include "DefaultROM.hpp"
 #include "KernelEscape.hpp"
+#include "imgui.h"
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
 Felix::Felix( std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
   mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>() }, mMikey{ std::make_shared<Mikey>( *this, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
-  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
+  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mEmulationRunning{ true }
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
 
@@ -75,6 +76,35 @@ void Felix::injectFile( InputFile const & file )
 void Felix::setLog( std::filesystem::path const & path )
 {
   mCpu->setLog( path );
+}
+
+void Felix::drawGui( int left, int top, int right, int bottom )
+{
+  ImGuiIO & io = ImGui::GetIO();
+
+  bool hovered = io.MousePos.x > left && io.MousePos.y > top && io.MousePos.x < right && io.MousePos.y < bottom;
+
+  if ( hovered )
+  {
+    ImGui::PushStyleVar( ImGuiStyleVar_Alpha, std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
+    if ( ImGui::BeginMainMenuBar() )
+    {
+      ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 1.0f );
+      if ( ImGui::BeginMenu( "File" ) )
+      {
+        if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
+        {
+          mEmulationRunning = false;
+        }
+        ImGui::EndMenu();
+      }
+      ImGui::EndMainMenuBar();
+      ImGui::PopStyleVar();
+    }
+    ImGui::PopStyleVar();
+  }
+
+  //ImGui::ShowDemoWindow();
 }
 
 void Felix::pulseReset( std::optional<uint16_t> resetAddress )
@@ -514,6 +544,11 @@ std::pair<float, float> Felix::getSample( int sps )
   auto audioSample = mMikey->sampleAudio();
 
   return { (float)audioSample.left / 32768.0f, (float)audioSample.right / 32768.0f };
+}
+
+bool Felix::running() const
+{
+  return mEmulationRunning;
 }
 
 void Felix::enterMonitor()

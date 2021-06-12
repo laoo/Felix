@@ -1,5 +1,8 @@
 #include "pch.hpp"
 #include "WinRenderer.hpp"
+#include "Felix.hpp"
+#include "imgui.h"
+#include "WinImgui.hpp"
 #include "renderer.hxx"
 #include "Log.hpp"
 
@@ -35,11 +38,22 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{ hWnd }, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}, mFrameTicks{ ~0ull }
+WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}, mFrameTicks{ ~0ull }
 {
   QueryPerformanceFrequency( (LARGE_INTEGER*)&mPerfFreq );
 
-  typedef HRESULT( WINAPI * LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
+  for ( uint32_t i = 0; i < 256; ++i )
+  {
+    mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
+  }
+}
+
+
+void WinRenderer::initialize( HWND hWnd )
+{
+  mHWnd = hWnd;
+
+  typedef HRESULT( WINAPI * LPD3D11CREATEDEVICE )( IDXGIAdapter *, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL *, UINT, UINT32, ID3D11Device **, D3D_FEATURE_LEVEL *, ID3D11DeviceContext ** );
   static LPD3D11CREATEDEVICE  s_DynamicD3D11CreateDevice = nullptr;
   HMODULE hModD3D11 = ::LoadLibrary( L"d3d11.dll" );
   if ( hModD3D11 == nullptr )
@@ -52,13 +66,13 @@ WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrames{}, mQueu
   UINT               numFeatureLevelsRequested = 1;
   D3D_FEATURE_LEVEL  featureLevelsSupported;
 
-  HRESULT hr = s_DynamicD3D11CreateDevice( nullptr,  D3D_DRIVER_TYPE_HARDWARE, nullptr,
+  HRESULT hr = s_DynamicD3D11CreateDevice( nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
 #ifndef NDEBUG
     D3D11_CREATE_DEVICE_DEBUG,
 #else
     0,
 #endif
-    &featureLevelsRequested, numFeatureLevelsRequested, D3D11_SDK_VERSION, mD3DDevice.ReleaseAndGetAddressOf(), &featureLevelsSupported, mImmediateContext.ReleaseAndGetAddressOf() );
+    & featureLevelsRequested, numFeatureLevelsRequested, D3D11_SDK_VERSION, mD3DDevice.ReleaseAndGetAddressOf(), &featureLevelsSupported, mImmediateContext.ReleaseAndGetAddressOf() );
 
   V_THROW( hr );
 
@@ -70,7 +84,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrames{}, mQueu
   sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
   sd.BufferDesc.RefreshRate.Numerator = 0;
   sd.BufferDesc.RefreshRate.Denominator = 1;
-  sd.BufferUsage = DXGI_USAGE_UNORDERED_ACCESS;
+  sd.BufferUsage = DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_RENDER_TARGET_OUTPUT;
   sd.OutputWindow = mHWnd;
   sd.SampleDesc.Count = 1;
   sd.SampleDesc.Quality = 0;
@@ -90,7 +104,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrames{}, mQueu
 
   ComPtr<IDXGIOutput> pIDXGIOutput;
   V_THROW( mSwapChain->GetContainingOutput( pIDXGIOutput.ReleaseAndGetAddressOf() ) );
-  
+
   DXGI_MODE_DESC md;
   V_THROW( pIDXGIOutput->FindClosestMatchingMode( &sd.BufferDesc, &md, mD3DDevice.Get() ) );
   mRefreshRate = { md.RefreshRate.Numerator, md.RefreshRate.Denominator };
@@ -99,7 +113,7 @@ WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrames{}, mQueu
 
   V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, mRendererCS.ReleaseAndGetAddressOf() ) );
 
-  D3D11_BUFFER_DESC bd ={};
+  D3D11_BUFFER_DESC bd = {};
   bd.ByteWidth = sizeof( CBPosSize );
   bd.Usage = D3D11_USAGE_DEFAULT;
   bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -120,13 +134,10 @@ WinRenderer::WinRenderer( HWND hWnd ) : mActiveFrame{}, mFinishedFrames{}, mQueu
   mD3DDevice->CreateTexture2D( &desc, nullptr, mSource.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
-  for ( uint32_t i = 0; i < 256; ++i )
-  {
-    mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
-  }
+  mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext } );
 }
 
-bool WinRenderer::render()
+bool WinRenderer::render( std::shared_ptr<Felix> felix )
 {
   if ( auto frame = pullNextFrame() )
   {
@@ -148,12 +159,14 @@ bool WinRenderer::render()
     }
 
     mBackBufferUAV.Reset();
+    mBackBufferRTV.Reset();
 
     mSwapChain->ResizeBuffers( 0, theWinWidth, theWinHeight, DXGI_FORMAT_UNKNOWN, 0 );
 
     ComPtr<ID3D11Texture2D> backBuffer;
     V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
+    V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
 
     D3D11_VIEWPORT vp;
     vp.Width = (FLOAT)theWinWidth;
@@ -178,6 +191,34 @@ bool WinRenderer::render()
   UINT v[4]= { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
   mImmediateContext->Dispatch( 10, 102, 1 );
+  std::array<ID3D11UnorderedAccessView * const, 1> uav{};
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.data(), nullptr );
+
+  {
+    RECT r;
+    GetWindowRect( mHWnd, &r );
+    POINT p{ r.left, r.top };
+    ScreenToClient( mHWnd, &p );
+    GetClientRect( mHWnd, &r );
+    r.left = p.x;
+    r.top = p.y;
+
+    mImgui->dx11_NewFrame();
+    mImgui->win32_NewFrame();
+
+    ImGui::NewFrame();
+
+    felix->drawGui( r.left, r.top, r.right, r.bottom );
+
+    ImGui::Render();
+
+    mImmediateContext->OMSetRenderTargets( 1, mBackBufferRTV.GetAddressOf(), nullptr );
+    mImgui->dx11_RenderDrawData( ImGui::GetDrawData() );
+
+    std::array<ID3D11RenderTargetView * const, 1> rtv{};
+    mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
+  }
+
   mSwapChain->Present( 1, 0 );
   int64_t cnt = 0;
   QueryPerformanceCounter( (LARGE_INTEGER*)&cnt );
@@ -195,7 +236,7 @@ void WinRenderer::startNewFrame( uint64_t tick )
   mIdx = 0;
   if ( mActiveFrame )
   {
-    L_TRACE << "Dropped " << mActiveFrame->id;
+    //L_TRACE << "Dropped " << mActiveFrame->id;
     mActiveFrame.reset();
   }
   mActiveFrame = std::make_shared<RenderFrame>();
@@ -210,16 +251,16 @@ void WinRenderer::endFrame( uint64_t tick )
     std::scoped_lock<std::mutex> lock( mQueueMutex );
     if ( mFinishedFrames.size() > 1 )
     {
-      L_TRACE << "Dropping " << mFinishedFrames.front()->id;
+      //L_TRACE << "Dropping " << mFinishedFrames.front()->id;
       mFinishedFrames.pop();
     }
-    L_TRACE << "Ready " << mActiveFrame->id << " at " << mFinishedFrames.size();
+    //L_TRACE << "Ready " << mActiveFrame->id << " at " << mFinishedFrames.size();
     mFinishedFrames.push( std::move( mActiveFrame ) );
     mActiveFrame.reset();
   }
   else
   {
-    L_TRACE << "Not Ready";
+   // L_TRACE << "Not Ready";
   }
 }
 
@@ -298,14 +339,19 @@ std::shared_ptr<RenderFrame> WinRenderer::pullNextFrame()
   {
     result = mFinishedFrames.front();
     mFinishedFrames.pop();
-    L_TRACE << "Rendering " << result->id << " " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
+    //L_TRACE << "Rendering " << result->id << " " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
   }
   else
   {
-    L_TRACE << "Noop " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
+   // L_TRACE << "Noop " << ( (double)( mLastTick - mBeginTick ) / (double)mFrameTicks );
   }
 
   return result;
+}
+
+bool WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+  return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
 }
 
 void WinRenderer::emitScreenData( uint64_t tick, std::span<uint8_t const> data )

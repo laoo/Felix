@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VersionTool", "VersionTool\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "helpers", "helpers", "{01B87F5A-7A71-4C3B-9578-B8F939BF4438}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "imgui\imgui.vcxproj", "{DA3E55BA-76F9-400D-A64C-42A416BE55C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -36,6 +38,14 @@ Global
 		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Release|x64.Build.0 = Release|x64
 		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Release|x86.ActiveCfg = Release|Win32
 		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97}.Release|x86.Build.0 = Release|Win32
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Debug|x64.ActiveCfg = Debug|x64
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Debug|x64.Build.0 = Debug|x64
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Debug|x86.ActiveCfg = Debug|Win32
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Debug|x86.Build.0 = Debug|Win32
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Release|x64.ActiveCfg = Release|x64
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Release|x64.Build.0 = Release|x64
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Release|x86.ActiveCfg = Release|Win32
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

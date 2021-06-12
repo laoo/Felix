@@ -100,6 +100,9 @@
     <ClCompile Include="Encryption.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WinImgui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.hpp">
@@ -229,6 +232,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DisplayLine.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WinImgui.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

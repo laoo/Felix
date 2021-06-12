@@ -42,6 +42,22 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
   switch ( msg )
   {
+  case WM_CREATE:
+  {
+    WinRenderer * pRenderer = reinterpret_cast<WinRenderer *>( reinterpret_cast<LPCREATESTRUCT>( lParam )->lpCreateParams );
+    assert( pRenderer );
+    try
+    {
+      pRenderer->initialize( hwnd );
+    }
+    catch ( std::exception const & ex )
+    {
+      MessageBoxA( nullptr, ex.what(), "Renderinit Error", MB_OK | MB_ICONERROR );
+      PostQuitMessage( 0 );
+    }
+    SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( pRenderer ) );
+    return 0;
+  }
   case WM_KEYDOWN:
   case WM_KEYUP:
     {
@@ -88,20 +104,28 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
     break;
   case WM_CLOSE:
     DestroyWindow( hwnd );
-    break;
+    return 0;
   case WM_DESTROY:
     PostQuitMessage( 0 );
-    break;
+    return 0;
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
+    return 0;
   default:
-    return DefWindowProc( hwnd, msg, wParam, lParam );
+    break;
   }
-  return 0;
+
+  if ( WinRenderer * pRenderer = reinterpret_cast<WinRenderer *>( GetWindowLongPtr( hwnd, GWLP_USERDATA ) ) )
+  {
+    if ( pRenderer->win32_WndProcHandler( hwnd, msg, wParam, lParam ) )
+      return true;
+  }
+  return DefWindowProc( hwnd, msg, wParam, lParam );
 }
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
+  L_SET_LOGLEVEL( Log::LL_TRACE );
 
   std::vector<std::wstring> args;
 
@@ -139,15 +163,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     return 0;
   }
 
-  std::wstring name = L"Felix " + std::wstring{ version_string };
-
-  HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, nullptr );
-
-  if ( hwnd == nullptr )
-  {
-    return 0;
-  }
-
   std::thread renderThread;
   std::thread audioThread;
   std::atomic_bool doProcess = true;
@@ -155,28 +170,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   MSG msg;
   try
   {
-    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( hwnd );
-    std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>( (uint32_t)( 1000 / 45 ) );
+    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>();
+    std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
+    std::shared_ptr<Felix> felix = std::make_shared<Felix>( renderer, [] { return gKeyInput; } );
 
-    renderThread = std::thread{ [&,renderer]
-    {
-      while ( doProcess.load() )
-      {
-        if ( !renderer->render() )
-          break;
-      }
-    } };
-
-    ShowWindow( hwnd, nCmdShow );
-    UpdateWindow( hwnd );
-
-    DragAcceptFiles( hwnd, TRUE );
-
-    L_SET_LOGLEVEL( Log::LL_TRACE );
-
-    std::shared_ptr<Felix> felix = std::make_shared<Felix>( renderer, []{ return gKeyInput; } );
-
-    for ( auto const& arg : args )
+    for ( auto const & arg : args )
     {
       {
         std::filesystem::path path{ arg };
@@ -193,6 +191,28 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       }
     }
 
+    std::wstring name = L"Felix " + std::wstring{ version_string };
+
+    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, renderer.get() );
+
+    if ( hwnd == nullptr )
+    {
+      return 0;
+    }
+
+    ShowWindow( hwnd, nCmdShow );
+    UpdateWindow( hwnd );
+    DragAcceptFiles( hwnd, TRUE );
+
+    renderThread = std::thread{ [&,renderer]
+    {
+      while ( doProcess.load() )
+      {
+        if ( !renderer->render( felix ) )
+          break;
+      }
+    } };
+
     audioThread = std::thread{ [&,audioOut,felix]
     {
       std::function<std::pair<float, float>( int sps )> sampleSource = [=]( int sps ) ->std::pair<float, float>
@@ -206,7 +226,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       }
     } };
  
-    for ( ;; )
+    while ( felix->running() )
     {
       while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
       {

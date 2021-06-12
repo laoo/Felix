@@ -17,7 +17,7 @@ class WinAudioOut
 {
 public:
 
-  WinAudioOut( uint32_t audioBufferLengthMs );
+  WinAudioOut();
   ~WinAudioOut();
 
   void fillBuffer( std::function<std::pair<float, float>( int sps )> & fun );
@@ -27,10 +27,8 @@ private:
   ComPtr<IMMDevice> mDevice;
   ComPtr<IAudioClient> mAudioClient;
   ComPtr<IAudioRenderClient> mRenderClient;
-  ComPtr<IAudioClock> mAudioClock;
   HANDLE mEvent;
 
-  UINT64 mDeviceFrequency;
   uint32_t mBufferSize;
 
   WAVEFORMATEX * mMixFormat;

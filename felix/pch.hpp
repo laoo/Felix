@@ -36,6 +36,7 @@
 #pragma warning( disable: 4005 )
 #include <d3d11.h>
 #pragma warning(pop)
+#include <d3dcompiler.h>
 
 #include <wrl/client.h>
 template<typename T>

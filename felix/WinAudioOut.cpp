@@ -2,7 +2,7 @@
 #include "WinAudioOut.hpp"
 #include "Log.hpp"
 
-WinAudioOut::WinAudioOut( uint32_t audioBufferLengthMs )
+WinAudioOut::WinAudioOut()
 {
   CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
@@ -45,14 +45,6 @@ WinAudioOut::WinAudioOut( uint32_t audioBufferLengthMs )
   if ( FAILED( hr ) )
     throw std::exception{};
 
-  hr = mAudioClient->GetService( __uuidof( IAudioClock ), reinterpret_cast<void **>( mAudioClock.ReleaseAndGetAddressOf() ) );
-  if ( FAILED( hr ) )
-    throw std::exception{};
-
-  hr = mAudioClock->GetFrequency( &mDeviceFrequency );
-  if ( FAILED( hr ) )
-    throw std::exception{};
-
   mAudioClient->Start();
 }
 
@@ -85,7 +77,7 @@ void WinAudioOut::fillBuffer( std::function<std::pair<float, float>( int sps )> 
   uint32_t padding{};
   hr = mAudioClient->GetCurrentPadding( &padding );
   uint32_t framesAvailable = mBufferSize - padding;
-  L_TRACE << "AUD " << mBufferSize << " - " << padding << " = " << framesAvailable;
+  //L_TRACE << "AUD " << mBufferSize << " - " << padding << " = " << framesAvailable;
   if ( framesAvailable > 0 )
   {
     BYTE *pData;
