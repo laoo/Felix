@@ -204,24 +204,19 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
-    renderThread = std::thread{ [&,renderer]
+    renderThread = std::thread{ [&doProcess,renderer,felix]
     {
       while ( doProcess.load() )
       {
-        renderer->render( felix );
+        renderer->render( *felix );
       }
     } };
 
-    audioThread = std::thread{ [&,audioOut,felix]
+    audioThread = std::thread{ [&doProcess,audioOut,felix]
     {
-      std::function<std::pair<float, float>( int sps )> sampleSource = [=]( int sps ) ->std::pair<float, float>
-      {
-        return felix->getSample( sps );
-      };
-
       while ( doProcess.load() )
       {
-        audioOut->fillBuffer( sampleSource );
+        audioOut->fillBuffer( *felix );
       }
     } };
  

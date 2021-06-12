@@ -137,7 +137,7 @@ void WinRenderer::initialize( HWND hWnd )
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext } );
 }
 
-void WinRenderer::render( std::shared_ptr<Felix> felix )
+void WinRenderer::render( Felix & felix )
 {
   if ( auto frame = pullNextFrame() )
   {
@@ -208,7 +208,7 @@ void WinRenderer::render( std::shared_ptr<Felix> felix )
 
     ImGui::NewFrame();
 
-    felix->drawGui( r.left, r.top, r.right, r.bottom );
+    felix.drawGui( r.left, r.top, r.right, r.bottom );
 
     ImGui::Render();
 

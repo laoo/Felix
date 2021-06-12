@@ -1,5 +1,6 @@
 #include "pch.hpp"
 #include "WinAudioOut.hpp"
+#include "Felix.hpp"
 #include "Log.hpp"
 
 WinAudioOut::WinAudioOut()
@@ -67,9 +68,9 @@ WinAudioOut::~WinAudioOut()
   }
 }
 
-void WinAudioOut::fillBuffer( std::function<std::pair<float, float>( int sps )> & fun )
+void WinAudioOut::fillBuffer( Felix & felix )
 {
-  DWORD retval = WaitForSingleObject( mEvent, 2000 );
+  DWORD retval = WaitForSingleObject( mEvent, 1000 );
   if ( retval != WAIT_OBJECT_0 )
     return;
 
@@ -87,13 +88,14 @@ void WinAudioOut::fillBuffer( std::function<std::pair<float, float>( int sps )> 
     float* pfData = reinterpret_cast<float*>( pData );
     for ( uint32_t i = 0; i < framesAvailable; ++i )
     {
-      auto pair = fun( mMixFormat->nSamplesPerSec );
-      for ( int j = 0; j < mMixFormat->nChannels; ++j )
-        pfData[i * mMixFormat->nChannels + j] = ( ( j & 1 ) == 0 ) ? pair.first : pair.second;
+      auto pair = felix.getSample( mMixFormat->nSamplesPerSec );
+      for ( int j = 0; j < mMixFormat->nChannels; j += 2 )
+      {
+        pfData[i * mMixFormat->nChannels + j + 0] = pair.first;
+        pfData[i * mMixFormat->nChannels + j + 1] = pair.second;
+      }
     }
     hr = mRenderClient->ReleaseBuffer( framesAvailable, 0 );
-    if ( FAILED( hr ) )
-      return;
   }
 }
 

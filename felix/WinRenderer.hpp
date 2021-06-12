@@ -15,7 +15,7 @@ public:
 
   void initialize( HWND hWnd );
 
-  void render( std::shared_ptr<Felix> felix );
+  void render( Felix & felix );
 
   void startNewFrame( uint64_t cycle ) override;
   void emitScreenData( uint64_t cycle, std::span<uint8_t const> data ) override;

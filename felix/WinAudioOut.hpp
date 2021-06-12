@@ -13,6 +13,8 @@
 #include <atomic>
 #include <utility>
 
+class Felix;
+
 class WinAudioOut
 {
 public:
@@ -20,7 +22,7 @@ public:
   WinAudioOut();
   ~WinAudioOut();
 
-  void fillBuffer( std::function<std::pair<float, float>( int sps )> & fun );
+  void fillBuffer( Felix & felix );
 
 private:
 
