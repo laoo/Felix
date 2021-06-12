@@ -1,6 +1,5 @@
 #pragma once
 #include "Suzy.hpp"
-#include "Shifter.hpp"
 #include "Utility.hpp"
 
 class SuzyProcess : public ISuzyProcess

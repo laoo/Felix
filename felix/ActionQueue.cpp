@@ -1,6 +1,10 @@
 #include "pch.hpp"
 #include "ActionQueue.hpp"
 
+SequencedAction::SequencedAction() : mData{}
+{
+}
+
 SequencedAction::SequencedAction( Action action, uint64_t tick ) : mData{ ( tick << TICK_PERIOD_LOG ) | (int64_t)action }
 {
 }

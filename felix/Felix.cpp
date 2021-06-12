@@ -225,7 +225,7 @@ bool Felix::executeSequencedAction( SequencedAction seqAction )
   case Action::DESERT_RESET:
     mCpu->desertInterrupt( CPUState::I_RESET );
     break;
-  case Action::END_FRAME:
+  case Action::END_BATCH:
     return true;
   default:
     assert( false );
@@ -510,7 +510,7 @@ void Felix::handlePatch( uint16_t address )
 
 void Felix::process( uint64_t ticks )
 {
-  mActionQueue.push( { Action::END_FRAME, mCurrentTick + ticks } );
+  mActionQueue.push( { Action::END_BATCH, mCurrentTick + ticks } );
 
   for ( ;; )
   {

@@ -24,7 +24,7 @@ enum class Action
   ASSERT_RESET,
   DESERT_IRQ,
   DESERT_RESET,
-  END_FRAME,
+  END_BATCH,
   ACTIONS_END_
 };
 
@@ -34,7 +34,8 @@ class SequencedAction
 {
 public:
 
-  SequencedAction( Action action = Action::NONE, uint64_t tick = 0 );
+  SequencedAction();
+  SequencedAction( Action action, uint64_t tick );
 
   Action getAction() const;
   uint64_t getTick() const;
