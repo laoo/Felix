@@ -186,7 +186,14 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
         std::filesystem::path path{ arg };
         if ( path.has_extension() && path.extension() == ".log" )
         {
-          instances[0]->setLog( arg );
+          auto path1 = path;
+          auto path2 = path;
+          path1.replace_extension() += "[1]";
+          path2.replace_extension() += "[2]";
+          path1.replace_extension( ".log" );
+          path2.replace_extension( ".log" );
+          instances[0]->setLog( path1 );
+          instances[1]->setLog( path2 );
         }
       }
 
