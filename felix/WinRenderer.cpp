@@ -60,7 +60,7 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, mSizeManager{}, mRefreshRate{}, mFrameTicks{ ~0ull }, mInstances{ 1 }
+WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, mSizeManager{}, mRefreshRate{}, mFrameTicks{ ~0ull }, mInstances{ 2 }
 {
   for ( uint32_t i = 0; i < 256; ++i )
   {
@@ -167,9 +167,9 @@ void WinRenderer::render( Config & config )
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
 
-  if ( mSizeManager.windowHeight() != ( r.bottom - r.top ) || ( mSizeManager.windowWidth() != r.right - r.left ) )
+  if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) )
   {
-    mSizeManager = SizeManager{ mInstances, false, r.right - r.left, r.bottom - r.top };
+    mSizeManager = SizeManager{ mInstances, config.horizontalView(), r.right, r.bottom };
 
     if ( !mSizeManager )
     {
@@ -185,6 +185,18 @@ void WinRenderer::render( Config & config )
     V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
+  }
+
+  if ( config.horizontalView() != mSizeManager.horizontal() )
+  {
+    if ( r.right >= mSizeManager.minWindowWidth( config.horizontalView() ) && r.bottom >= mSizeManager.minWindowHeight( config.horizontalView() ) )
+    {
+      mSizeManager = SizeManager{ mInstances, config.horizontalView(), r.right, r.bottom };
+    }
+    else
+    {
+      config.horizontalView( mSizeManager.horizontal() );
+    }
   }
 
   UINT v[4] = { 255, 255, 255, 255 };
@@ -450,12 +462,12 @@ int WinRenderer::SizeManager::windowHeight() const
   return mWinHeight;
 }
 
-int WinRenderer::SizeManager::minWindowWidth() const
+int WinRenderer::SizeManager::minWindowWidth( std::optional<bool> horizontal ) const
 {
   switch ( mInstances )
   {
   case 2:
-    if ( mHorizontal )
+    if ( horizontal.value_or( mHorizontal ) )
     {
       return 160 * 2;
     }
@@ -468,12 +480,12 @@ int WinRenderer::SizeManager::minWindowWidth() const
   }
 }
 
-int WinRenderer::SizeManager::minWindowHeight() const
+int WinRenderer::SizeManager::minWindowHeight( std::optional<bool> horizontal ) const
 {
   switch ( mInstances )
   {
   case 2:
-    if ( mHorizontal )
+    if ( horizontal.value_or( mHorizontal ) )
     {
       return 102;
     }
@@ -513,6 +525,11 @@ int WinRenderer::SizeManager::instanceYOff( int instance ) const
 int WinRenderer::SizeManager::scale() const
 {
   return mScale;
+}
+
+bool WinRenderer::SizeManager::horizontal() const
+{
+  return mHorizontal;
 }
 
 WinRenderer::SizeManager::operator bool() const

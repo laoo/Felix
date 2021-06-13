@@ -63,11 +63,12 @@ private:
 
     int windowWidth() const;
     int windowHeight() const;
-    int minWindowWidth() const;
-    int minWindowHeight() const;
+    int minWindowWidth( std::optional<bool> horizontal = std::nullopt ) const;
+    int minWindowHeight( std::optional<bool> horizontal = std::nullopt ) const;
     int instanceXOff( int instance ) const;
     int instanceYOff( int instance ) const;
     int scale() const;
+    bool horizontal() const;
     explicit operator bool() const;
 
   private:

@@ -2,7 +2,7 @@
 #include "Config.hpp"
 #include "imgui.h"
 
-Config::Config() : mEmulationRunning{ true }
+Config::Config() : mEmulationRunning{ true }, mHorizontalView{ true }
 {
 }
 
@@ -26,6 +26,11 @@ void Config::drawGui( int left, int top, int right, int bottom )
         }
         ImGui::EndMenu();
       }
+      if ( ImGui::BeginMenu( "View" ) )
+      {
+        ImGui::Checkbox( "Horizontal", &mHorizontalView );
+        ImGui::EndMenu();
+      }
       ImGui::EndMainMenuBar();
       ImGui::PopStyleVar();
     }
@@ -35,8 +40,18 @@ void Config::drawGui( int left, int top, int right, int bottom )
   //ImGui::ShowDemoWindow();
 }
 
+void Config::horizontalView( bool horizontal )
+{
+  mHorizontalView = horizontal;
+}
+
 bool Config::doRun() const
 {
   return mEmulationRunning;
+}
+
+bool Config::horizontalView() const
+{
+  return mHorizontalView;
 }
 
