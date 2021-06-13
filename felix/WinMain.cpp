@@ -172,9 +172,13 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   try
   {
     std::shared_ptr<Config> config = std::make_shared<Config>();
-    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( 1 );
+    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( 2 );
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
-    std::shared_ptr<Felix> felix = std::make_shared<Felix>( renderer->getVideoSink( 0 ),  [] { return gKeyInput; } );
+
+    std::vector<std::shared_ptr<Felix>> instances;
+
+    instances.push_back( std::make_shared<Felix>( renderer->getVideoSink( 0 ), [] { return gKeyInput; } ) );
+    instances.push_back( std::make_shared<Felix>( renderer->getVideoSink( 1 ), [] { return gKeyInput; } ) );
 
     for ( auto const & arg : args )
     {
@@ -182,14 +186,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
         std::filesystem::path path{ arg };
         if ( path.has_extension() && path.extension() == ".log" )
         {
-          felix->setLog( arg );
+          instances[0]->setLog( arg );
         }
       }
 
       InputFile file{ arg };
       if ( file.valid() )
       {
-        felix->injectFile( file );
+        instances[0]->injectFile( file );
+        instances[1]->injectFile( file );
       }
     }
 
@@ -214,11 +219,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       }
     } };
 
-    audioThread = std::thread{ [&doProcess,audioOut,felix]
+    audioThread = std::thread{ [&doProcess,audioOut,instances]
     {
       while ( doProcess.load() )
       {
-        audioOut->fillBuffer( *felix );
+        audioOut->fillBuffer( std::span<std::shared_ptr<Felix> const>{ instances.data(), instances.size() } );
       }
     } };
  
@@ -244,7 +249,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
           InputFile file{ arg };
           if ( file.valid() )
           {
-            felix->injectFile( file );
+            instances[0]->injectFile( file );
+            instances[1]->injectFile( file );
           }
         }
 

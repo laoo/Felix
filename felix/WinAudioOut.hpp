@@ -22,7 +22,7 @@ public:
   WinAudioOut();
   ~WinAudioOut();
 
-  void fillBuffer( Felix & felix );
+  void fillBuffer( std::span<std::shared_ptr<Felix> const> instances );
 
 private:
 

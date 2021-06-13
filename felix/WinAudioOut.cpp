@@ -68,7 +68,7 @@ WinAudioOut::~WinAudioOut()
   }
 }
 
-void WinAudioOut::fillBuffer( Felix & felix )
+void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Felix> const> instances )
 {
   DWORD retval = WaitForSingleObject( mEvent, 1000 );
   if ( retval != WAIT_OBJECT_0 )
@@ -88,7 +88,12 @@ void WinAudioOut::fillBuffer( Felix & felix )
     float* pfData = reinterpret_cast<float*>( pData );
     for ( uint32_t i = 0; i < framesAvailable; ++i )
     {
-      auto pair = felix.getSample( mMixFormat->nSamplesPerSec );
+      std::pair<float, float> pair;
+      for ( size_t i = 0; i < instances.size(); ++i )
+      {
+        //last sample is used
+        pair = instances[i]->getSample( mMixFormat->nSamplesPerSec );
+      }
       for ( int j = 0; j < mMixFormat->nChannels; j += 2 )
       {
         pfData[i * mMixFormat->nChannels + j + 0] = pair.first;
