@@ -1,10 +1,12 @@
 #pragma once
 
+struct ComLynxWire;
+
 class ComLynx
 {
 public:
 
-  ComLynx();
+  ComLynx( std::shared_ptr<ComLynxWire> comLynxWire );
 
   bool pulse();
   void setCtrl( uint8_t data );
@@ -39,6 +41,7 @@ private:
     static constexpr uint8_t PARBIT = 0x01; //9th bit
   };
 
+  std::shared_ptr<ComLynxWire> mWire;
   uint8_t mWriteCtrl;
   uint8_t mReadCtrl;
   uint8_t mHold;

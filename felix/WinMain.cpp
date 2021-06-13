@@ -7,6 +7,7 @@
 #include "WinAudioOut.hpp"
 #include "InputFile.hpp"
 #include "Config.hpp"
+#include "ComLynxWire.hpp"
 #include "version.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
@@ -174,11 +175,12 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     std::shared_ptr<Config> config = std::make_shared<Config>();
     std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( 2 );
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
+    std::shared_ptr<ComLynxWire> comLynxWire = std::make_shared<ComLynxWire>( false );
 
     std::vector<std::shared_ptr<Felix>> instances;
 
-    instances.push_back( std::make_shared<Felix>( renderer->getVideoSink( 0 ), [] { return gKeyInput; } ) );
-    instances.push_back( std::make_shared<Felix>( renderer->getVideoSink( 1 ), [] { return gKeyInput; } ) );
+    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 0 ), [] { return gKeyInput; } ) );
+    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 1 ), [] { return gKeyInput; } ) );
 
     for ( auto const & arg : args )
     {

@@ -14,11 +14,12 @@ class ImageBS93;
 class ImageBIOS;
 class ImageCart;
 class IEscape;
+struct ComLynxWire;
 
 class Felix
 {
 public:
-  Felix( std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const& inputProvider );
+  Felix( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const& inputProvider );
   ~Felix();
 
   void requestDisplayDMA( uint64_t tick, uint16_t address );

@@ -1,8 +1,9 @@
 #include "pch.hpp"
 #include "ComLynx.hpp"
 #include "Utility.hpp"
+#include "ComLynxWire.hpp"
 
-ComLynx::ComLynx() : mWriteCtrl{}, mReadCtrl{ SERCTL::TXRDY | SERCTL::TXEMPTY }, mShift{}, mHold{}, mRead{}, mCycle{}
+ComLynx::ComLynx( std::shared_ptr<ComLynxWire> comLynxWire ) : mWire{std::move( comLynxWire ) }, mWriteCtrl {}, mReadCtrl{ SERCTL::TXRDY | SERCTL::TXEMPTY }, mShift{}, mHold{}, mRead{}, mCycle{}
 {
 }
 
