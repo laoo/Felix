@@ -11,7 +11,8 @@
 #include "version.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
-KeyInput gKeyInput;
+KeyInput gKeyInput0;
+KeyInput gKeyInput1;
 
 
 wchar_t gClassName[] = L"FelixWindowClass";
@@ -60,50 +61,6 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
     SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( pRenderer ) );
     return 0;
   }
-  case WM_KEYDOWN:
-  case WM_KEYUP:
-    {
-      WORD hi = HIWORD( lParam );
-      bool down = ( hi & KF_UP ) == 0;
-      bool nonRepeat = ( hi & KF_REPEAT ) == 0;
-
-      if ( nonRepeat == down )
-      {
-        switch ( wParam )
-        {
-        case VK_LEFT:
-          gKeyInput.left = down;
-          break;
-        case VK_UP:
-          gKeyInput.up = down;
-          break;
-        case VK_RIGHT:
-          gKeyInput.right = down;
-          break;
-        case VK_DOWN:
-          gKeyInput.down = down;
-          break;
-        case '1':
-          gKeyInput.opt1 = down;
-          break;
-        case '2':
-          gKeyInput.opt2 = down;
-          break;
-        case 'Q':
-          gKeyInput.pause = down;
-          break;
-        case 'Z':
-          gKeyInput.a = down;
-          break;
-        case 'X':
-          gKeyInput.b = down;
-          break;
-        default:
-          break;
-        }
-      }
-    }
-    break;
   case WM_CLOSE:
     DestroyWindow( hwnd );
     return 0;
@@ -124,6 +81,34 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
   }
   return DefWindowProc( hwnd, msg, wParam, lParam );
 }
+
+void processKeys()
+{
+  std::array<uint8_t, 256> keys;
+  if ( !GetKeyboardState( keys.data() ) )
+    return;
+
+  gKeyInput0.left = keys['A'] & 0x80;
+  gKeyInput0.up = keys['W'] & 0x80;
+  gKeyInput0.right = keys['D'] & 0x80;
+  gKeyInput0.down = keys['S'] & 0x80;
+  gKeyInput0.opt1 = keys['1'] & 0x80;
+  gKeyInput0.pause = keys['2'] & 0x80;
+  gKeyInput0.opt2 = keys['3'] & 0x80;
+  gKeyInput0.a = keys[VK_LCONTROL] & 0x80;
+  gKeyInput0.b = keys[VK_LSHIFT] & 0x80;
+
+  gKeyInput1.left = keys[VK_LEFT] & 0x80;
+  gKeyInput1.up = keys[VK_UP] & 0x80;
+  gKeyInput1.right = keys[VK_RIGHT] & 0x80;
+  gKeyInput1.down = keys[VK_DOWN] & 0x80;
+  gKeyInput1.opt1 = keys[VK_DELETE] & 0x80;
+  gKeyInput1.pause = keys[VK_END] & 0x80;
+  gKeyInput1.opt2 = keys[VK_NEXT] & 0x80;
+  gKeyInput1.a = keys[VK_RCONTROL] & 0x80;
+  gKeyInput1.b = keys[VK_RSHIFT] & 0x80;
+}
+
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
@@ -179,8 +164,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     std::vector<std::shared_ptr<Felix>> instances;
 
-    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 0 ), [] { return gKeyInput; } ) );
-    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 1 ), [] { return gKeyInput; } ) );
+    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 0 ), [] { return gKeyInput0; } ) );
+    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 1 ), [] { return gKeyInput1; } ) );
 
     for ( auto const & arg : args )
     {
@@ -250,6 +235,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       if ( msg.message == WM_QUIT )
         break;
 
+      processKeys();
 
       if ( !gDroppedFiles.empty() )
       {
