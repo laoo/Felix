@@ -6,6 +6,7 @@
 #include "Log.hpp"
 #include "WinAudioOut.hpp"
 #include "InputFile.hpp"
+#include "Config.hpp"
 #include "version.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
@@ -170,6 +171,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   MSG msg;
   try
   {
+    std::shared_ptr<Config> config = std::make_shared<Config>();
     std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>();
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
     std::shared_ptr<Felix> felix = std::make_shared<Felix>( renderer, [] { return gKeyInput; } );
@@ -204,11 +206,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
-    renderThread = std::thread{ [&doProcess,renderer,felix]
+    renderThread = std::thread{ [&doProcess,config,renderer]
     {
       while ( doProcess.load() )
       {
-        renderer->render( *felix );
+        renderer->render( *config );
       }
     } };
 
@@ -220,7 +222,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       }
     } };
  
-    while ( felix->running() )
+    while ( config->doRun() )
     {
       while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
       {

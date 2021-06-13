@@ -5,6 +5,7 @@
 
 struct RenderFrame;
 class WinImgui;
+class Config;
 
 class WinRenderer : public IVideoSink
 {
@@ -15,7 +16,7 @@ public:
 
   void initialize( HWND hWnd );
 
-  void render( Felix & felix );
+  void render( Config & config );
 
   void newFrame( uint64_t tick ) override;
   void newRow( uint64_t tick, int row ) override;

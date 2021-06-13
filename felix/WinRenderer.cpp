@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "WinRenderer.hpp"
-#include "Felix.hpp"
+#include "Config.hpp"
 #include "imgui.h"
 #include "WinImgui.hpp"
 #include "renderer.hxx"
@@ -156,7 +156,7 @@ void WinRenderer::initialize( HWND hWnd )
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext } );
 }
 
-void WinRenderer::render( Felix & felix )
+void WinRenderer::render( Config & config )
 {
   if ( auto frame = pullNextFrame() )
   {
@@ -219,7 +219,7 @@ void WinRenderer::render( Felix & felix )
 
     ImGui::NewFrame();
 
-    felix.drawGui( r.left, r.top, r.right, r.bottom );
+    config.drawGui( r.left, r.top, r.right, r.bottom );
 
     ImGui::Render();
 
