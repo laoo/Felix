@@ -60,7 +60,7 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, mSizeManager{}, mRefreshRate{}, mFrameTicks{ ~0ull }
+WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, mSizeManager{}, mRefreshRate{}, mFrameTicks{ ~0ull }, mInstances{ 1 }
 {
   for ( uint32_t i = 0; i < 256; ++i )
   {
@@ -169,7 +169,7 @@ void WinRenderer::render( Felix & felix )
 
   if ( mSizeManager.windowHeight() != ( r.bottom - r.top ) || ( mSizeManager.windowWidth() != r.right - r.left ) )
   {
-    mSizeManager = SizeManager{ 1, true, r.right - r.left, r.bottom - r.top };
+    mSizeManager = SizeManager{ mInstances, false, r.right - r.left, r.bottom - r.top };
 
     if ( !mSizeManager )
     {
@@ -187,19 +187,21 @@ void WinRenderer::render( Felix & felix )
     V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
   }
 
-  int sx = (std::max)( 1, mSizeManager.windowWidth() / 160 );
-  int sy = (std::max)( 1, mSizeManager.windowHeight() / 102 );
-  int s = (std::min)( sx, sy );
-
-  CBPosSize cbPosSize{ mSizeManager.instanceXOff( 0 ), mSizeManager.instanceYOff( 0 ), mSizeManager.scale() };
-  mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
-  mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-  mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, mBackBufferUAV.GetAddressOf(), nullptr );
-  mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
-  UINT v[4]= { 255, 255, 255, 255 };
+  UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
-  mImmediateContext->Dispatch( 5, 51, 1 );
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, mBackBufferUAV.GetAddressOf(), nullptr );
+
+  for ( int i = 0; i < mInstances; ++i )
+  {
+    CBPosSize cbPosSize{ mSizeManager.instanceXOff( i ), mSizeManager.instanceYOff( i ), mSizeManager.scale() };
+    mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
+    mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
+    mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
+    mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
+    mImmediateContext->Dispatch( 5, 51, 1 );
+  }
+
+
   std::array<ID3D11UnorderedAccessView * const, 1> uav{};
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.data(), nullptr );
 
@@ -373,12 +375,12 @@ bool WinRenderer::sizing( RECT & rect )
   int cW = cRect.right - cRect.left + dW;
   int cH = cRect.bottom - cRect.top + dH;
 
-  if ( cW < 160 )
+  if ( cW < mSizeManager.minWindowWidth() )
   {
     rect.left = wRect.left;
     rect.right = wRect.right;
   }
-  if ( cH < 102 )
+  if ( cH < mSizeManager.minWindowHeight() )
   {
     rect.top = wRect.top;
     rect.bottom = wRect.bottom;
@@ -405,15 +407,37 @@ void WinRenderer::updateColorReg( uint8_t reg, uint8_t value )
   }
 }
 
-WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }
+WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }, mInstances{ 1 }, mHorizontal{ true }
 {
 }
 
-WinRenderer::SizeManager::SizeManager( int instances, bool horizontal, int windowWidth, int windowHeight ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }
+WinRenderer::SizeManager::SizeManager( int instances, bool horizontal, int windowWidth, int windowHeight ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }, mInstances{ instances }, mHorizontal{ horizontal }
 {
-  int sx = (std::max)( 1, mWinWidth / 160 );
-  int sy = (std::max)( 1, mWinHeight / 102 );
-  mScale = (std::min)( sx, sy );
+  if ( mInstances < 1 || mInstances > 2 )
+    throw std::runtime_error{ "Bad emulation instances numer" };
+
+  int sx, sy;
+  switch ( mInstances )
+  {
+  case 2:
+    if ( mHorizontal )
+    {
+      sx = (std::max)( 1, mWinWidth / 2 / 160 );
+      sy = (std::max)( 1, mWinHeight / 102 );
+    }
+    else
+    {
+      sx = (std::max)( 1, mWinWidth / 160 );
+      sy = (std::max)( 1, mWinHeight / 2 / 102 );
+    }
+    mScale = (std::min)( sx, sy );
+    break;
+  default:
+    sx = (std::max)( 1, mWinWidth / 160 );
+    sy = (std::max)( 1, mWinHeight / 102 );
+    mScale = (std::min)( sx, sy );
+    break;
+  }
 }
 
 int WinRenderer::SizeManager::windowWidth() const
@@ -428,32 +452,62 @@ int WinRenderer::SizeManager::windowHeight() const
 
 int WinRenderer::SizeManager::minWindowWidth() const
 {
-  return 160;
+  switch ( mInstances )
+  {
+  case 2:
+    if ( mHorizontal )
+    {
+      return 160 * 2;
+    }
+    else
+    {
+      return 160;
+    }
+  default:
+    return 160;
+  }
 }
 
 int WinRenderer::SizeManager::minWindowHeight() const
 {
-  return 102;
-}
-
-int WinRenderer::SizeManager::instanceWidth( int instance ) const
-{
-  return mWinWidth;
-}
-
-int WinRenderer::SizeManager::instanceHeight( int instance ) const
-{
-  return mWinHeight;
+  switch ( mInstances )
+  {
+  case 2:
+    if ( mHorizontal )
+    {
+      return 102;
+    }
+    else
+    {
+      return 102 * 2;
+    }
+  default:
+    return 102;
+  }
 }
 
 int WinRenderer::SizeManager::instanceXOff( int instance ) const
 {
-  return ( mWinWidth - 160 * mScale ) / 2;
+  if ( mInstances == 2 && mHorizontal )
+  {
+    return ( ( instance == 1 ? 3 : 1 ) * mWinWidth - 320 * mScale ) / 4;
+  }
+  else
+  {
+    return ( mWinWidth - 160 * mScale ) / 2;
+  }
 }
 
 int WinRenderer::SizeManager::instanceYOff( int instance ) const
 {
-  return ( mWinHeight - 102 * mScale ) / 2;
+  if ( mInstances == 2 && !mHorizontal )
+  {
+    return ( ( instance == 1 ? 3 : 1 ) * mWinHeight - 204 * mScale ) / 4;
+  }
+  else
+  {
+    return ( mWinHeight - 102 * mScale ) / 2;
+  }
 }
 
 int WinRenderer::SizeManager::scale() const

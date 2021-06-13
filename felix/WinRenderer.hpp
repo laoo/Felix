@@ -64,8 +64,6 @@ private:
     int windowHeight() const;
     int minWindowWidth() const;
     int minWindowHeight() const;
-    int instanceWidth( int instance ) const;
-    int instanceHeight( int instance ) const;
     int instanceXOff( int instance ) const;
     int instanceYOff( int instance ) const;
     int scale() const;
@@ -75,6 +73,8 @@ private:
     int mWinWidth;
     int mWinHeight;
     int mScale;
+    int mInstances;
+    bool mHorizontal;
   };
 
 private:
@@ -99,4 +99,5 @@ private:
   uint64_t mBeginTick;
   uint64_t mLastTick;
   uint64_t mFrameTicks;
+  int mInstances;
 };
