@@ -60,14 +60,20 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, mSizeManager{}, mRefreshRate{}, mFrameTicks{ ~0ull }, mInstances{ 2 }
+WinRenderer::WinRenderer( int instances ) : mInstances{}, mHWnd{}, mSizeManager{}, mRefreshRate{}
 {
-  for ( uint32_t i = 0; i < 256; ++i )
+  if ( instances <= 0 || instances > 2 )
+    throw std::runtime_error{ "Bad emulation instances numer" };
+
+  for ( int i = 0; i < instances; ++i )
   {
-    mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
+    mInstances.push_back( std::make_shared<Instance>() );
   }
 }
 
+WinRenderer::~WinRenderer()
+{
+}
 
 void WinRenderer::initialize( HWND hWnd )
 {
@@ -156,20 +162,23 @@ void WinRenderer::initialize( HWND hWnd )
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext } );
 }
 
+std::shared_ptr<IVideoSink> WinRenderer::getVideoSink( int instance ) const
+{
+  if ( instance >= 0 && instance < mInstances.size() )
+    return mInstances[instance];
+  else
+    return {};
+}
+
 void WinRenderer::render( Config & config )
 {
-  if ( auto frame = pullNextFrame() )
-  {
-    updateSourceTexture( std::move( frame ) );
-  }
-
   RECT r;
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
 
   if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) )
   {
-    mSizeManager = SizeManager{ mInstances, config.horizontalView(), r.right, r.bottom };
+    mSizeManager = SizeManager{ (int)mInstances.size(), config.horizontalView(), r.right, r.bottom };
 
     if ( !mSizeManager )
     {
@@ -191,7 +200,7 @@ void WinRenderer::render( Config & config )
   {
     if ( r.right >= mSizeManager.minWindowWidth( config.horizontalView() ) && r.bottom >= mSizeManager.minWindowHeight( config.horizontalView() ) )
     {
-      mSizeManager = SizeManager{ mInstances, config.horizontalView(), r.right, r.bottom };
+      mSizeManager = SizeManager{ (int)mInstances.size(), config.horizontalView(), r.right, r.bottom };
     }
     else
     {
@@ -203,8 +212,13 @@ void WinRenderer::render( Config & config )
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, mBackBufferUAV.GetAddressOf(), nullptr );
 
-  for ( int i = 0; i < mInstances; ++i )
+  for ( int i = 0; i < mInstances.size(); ++i )
   {
+    if ( auto frame = mInstances[i]->pullNextFrame() )
+    {
+      updateSourceTexture( i, std::move( frame ) );
+    }
+
     CBPosSize cbPosSize{ mSizeManager.instanceXOff( i ), mSizeManager.instanceYOff( i ), mSizeManager.scale() };
     mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
@@ -245,11 +259,10 @@ void WinRenderer::render( Config & config )
   mSwapChain->Present( 1, 0 );
 }
 
-void WinRenderer::newFrame( uint64_t tick )
+void WinRenderer::Instance::newFrame( uint64_t tick )
 {
   mFrameTicks = tick - mBeginTick;
   mBeginTick = tick;
-  mIdx = 0;
   if ( mActiveFrame )
   {
     std::scoped_lock<std::mutex> lock( mQueueMutex );
@@ -263,12 +276,12 @@ void WinRenderer::newFrame( uint64_t tick )
   mActiveFrame = std::make_shared<RenderFrame>();
 }
 
-void WinRenderer::newRow( uint64_t tick, int row )
+void WinRenderer::Instance::newRow( uint64_t tick, int row )
 {
   mActiveFrame->newRow( row );
 }
 
-void WinRenderer::updatePalette( uint16_t reg, uint8_t value )
+void WinRenderer::Instance::updatePalette( uint16_t reg, uint8_t value )
 {
   reg &= 0xff;
 
@@ -312,9 +325,12 @@ void WinRenderer::updatePalette( uint16_t reg, uint8_t value )
   }
 }
 
-void WinRenderer::updateSourceTexture( std::shared_ptr<RenderFrame> frame )
+void WinRenderer::updateSourceTexture( int instance, std::shared_ptr<RenderFrame> frame )
 {
-  assert( frame );
+  assert( frame && instance >= 0 && instance < mInstances.size() );
+
+  auto & inst = mInstances[instance];
+
   D3D11_MAPPED_SUBRESOURCE map;
   mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
   size_t pitch = map.RowPitch / sizeof( DPixel );
@@ -330,11 +346,11 @@ void WinRenderer::updateSourceTexture( std::shared_ptr<RenderFrame> frame )
       uint16_t v = row.lineBuffer[j];
       if ( std::bit_cast<int16_t>( v ) < 0 )
       {
-        *dst++ = mPalette[(uint8_t)v];
+        *dst++ = inst->mPalette[(uint8_t)v];
       }
       else
       {
-        updatePalette( v >> 8, (uint8_t)v );
+        inst->updatePalette( v >> 8, (uint8_t)v );
       }
     }
   }
@@ -342,7 +358,7 @@ void WinRenderer::updateSourceTexture( std::shared_ptr<RenderFrame> frame )
   mImmediateContext->Unmap( mSource.Get(), 0 );
 }
 
-std::shared_ptr<RenderFrame> WinRenderer::pullNextFrame()
+std::shared_ptr<RenderFrame> WinRenderer::Instance::pullNextFrame()
 {
   std::shared_ptr<RenderFrame> result{};
 
@@ -401,13 +417,13 @@ bool WinRenderer::sizing( RECT & rect )
   return true;
 }
 
-void WinRenderer::emitScreenData( std::span<uint8_t const> data )
+void WinRenderer::Instance::emitScreenData( std::span<uint8_t const> data )
 {
   if ( mActiveFrame )
     mActiveFrame->pushScreenBytes( data );
 }
 
-void WinRenderer::updateColorReg( uint8_t reg, uint8_t value )
+void WinRenderer::Instance::updateColorReg( uint8_t reg, uint8_t value )
 {
   if ( mActiveFrame )
   {
@@ -535,4 +551,12 @@ bool WinRenderer::SizeManager::horizontal() const
 WinRenderer::SizeManager::operator bool() const
 {
   return mWinWidth != 0 && mWinHeight != 0;
+}
+
+WinRenderer::Instance::Instance() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mFrameTicks{ ~0ull }
+{
+  for ( uint32_t i = 0; i < 256; ++i )
+  {
+    mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
+  }
 }

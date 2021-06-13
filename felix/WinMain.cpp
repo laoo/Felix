@@ -172,9 +172,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   try
   {
     std::shared_ptr<Config> config = std::make_shared<Config>();
-    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>();
+    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( 1 );
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
-    std::shared_ptr<Felix> felix = std::make_shared<Felix>( renderer, [] { return gKeyInput; } );
+    std::shared_ptr<Felix> felix = std::make_shared<Felix>( renderer->getVideoSink( 0 ),  [] { return gKeyInput; } );
 
     for ( auto const & arg : args )
     {

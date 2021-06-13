@@ -7,21 +7,18 @@ struct RenderFrame;
 class WinImgui;
 class Config;
 
-class WinRenderer : public IVideoSink
+class WinRenderer
 {
 public:
 
-  WinRenderer();
-  ~WinRenderer() override = default;
+  WinRenderer( int instances );
+  ~WinRenderer();
 
   void initialize( HWND hWnd );
 
-  void render( Config & config );
+  std::shared_ptr<IVideoSink> getVideoSink( int instance ) const;
 
-  void newFrame( uint64_t tick ) override;
-  void newRow( uint64_t tick, int row ) override;
-  void emitScreenData( std::span<uint8_t const> data ) override;
-  void updateColorReg( uint8_t reg, uint8_t value ) override;
+  void render( Config & config );
 
 private:
   struct CBPosSize
@@ -47,9 +44,7 @@ private:
   };
 
 
-  void updatePalette( uint16_t reg, uint8_t value );
-  void updateSourceTexture( std::shared_ptr<RenderFrame> frame );
-  std::shared_ptr<RenderFrame> pullNextFrame();
+  void updateSourceTexture( int instance, std::shared_ptr<RenderFrame> frame );
 
   friend LRESULT CALLBACK WndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
   bool win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
@@ -79,12 +74,28 @@ private:
     bool mHorizontal;
   };
 
+  struct Instance : public IVideoSink
+  {
+    Instance();
+
+    std::array<DPixel, 256> mPalette;
+    std::shared_ptr<RenderFrame> mActiveFrame;
+    std::queue<std::shared_ptr<RenderFrame>> mFinishedFrames;
+    mutable std::mutex mQueueMutex;
+    uint64_t mBeginTick;
+    uint64_t mLastTick;
+    uint64_t mFrameTicks;
+
+    void updatePalette( uint16_t reg, uint8_t value );
+    void newFrame( uint64_t tick ) override;
+    void newRow( uint64_t tick, int row ) override;
+    void emitScreenData( std::span<uint8_t const> data ) override;
+    void updateColorReg( uint8_t reg, uint8_t value ) override;
+    std::shared_ptr<RenderFrame> pullNextFrame();
+  };
+
 private:
-  std::array<DPixel, 256> mPalette;
-  std::shared_ptr<RenderFrame> mActiveFrame;
-  std::queue<std::shared_ptr<RenderFrame>> mFinishedFrames;
-  mutable std::mutex mQueueMutex;
-  uint32_t mIdx;
+  std::vector<std::shared_ptr<Instance>> mInstances;
   HWND mHWnd;
   std::unique_ptr<WinImgui>         mImgui;
   ComPtr<ID3D11Device>              mD3DDevice;
@@ -98,8 +109,4 @@ private:
   ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
   SizeManager mSizeManager;
   boost::rational<int32_t> mRefreshRate;
-  uint64_t mBeginTick;
-  uint64_t mLastTick;
-  uint64_t mFrameTicks;
-  int mInstances;
 };
