@@ -60,10 +60,8 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, theWinWidth{}, theWinHeight{}, mRefreshRate{}, mPerfCount{}, mFrameTicks{ ~0ull }
+WinRenderer::WinRenderer() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mIdx{}, mHWnd{}, mSizeManager{}, mRefreshRate{}, mFrameTicks{ ~0ull }
 {
-  QueryPerformanceFrequency( (LARGE_INTEGER*)&mPerfFreq );
-
   for ( uint32_t i = 0; i < 256; ++i )
   {
     mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
@@ -76,7 +74,7 @@ void WinRenderer::initialize( HWND hWnd )
   mHWnd = hWnd;
 
   typedef HRESULT( WINAPI * LPD3D11CREATEDEVICE )( IDXGIAdapter *, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL *, UINT, UINT32, ID3D11Device **, D3D_FEATURE_LEVEL *, ID3D11DeviceContext ** );
-  static LPD3D11CREATEDEVICE  s_DynamicD3D11CreateDevice = nullptr;
+  static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
   HMODULE hModD3D11 = ::LoadLibrary( L"d3d11.dll" );
   if ( hModD3D11 == nullptr )
     throw std::runtime_error{ "DXError" };
@@ -85,7 +83,6 @@ void WinRenderer::initialize( HWND hWnd )
 
 
   D3D_FEATURE_LEVEL  featureLevelsRequested = D3D_FEATURE_LEVEL_11_0;
-  UINT               numFeatureLevelsRequested = 1;
   D3D_FEATURE_LEVEL  featureLevelsSupported;
 
   HRESULT hr = s_DynamicD3D11CreateDevice( nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
@@ -94,7 +91,7 @@ void WinRenderer::initialize( HWND hWnd )
 #else
     0,
 #endif
-    & featureLevelsRequested, numFeatureLevelsRequested, D3D11_SDK_VERSION, mD3DDevice.ReleaseAndGetAddressOf(), &featureLevelsSupported, mImmediateContext.ReleaseAndGetAddressOf() );
+    &featureLevelsRequested, 1, D3D11_SDK_VERSION, mD3DDevice.ReleaseAndGetAddressOf(), &featureLevelsSupported, mImmediateContext.ReleaseAndGetAddressOf() );
 
   V_THROW( hr );
 
@@ -170,12 +167,11 @@ void WinRenderer::render( Felix & felix )
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
 
-  if ( theWinHeight != ( r.bottom - r.top ) || ( theWinWidth != r.right - r.left ) )
+  if ( mSizeManager.windowHeight() != ( r.bottom - r.top ) || ( mSizeManager.windowWidth() != r.right - r.left ) )
   {
-    theWinHeight = r.bottom - r.top;
-    theWinWidth = r.right - r.left;
+    mSizeManager = SizeManager{ 1, true, r.right - r.left, r.bottom - r.top };
 
-    if ( theWinHeight == 0 || theWinWidth == 0 )
+    if ( !mSizeManager )
     {
       return;
     }
@@ -183,28 +179,19 @@ void WinRenderer::render( Felix & felix )
     mBackBufferUAV.Reset();
     mBackBufferRTV.Reset();
 
-    mSwapChain->ResizeBuffers( 0, theWinWidth, theWinHeight, DXGI_FORMAT_UNKNOWN, 0 );
+    mSwapChain->ResizeBuffers( 0, mSizeManager.windowWidth(), mSizeManager.windowHeight(), DXGI_FORMAT_UNKNOWN, 0 );
 
     ComPtr<ID3D11Texture2D> backBuffer;
     V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
-
-    D3D11_VIEWPORT vp;
-    vp.Width = (FLOAT)theWinWidth;
-    vp.Height = (FLOAT)theWinHeight;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    mImmediateContext->RSSetViewports( 1, &vp );
   }
 
-  int sx = (std::max)( 1, theWinWidth / 160 );
-  int sy = (std::max)( 1, theWinHeight / 102 );
+  int sx = (std::max)( 1, mSizeManager.windowWidth() / 160 );
+  int sy = (std::max)( 1, mSizeManager.windowHeight() / 102 );
   int s = (std::min)( sx, sy );
 
-  CBPosSize cbPosSize{ ( theWinWidth - 160 * s ) / 2, ( theWinHeight - 102 * s ) / 2, s, s };
+  CBPosSize cbPosSize{ mSizeManager.instanceXOff( 0 ), mSizeManager.instanceYOff( 0 ), mSizeManager.scale() };
   mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
   mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
   mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
@@ -212,7 +199,7 @@ void WinRenderer::render( Felix & felix )
   mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
   UINT v[4]= { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
-  mImmediateContext->Dispatch( 10, 102, 1 );
+  mImmediateContext->Dispatch( 5, 51, 1 );
   std::array<ID3D11UnorderedAccessView * const, 1> uav{};
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.data(), nullptr );
 
@@ -242,11 +229,6 @@ void WinRenderer::render( Felix & felix )
   }
 
   mSwapChain->Present( 1, 0 );
-  int64_t cnt = 0;
-  QueryPerformanceCounter( (LARGE_INTEGER*)&cnt );
-  int64_t diff = cnt - mPerfCount;
-  //L_TRACE << diff << "\t" << (double)mPerfFreq / (double)diff;
-  mPerfCount = cnt;
 }
 
 void WinRenderer::newFrame( uint64_t tick )
@@ -423,3 +405,63 @@ void WinRenderer::updateColorReg( uint8_t reg, uint8_t value )
   }
 }
 
+WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }
+{
+}
+
+WinRenderer::SizeManager::SizeManager( int instances, bool horizontal, int windowWidth, int windowHeight ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }
+{
+  int sx = (std::max)( 1, mWinWidth / 160 );
+  int sy = (std::max)( 1, mWinHeight / 102 );
+  mScale = (std::min)( sx, sy );
+}
+
+int WinRenderer::SizeManager::windowWidth() const
+{
+  return mWinWidth;
+}
+
+int WinRenderer::SizeManager::windowHeight() const
+{
+  return mWinHeight;
+}
+
+int WinRenderer::SizeManager::minWindowWidth() const
+{
+  return 160;
+}
+
+int WinRenderer::SizeManager::minWindowHeight() const
+{
+  return 102;
+}
+
+int WinRenderer::SizeManager::instanceWidth( int instance ) const
+{
+  return mWinWidth;
+}
+
+int WinRenderer::SizeManager::instanceHeight( int instance ) const
+{
+  return mWinHeight;
+}
+
+int WinRenderer::SizeManager::instanceXOff( int instance ) const
+{
+  return ( mWinWidth - 160 * mScale ) / 2;
+}
+
+int WinRenderer::SizeManager::instanceYOff( int instance ) const
+{
+  return ( mWinHeight - 102 * mScale ) / 2;
+}
+
+int WinRenderer::SizeManager::scale() const
+{
+  return mScale;
+}
+
+WinRenderer::SizeManager::operator bool() const
+{
+  return mWinWidth != 0 && mWinHeight != 0;
+}

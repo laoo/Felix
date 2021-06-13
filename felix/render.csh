@@ -4,20 +4,19 @@ RWTexture2D<unorm float4> dst : register( u0 );
 
 cbuffer cb : register( b0 )
 {
-  int4 posSize;
+  int2 off;
+  int size;
 };
 
 
-[numthreads( 16, 1, 1 )]
+[numthreads( 32, 2, 1 )]  
 void main( uint3 DT : SV_DispatchThreadID )
 {
-  
-  for ( int y = 0; y < posSize.w; ++y )
+  for ( int y = 0; y < size; ++y )
   {
-    for ( int x = 0; x < posSize.z; ++x )
+    for ( int x = 0; x < size; ++x )
     {
-      dst[posSize.xy + DT.xy * posSize.zw + int2( x, y )]  = src[DT.xy];
+      dst[off + DT.xy * size + int2( x, y )]  = src[DT.xy];
     }
   }
-
 }
