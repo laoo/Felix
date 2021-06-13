@@ -111,7 +111,7 @@ uint8_t ComLynx::getData()
 
 bool ComLynx::present() const
 {
-  return false;
+  return mWire->connected;
 }
 
 void ComLynx::setRead( uint8_t shift )

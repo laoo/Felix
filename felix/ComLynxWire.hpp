@@ -2,5 +2,6 @@
 
 struct ComLynxWire
 {
+  bool connected;
   bool bit;
 };
