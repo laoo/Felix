@@ -24,7 +24,7 @@ enum class Action
   ASSERT_RESET,
   DESERT_IRQ,
   DESERT_RESET,
-  END_BATCH,
+  SAMPLE_AUDIO,
   ACTIONS_END_
 };
 

@@ -155,7 +155,7 @@ void Felix::desertInterrupt( int mask, std::optional<uint64_t> tick )
   }
 }
 
-bool Felix::executeSequencedAction( SequencedAction seqAction )
+int Felix::executeSequencedAction( SequencedAction seqAction )
 {
   auto action = seqAction.getAction();
 
@@ -195,13 +195,17 @@ bool Felix::executeSequencedAction( SequencedAction seqAction )
   case Action::DESERT_RESET:
     mCpu->desertInterrupt( CPUState::I_RESET );
     break;
-  case Action::END_BATCH:
-    return true;
+  case Action::SAMPLE_AUDIO:
+    mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
+    if ( mSamplesEmitted >= mOutputSamples.size() )
+      return 0;
+    enqueueSampling();
+    break;
   default:
     assert( false );
     break;
   }
-  return false;
+  return 1;
 }
 
 bool Felix::executeSuzyAction()
@@ -478,16 +482,37 @@ void Felix::handlePatch( uint16_t address )
 }
 
 
-void Felix::process( uint64_t ticks )
+void Felix::setAudioOut( int sps, std::span<AudioSample> outputBuffer )
 {
-  mActionQueue.push( { Action::END_BATCH, mCurrentTick + ticks } );
+  mSPS = sps;
+  mOutputSamples = outputBuffer;
+  mSamplesEmitted = 0;
+  enqueueSampling();
+}
+
+void Felix::enqueueSampling()
+{
+  int ticks = 16000000 / mSPS;
+  mSamplesRemainder += 16000000 % mSPS;
+  if ( mSamplesRemainder > mSPS )
+  {
+    mSamplesRemainder &= mSPS;
+    ticks += 1;
+  }
+
+  mActionQueue.push( { Action::SAMPLE_AUDIO, mCurrentTick + ticks } );
+}
+
+int Felix::advance()
+{
+  if ( mSamplesEmitted >= mOutputSamples.size() )
+    return 0;
 
   for ( ;; )
   {
     if ( mActionQueue.head().getTick() <= mCurrentTick )
     {
-      if ( executeSequencedAction( mActionQueue.pop() ) )
-        return;
+      return executeSequencedAction( mActionQueue.pop() );
     }
     else
     {
@@ -497,23 +522,6 @@ void Felix::process( uint64_t ticks )
       }
     }
   }
-}
-
-std::pair<float, float> Felix::getSample( int sps )
-{
-  int cnt = 16000000 / sps;
-  mSamplesRemainder += 16000000 % sps;
-  if ( mSamplesRemainder > sps )
-  {
-    mSamplesRemainder &= sps;
-    cnt += 1;
-  }
-
-  process( cnt );
-
-  auto audioSample = mMikey->sampleAudio();
-
-  return { (float)audioSample.left / 32768.0f, (float)audioSample.right / 32768.0f };
 }
 
 void Felix::enterMonitor()

@@ -13,6 +13,8 @@
 #include <atomic>
 #include <utility>
 
+#include "Utility.hpp"
+
 class Felix;
 
 class WinAudioOut
@@ -32,6 +34,7 @@ private:
   HANDLE mEvent;
 
   uint32_t mBufferSize;
+  std::vector<AudioSample> mSamplesBuffer;
 
   WAVEFORMATEX * mMixFormat;
 };

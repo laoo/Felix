@@ -3,6 +3,7 @@
 #include "ActionQueue.hpp"
 #include "ParallelPort.hpp"
 #include "DisplayGenerator.hpp"
+#include "Utility.hpp"
 
 class Felix;
 class TimerCore;
@@ -71,13 +72,6 @@ public:
     static constexpr uint8_t DISP_FLIP    = 0b00000010; //1 = flip, 0 normal
     static constexpr uint8_t DMA_ENABLE   = 0b00000001; //1 = enable video DMA, 0 = disable.must be set to 1 ( set by kernel )
   };
-
-  struct AudioSample
-  {
-    int16_t left;
-    int16_t right;
-  };
-
 
   Mikey( Felix & felix, std::shared_ptr<IVideoSink> videoSink );
   ~Mikey();

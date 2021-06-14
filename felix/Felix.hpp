@@ -4,6 +4,7 @@
 #include "ActionQueue.hpp"
 #include "DisplayGenerator.hpp"
 #include "Suzy.hpp"
+#include "Utility.hpp"
 
 class Mikey;
 class CPU;
@@ -27,8 +28,8 @@ public:
   void assertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
   void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
 
-  void process( uint64_t ticks );
-  std::pair<float, float> getSample( int sps );
+  void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
+  int advance();
 
   void injectFile( InputFile const& file );
   void setLog( std::filesystem::path const & path );
@@ -57,7 +58,7 @@ private:
     bool suzyDisable;
   };
 
-  bool executeSequencedAction( SequencedAction );
+  int executeSequencedAction( SequencedAction );
   bool executeSuzyAction();
   void executeCPUAction();
   void handlePatch( uint16_t address );
@@ -67,6 +68,7 @@ private:
 
   void pulseReset( std::optional<uint16_t> resetAddress = std::nullopt );
   void writeMAPCTL( uint8_t value );
+  void enqueueSampling();
 
 private:
   std::array<uint8_t,65536> mRAM;
@@ -75,6 +77,9 @@ private:
   std::array<std::shared_ptr<IEscape>, 16> mEscapes;
   uint64_t mCurrentTick;
   int mSamplesRemainder;
+  int mSPS;
+  std::span<AudioSample> mOutputSamples;
+  uint32_t mSamplesEmitted;
   ActionQueue mActionQueue;
   std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Cartridge> mCartridge;

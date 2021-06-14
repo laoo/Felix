@@ -81,6 +81,27 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Felix> const> instances 
   //L_TRACE << "AUD " << mBufferSize << " - " << padding << " = " << framesAvailable;
   if ( framesAvailable > 0 )
   {
+    if ( mSamplesBuffer.size() < framesAvailable * instances.size() )
+    {
+      mSamplesBuffer.resize( framesAvailable * instances.size() );
+    }
+
+    for ( size_t i = 0; i < instances.size(); ++i )
+    {
+      instances[i]->setAudioOut( mMixFormat->nSamplesPerSec, std::span<AudioSample>{ mSamplesBuffer.data() + framesAvailable * i, framesAvailable } );
+    }
+
+    for ( ;; )
+    {
+      int processed = 0;
+      for ( size_t i = 0; i < instances.size(); ++i )
+      {
+        processed += instances[i]->advance();
+      }
+      if ( processed == 0 )
+        break;
+    }
+
     BYTE *pData;
     hr = mRenderClient->GetBuffer( framesAvailable, &pData );
     if ( FAILED( hr ) )
@@ -88,17 +109,8 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Felix> const> instances 
     float* pfData = reinterpret_cast<float*>( pData );
     for ( uint32_t i = 0; i < framesAvailable; ++i )
     {
-      std::pair<float, float> pair;
-      for ( size_t i = 0; i < instances.size(); ++i )
-      {
-        //last sample is used
-        pair = instances[i]->getSample( mMixFormat->nSamplesPerSec );
-      }
-      for ( int j = 0; j < mMixFormat->nChannels; j += 2 )
-      {
-        pfData[i * mMixFormat->nChannels + j + 0] = pair.first;
-        pfData[i * mMixFormat->nChannels + j + 1] = pair.second;
-      }
+      pfData[i * mMixFormat->nChannels + 0] = mSamplesBuffer[i].left / 32768.0f;
+      pfData[i * mMixFormat->nChannels + 1] = mSamplesBuffer[i].right / 32768.0f;
     }
     hr = mRenderClient->ReleaseBuffer( framesAvailable, 0 );
   }

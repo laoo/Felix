@@ -11,6 +11,13 @@ protected:
   ~NonCopyable() = default;
 };
 
+struct AudioSample
+{
+  int16_t left;
+  int16_t right;
+};
+
+
 #ifdef __cpp_lib_bitops
 
 #define popcnt(X) std::popcount(X)

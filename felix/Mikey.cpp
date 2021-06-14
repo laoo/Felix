@@ -439,7 +439,7 @@ void Mikey::suzyDone()
   mSuzyDone = true;
 }
 
-Mikey::AudioSample Mikey::sampleAudio() const
+AudioSample Mikey::sampleAudio() const
 {
   int16_t left{};
   int16_t right{};
