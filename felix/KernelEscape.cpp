@@ -87,9 +87,9 @@ void KernelEscape::decryptCartridge( IAccessor & acc )
 
   assert( plain.size() <= 50 * blockcount );
 
-  for ( int i = 0; i < 50 * blockcount; ++i )
+  for ( uint8_t byte : plain )
   {
-    acc.writeRAM( addr++, plain[i] );
+    acc.writeRAM( addr++, byte );
   }
 
   acc.state().pc = 0x200;
