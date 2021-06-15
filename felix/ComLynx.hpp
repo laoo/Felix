@@ -1,23 +1,24 @@
 #pragma once
 
-struct ComLynxWire;
+class ComLynxWire;
 
 class ComLynx
 {
 public:
 
   ComLynx( std::shared_ptr<ComLynxWire> comLynxWire );
+  ~ComLynx();
 
+  bool present() const;
   bool pulse();
-  void setCtrl( uint8_t data );
+  void setCtrl( uint8_t ctrl );
   void setData( uint8_t data );
   uint8_t getCtrl() const;
   uint8_t getData();
-  bool present() const;
+
+  bool interrupt() const;
 
 private:
-
-  void setRead( uint8_t shift );
 
   struct SERCTL
   {
@@ -41,12 +42,60 @@ private:
     static constexpr uint8_t PARBIT = 0x01; //9th bit
   };
 
-  std::shared_ptr<ComLynxWire> mWire;
-  uint8_t mWriteCtrl;
-  uint8_t mReadCtrl;
-  uint8_t mHold;
-  uint8_t mShift;
-  uint8_t mRead;
-  int mCycle;
+  int mId;
+
+  class Transmitter
+  {
+  public:
+    Transmitter( int id, std::shared_ptr<ComLynxWire> comLynxWire );
+
+    void setCtrl( uint8_t ctrl );
+    void setData( int data );
+    uint8_t getStatus() const;
+    bool interrupt() const;
+    void process();
+
+  private:
+
+    void pull( int bit );
+
+    std::shared_ptr<ComLynxWire> mWire;
+    std::optional<int> mData;
+    int mState;
+    int mCounter;
+    int mParity;
+    int mShifter;
+    int mParEn;
+    int mIntEn;
+    int mInt;
+    int mTxBrk;
+    int mId;
+  } mTx;
+
+  class Receiver
+  {
+  public:
+    Receiver( int id, std::shared_ptr<ComLynxWire> comLynxWire );
+
+    void setCtrl( uint8_t ctrl );
+    int getData();
+    uint8_t getStatus() const;
+    bool interrupt() const;
+    void process();
+
+  private:
+    std::shared_ptr<ComLynxWire> mWire;
+    std::optional<int> mData;
+    int mCounter;
+    int mParity;
+    int mShifter;
+    int mParErr;
+    int mFrameErr;
+    int mRxBrk;
+    int mOverrun;
+    int mIntEn;
+    int mInt;
+    int mId;
+  } mRx;
 
 };

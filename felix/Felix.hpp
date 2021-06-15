@@ -15,7 +15,7 @@ class ImageBS93;
 class ImageBIOS;
 class ImageCart;
 class IEscape;
-struct ComLynxWire;
+class ComLynxWire;
 
 class Felix
 {
@@ -84,13 +84,14 @@ private:
   std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Cartridge> mCartridge;
   std::shared_ptr<ComLynx> mComLynx;
+  std::shared_ptr<ComLynxWire> mComLynxWire;
   std::shared_ptr<Mikey> mMikey;
   std::shared_ptr<Suzy> mSuzy;
   MAPCTL mMapCtl;
-  uint32_t mSequencedAccessAddress;
-  uint16_t mDMAAddress;
   uint64_t mFastCycleTick;
   uint64_t mPatchMagickCodeAccumulator;
+  uint32_t mSequencedAccessAddress;
+  uint16_t mDMAAddress;
   std::shared_ptr<ISuzyProcess> mSuzyProcess;
   ISuzyProcess::Request const* mSuzyProcessRequest;
   bool mResetRequestDuringSpriteRendering;

@@ -160,7 +160,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     std::shared_ptr<Config> config = std::make_shared<Config>();
     std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( 2 );
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
-    std::shared_ptr<ComLynxWire> comLynxWire = std::make_shared<ComLynxWire>( true, false );
+    std::shared_ptr<ComLynxWire> comLynxWire = std::make_shared<ComLynxWire>();
 
     std::vector<std::shared_ptr<Felix>> instances;
 

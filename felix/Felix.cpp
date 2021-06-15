@@ -3,6 +3,7 @@
 #include "CPU.hpp"
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
+#include "ComLynxWire.hpp"
 #include "Mikey.hpp"
 #include "InputFile.hpp"
 #include "ImageBS93.hpp"
@@ -17,7 +18,7 @@
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
 Felix::Felix( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-  mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>( std::move( comLynxWire ) ) }, mMikey{ std::make_shared<Mikey>( *this, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
+  mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
@@ -169,7 +170,6 @@ int Felix::executeSequencedAction( SequencedAction seqAction )
   case Action::FIRE_TIMER1:
   case Action::FIRE_TIMER2:
   case Action::FIRE_TIMER3:
-  case Action::FIRE_TIMER4:
   case Action::FIRE_TIMER5:
   case Action::FIRE_TIMER6:
   case Action::FIRE_TIMER7:
@@ -183,6 +183,13 @@ int Felix::executeSequencedAction( SequencedAction seqAction )
       mActionQueue.push( newAction );
     }
     break;
+  case Action::FIRE_TIMER4:
+    //serial timer causes break
+    if ( auto newAction = mMikey->fireTimer( seqAction.getTick(), 4 ) )
+    {
+      mActionQueue.push( newAction );
+    }
+    return 0;
   case Action::ASSERT_IRQ:
     mCpu->assertInterrupt( CPUState::I_IRQ );
     break;
