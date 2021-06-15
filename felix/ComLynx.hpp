@@ -69,6 +69,7 @@ private:
     int mIntEn;
     int mInt;
     int mTxBrk;
+    int mParBit;
     int mId;
   } mTx;
 

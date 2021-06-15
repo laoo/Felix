@@ -1,255 +1,258 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
+    <Filter Include="Source">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{5fc7d2e0-3f76-4d29-903e-d1dd6914c121}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Mikey.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Suzy.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ActionQueue.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="TimerCore.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="DisplayGenerator.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="WinMain.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="WinRenderer.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="CPU.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="SuzyProcess.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="VidOperator.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="AudioChannel.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="SuzyMath.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ParallelPort.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Cartridge.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ComLynx.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ColOperator.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Log.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="WinAudioOut.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="InputFile.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ImageBS93.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ImageBIOS.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ImageCart.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ImageLyx.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="CartBank.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ImageLnx.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Felix.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ImageBIN.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="KernelEscape.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="AddressMapper.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Encryption.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="WinImgui.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Config.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CPU.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Opcodes.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mikey.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Suzy.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ActionQueue.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="TimerCore.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DisplayGenerator.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WinRenderer.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer.hxx">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SuzyProcess.hpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Shifter.hpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="VidOperator.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AudioChannel.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="KeyInput.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SuzyMath.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ParallelPort.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Cartridge.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComLynx.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ColOperator.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SpriteTemplates.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Log.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WinAudioOut.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InputFile.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageBS93.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageBIOS.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageCart.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageLyx.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CartBank.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="version.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageLnx.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Felix.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageBIN.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pch.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SpriteLineParser.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IEscape.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DefaultROM.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="KernelEscape.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CPUState.hpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="ActionQueue.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="AddressMapper.hpp">
-      <Filter>Source Files</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Encryption.hpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="AudioChannel.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="IVideoSink.hpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="CartBank.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="DisplayLine.hpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Cartridge.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="WinImgui.hpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="ColOperator.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Config.hpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="ComLynx.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="ComLynxWire.hpp">
-      <Filter>Source Files</Filter>
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="CPU.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="CPUState.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="DefaultROM.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayGenerator.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayLine.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Encryption.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Felix.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="WinRenderer.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="WinImgui.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="WinAudioOut.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="VidOperator.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="version.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="SuzyProcess.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="SuzyMath.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Suzy.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteTemplates.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteLineParser.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer.hxx">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ParallelPort.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Opcodes.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Mikey.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyInput.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="KernelEscape.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="IVideoSink.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="InputFile.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageLyx.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageLnx.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageCart.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageBS93.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageBIOS.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageBIN.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="IEscape.hpp">
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

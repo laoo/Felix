@@ -11,8 +11,7 @@
 #include "version.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
-KeyInput gKeyInput0;
-KeyInput gKeyInput1;
+std::array<KeyInput,2> gKeyInput;
 
 
 wchar_t gClassName[] = L"FelixWindowClass";
@@ -88,31 +87,31 @@ void processKeys()
   if ( !GetKeyboardState( keys.data() ) )
     return;
 
-  gKeyInput0.left = keys['A'] & 0x80;
-  gKeyInput0.up = keys['W'] & 0x80;
-  gKeyInput0.right = keys['D'] & 0x80;
-  gKeyInput0.down = keys['S'] & 0x80;
-  gKeyInput0.opt1 = keys['1'] & 0x80;
-  gKeyInput0.pause = keys['2'] & 0x80;
-  gKeyInput0.opt2 = keys['3'] & 0x80;
-  gKeyInput0.a = keys[VK_LCONTROL] & 0x80;
-  gKeyInput0.b = keys[VK_LSHIFT] & 0x80;
+  gKeyInput[0].left = keys['A'] & 0x80;
+  gKeyInput[0].up = keys['W'] & 0x80;
+  gKeyInput[0].right = keys['D'] & 0x80;
+  gKeyInput[0].down = keys['S'] & 0x80;
+  gKeyInput[0].opt1 = keys['1'] & 0x80;
+  gKeyInput[0].pause = keys['2'] & 0x80;
+  gKeyInput[0].opt2 = keys['3'] & 0x80;
+  gKeyInput[0].a = keys[VK_LCONTROL] & 0x80;
+  gKeyInput[0].b = keys[VK_LSHIFT] & 0x80;
 
-  gKeyInput1.left = keys[VK_LEFT] & 0x80;
-  gKeyInput1.up = keys[VK_UP] & 0x80;
-  gKeyInput1.right = keys[VK_RIGHT] & 0x80;
-  gKeyInput1.down = keys[VK_DOWN] & 0x80;
-  gKeyInput1.opt1 = keys[VK_DELETE] & 0x80;
-  gKeyInput1.pause = keys[VK_END] & 0x80;
-  gKeyInput1.opt2 = keys[VK_NEXT] & 0x80;
-  gKeyInput1.a = keys[VK_RCONTROL] & 0x80;
-  gKeyInput1.b = keys[VK_RSHIFT] & 0x80;
+  gKeyInput[1].left = keys[VK_LEFT] & 0x80;
+  gKeyInput[1].up = keys[VK_UP] & 0x80;
+  gKeyInput[1].right = keys[VK_RIGHT] & 0x80;
+  gKeyInput[1].down = keys[VK_DOWN] & 0x80;
+  gKeyInput[1].opt1 = keys[VK_DELETE] & 0x80;
+  gKeyInput[1].pause = keys[VK_END] & 0x80;
+  gKeyInput[1].opt2 = keys[VK_NEXT] & 0x80;
+  gKeyInput[1].a = keys[VK_RCONTROL] & 0x80;
+  gKeyInput[1].b = keys[VK_RSHIFT] & 0x80;
 }
 
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
-  L_SET_LOGLEVEL( Log::LL_TRACE );
+  L_SET_LOGLEVEL( Log::LL_DEBUG );
 
   std::vector<std::wstring> args;
 
@@ -157,15 +156,19 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   MSG msg;
   try
   {
+    static const size_t INSTANCES = 2;
+
     std::shared_ptr<Config> config = std::make_shared<Config>();
-    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( 2 );
+    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( (int)INSTANCES );
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
     std::shared_ptr<ComLynxWire> comLynxWire = std::make_shared<ComLynxWire>();
 
     std::vector<std::shared_ptr<Felix>> instances;
 
-    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 0 ), [] { return gKeyInput0; } ) );
-    instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( 1 ), [] { return gKeyInput1; } ) );
+    for ( size_t i = 0; i < INSTANCES; ++i )
+    {
+      instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( (int)i ), [i] { return gKeyInput[i]; } ) );
+    }
 
     for ( auto const & arg : args )
     {
@@ -180,15 +183,18 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
           path1.replace_extension( ".log" );
           path2.replace_extension( ".log" );
           instances[0]->setLog( path1 );
-          instances[1]->setLog( path2 );
+          if ( instances.size() > 1 )
+            instances[1]->setLog( path2 );
         }
       }
 
       InputFile file{ arg };
       if ( file.valid() )
       {
-        instances[0]->injectFile( file );
-        instances[1]->injectFile( file );
+        for ( auto & inst : instances )
+        {
+          inst->injectFile( file );
+        }
       }
     }
 

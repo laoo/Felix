@@ -76,7 +76,7 @@ bool ComLynx::present() const
   return true;
 }
 
-ComLynx::Transmitter::Transmitter( int id, std::shared_ptr<ComLynxWire> comLynxWire ) : mWire{ std::move( comLynxWire ) }, mData{}, mState{ 1 }, mCounter{}, mParity{}, mShifter{}, mParEn{}, mIntEn{}, mInt{}, mTxBrk{}, mId{ id }
+ComLynx::Transmitter::Transmitter( int id, std::shared_ptr<ComLynxWire> comLynxWire ) : mWire{ std::move( comLynxWire ) }, mData{}, mState{ 1 }, mCounter{}, mParity{}, mShifter{}, mParEn{}, mIntEn{}, mInt{}, mTxBrk{}, mParBit{}, mId{ id }
 {
 }
 
@@ -85,7 +85,7 @@ void ComLynx::Transmitter::setCtrl( uint8_t ctrl )
   mInt &= mIntEn;
   mIntEn = ctrl & SERCTL::TXINTEN;
   mParEn = ( ctrl & SERCTL::PAREN ) ? 1 : 0;
-  mParity = ctrl & SERCTL::PARBIT;
+  mParBit = ctrl & SERCTL::PARBIT;
   mTxBrk = ctrl & SERCTL::TXBRK;
 
   L_DEBUG << "TX" << mId << ": Int=" << ( mInt ? 1 : 0 ) << " IntEn=" << ( mIntEn ? 1 : 0 ) << " ParEn=" << ( mParEn ? 1 : 0 ) << " ParBit=" << mParity << " TxBrk=" << ( mTxBrk ? 1 : 0 );
@@ -115,15 +115,23 @@ void ComLynx::Transmitter::process()
   switch ( mCounter )
   {
   case 2:
-    L_TRACE << "Tx" << mId << ": Par=" << mParity;
-    pull( mParity );
+    if ( mParEn )
+    {
+      L_TRACE << "Tx" << mId << ": Parity=" << mParity;
+      pull( mParity );
+    }
+    else
+    {
+      L_TRACE << "Tx" << mId << ": ParBit=" << mParBit;
+      pull( mParBit );
+    }
     mCounter = 1;
     break;
   case 1:
-    L_TRACE << "Tx" << mId << ": Stop";
     pull( 1 );
     mCounter = 0;
     mInt = mIntEn ? SERCTL::TXINTEN : 0;
+    L_TRACE << "Tx" << mId << ": Stop " << ( mInt ? "Int" : "" );
     break;
   case 0:
     if ( mTxBrk )
@@ -137,15 +145,14 @@ void ComLynx::Transmitter::process()
       mShifter = mData.value();
       mData.reset();
       mCounter = 10;
-      if ( mParEn )
-        mParity = 0;
+      mParity = 0;
       L_TRACE << "Tx" << mId << ": Start Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mShifter;
     }
     break;
   default:
     L_TRACE << "Tx" << mId << ": #" << ( 10 - mCounter ) << "=" << ( mShifter & 1 );
     pull( mShifter & 1 );
-    mParity ^= mParEn & mShifter & 1;
+    mParity ^= mShifter & 1;
     mShifter >>= 1;
     mCounter -= 1;
     break;
@@ -236,8 +243,8 @@ void ComLynx::Receiver::process()
   case 5:
   case 4:
   case 3:
-    mShifter <<= 1;
-    mShifter |= mWire->value();
+    mShifter |= ( mWire->value() << 8 );
+    mShifter >>= 1;
     mParity ^= mWire->value();
     mCounter -= 1;
     L_TRACE << "Rx" << mId << ": #" << ( 9 - mCounter ) << "=" << ( mShifter & 1 );

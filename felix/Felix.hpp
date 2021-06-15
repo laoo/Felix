@@ -58,7 +58,12 @@ private:
     bool suzyDisable;
   };
 
-  int executeSequencedAction( SequencedAction );
+  enum class SequencedActionResult
+  {
+    CARRY_ON,
+    SWITCH_INSTANCE,
+    BAIL_OUT
+  } executeSequencedAction( SequencedAction );
   bool executeSuzyAction();
   void executeCPUAction();
   void handlePatch( uint16_t address );

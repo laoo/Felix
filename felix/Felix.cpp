@@ -156,7 +156,7 @@ void Felix::desertInterrupt( int mask, std::optional<uint64_t> tick )
   }
 }
 
-int Felix::executeSequencedAction( SequencedAction seqAction )
+Felix::SequencedActionResult Felix::executeSequencedAction( SequencedAction seqAction )
 {
   auto action = seqAction.getAction();
 
@@ -184,12 +184,12 @@ int Felix::executeSequencedAction( SequencedAction seqAction )
     }
     break;
   case Action::FIRE_TIMER4:
-    //serial timer causes break
+    //serial timer causes instance switch
     if ( auto newAction = mMikey->fireTimer( seqAction.getTick(), 4 ) )
     {
       mActionQueue.push( newAction );
     }
-    return 0;
+    return SequencedActionResult::SWITCH_INSTANCE;
   case Action::ASSERT_IRQ:
     mCpu->assertInterrupt( CPUState::I_IRQ );
     break;
@@ -205,14 +205,14 @@ int Felix::executeSequencedAction( SequencedAction seqAction )
   case Action::SAMPLE_AUDIO:
     mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
     if ( mSamplesEmitted >= mOutputSamples.size() )
-      return 0;
+      return SequencedActionResult::BAIL_OUT;
     enqueueSampling();
     break;
   default:
     assert( false );
     break;
   }
-  return 1;
+  return SequencedActionResult::CARRY_ON;
 }
 
 bool Felix::executeSuzyAction()
@@ -519,7 +519,15 @@ int Felix::advance()
   {
     if ( mActionQueue.head().getTick() <= mCurrentTick )
     {
-      return executeSequencedAction( mActionQueue.pop() );
+      switch ( executeSequencedAction( mActionQueue.pop() ) )
+      {
+      case SequencedActionResult::CARRY_ON:
+        break;
+      case SequencedActionResult::SWITCH_INSTANCE:
+        return 1;
+      case SequencedActionResult::BAIL_OUT:
+        return 0;
+      }
     }
     else
     {
