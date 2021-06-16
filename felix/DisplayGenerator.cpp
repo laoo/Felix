@@ -4,7 +4,7 @@
 #include "Log.hpp"
 
 DisplayGenerator::DisplayGenerator( std::shared_ptr<IVideoSink> videoSink ) : mDMAData{}, mVideoSink{ std::move( videoSink ) }, mRowStartTick{ std::numeric_limits<uint64_t>::max() }, mDMAIteration{}, mDisplayRow{}, mEmitedScreenBytes{},
-mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}
+  mDispAdr{}, mDispColor{}, mDispFlip{}, mDMAEnable{}, mDMAOffset{ -1 }
 {
   assert( mVideoSink );
 }
@@ -34,7 +34,7 @@ DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
     mVideoSink->newFrame( tick );
   }
   mVideoSink->newRow( tick, row );
-  if ( mDisplayRow >= 0 && mDMAOffset > 0 )
+  if ( mDisplayRow >= 0 && mDMAOffset >= 0 )
   {
     mRowStartTick = tick + mDMAOffset;
     if ( mDMAEnable )
