@@ -76,26 +76,24 @@ bool ComLynx::present() const
   return true;
 }
 
-ComLynx::Transmitter::Transmitter( int id, std::shared_ptr<ComLynxWire> comLynxWire ) : mWire{ std::move( comLynxWire ) }, mData{}, mState{ 1 }, mCounter{}, mParity{}, mShifter{}, mParEn{}, mIntEn{}, mInt{}, mTxBrk{}, mParBit{}, mId{ id }
+ComLynx::Transmitter::Transmitter( int id, std::shared_ptr<ComLynxWire> comLynxWire ) : mWire{ std::move( comLynxWire ) }, mData{}, mState{ 1 }, mCounter{}, mParity{}, mShifter{}, mParEn{}, mIntEn{}, mTxBrk{}, mParBit{}, mId{ id }
 {
 }
 
 void ComLynx::Transmitter::setCtrl( uint8_t ctrl )
 {
-  mInt &= mIntEn;
   mIntEn = ctrl & SERCTL::TXINTEN;
   mParEn = ( ctrl & SERCTL::PAREN ) ? 1 : 0;
   mParBit = ctrl & SERCTL::PARBIT;
   mTxBrk = ctrl & SERCTL::TXBRK;
 
-  L_DEBUG << "TX" << mId << ": Int=" << ( mInt ? 1 : 0 ) << " IntEn=" << ( mIntEn ? 1 : 0 ) << " ParEn=" << ( mParEn ? 1 : 0 ) << " ParBit=" << mParity << " TxBrk=" << ( mTxBrk ? 1 : 0 );
+  L_DEBUG << "Tx" << mId << ": IntEn=" << ( mIntEn ? 1 : 0 ) << " ParEn=" << ( mParEn ? 1 : 0 ) << " ParBit=" << mParity << " TxBrk=" << ( mTxBrk ? 1 : 0 );
 }
 
 void ComLynx::Transmitter::setData( int data )
 {
   mData = data;
-  mInt &= mIntEn;
-  L_DEBUG << "TX" << mId << ": Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value() << " Int=" << ( mInt ? 1 : 0 );
+  L_DEBUG << "Tx" << mId << ": Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value();
 }
 
 uint8_t ComLynx::Transmitter::getStatus() const
@@ -107,7 +105,7 @@ uint8_t ComLynx::Transmitter::getStatus() const
 
 bool ComLynx::Transmitter::interrupt() const
 {
-  return mInt != 0;
+  return !mData.has_value() && mIntEn != 0;
 }
 
 void ComLynx::Transmitter::process()
@@ -130,8 +128,7 @@ void ComLynx::Transmitter::process()
   case 1:
     pull( 1 );
     mCounter = 0;
-    mInt = mIntEn ? SERCTL::TXINTEN : 0;
-    L_TRACE << "Tx" << mId << ": Stop " << ( mInt ? "Int" : "" );
+    L_TRACE << "Tx" << mId << ": Stop";
     break;
   case 0:
     if ( mTxBrk )
@@ -146,7 +143,7 @@ void ComLynx::Transmitter::process()
       mData.reset();
       mCounter = 10;
       mParity = 0;
-      L_TRACE << "Tx" << mId << ": Start Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mShifter;
+      L_INFO << "Tx" << mId << ": Start Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mShifter;
     }
     break;
   default:
@@ -175,13 +172,12 @@ void ComLynx::Transmitter::pull( int bit )
   }
 }
 
-ComLynx::Receiver::Receiver( int id, std::shared_ptr<ComLynxWire> comLynxWire ) : mWire{ std::move( comLynxWire ) }, mData{}, mCounter{}, mParity{}, mShifter{}, mParErr{}, mFrameErr{}, mRxBrk{}, mOverrun{}, mIntEn{}, mInt{}, mId{ id }
+ComLynx::Receiver::Receiver( int id, std::shared_ptr<ComLynxWire> comLynxWire ) : mWire{ std::move( comLynxWire ) }, mData{}, mCounter{}, mParity{}, mShifter{}, mParErr{}, mFrameErr{}, mRxBrk{}, mOverrun{}, mIntEn{}, mId{ id }
 {
 }
 
 void ComLynx::Receiver::setCtrl( uint8_t ctrl )
 {
-  mInt &= mIntEn;
   mIntEn = ctrl & SERCTL::RXINTEN;
   if ( ctrl & SERCTL::RESETERR )
   {
@@ -192,25 +188,21 @@ void ComLynx::Receiver::setCtrl( uint8_t ctrl )
     mRxBrk = 0;
   }
 
-  L_DEBUG << "RX" << mId << ": Int=" << ( mInt ? 1 : 0 ) << " IntEn=" << ( mIntEn ? 1 : 0 ) << ( (ctrl & SERCTL::RESETERR ) ? " ResetErr" : "" );
+  L_DEBUG << "Rx" << mId << ": IntEn=" << ( mIntEn ? 1 : 0 ) << ( (ctrl & SERCTL::RESETERR ) ? " ResetErr" : "" );
 }
 
 int ComLynx::Receiver::getData()
 {
   if ( mData.has_value() )
   {
-    int i = mInt;
-    mInt &= mIntEn;
-    L_DEBUG << "RX" << mId << ": Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value() << " Int=" << ( i ? 1 : 0 ) << "->" << ( mInt ? 1 : 0 );
+    L_DEBUG << "Rx" << mId << ": Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value();
     int result = mData.value_or( 0 );
     mData.reset();
     return result;
   }
   else
   {
-    int i = mInt;
-    mInt &= mIntEn;
-    L_DEBUG << "RX" << mId << ": Data=nil Int=" << ( i ? 1 : 0 ) << "->" << ( mInt ? 1 : 0 );
+    L_DEBUG << "Rx" << mId << ": Data=nil";
     return 0;
   }
 }
@@ -228,7 +220,7 @@ uint8_t ComLynx::Receiver::getStatus() const
 
 bool ComLynx::Receiver::interrupt() const
 {
-  return mInt != 0;
+  return mData.has_value() && mIntEn != 0;
 }
 
 void ComLynx::Receiver::process()
@@ -260,7 +252,7 @@ void ComLynx::Receiver::process()
       mOverrun |= mData.has_value() ? SERCTL::OVERRUN : 0;
       mData = mShifter;
       mCounter = 0;
-      L_TRACE << "Rx" << mId << ": Stop Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mShifter;
+      L_INFO << "Rx" << mId << ": Stop Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mShifter << ( mOverrun ? " Overrun" : "" );
     }
     else
     {

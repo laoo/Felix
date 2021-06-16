@@ -336,8 +336,6 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     break;
   case SERCTL:
     mFelix.getComLynx().setCtrl( value );
-    if ( !mFelix.getComLynx().interrupt() )
-      resetIRQ( 0x10 );
     break;
   case SERDAT:
     mFelix.getComLynx().setData( value );
@@ -476,9 +474,8 @@ void Mikey::setIRQ( uint8_t mask )
 
 void Mikey::resetIRQ( uint8_t mask )
 {
-  //can't reset serial interrupt
   if ( mFelix.getComLynx().interrupt() )
-    return;
+    mask &= ~0x10;  //preventing to reset serial interrupt if source is still active
 
   mIRQ &= ~mask;
   if ( mIRQ == 0 )

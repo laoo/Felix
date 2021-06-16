@@ -67,7 +67,6 @@ private:
     int mShifter;
     int mParEn;
     int mIntEn;
-    int mInt;
     int mTxBrk;
     int mParBit;
     int mId;
@@ -95,7 +94,6 @@ private:
     int mRxBrk;
     int mOverrun;
     int mIntEn;
-    int mInt;
     int mId;
   } mRx;
 
