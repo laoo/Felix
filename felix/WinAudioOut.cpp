@@ -96,7 +96,7 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Felix> const> instances 
       int processed = 0;
       for ( size_t i = 0; i < instances.size(); ++i )
       {
-        processed += instances[i]->advance();
+        processed += instances[i]->advanceAudio();
       }
       if ( processed == 0 )
         break;

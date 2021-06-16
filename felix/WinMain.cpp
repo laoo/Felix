@@ -211,6 +211,13 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
+
+    //desynchronizing instances
+    for ( size_t i = 0; i < INSTANCES; ++i )
+    {
+      instances[i]->advance( i * 16000000 / 60 / 3 ); //advance an arbitrary number of pixels. 1/3 of a frame
+    }
+
     renderThread = std::thread{ [&doProcess,config,renderer]
     {
       while ( doProcess.load() )

@@ -29,7 +29,8 @@ public:
   void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
 
   void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
-  int advance();
+  int advanceAudio();
+  void advance( uint64_t ticks );
 
   void injectFile( InputFile const& file );
   void setLog( std::filesystem::path const & path );

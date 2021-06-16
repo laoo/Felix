@@ -208,6 +208,8 @@ Felix::SequencedActionResult Felix::executeSequencedAction( SequencedAction seqA
       return SequencedActionResult::BAIL_OUT;
     enqueueSampling();
     break;
+  case Action::BATCH_END:
+    return SequencedActionResult::BAIL_OUT;
   default:
     assert( false );
     break;
@@ -510,7 +512,7 @@ void Felix::enqueueSampling()
   mActionQueue.push( { Action::SAMPLE_AUDIO, mCurrentTick + ticks } );
 }
 
-int Felix::advance()
+int Felix::advanceAudio()
 {
   if ( mSamplesEmitted >= mOutputSamples.size() )
     return 0;
@@ -528,6 +530,27 @@ int Felix::advance()
       case SequencedActionResult::BAIL_OUT:
         return 0;
       }
+    }
+    else
+    {
+      if ( executeSuzyAction() )
+      {
+        executeCPUAction();
+      }
+    }
+  }
+}
+
+void Felix::advance( uint64_t ticks )
+{
+  mActionQueue.push( { Action::BATCH_END, mCurrentTick + ticks } );
+
+  for ( ;; )
+  {
+    if ( mActionQueue.head().getTick() <= mCurrentTick )
+    {
+      if ( executeSequencedAction( mActionQueue.pop() ) == SequencedActionResult::BAIL_OUT )
+        return;
     }
     else
     {
