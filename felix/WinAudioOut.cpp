@@ -91,15 +91,12 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Felix> const> instances 
       instances[i]->setAudioOut( mMixFormat->nSamplesPerSec, std::span<AudioSample>{ mSamplesBuffer.data() + framesAvailable * i, framesAvailable } );
     }
 
-    for ( ;; )
+    for ( int finished = 0; finished < instances.size(); )
     {
-      int processed = 0;
       for ( size_t i = 0; i < instances.size(); ++i )
       {
-        processed += instances[i]->advanceAudio();
+        finished += instances[i]->advanceAudio();
       }
-      if ( processed == 0 )
-        break;
     }
 
     BYTE *pData;

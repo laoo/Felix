@@ -514,9 +514,6 @@ void Felix::enqueueSampling()
 
 int Felix::advanceAudio()
 {
-  if ( mSamplesEmitted >= mOutputSamples.size() )
-    return 0;
-
   for ( ;; )
   {
     if ( mActionQueue.head().getTick() <= mCurrentTick )
@@ -526,9 +523,9 @@ int Felix::advanceAudio()
       case SequencedActionResult::CARRY_ON:
         break;
       case SequencedActionResult::SWITCH_INSTANCE:
-        return 1;
-      case SequencedActionResult::BAIL_OUT:
         return 0;
+      case SequencedActionResult::BAIL_OUT:
+        return 1;
       }
     }
     else
