@@ -93,7 +93,7 @@ void ComLynxCoarse::Transmitter::setCtrl( uint8_t ctrl )
 void ComLynxCoarse::Transmitter::setData( int data )
 {
   mData = data;
-  L_DEBUG << "Tx" << mId << ": Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value();
+  L_DEBUG << "Tx" << mId << ": SetData=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value();
 }
 
 uint8_t ComLynxCoarse::Transmitter::getStatus() const
@@ -180,7 +180,7 @@ int ComLynxCoarse::Receiver::getData()
 {
   if ( mData.has_value() )
   {
-    L_DEBUG << "Rx" << mId << ": Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value();
+    L_DEBUG << "Rx" << mId << ": GetData=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << mData.value();
     int result = mData.value_or( 0 );
     mData.reset();
     return result;
@@ -230,8 +230,10 @@ void ComLynxCoarse::Receiver::process()
       }
       else
       {
-        mOverrun |= mData.has_value() ? SERCTL::OVERRUN : 0;
+        bool overrun = mData.has_value();
+        mOverrun |= overrun ? SERCTL::OVERRUN : 0;
         mData = mWire->getCoarse( mParity );
+        L_TRACE << "Rx" << mId << ": Stop Data=" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << *mData << ( overrun ? " overrun" : "" );
       }
       mCounter = 0;
       break;
