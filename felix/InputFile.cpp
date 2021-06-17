@@ -48,13 +48,6 @@ InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
     mCart = std::move( pLnx );
     return;
   }
-  else if ( auto pBIN = checkBIN( std::move( data ) ) )
-  {
-    mType = FileType::BIN;
-    mBIN = std::move( pBIN );
-    return;
-  }
-
 }
 
 bool InputFile::valid() const
@@ -80,11 +73,6 @@ std::shared_ptr<ImageBIOS const> InputFile::getBIOS() const
 std::shared_ptr<ImageCart const> InputFile::getCart() const
 {
   return mCart;
-}
-
-std::shared_ptr<ImageBIN const> InputFile::getBIN() const
-{
-  return mBIN;
 }
 
 std::shared_ptr<ImageBS93 const> InputFile::checkBS93( std::vector<uint8_t>&& data ) const
@@ -127,15 +115,6 @@ std::shared_ptr<ImageCart const> InputFile::checkLnx( std::vector<uint8_t>&& dat
     return {};
   }
 }
-
-std::shared_ptr<ImageBIN const> InputFile::checkBIN( std::vector<uint8_t>&& data ) const
-{
-  if ( data.size() != 65536 )
-    return {};
-
-  return std::make_shared<ImageBIN const>( std::move( data ) );
-}
-
 
 std::shared_ptr<ImageCart const> InputFile::checkLyx( std::vector<uint8_t>&& data ) const
 {
