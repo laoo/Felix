@@ -5,7 +5,7 @@
 #include "Felix.hpp"
 
 
-ParallelPort::ParallelPort( Felix & felix, RestProvider const& restProvider ) : mFelix{ felix }, mRestProvider{ restProvider },
+ParallelPort::ParallelPort( Felix & felix, ComLynx & comLynx, RestProvider const & restProvider ) : mFelix{ felix }, mComLynx{ comLynx }, mRestProvider{ restProvider },
   mOutputMask{}, mData{}
 {
 }
@@ -60,7 +60,7 @@ uint8_t ParallelPort::getData() const
 
   if ( ( mOutputMask & Mask::NOEXP ) == 0 )
   {
-    result |=mFelix.getComLynx().present() ? Mask::NOEXP : 0;
+    result |=mComLynx.present() ? Mask::NOEXP : 0;
   }
   else
   {

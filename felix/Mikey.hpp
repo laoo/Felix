@@ -73,7 +73,7 @@ public:
     static constexpr uint8_t DMA_ENABLE   = 0b00000001; //1 = enable video DMA, 0 = disable.must be set to 1 ( set by kernel )
   };
 
-  Mikey( Felix & felix, std::shared_ptr<IVideoSink> videoSink );
+  Mikey( Felix & felix, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink );
   ~Mikey();
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
@@ -90,6 +90,7 @@ public:
 
 private:
   Felix & mFelix;
+  ComLynx & mComLynx;
   uint64_t mAccessTick;
 
   std::array<std::unique_ptr<TimerCore>, 12> mTimers;

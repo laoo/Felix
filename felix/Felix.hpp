@@ -73,7 +73,6 @@ private:
   void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
   void requestDisplayDMA( uint64_t tick, uint16_t address );
   void runSuzy();
-  ComLynx & getComLynx();
   Cartridge & getCartridge();
 
   friend class Mikey;

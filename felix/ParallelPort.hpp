@@ -16,7 +16,7 @@ class ParallelPort
 {
 public:
 
-  ParallelPort( Felix & felix, RestProvider const& restProvider );
+  ParallelPort( Felix & felix, ComLynx & comLynx, RestProvider const& restProvider );
 
   void setDirection( uint8_t value );
   uint8_t getDirection() const;
@@ -38,6 +38,7 @@ public:
 
 private:
   Felix & mFelix;
+  ComLynx & mComLynx;
   RestProvider const& mRestProvider;
   uint8_t mOutputMask;
   uint8_t mData;

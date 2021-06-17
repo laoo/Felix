@@ -7,9 +7,9 @@
 #include "CPU.hpp"
 #include "ComLynx.hpp"
 
-Mikey::Mikey( Felix & busMaster, std::shared_ptr<IVideoSink> videoSink ) : mFelix{ busMaster }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
+Mikey::Mikey( Felix & busMaster, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mFelix{ busMaster }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
   mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mAttenuationLeft{ 0x3c, 0x3c, 0x3c, 0x3c }, mAttenuationRight{ 0x3c, 0x3c, 0x3c, 0x3c }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( std::move( videoSink ) ) },
-  mParallelPort{ mFelix, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
+  mParallelPort{ mFelix, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -53,9 +53,9 @@ Mikey::Mikey( Felix & busMaster, std::shared_ptr<IVideoSink> videoSink ) : mFeli
       setIRQ( 0x08 );
     }
   } );  //timer 3 -> timer 5
-  mTimers[0x4] = std::make_unique<TimerCore>( 0x4, [this, &comlynx = mFelix.getComLynx()]( uint64_t tick, bool interrupt )
+  mTimers[0x4] = std::make_unique<TimerCore>( 0x4, [this]( uint64_t tick, bool interrupt )
   {
-    if ( comlynx.pulse() )
+    if ( mComLynx.pulse() )
     {
       setIRQ( 0x10 );
     }
@@ -203,9 +203,9 @@ uint8_t Mikey::read( uint16_t address )
   case MIKEYHREV:
     return 0x01;
   case SERCTL:
-    return mFelix.getComLynx().getCtrl();
+    return mComLynx.getCtrl();
   case SERDAT:
-    return mFelix.getComLynx().getData();
+    return mComLynx.getData();
   case GREEN + 0x00:
   case GREEN + 0x01:
   case GREEN + 0x02:
@@ -335,10 +335,10 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     mParallelPort.setData( value );
     break;
   case SERCTL:
-    mFelix.getComLynx().setCtrl( value );
+    mComLynx.setCtrl( value );
     break;
   case SERDAT:
-    mFelix.getComLynx().setData( value );
+    mComLynx.setData( value );
     break;
   case SDONEACK:
     mSuzyDone = false;
@@ -474,7 +474,7 @@ void Mikey::setIRQ( uint8_t mask )
 
 void Mikey::resetIRQ( uint8_t mask )
 {
-  if ( mFelix.getComLynx().interrupt() )
+  if ( mComLynx.interrupt() )
     mask &= ~0x10;  //preventing to reset serial interrupt if source is still active
 
   mIRQ &= ~mask;
