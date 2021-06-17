@@ -68,6 +68,8 @@ WinRenderer::WinRenderer( int instances ) : mInstances{}, mHWnd{}, mSizeManager{
   for ( int i = 0; i < instances; ++i )
   {
     mInstances.push_back( std::make_shared<Instance>() );
+    mSources.push_back( {} );
+    mSourceSRVs.push_back( {} );
   }
 }
 
@@ -156,8 +158,13 @@ void WinRenderer::initialize( HWND hWnd )
   desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
   desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
   desc.MiscFlags = 0;
-  mD3DDevice->CreateTexture2D( &desc, nullptr, mSource.ReleaseAndGetAddressOf() );
-  V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
+
+  for ( size_t i = 0; i < mInstances.size(); ++i )
+  {
+    mD3DDevice->CreateTexture2D( &desc, nullptr, mSources[i].ReleaseAndGetAddressOf() );
+    V_THROW( mD3DDevice->CreateShaderResourceView( mSources[i].Get(), NULL, mSourceSRVs[i].ReleaseAndGetAddressOf() ) );
+  }
+
 
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext } );
 }
@@ -222,7 +229,7 @@ void WinRenderer::render( Config & config )
     CBPosSize cbPosSize{ mSizeManager.instanceXOff( i ), mSizeManager.instanceYOff( i ), mSizeManager.scale() };
     mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-    mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
+    mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRVs[i].GetAddressOf() );
     mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
     mImmediateContext->Dispatch( 5, 51, 1 );
   }
@@ -332,7 +339,7 @@ void WinRenderer::updateSourceTexture( int instance, std::shared_ptr<RenderFrame
   auto & inst = mInstances[instance];
 
   D3D11_MAPPED_SUBRESOURCE map;
-  mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
+  mImmediateContext->Map( mSources[instance].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
   size_t pitch = map.RowPitch / sizeof( DPixel );
 
   for ( int i = 0; i < (int)frame->rows.size(); ++i )
@@ -355,7 +362,7 @@ void WinRenderer::updateSourceTexture( int instance, std::shared_ptr<RenderFrame
     }
   }
 
-  mImmediateContext->Unmap( mSource.Get(), 0 );
+  mImmediateContext->Unmap( mSources[instance].Get(), 0 );
 }
 
 std::shared_ptr<RenderFrame> WinRenderer::Instance::pullNextFrame()

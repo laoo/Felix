@@ -105,8 +105,8 @@ private:
   ComPtr<ID3D11Buffer>              mPosSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
   ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
-  ComPtr<ID3D11Texture2D>           mSource;
-  ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
+  std::vector<ComPtr<ID3D11Texture2D>>           mSources;
+  std::vector<ComPtr<ID3D11ShaderResourceView>>  mSourceSRVs;
   SizeManager mSizeManager;
   boost::rational<int32_t> mRefreshRate;
 };
