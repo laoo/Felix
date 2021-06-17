@@ -521,7 +521,10 @@ int Felix::advanceAudio()
       switch ( executeSequencedAction( mActionQueue.pop() ) )
       {
       case SequencedActionResult::CARRY_ON:
-        break;
+        if ( mSamplesEmitted >= mOutputSamples.size() )
+          return 0;
+        else
+          break;
       case SequencedActionResult::SWITCH_INSTANCE:
         return 0;
       case SequencedActionResult::BAIL_OUT:
