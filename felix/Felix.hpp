@@ -23,10 +23,6 @@ public:
   Felix( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const& inputProvider );
   ~Felix();
 
-  void requestDisplayDMA( uint64_t tick, uint16_t address );
-  void runSuzy();
-  void assertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
-  void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
 
   void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
   int advanceAudio();
@@ -37,8 +33,6 @@ public:
 
   void enterMonitor();
 
-  Cartridge & getCartridge();
-  ComLynx & getComLynx();
 
 private:
 
@@ -75,6 +69,16 @@ private:
   void pulseReset( std::optional<uint16_t> resetAddress = std::nullopt );
   void writeMAPCTL( uint8_t value );
   void enqueueSampling();
+  void assertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
+  void desertInterrupt( int mask, std::optional<uint64_t> tick = std::nullopt );
+  void requestDisplayDMA( uint64_t tick, uint16_t address );
+  void runSuzy();
+  ComLynx & getComLynx();
+  Cartridge & getCartridge();
+
+  friend class Mikey;
+  friend class Suzy;
+  friend class ParallelPort;
 
 private:
   std::array<uint8_t,65536> mRAM;
