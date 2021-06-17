@@ -4,7 +4,6 @@
 #include "ImageBIOS.hpp"
 #include "ImageLyx.hpp"
 #include "ImageLnx.hpp"
-#include "ImageBIN.hpp"
 #include "Encryption.hpp"
 #include "Log.hpp"
 
