@@ -1,7 +1,8 @@
 #pragma once
 
+#include "ComLynxFwd.hpp"
+
 class Cartridge;
-class ComLynx;
 class Felix;
 
 class RestProvider

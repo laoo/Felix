@@ -5,11 +5,11 @@
 #include "DisplayGenerator.hpp"
 #include "Suzy.hpp"
 #include "Utility.hpp"
+#include "ComLynxFwd.hpp"
 
 class Mikey;
 class CPU;
 class Cartridge;
-class ComLynx;
 class InputFile;
 class ImageBS93;
 class ImageBIOS;

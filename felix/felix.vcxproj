@@ -170,13 +170,14 @@
     <ClCompile Include="ActionQueue.cpp" />
     <ClCompile Include="AddressMapper.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
+    <ClCompile Include="ComLynxCoarse.cpp" />
+    <ClCompile Include="ComLynxDetailed.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Encryption.cpp" />
     <ClCompile Include="Felix.cpp" />
     <ClCompile Include="CartBank.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ColOperator.cpp" />
-    <ClCompile Include="ComLynx.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="ImageBIN.cpp" />
@@ -208,6 +209,10 @@
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="AddressMapper.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
+    <ClInclude Include="ComLynx.hpp" />
+    <ClInclude Include="ComLynxCoarse.hpp" />
+    <ClInclude Include="ComLynxDetailed.hpp" />
+    <ClInclude Include="ComLynxFwd.hpp" />
     <ClInclude Include="ComLynxWire.hpp" />
     <ClInclude Include="CPUState.hpp" />
     <ClInclude Include="DefaultROM.hpp" />
@@ -217,7 +222,6 @@
     <ClInclude Include="CartBank.hpp" />
     <ClInclude Include="Cartridge.hpp" />
     <ClInclude Include="ColOperator.hpp" />
-    <ClInclude Include="ComLynx.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="ImageBIN.hpp" />

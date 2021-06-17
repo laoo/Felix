@@ -52,9 +52,6 @@
     <ClCompile Include="Cartridge.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="ComLynx.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="ColOperator.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -109,6 +106,12 @@
     <ClCompile Include="Config.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="ComLynxDetailed.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ComLynxCoarse.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TimerCore.hpp">
@@ -133,9 +136,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="ColOperator.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="ComLynx.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="ComLynxWire.hpp">
@@ -247,6 +247,18 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="IEscape.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ComLynxDetailed.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ComLynx.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ComLynxFwd.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ComLynxCoarse.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

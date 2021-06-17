@@ -3,7 +3,7 @@
 class ComLynxWire
 {
 public:
-  ComLynxWire() : mValue{ 0 }, mClients{ 0 } {}
+  ComLynxWire() : mValue{ 0 }, mClients{ 0 }, mCoarseValue{}, mParBit{} {}
 
   void pullUp()
   {
@@ -13,6 +13,11 @@ public:
   void pullDown()
   {
     mValue -= 1;
+  }
+
+  int wire() const
+  {
+    return mValue;
   }
 
   int value() const
@@ -25,8 +30,22 @@ public:
     return mClients++;
   }
 
+  void setCoarse( int value, int parbit )
+  {
+    mCoarseValue = value;
+    mParBit = parbit;
+  }
+
+  int getCoarse( int & parbit ) const
+  {
+    return mCoarseValue;
+    parbit = mParBit;
+  }
+
 private:
   //value is pulled up in idle (0) state.
   int mValue;
   int mClients;
+  int mCoarseValue;
+  int mParBit;
 };
