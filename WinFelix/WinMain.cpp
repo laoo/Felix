@@ -2,7 +2,7 @@
 #include "WinRenderer.hpp"
 #include "Core.hpp"
 #include "Mikey.hpp"
-#include "KeyInput.hpp"
+#include "IInputSource.hpp"
 #include "Log.hpp"
 #include "WinAudioOut.hpp"
 #include "InputFile.hpp"
@@ -11,8 +11,6 @@
 #include "version.hpp"
 
 std::vector<std::wstring> gDroppedFiles;
-std::array<KeyInput,2> gKeyInput;
-
 
 wchar_t gClassName[] = L"FelixWindowClass";
 
@@ -81,33 +79,6 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
   return 0;
 }
 
-void processKeys()
-{
-  std::array<uint8_t, 256> keys;
-  if ( !GetKeyboardState( keys.data() ) )
-    return;
-
-  gKeyInput[0].left = keys['A'] & 0x80;
-  gKeyInput[0].up = keys['W'] & 0x80;
-  gKeyInput[0].right = keys['D'] & 0x80;
-  gKeyInput[0].down = keys['S'] & 0x80;
-  gKeyInput[0].opt1 = keys['1'] & 0x80;
-  gKeyInput[0].pause = keys['2'] & 0x80;
-  gKeyInput[0].opt2 = keys['3'] & 0x80;
-  gKeyInput[0].a = keys[VK_LCONTROL] & 0x80;
-  gKeyInput[0].b = keys[VK_LSHIFT] & 0x80;
-
-  gKeyInput[1].left = keys[VK_LEFT] & 0x80;
-  gKeyInput[1].up = keys[VK_UP] & 0x80;
-  gKeyInput[1].right = keys[VK_RIGHT] & 0x80;
-  gKeyInput[1].down = keys[VK_DOWN] & 0x80;
-  gKeyInput[1].opt1 = keys[VK_DELETE] & 0x80;
-  gKeyInput[1].pause = keys[VK_END] & 0x80;
-  gKeyInput[1].opt2 = keys[VK_NEXT] & 0x80;
-  gKeyInput[1].a = keys[VK_RCONTROL] & 0x80;
-  gKeyInput[1].b = keys[VK_RSHIFT] & 0x80;
-}
-
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
@@ -167,7 +138,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     for ( size_t i = 0; i < INSTANCES; ++i )
     {
-      instances.push_back( std::make_shared<Core>( comLynxWire, renderer->getVideoSink( (int)i ), [i] { return gKeyInput[i]; } ) );
+      instances.push_back( std::make_shared<Core>( comLynxWire, renderer->getVideoSink( (int)i ), config->getInputSource(i) ) );
     }
 
     for ( auto const & arg : args )
@@ -248,7 +219,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       if ( msg.message == WM_QUIT )
         break;
 
-      processKeys();
+      config->processKeys();
 
       if ( !gDroppedFiles.empty() )
       {

@@ -4,7 +4,7 @@
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"
 
-Suzy::Suzy( Core & core, std::function<KeyInput()> const& inputProvider ) : mCore{ core }, mSCB{}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
+Suzy::Suzy( Core & core, std::shared_ptr<IInputSource> inputSource ) : mCore{ core }, mSCB{}, mMath{}, mInputSource{ inputSource }, mAccessTick{},
   mPalette{}, mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
   mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}
@@ -149,7 +149,7 @@ uint8_t Suzy::read( uint16_t address )
     break;
   case JOYSTICK:
   {
-    auto input = mInputProvider();
+    auto input = mInputSource->getInput();
     uint8_t joystick =
       ( input.opt1 ? JOYSTICK::OPTION1 : 0 ) |
       ( input.opt2 ? JOYSTICK::OPTION2 : 0 ) |
@@ -176,7 +176,7 @@ uint8_t Suzy::read( uint16_t address )
   }
   case SWITCHES:
   {
-    auto input = mInputProvider();
+    auto input = mInputSource->getInput();
     return input.pause ? SWITCHES::PAUSE_SWITCH : 0;
   }
   case RCART0:

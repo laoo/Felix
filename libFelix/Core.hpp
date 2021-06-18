@@ -20,7 +20,7 @@ class ComLynxWire;
 class Core
 {
 public:
-  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const& inputProvider );
+  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource );
   ~Core();
 
 

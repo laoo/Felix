@@ -1,6 +1,6 @@
 #pragma once
 #include "ActionQueue.hpp"
-#include "KeyInput.hpp"
+#include "IInputSource.hpp"
 #include "SuzyMath.hpp"
 
 class Core;
@@ -42,7 +42,7 @@ public:
 class Suzy
 {
 public:
-  Suzy( Core & core, std::function<KeyInput()> const& inputProvider );
+  Suzy( Core & core, std::shared_ptr<IInputSource> inputSource );
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
@@ -311,7 +311,7 @@ private:
   } mSCB;
 
   SuzyMath mMath;
-  std::function<KeyInput()> const mInputProvider;
+  std::shared_ptr<IInputSource> mInputSource;
   uint64_t mAccessTick;
 
   std::array<uint8_t, 16> mPalette;

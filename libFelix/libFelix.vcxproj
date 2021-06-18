@@ -71,6 +71,7 @@
     <ClInclude Include="DisplayLine.hpp" />
     <ClInclude Include="Encryption.hpp" />
     <ClInclude Include="IEscape.hpp" />
+    <ClInclude Include="IInputSource.hpp" />
     <ClInclude Include="ImageBIOS.hpp" />
     <ClInclude Include="ImageBS93.hpp" />
     <ClInclude Include="ImageCart.hpp" />
@@ -79,7 +80,6 @@
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="IVideoSink.hpp" />
     <ClInclude Include="KernelEscape.hpp" />
-    <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />

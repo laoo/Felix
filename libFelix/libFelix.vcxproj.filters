@@ -59,7 +59,6 @@
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="IVideoSink.hpp" />
     <ClInclude Include="KernelEscape.hpp" />
-    <ClInclude Include="KeyInput.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
@@ -73,5 +72,6 @@
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="Utility.hpp" />
     <ClInclude Include="VidOperator.hpp" />
+    <ClInclude Include="IInputSource.hpp" />
   </ItemGroup>
 </Project>
