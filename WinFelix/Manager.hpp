@@ -1,9 +1,9 @@
 #pragma once
 
-class Config
+class Manager
 {
 public:
-  Config();
+  Manager();
 
   void drawGui( int left, int top, int right, int bottom );
 

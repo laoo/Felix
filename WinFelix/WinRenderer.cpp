@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "WinRenderer.hpp"
-#include "Config.hpp"
+#include "Manager.hpp"
 #include "imgui.h"
 #include "WinImgui.hpp"
 #include "renderer.hxx"
@@ -177,7 +177,7 @@ std::shared_ptr<IVideoSink> WinRenderer::getVideoSink( int instance ) const
     return {};
 }
 
-void WinRenderer::render( Config & config )
+void WinRenderer::render( Manager & config )
 {
   RECT r;
   if ( ::GetClientRect( mHWnd, &r ) == 0 )

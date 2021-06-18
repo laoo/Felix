@@ -5,7 +5,7 @@
 
 struct RenderFrame;
 class WinImgui;
-class Config;
+class Manager;
 
 class WinRenderer
 {
@@ -18,7 +18,7 @@ public:
 
   std::shared_ptr<IVideoSink> getVideoSink( int instance ) const;
 
-  void render( Config & config );
+  void render( Manager & config );
 
 private:
   struct CBPosSize

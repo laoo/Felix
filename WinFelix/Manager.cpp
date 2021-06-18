@@ -1,12 +1,12 @@
 #include "pch.hpp"
-#include "Config.hpp"
+#include "Manager.hpp"
 #include "imgui.h"
 
-Config::Config() : mEmulationRunning{ true }, mHorizontalView{ true }
+Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }
 {
 }
 
-void Config::drawGui( int left, int top, int right, int bottom )
+void Manager::drawGui( int left, int top, int right, int bottom )
 {
   ImGuiIO & io = ImGui::GetIO();
 
@@ -40,17 +40,17 @@ void Config::drawGui( int left, int top, int right, int bottom )
   //ImGui::ShowDemoWindow();
 }
 
-void Config::horizontalView( bool horizontal )
+void Manager::horizontalView( bool horizontal )
 {
   mHorizontalView = horizontal;
 }
 
-bool Config::doRun() const
+bool Manager::doRun() const
 {
   return mEmulationRunning;
 }
 
-bool Config::horizontalView() const
+bool Manager::horizontalView() const
 {
   return mHorizontalView;
 }

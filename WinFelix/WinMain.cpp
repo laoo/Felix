@@ -6,7 +6,7 @@
 #include "Log.hpp"
 #include "WinAudioOut.hpp"
 #include "InputFile.hpp"
-#include "Config.hpp"
+#include "Manager.hpp"
 #include "ComLynxWire.hpp"
 #include "version.hpp"
 
@@ -158,7 +158,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   {
     static const size_t INSTANCES = 2;
 
-    std::shared_ptr<Config> config = std::make_shared<Config>();
+    std::shared_ptr<Manager> config = std::make_shared<Manager>();
     std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( (int)INSTANCES );
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
     std::shared_ptr<ComLynxWire> comLynxWire = std::make_shared<ComLynxWire>();
