@@ -2,14 +2,14 @@
 #include "Mikey.hpp"
 #include "TimerCore.hpp"
 #include "AudioChannel.hpp"
-#include "Felix.hpp"
+#include "Core.hpp"
 #include "Cartridge.hpp"
 #include "CPU.hpp"
 #include "ComLynx.hpp"
 
-Mikey::Mikey( Felix & busMaster, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mFelix{ busMaster }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
+Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mCore{ core }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
   mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mAttenuationLeft{ 0x3c, 0x3c, 0x3c, 0x3c }, mAttenuationRight{ 0x3c, 0x3c, 0x3c, 0x3c }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( std::move( videoSink ) ) },
-  mParallelPort{ mFelix, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
+  mParallelPort{ mCore, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -21,7 +21,7 @@ Mikey::Mikey( Felix & busMaster, ComLynx & comLynx, std::shared_ptr<IVideoSink> 
     }
     if ( auto dma = mDisplayGenerator->hblank( tick, cnt ) )
     {
-      mFelix.requestDisplayDMA( dma.tick, dma.address );
+      mCore.requestDisplayDMA( dma.tick, dma.address );
     }
     if ( interrupt )
     {
@@ -324,9 +324,9 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   case SYSCTL1:
     if ( ( value & SYSCTL1::POWERON ) == 0 )
     {
-      mFelix.enterMonitor();
+      mCore.enterMonitor();
     }
-    mFelix.getCartridge().setCartAddressStrobe( ( value & SYSCTL1::CART_ADDR_STROBE ) == 1 );
+    mCore.getCartridge().setCartAddressStrobe( ( value & SYSCTL1::CART_ADDR_STROBE ) == 1 );
     break;
   case IODIR:
     mParallelPort.setDirection( value );
@@ -348,7 +348,7 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     //will prevent the CPU from going to sleep, and thus prevent Suzy from functioning.
     //So if sprites stop working, unintentional interrupt bits can be the hidden cause.
     if ( !mSuzyDone && mIRQ == 0 )
-      mFelix.runSuzy();
+      mCore.runSuzy();
     break;
   case DISPCTL:
     mDisplayRegs.dispColor = ( value & DISPCTL::DISP_COLOR ) != 0;
@@ -430,7 +430,7 @@ void Mikey::setDMAData( uint64_t tick, uint64_t data )
 {
   if ( auto dma = mDisplayGenerator->pushData( tick, data ) )
   {
-    mFelix.requestDisplayDMA( dma.tick, dma.address );
+    mCore.requestDisplayDMA( dma.tick, dma.address );
   }
 }
 
@@ -468,7 +468,7 @@ void Mikey::setIRQ( uint8_t mask )
   mIRQ |= mask;
   if ( mIRQ != 0 )
   {
-    mFelix.assertInterrupt( CPUState::I_IRQ );
+    mCore.assertInterrupt( CPUState::I_IRQ );
   }
 }
 
@@ -480,6 +480,6 @@ void Mikey::resetIRQ( uint8_t mask )
   mIRQ &= ~mask;
   if ( mIRQ == 0 )
   {
-    mFelix.desertInterrupt( CPUState::I_IRQ );
+    mCore.desertInterrupt( CPUState::I_IRQ );
   }
 }

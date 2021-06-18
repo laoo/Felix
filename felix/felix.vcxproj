@@ -174,7 +174,7 @@
     <ClCompile Include="ComLynxDetailed.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Encryption.cpp" />
-    <ClCompile Include="Felix.cpp" />
+    <ClCompile Include="Core.cpp" />
     <ClCompile Include="CartBank.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ColOperator.cpp" />
@@ -217,7 +217,7 @@
     <ClInclude Include="DefaultROM.hpp" />
     <ClInclude Include="DisplayLine.hpp" />
     <ClInclude Include="Encryption.hpp" />
-    <ClInclude Include="Felix.hpp" />
+    <ClInclude Include="Core.hpp" />
     <ClInclude Include="CartBank.hpp" />
     <ClInclude Include="Cartridge.hpp" />
     <ClInclude Include="ColOperator.hpp" />

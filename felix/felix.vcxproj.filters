@@ -82,7 +82,7 @@
     <ClCompile Include="ImageLnx.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Felix.cpp">
+    <ClCompile Include="Core.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
@@ -159,7 +159,7 @@
     <ClInclude Include="Encryption.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Felix.hpp">
+    <ClInclude Include="Core.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="WinRenderer.hpp">

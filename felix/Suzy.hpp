@@ -3,7 +3,7 @@
 #include "KeyInput.hpp"
 #include "SuzyMath.hpp"
 
-class Felix;
+class Core;
 
 class ISuzyProcess
 {
@@ -42,7 +42,7 @@ public:
 class Suzy
 {
 public:
-  Suzy( Felix & felix, std::function<KeyInput()> const& inputProvider );
+  Suzy( Core & core, std::function<KeyInput()> const& inputProvider );
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
@@ -281,7 +281,7 @@ private:
   int bpp() const;
 
 private:
-  Felix & mFelix;
+  Core & mCore;
   struct SCB
   {
     Reg tmpadr;

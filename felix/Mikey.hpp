@@ -5,7 +5,7 @@
 #include "DisplayGenerator.hpp"
 #include "Utility.hpp"
 
-class Felix;
+class Core;
 class TimerCore;
 class AudioChannel;
 class DisplayGenerator;
@@ -73,7 +73,7 @@ public:
     static constexpr uint8_t DMA_ENABLE   = 0b00000001; //1 = enable video DMA, 0 = disable.must be set to 1 ( set by kernel )
   };
 
-  Mikey( Felix & felix, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink );
+  Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink );
   ~Mikey();
 
   uint64_t requestAccess( uint64_t tick, uint16_t address );
@@ -89,7 +89,7 @@ public:
 
 
 private:
-  Felix & mFelix;
+  Core & mCore;
   ComLynx & mComLynx;
   uint64_t mAccessTick;
 

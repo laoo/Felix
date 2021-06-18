@@ -4,7 +4,6 @@
 #include "Utility.hpp"
 
 enum class Opcode : uint8_t;
-class Felix;
 struct CpuTrace;
 struct TraceRequest;
 
@@ -42,7 +41,7 @@ public:
   };
 
 
-  CPU( Felix & felix );
+  CPU();
 
   Request const& advance();
 
@@ -56,7 +55,6 @@ public:
   CPUState & state();
 
 private:
-  Felix & felix;
 
   CPUState mState;
   uint8_t operand;

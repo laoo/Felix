@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "Felix.hpp"
+#include "Core.hpp"
 #include "CPU.hpp"
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
@@ -16,8 +16,8 @@
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
-Felix::Felix( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-  mCpu{ std::make_shared<CPU>( *this ) }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
+Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const & inputProvider ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
+  mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputProvider ) },
   mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
@@ -45,7 +45,7 @@ Felix::Felix( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSi
   }
 }
 
-void Felix::injectFile( InputFile const & file )
+void Core::injectFile( InputFile const & file )
 {
   switch ( file.getType() )
   {
@@ -68,12 +68,12 @@ void Felix::injectFile( InputFile const & file )
   }
 }
 
-void Felix::setLog( std::filesystem::path const & path )
+void Core::setLog( std::filesystem::path const & path )
 {
   mCpu->setLog( path );
 }
 
-void Felix::pulseReset( std::optional<uint16_t> resetAddress )
+void Core::pulseReset( std::optional<uint16_t> resetAddress )
 {
   if ( resetAddress )
   {
@@ -97,24 +97,24 @@ void Felix::pulseReset( std::optional<uint16_t> resetAddress )
   }
 }
 
-Felix::~Felix()
+Core::~Core()
 {
 }
 
-void Felix::requestDisplayDMA( uint64_t tick, uint16_t address )
+void Core::requestDisplayDMA( uint64_t tick, uint16_t address )
 {
   mDMAAddress = address;
   mActionQueue.push( { Action::DISPLAY_DMA, tick } );
 }
 
-void Felix::runSuzy()
+void Core::runSuzy()
 {
   mSuzyRunning = true;
   if ( !mSuzyProcess )
     mSuzyProcess = mSuzy->suzyProcess();
 }
 
-void Felix::assertInterrupt( int mask, std::optional<uint64_t> tick )
+void Core::assertInterrupt( int mask, std::optional<uint64_t> tick )
 {
   if ( ( mask & CPUState::I_IRQ ) != 0 )
   {
@@ -133,7 +133,7 @@ void Felix::assertInterrupt( int mask, std::optional<uint64_t> tick )
   }
 }
 
-void Felix::desertInterrupt( int mask, std::optional<uint64_t> tick )
+void Core::desertInterrupt( int mask, std::optional<uint64_t> tick )
 {
   if ( ( mask & CPUState::I_IRQ ) != 0 )
   {
@@ -151,7 +151,7 @@ void Felix::desertInterrupt( int mask, std::optional<uint64_t> tick )
   }
 }
 
-Felix::SequencedActionResult Felix::executeSequencedAction( SequencedAction seqAction )
+Core::SequencedActionResult Core::executeSequencedAction( SequencedAction seqAction )
 {
   auto action = seqAction.getAction();
 
@@ -212,7 +212,7 @@ Felix::SequencedActionResult Felix::executeSequencedAction( SequencedAction seqA
   return SequencedActionResult::CARRY_ON;
 }
 
-bool Felix::executeSuzyAction()
+bool Core::executeSuzyAction()
 {
   if ( !mSuzyProcess || !mSuzyRunning )
     return true;
@@ -298,7 +298,7 @@ bool Felix::executeSuzyAction()
   return false;
 }
 
-void Felix::executeCPUAction()
+void Core::executeCPUAction()
 {
   auto const& req = mCpu->advance();
 
@@ -417,7 +417,7 @@ void Felix::executeCPUAction()
   }
 }
 
-void Felix::handlePatch( uint16_t address )
+void Core::handlePatch( uint16_t address )
 {
   mPatchMagickCodeAccumulator <<= 16;
   mPatchMagickCodeAccumulator |= address;
@@ -486,7 +486,7 @@ void Felix::handlePatch( uint16_t address )
 }
 
 
-void Felix::setAudioOut( int sps, std::span<AudioSample> outputBuffer )
+void Core::setAudioOut( int sps, std::span<AudioSample> outputBuffer )
 {
   mSPS = sps;
   mOutputSamples = outputBuffer;
@@ -494,7 +494,7 @@ void Felix::setAudioOut( int sps, std::span<AudioSample> outputBuffer )
   enqueueSampling();
 }
 
-void Felix::enqueueSampling()
+void Core::enqueueSampling()
 {
   int ticks = 16000000 / mSPS;
   mSamplesRemainder += 16000000 % mSPS;
@@ -507,7 +507,7 @@ void Felix::enqueueSampling()
   mActionQueue.push( { Action::SAMPLE_AUDIO, mCurrentTick + ticks } );
 }
 
-int Felix::advanceAudio()
+int Core::advanceAudio()
 {
   for ( ;; )
   {
@@ -536,7 +536,7 @@ int Felix::advanceAudio()
   }
 }
 
-void Felix::advance( uint64_t ticks )
+void Core::advance( uint64_t ticks )
 {
   mActionQueue.push( { Action::BATCH_END, mCurrentTick + ticks } );
 
@@ -557,17 +557,17 @@ void Felix::advance( uint64_t ticks )
   }
 }
 
-void Felix::enterMonitor()
+void Core::enterMonitor()
 {
 }
 
-Cartridge & Felix::getCartridge()
+Cartridge & Core::getCartridge()
 {
   assert( mCartridge );
   return *mCartridge;
 }
 
-uint8_t Felix::readKernel( uint16_t address )
+uint8_t Core::readKernel( uint16_t address )
 {
   if ( address >= 0x1fa )
   {
@@ -594,7 +594,7 @@ uint8_t Felix::readKernel( uint16_t address )
   }
 }
 
-void Felix::writeKernel( uint16_t address, uint8_t value )
+void Core::writeKernel( uint16_t address, uint8_t value )
 {
   if ( address >= 0x1fa && mMapCtl.vectorSpaceDisable || address < 0x1f8 && mMapCtl.kernelDisable || address == 0x1f8 )
   {
@@ -610,7 +610,7 @@ void Felix::writeKernel( uint16_t address, uint8_t value )
   }
 }
 
-void Felix::writeMAPCTL( uint8_t value )
+void Core::writeMAPCTL( uint8_t value )
 {
   mMapCtl.sequentialDisable = ( value & 0x80 ) != 0;
   mMapCtl.vectorSpaceDisable = ( value & 0x08 ) != 0;

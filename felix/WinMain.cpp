@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "WinRenderer.hpp"
-#include "Felix.hpp"
+#include "Core.hpp"
 #include "Mikey.hpp"
 #include "KeyInput.hpp"
 #include "Log.hpp"
@@ -163,11 +163,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
     std::shared_ptr<ComLynxWire> comLynxWire = std::make_shared<ComLynxWire>();
 
-    std::vector<std::shared_ptr<Felix>> instances;
+    std::vector<std::shared_ptr<Core>> instances;
 
     for ( size_t i = 0; i < INSTANCES; ++i )
     {
-      instances.push_back( std::make_shared<Felix>( comLynxWire, renderer->getVideoSink( (int)i ), [i] { return gKeyInput[i]; } ) );
+      instances.push_back( std::make_shared<Core>( comLynxWire, renderer->getVideoSink( (int)i ), [i] { return gKeyInput[i]; } ) );
     }
 
     for ( auto const & arg : args )
@@ -230,7 +230,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     {
       while ( doProcess.load() )
       {
-        audioOut->fillBuffer( std::span<std::shared_ptr<Felix> const>{ instances.data(), instances.size() } );
+        audioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ instances.data(), instances.size() } );
       }
     } };
  

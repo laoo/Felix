@@ -2,10 +2,10 @@
 #include "ParallelPort.hpp"
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"
-#include "Felix.hpp"
+#include "Core.hpp"
 
 
-ParallelPort::ParallelPort( Felix & felix, ComLynx & comLynx, RestProvider const & restProvider ) : mFelix{ felix }, mComLynx{ comLynx }, mRestProvider{ restProvider },
+ParallelPort::ParallelPort( Core & core, ComLynx & comLynx, RestProvider const & restProvider ) : mCore{ core }, mComLynx{ comLynx }, mRestProvider{ restProvider },
   mOutputMask{}, mData{}
 {
 }
@@ -26,13 +26,13 @@ void ParallelPort::setData( uint8_t value )
 
   if ( ( mOutputMask & Mask::CART_ADDR_DATA ) != 0 )
   {
-    mFelix.getCartridge().setCartAddressData( ( mData & Mask::CART_ADDR_DATA ) != 0 );
-    mFelix.getCartridge().setPower( ( mData & Mask::CART_ADDR_DATA ) == 0 );
+    mCore.getCartridge().setCartAddressData( ( mData & Mask::CART_ADDR_DATA ) != 0 );
+    mCore.getCartridge().setPower( ( mData & Mask::CART_ADDR_DATA ) == 0 );
   }
 
   if ( ( mOutputMask & Mask::AUDIN ) != 0 )
   {
-    mFelix.getCartridge().setAudIn( ( mData & Mask::AUDIN ) != 0 );
+    mCore.getCartridge().setAudIn( ( mData & Mask::AUDIN ) != 0 );
   }
 }
 
@@ -42,7 +42,7 @@ uint8_t ParallelPort::getData() const
 
   if ( ( mOutputMask & Mask::AUDIN ) == 0 )
   {
-    result |= mFelix.getCartridge().getAudIn() ? Mask::AUDIN : 0;
+    result |= mCore.getCartridge().getAudIn() ? Mask::AUDIN : 0;
   }
   else
   {

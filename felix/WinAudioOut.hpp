@@ -15,7 +15,7 @@
 
 #include "Utility.hpp"
 
-class Felix;
+class Core;
 
 class WinAudioOut
 {
@@ -24,7 +24,7 @@ public:
   WinAudioOut();
   ~WinAudioOut();
 
-  void fillBuffer( std::span<std::shared_ptr<Felix> const> instances );
+  void fillBuffer( std::span<std::shared_ptr<Core> const> instances );
 
 private:
 

@@ -1,10 +1,10 @@
 #include "pch.hpp"
 #include "Suzy.hpp"
-#include "Felix.hpp"
+#include "Core.hpp"
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"
 
-Suzy::Suzy( Felix & felix, std::function<KeyInput()> const& inputProvider ) : mFelix{ felix }, mSCB{}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
+Suzy::Suzy( Core & core, std::function<KeyInput()> const& inputProvider ) : mCore{ core }, mSCB{}, mMath{}, mInputProvider{ inputProvider }, mAccessTick{},
   mPalette{}, mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
   mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}
@@ -180,9 +180,9 @@ uint8_t Suzy::read( uint16_t address )
     return input.pause ? SWITCHES::PAUSE_SWITCH : 0;
   }
   case RCART0:
-    return mFelix.getCartridge().peekRCART0();
+    return mCore.getCartridge().peekRCART0();
   case RCART1:
-    return mFelix.getCartridge().peekRCART1();
+    return mCore.getCartridge().peekRCART1();
   default:
     return uint8_t( 0xff );
   }

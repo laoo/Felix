@@ -3,7 +3,7 @@
 #include "ComLynxFwd.hpp"
 
 class Cartridge;
-class Felix;
+class Core;
 
 class RestProvider
 {
@@ -16,7 +16,7 @@ class ParallelPort
 {
 public:
 
-  ParallelPort( Felix & felix, ComLynx & comLynx, RestProvider const& restProvider );
+  ParallelPort( Core & core, ComLynx & comLynx, RestProvider const& restProvider );
 
   void setDirection( uint8_t value );
   uint8_t getDirection() const;
@@ -37,7 +37,7 @@ public:
 
 
 private:
-  Felix & mFelix;
+  Core & mCore;
   ComLynx & mComLynx;
   RestProvider const& mRestProvider;
   uint8_t mOutputMask;

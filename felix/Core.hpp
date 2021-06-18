@@ -17,11 +17,11 @@ class ImageCart;
 class IEscape;
 class ComLynxWire;
 
-class Felix
+class Core
 {
 public:
-  Felix( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const& inputProvider );
-  ~Felix();
+  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::function<KeyInput()> const& inputProvider );
+  ~Core();
 
 
   void setAudioOut( int sps, std::span<AudioSample> outputBuffer );

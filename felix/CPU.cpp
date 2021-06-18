@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "CPU.hpp"
 #include "Opcodes.hpp"
-#include "Felix.hpp"
 #include "AddressMapper.hpp"
 
 bool CPU::isHiccup()
@@ -58,7 +57,7 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU( Felix & felix ) : felix{ felix }, mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{ false }
+CPU::CPU() : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{ false }
 {
 }
 

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "WinAudioOut.hpp"
-#include "Felix.hpp"
+#include "Core.hpp"
 #include "Log.hpp"
 
 WinAudioOut::WinAudioOut()
@@ -68,7 +68,7 @@ WinAudioOut::~WinAudioOut()
   }
 }
 
-void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Felix> const> instances )
+void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
 {
   DWORD retval = WaitForSingleObject( mEvent, 1000 );
   if ( retval != WAIT_OBJECT_0 )
