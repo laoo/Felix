@@ -1,11 +1,87 @@
 #include "pch.hpp"
 #include "Manager.hpp"
+#include "InputFile.hpp"
+#include "WinRenderer.hpp"
+#include "WinAudioOut.hpp"
+#include "ComLynxWire.hpp"
+#include "Core.hpp"
 #include "imgui.h"
 
-Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mIntputSources{}
+Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}
 {
   mIntputSources[0] = std::make_shared<InputSource>();
   mIntputSources[1] = std::make_shared<InputSource>();
+
+  mRenderer = std::make_shared<WinRenderer>( mInstancesCount );
+  mAudioOut = std::make_shared<WinAudioOut>();
+  mComLynxWire = std::make_shared<ComLynxWire>();
+}
+
+void Manager::doArgs( std::vector<std::wstring> args )
+{
+  stopThreads();
+  mProcessThreads.store( true );
+  mInstances.clear();
+
+  std::filesystem::path log{};
+  std::vector<InputFile> inputs;
+
+  for ( auto const& arg : args )
+  {
+    std::filesystem::path path{ arg };
+    if ( path.has_extension() && path.extension() == ".log" )
+    {
+      log = path;
+      continue;
+    }
+
+    InputFile file{ path };
+    if ( file.valid() )
+    {
+      inputs.push_back( file );
+    }
+  }
+
+  if ( !inputs.empty() )
+  {
+    for ( size_t i = 0; i < mInstancesCount; ++i )
+    {
+      mInstances.push_back( std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink( (int)i ), getInputSource( (int)i ), std::span<InputFile>{ inputs.data(), inputs.size() } ) );
+    }
+
+    mRenderThread = std::thread{ [this]
+    {
+      while ( mProcessThreads.load() )
+      {
+        mRenderer->render( *this );
+      }
+    } };
+
+    mAudioThread = std::thread{ [this]
+    {
+      while ( mProcessThreads.load() )
+      {
+        mAudioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ mInstances.data(), mInstances.size() } );
+      }
+    } };
+  }
+}
+
+void Manager::initialize( HWND hWnd )
+{
+  assert( mRenderer );
+  mRenderer->initialize( hWnd );
+}
+
+int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+  assert( mRenderer );
+  return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+}
+
+Manager::~Manager()
+{
+  stopThreads();
 }
 
 void Manager::drawGui( int left, int top, int right, int bottom )
@@ -90,6 +166,17 @@ std::shared_ptr<IInputSource> Manager::getInputSource( int instance )
     return mIntputSources[instance];
   else
     return {};
+}
+
+void Manager::stopThreads()
+{
+  mProcessThreads.store( 0 );
+  if ( mAudioThread.joinable() )
+    mAudioThread.join();
+  mAudioThread = {};
+  if ( mRenderThread.joinable() )
+    mRenderThread.join();
+  mRenderThread = {};
 }
 
 Manager::InputSource::InputSource() : KeyInput{}

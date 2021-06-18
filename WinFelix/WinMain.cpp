@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "WinRenderer.hpp"
 #include "Core.hpp"
-#include "Mikey.hpp"
 #include "IInputSource.hpp"
 #include "Log.hpp"
 #include "WinAudioOut.hpp"
@@ -44,18 +43,18 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
   {
   case WM_CREATE:
   {
-    WinRenderer * pRenderer = reinterpret_cast<WinRenderer *>( reinterpret_cast<LPCREATESTRUCT>( lParam )->lpCreateParams );
-    assert( pRenderer );
+    Manager* manager = reinterpret_cast<Manager*>( reinterpret_cast<LPCREATESTRUCT>( lParam )->lpCreateParams );
+    assert( manager );
     try
     {
-      pRenderer->initialize( hwnd );
+      manager->initialize( hwnd );
     }
     catch ( std::exception const & ex )
     {
       MessageBoxA( nullptr, ex.what(), "Renderinit Error", MB_OK | MB_ICONERROR );
       PostQuitMessage( 0 );
     }
-    SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( pRenderer ) );
+    SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( manager ) );
     break;
   }
   case WM_CLOSE:
@@ -68,9 +67,9 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
     handleFileDrop( (HDROP)wParam );
     break;
   default:
-    if ( WinRenderer * pRenderer = reinterpret_cast<WinRenderer *>( GetWindowLongPtr( hwnd, GWLP_USERDATA ) ) )
+    if ( Manager* manager = reinterpret_cast<Manager*>( GetWindowLongPtr( hwnd, GWLP_USERDATA ) ) )
     {
-      if ( pRenderer->win32_WndProcHandler( hwnd, msg, wParam, lParam ) )
+      if ( manager->win32_WndProcHandler( hwnd, msg, wParam, lParam ) )
         return 1;
     }
     return DefWindowProc( hwnd, msg, wParam, lParam );
@@ -86,7 +85,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
   std::vector<std::wstring> args;
 
-  LPWSTR *szArgList;
+  LPWSTR* szArgList;
   int argCount;
 
   szArgList = CommandLineToArgvW( GetCommandLine(), &argCount );
@@ -100,78 +99,36 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     LocalFree( szArgList );
   }
 
-  WNDCLASSEX wc{};
-
-  wc.cbSize        = sizeof( WNDCLASSEX );
-  wc.style         = 0;
-  wc.lpfnWndProc   = WndProc;
-  wc.cbClsExtra    = 0;
-  wc.cbWndExtra    = 0;
-  wc.hInstance     = hInstance;
-  wc.hIcon         = LoadIcon( NULL, IDI_APPLICATION );
-  wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
-  wc.hbrBackground = (HBRUSH)( COLOR_WINDOW + 1 );
-  wc.lpszMenuName  = NULL;
-  wc.lpszClassName = gClassName;
-  wc.hIconSm       = LoadIcon( NULL, IDI_APPLICATION );
-
-  if ( !RegisterClassEx( &wc ) )
-  {
-    return 0;
-  }
-
-  std::thread renderThread;
-  std::thread audioThread;
-  std::atomic_bool doProcess = true;
-
+  std::shared_ptr<Manager> manager = std::make_shared<Manager>();
   MSG msg;
+
   try
   {
-    static const size_t INSTANCES = 2;
 
-    std::shared_ptr<Manager> config = std::make_shared<Manager>();
-    std::shared_ptr<WinRenderer> renderer = std::make_shared<WinRenderer>( (int)INSTANCES );
-    std::shared_ptr<WinAudioOut> audioOut = std::make_shared<WinAudioOut>();
-    std::shared_ptr<ComLynxWire> comLynxWire = std::make_shared<ComLynxWire>();
+    WNDCLASSEX wc{};
 
-    std::vector<std::shared_ptr<Core>> instances;
+    wc.cbSize        = sizeof( WNDCLASSEX );
+    wc.style         = 0;
+    wc.lpfnWndProc   = WndProc;
+    wc.cbClsExtra    = 0;
+    wc.cbWndExtra    = 0;
+    wc.hInstance     = hInstance;
+    wc.hIcon         = LoadIcon( NULL, IDI_APPLICATION );
+    wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
+    wc.hbrBackground = (HBRUSH)( COLOR_WINDOW + 1 );
+    wc.lpszMenuName  = NULL;
+    wc.lpszClassName = gClassName;
+    wc.hIconSm       = LoadIcon( NULL, IDI_APPLICATION );
 
-    for ( size_t i = 0; i < INSTANCES; ++i )
+    if ( !RegisterClassEx( &wc ) )
     {
-      instances.push_back( std::make_shared<Core>( comLynxWire, renderer->getVideoSink( (int)i ), config->getInputSource(i) ) );
+      return 0;
     }
 
-    for ( auto const & arg : args )
-    {
-      {
-        std::filesystem::path path{ arg };
-        if ( path.has_extension() && path.extension() == ".log" )
-        {
-          auto path1 = path;
-          auto path2 = path;
-          path1.replace_extension() += "[1]";
-          path2.replace_extension() += "[2]";
-          path1.replace_extension( ".log" );
-          path2.replace_extension( ".log" );
-          instances[0]->setLog( path1 );
-          if ( instances.size() > 1 )
-            instances[1]->setLog( path2 );
-        }
-      }
-
-      InputFile file{ arg };
-      if ( file.valid() )
-      {
-        for ( auto & inst : instances )
-        {
-          inst->injectFile( file );
-        }
-      }
-    }
 
     std::wstring name = L"Felix " + std::wstring{ version_string };
 
-    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, renderer.get() );
+    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, manager.get() );
 
     if ( hwnd == nullptr )
     {
@@ -182,30 +139,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
+    manager->doArgs( args );
 
-    //desynchronizing instances
-    for ( size_t i = 0; i < INSTANCES; ++i )
-    {
-      instances[i]->advance( i * 16000000 / 60 / 3 ); //advance an arbitrary number of pixels. 1/3 of a frame
-    }
-
-    renderThread = std::thread{ [&doProcess,config,renderer]
-    {
-      while ( doProcess.load() )
-      {
-        renderer->render( *config );
-      }
-    } };
-
-    audioThread = std::thread{ [&doProcess,audioOut,instances]
-    {
-      while ( doProcess.load() )
-      {
-        audioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ instances.data(), instances.size() } );
-      }
-    } };
- 
-    while ( config->doRun() )
+    while ( manager->doRun() )
     {
       while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
       {
@@ -219,20 +155,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
       if ( msg.message == WM_QUIT )
         break;
 
-      config->processKeys();
+      manager->processKeys();
 
       if ( !gDroppedFiles.empty() )
       {
-        for ( auto const& arg : gDroppedFiles )
-        {
-          InputFile file{ arg };
-          if ( file.valid() )
-          {
-            instances[0]->injectFile( file );
-            instances[1]->injectFile( file );
-          }
-        }
-
+        manager->doArgs( gDroppedFiles );
         gDroppedFiles.clear();
       }
 
@@ -243,12 +170,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   {
     return -1;
   }
-
-  doProcess.store( false );
-  if ( audioThread.joinable() )
-    audioThread.join();
-  if ( renderThread.joinable() )
-    renderThread.join();
 
   return (int)msg.wParam;
 }

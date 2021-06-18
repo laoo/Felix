@@ -15,6 +15,7 @@ public:
   ~WinRenderer();
 
   void initialize( HWND hWnd );
+  int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
   std::shared_ptr<IVideoSink> getVideoSink( int instance ) const;
 
@@ -46,8 +47,6 @@ private:
 
   void updateSourceTexture( int instance, std::shared_ptr<RenderFrame> frame );
 
-  friend LRESULT CALLBACK WndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-  int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
   int sizing( RECT & rect );
 
   class SizeManager
