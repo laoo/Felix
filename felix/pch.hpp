@@ -1,33 +1,20 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
-#include <atomic>
-#include <bit>
 #include <cassert>
-#include <chrono>
-#include <cmath>
-#include <coroutine>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <functional>
-#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <queue>
 #include <span>
-#include <sstream>
 #include <string>
-#include <stdexcept>
-#include <thread>
-#include <type_traits>
-#include <utility>
-#include <variant>
 #include <vector>
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/rational.hpp>
 
 #ifdef _WIN32
 #define NOMINMAX

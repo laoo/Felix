@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="ActionQueue.cpp" />
+    <ClCompile Include="AddressMapper.cpp" />
+    <ClCompile Include="AudioChannel.cpp" />
+    <ClCompile Include="CartBank.cpp" />
+    <ClCompile Include="Cartridge.cpp" />
+    <ClCompile Include="ColOperator.cpp" />
+    <ClCompile Include="ComLynxCoarse.cpp" />
+    <ClCompile Include="ComLynxDetailed.cpp" />
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="DisplayGenerator.cpp" />
+    <ClCompile Include="Encryption.cpp" />
+    <ClCompile Include="ImageBIOS.cpp" />
+    <ClCompile Include="ImageBS93.cpp" />
+    <ClCompile Include="ImageCart.cpp" />
+    <ClCompile Include="ImageLnx.cpp" />
+    <ClCompile Include="ImageLyx.cpp" />
+    <ClCompile Include="InputFile.cpp" />
+    <ClCompile Include="KernelEscape.cpp" />
+    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="Mikey.cpp" />
+    <ClCompile Include="ParallelPort.cpp" />
+    <ClCompile Include="Suzy.cpp" />
+    <ClCompile Include="SuzyMath.cpp" />
+    <ClCompile Include="SuzyProcess.cpp" />
+    <ClCompile Include="TimerCore.cpp" />
+    <ClCompile Include="VidOperator.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.hpp" />
+    <ClInclude Include="ActionQueue.hpp" />
+    <ClInclude Include="AddressMapper.hpp" />
+    <ClInclude Include="AudioChannel.hpp" />
+    <ClInclude Include="CartBank.hpp" />
+    <ClInclude Include="Cartridge.hpp" />
+    <ClInclude Include="ColOperator.hpp" />
+    <ClInclude Include="ComLynx.hpp" />
+    <ClInclude Include="ComLynxCoarse.hpp" />
+    <ClInclude Include="ComLynxDetailed.hpp" />
+    <ClInclude Include="ComLynxFwd.hpp" />
+    <ClInclude Include="ComLynxWire.hpp" />
+    <ClInclude Include="Core.hpp" />
+    <ClInclude Include="CPU.hpp" />
+    <ClInclude Include="CPUState.hpp" />
+    <ClInclude Include="DefaultROM.hpp" />
+    <ClInclude Include="DisplayGenerator.hpp" />
+    <ClInclude Include="DisplayLine.hpp" />
+    <ClInclude Include="Encryption.hpp" />
+    <ClInclude Include="IEscape.hpp" />
+    <ClInclude Include="ImageBIOS.hpp" />
+    <ClInclude Include="ImageBS93.hpp" />
+    <ClInclude Include="ImageCart.hpp" />
+    <ClInclude Include="ImageLnx.hpp" />
+    <ClInclude Include="ImageLyx.hpp" />
+    <ClInclude Include="InputFile.hpp" />
+    <ClInclude Include="IVideoSink.hpp" />
+    <ClInclude Include="KernelEscape.hpp" />
+    <ClInclude Include="KeyInput.hpp" />
+    <ClInclude Include="Log.hpp" />
+    <ClInclude Include="Mikey.hpp" />
+    <ClInclude Include="Opcodes.hpp" />
+    <ClInclude Include="ParallelPort.hpp" />
+    <ClInclude Include="Shifter.hpp" />
+    <ClInclude Include="SpriteLineParser.hpp" />
+    <ClInclude Include="SpriteTemplates.hpp" />
+    <ClInclude Include="Suzy.hpp" />
+    <ClInclude Include="SuzyMath.hpp" />
+    <ClInclude Include="SuzyProcess.hpp" />
+    <ClInclude Include="TimerCore.hpp" />
+    <ClInclude Include="Utility.hpp" />
+    <ClInclude Include="VidOperator.hpp" />
+  </ItemGroup>
+</Project>

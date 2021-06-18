@@ -1,6 +1,9 @@
 #include "pch.hpp"
 #include "Log.hpp"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 Log::Log() : mLogLevel{ LL_INFO }
 {

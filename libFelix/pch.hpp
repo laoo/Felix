@@ -1,0 +1,22 @@
+#pragma once
+
+#include <algorithm>
+#include <array>
+#include <bit>
+#include <cassert>
+#include <coroutine>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <queue>
+#include <span>
+#include <string>
+#include <stdexcept>
+#include <vector>
+
+#include <boost/multiprecision/cpp_int.hpp>

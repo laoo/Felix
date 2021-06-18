@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "helpers", "helpers", "{01B8
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "imgui\imgui.vcxproj", "{DA3E55BA-76F9-400D-A64C-42A416BE55C8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFelix", "libFelix\libFelix.vcxproj", "{F73558BD-D0F3-4AD9-B123-7CC346A21A70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -46,12 +48,21 @@ Global
 		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Release|x64.Build.0 = Release|x64
 		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Release|x86.ActiveCfg = Release|Win32
 		{DA3E55BA-76F9-400D-A64C-42A416BE55C8}.Release|x86.Build.0 = Release|Win32
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Debug|x64.ActiveCfg = Debug|x64
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Debug|x64.Build.0 = Debug|x64
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Debug|x86.ActiveCfg = Debug|Win32
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Debug|x86.Build.0 = Debug|Win32
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Release|x64.ActiveCfg = Release|x64
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Release|x64.Build.0 = Release|x64
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Release|x86.ActiveCfg = Release|Win32
+		{F73558BD-D0F3-4AD9-B123-7CC346A21A70}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97} = {01B87F5A-7A71-4C3B-9578-B8F939BF4438}
+		{DA3E55BA-76F9-400D-A64C-42A416BE55C8} = {01B87F5A-7A71-4C3B-9578-B8F939BF4438}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3B5A8028-FB31-42B8-8779-5CE2F6957369}

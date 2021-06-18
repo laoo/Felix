@@ -18,35 +18,112 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ActionQueue.cpp" />
+    <ClCompile Include="AddressMapper.cpp" />
+    <ClCompile Include="AudioChannel.cpp" />
+    <ClCompile Include="CartBank.cpp" />
+    <ClCompile Include="Cartridge.cpp" />
+    <ClCompile Include="ColOperator.cpp" />
+    <ClCompile Include="ComLynxCoarse.cpp" />
+    <ClCompile Include="ComLynxDetailed.cpp" />
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="DisplayGenerator.cpp" />
+    <ClCompile Include="Encryption.cpp" />
+    <ClCompile Include="ImageBIOS.cpp" />
+    <ClCompile Include="ImageBS93.cpp" />
+    <ClCompile Include="ImageCart.cpp" />
+    <ClCompile Include="ImageLnx.cpp" />
+    <ClCompile Include="ImageLyx.cpp" />
+    <ClCompile Include="InputFile.cpp" />
+    <ClCompile Include="KernelEscape.cpp" />
+    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="Mikey.cpp" />
+    <ClCompile Include="ParallelPort.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Suzy.cpp" />
+    <ClCompile Include="SuzyMath.cpp" />
+    <ClCompile Include="SuzyProcess.cpp" />
+    <ClCompile Include="TimerCore.cpp" />
+    <ClCompile Include="VidOperator.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ActionQueue.hpp" />
+    <ClInclude Include="AddressMapper.hpp" />
+    <ClInclude Include="AudioChannel.hpp" />
+    <ClInclude Include="CartBank.hpp" />
+    <ClInclude Include="Cartridge.hpp" />
+    <ClInclude Include="ColOperator.hpp" />
+    <ClInclude Include="ComLynx.hpp" />
+    <ClInclude Include="ComLynxCoarse.hpp" />
+    <ClInclude Include="ComLynxDetailed.hpp" />
+    <ClInclude Include="ComLynxFwd.hpp" />
+    <ClInclude Include="ComLynxWire.hpp" />
+    <ClInclude Include="Core.hpp" />
+    <ClInclude Include="CPU.hpp" />
+    <ClInclude Include="CPUState.hpp" />
+    <ClInclude Include="DefaultROM.hpp" />
+    <ClInclude Include="DisplayGenerator.hpp" />
+    <ClInclude Include="DisplayLine.hpp" />
+    <ClInclude Include="Encryption.hpp" />
+    <ClInclude Include="IEscape.hpp" />
+    <ClInclude Include="ImageBIOS.hpp" />
+    <ClInclude Include="ImageBS93.hpp" />
+    <ClInclude Include="ImageCart.hpp" />
+    <ClInclude Include="ImageLnx.hpp" />
+    <ClInclude Include="ImageLyx.hpp" />
+    <ClInclude Include="InputFile.hpp" />
+    <ClInclude Include="IVideoSink.hpp" />
+    <ClInclude Include="KernelEscape.hpp" />
+    <ClInclude Include="KeyInput.hpp" />
+    <ClInclude Include="Log.hpp" />
+    <ClInclude Include="Mikey.hpp" />
+    <ClInclude Include="Opcodes.hpp" />
+    <ClInclude Include="ParallelPort.hpp" />
+    <ClInclude Include="pch.hpp" />
+    <ClInclude Include="Shifter.hpp" />
+    <ClInclude Include="SpriteLineParser.hpp" />
+    <ClInclude Include="SpriteTemplates.hpp" />
+    <ClInclude Include="Suzy.hpp" />
+    <ClInclude Include="SuzyMath.hpp" />
+    <ClInclude Include="SuzyProcess.hpp" />
+    <ClInclude Include="TimerCore.hpp" />
+    <ClInclude Include="Utility.hpp" />
+    <ClInclude Include="VidOperator.hpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>felix</RootNamespace>
+    <ProjectGuid>{f73558bd-d0f3-4ad9-b123-7cc346a21a70}</ProjectGuid>
+    <RootNamespace>libFelix</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -59,10 +136,12 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\user.props" />
     <Import Project="..\config.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\user.props" />
     <Import Project="..\config.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -79,130 +158,89 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <PreBuildEvent>
-      <Command>$(SolutionDir)out\$(Platform)_$(Configuration)\VersionTool\VersionTool.exe $(ProjectDir)version.hpp "$(GIT_PATH)"</Command>
-    </PreBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>
+      </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <Optimization>MaxSpeed</Optimization>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>
+      </SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
-    <PreBuildEvent>
-      <Command>$(SolutionDir)out\$(Platform)_$(Configuration)\VersionTool\VersionTool.exe $(ProjectDir)version.hpp "$(GIT_PATH)"</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Config.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="WinAudioOut.cpp" />
-    <ClCompile Include="WinImgui.cpp" />
-    <ClCompile Include="WinMain.cpp" />
-    <ClCompile Include="WinRenderer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Config.hpp" />
-    <ClInclude Include="pch.hpp" />
-    <ClInclude Include="version.hpp" />
-    <ClInclude Include="WinAudioOut.hpp" />
-    <ClInclude Include="WinImgui.hpp" />
-    <ClInclude Include="WinRenderer.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="render.csh">
-      <ShaderModel>5.0</ShaderModel>
-      <ShaderType>Compute</ShaderType>
-      <VariableName>g_Renderer</VariableName>
-      <HeaderFileOutput>renderer.hxx</HeaderFileOutput>
-      <DisableOptimizations>false</DisableOptimizations>
-      <EnableDebuggingInformation>false</EnableDebuggingInformation>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\imgui\imgui.vcxproj">
-      <Project>{da3e55ba-76f9-400d-a64c-42a416be55c8}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\libFelix\libFelix.vcxproj">
-      <Project>{f73558bd-d0f3-4ad9-b123-7cc346a21a70}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
