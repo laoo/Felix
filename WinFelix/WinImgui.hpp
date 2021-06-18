@@ -10,7 +10,7 @@ public:
 
   void     dx11_NewFrame();
   void     dx11_RenderDrawData( ImDrawData* draw_data );
-  bool win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+  int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
 private:
   void win32_UpdateMousePos();

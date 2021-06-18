@@ -47,8 +47,8 @@ private:
   void updateSourceTexture( int instance, std::shared_ptr<RenderFrame> frame );
 
   friend LRESULT CALLBACK WndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-  bool win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-  bool sizing( RECT & rect );
+  int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+  int sizing( RECT & rect );
 
   class SizeManager
   {

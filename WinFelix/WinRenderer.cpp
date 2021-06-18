@@ -379,7 +379,7 @@ std::shared_ptr<RenderFrame> WinRenderer::Instance::pullNextFrame()
   return result;
 }
 
-bool WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
   switch ( msg )
   {
@@ -391,10 +391,10 @@ bool WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPAR
     return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
   }
 
-  return false;
+  return 0;
 }
 
-bool WinRenderer::sizing( RECT & rect )
+int WinRenderer::sizing( RECT & rect )
 {
   RECT wRect, cRect;
   GetWindowRect( mHWnd, &wRect );
@@ -421,7 +421,7 @@ bool WinRenderer::sizing( RECT & rect )
     rect.bottom = wRect.bottom;
   }
 
-  return true;
+  return 1;
 }
 
 void WinRenderer::Instance::emitScreenData( std::span<uint8_t const> data )

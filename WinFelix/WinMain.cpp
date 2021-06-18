@@ -58,27 +58,27 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
       PostQuitMessage( 0 );
     }
     SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( pRenderer ) );
-    return 0;
+    break;
   }
   case WM_CLOSE:
     DestroyWindow( hwnd );
-    return 0;
+    break;
   case WM_DESTROY:
     PostQuitMessage( 0 );
-    return 0;
+    break;
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
-    return 0;
-  default:
     break;
+  default:
+    if ( WinRenderer * pRenderer = reinterpret_cast<WinRenderer *>( GetWindowLongPtr( hwnd, GWLP_USERDATA ) ) )
+    {
+      if ( pRenderer->win32_WndProcHandler( hwnd, msg, wParam, lParam ) )
+        return 1;
+    }
+    return DefWindowProc( hwnd, msg, wParam, lParam );
   }
 
-  if ( WinRenderer * pRenderer = reinterpret_cast<WinRenderer *>( GetWindowLongPtr( hwnd, GWLP_USERDATA ) ) )
-  {
-    if ( pRenderer->win32_WndProcHandler( hwnd, msg, wParam, lParam ) )
-      return true;
-  }
-  return DefWindowProc( hwnd, msg, wParam, lParam );
+  return 0;
 }
 
 void processKeys()
