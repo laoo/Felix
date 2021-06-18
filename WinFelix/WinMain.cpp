@@ -163,6 +163,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
         gDroppedFiles.clear();
       }
 
+      manager->update();
+
       std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
   }

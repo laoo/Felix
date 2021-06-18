@@ -60,21 +60,25 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer( int instances ) : mInstances{}, mHWnd{}, mSizeManager{}, mRefreshRate{}
+WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}
 {
-  if ( instances <= 0 || instances > 2 )
-    throw std::runtime_error{ "Bad emulation instances numer" };
-
-  for ( int i = 0; i < instances; ++i )
+  for ( int i = 0; i < mInstances.size(); ++i )
   {
-    mInstances.push_back( std::make_shared<Instance>() );
-    mSources.push_back( {} );
-    mSourceSRVs.push_back( {} );
+    mInstances[i] = std::make_shared<Instance>();
   }
 }
 
 WinRenderer::~WinRenderer()
 {
+}
+
+void WinRenderer::setInstances( int instances )
+{
+  if ( instances >= 0 && instances <= mInstances.size() )
+  {
+    mInstancesCount = instances;
+    mSizeManager = {};
+  }
 }
 
 void WinRenderer::initialize( HWND hWnd )
@@ -183,9 +187,11 @@ void WinRenderer::render( Manager & config )
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
 
+
+
   if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) )
   {
-    mSizeManager = SizeManager{ (int)mInstances.size(), config.horizontalView(), r.right, r.bottom };
+    mSizeManager = SizeManager{ mInstancesCount, config.horizontalView(), r.right, r.bottom };
 
     if ( !mSizeManager )
     {
@@ -207,7 +213,7 @@ void WinRenderer::render( Manager & config )
   {
     if ( r.right >= mSizeManager.minWindowWidth( config.horizontalView() ) && r.bottom >= mSizeManager.minWindowHeight( config.horizontalView() ) )
     {
-      mSizeManager = SizeManager{ (int)mInstances.size(), config.horizontalView(), r.right, r.bottom };
+      mSizeManager = SizeManager{ mInstancesCount, config.horizontalView(), r.right, r.bottom };
     }
     else
     {
@@ -219,7 +225,7 @@ void WinRenderer::render( Manager & config )
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, mBackBufferUAV.GetAddressOf(), nullptr );
 
-  for ( int i = 0; i < mInstances.size(); ++i )
+  for ( int i = 0; i < mInstancesCount; ++i )
   {
     if ( auto frame = mInstances[i]->pullNextFrame() )
     {

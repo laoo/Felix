@@ -11,9 +11,10 @@ class WinRenderer
 {
 public:
 
-  WinRenderer( int instances );
+  WinRenderer();
   ~WinRenderer();
 
+  void setInstances( int instances );
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
@@ -94,7 +95,8 @@ private:
   };
 
 private:
-  std::vector<std::shared_ptr<Instance>> mInstances;
+  std::array<std::shared_ptr<Instance>,2> mInstances;
+  std::atomic<int> mInstancesCount;
   HWND mHWnd;
   std::unique_ptr<WinImgui>         mImgui;
   ComPtr<ID3D11Device>              mD3DDevice;
@@ -104,8 +106,8 @@ private:
   ComPtr<ID3D11Buffer>              mPosSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
   ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
-  std::vector<ComPtr<ID3D11Texture2D>>           mSources;
-  std::vector<ComPtr<ID3D11ShaderResourceView>>  mSourceSRVs;
+  std::array<ComPtr<ID3D11Texture2D>,2> mSources;
+  std::array<ComPtr<ID3D11ShaderResourceView>,2> mSourceSRVs;
   SizeManager mSizeManager;
   boost::rational<int32_t> mRefreshRate;
 };

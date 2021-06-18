@@ -12,6 +12,8 @@ public:
   Manager();
   ~Manager();
 
+  void update();
+  void reset();
   void doArgs( std::vector<std::wstring> args );
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
@@ -43,6 +45,8 @@ private:
   bool mEmulationRunning;
   bool mHorizontalView;
 
+  bool mDoUpdate;
+
   std::array<std::shared_ptr<InputSource>, 2> mIntputSources;
   std::atomic<bool> mProcessThreads;
   int mInstancesCount;
@@ -52,6 +56,7 @@ private:
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
   std::vector<std::shared_ptr<Core>> mInstances;
+  std::vector<std::wstring> mArgs;
 
 
 };
