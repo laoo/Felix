@@ -3,5 +3,5 @@ tmp/
 out/
 renderer.hxx
 user.props
-felix/version.hpp
+WinFelix/version.hpp
 VersionTool/VersionTool.vcxproj.user

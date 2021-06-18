@@ -22,8 +22,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>felix</RootNamespace>
+    <RootNamespace>WinFelix</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>WinFelix</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
