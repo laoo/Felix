@@ -9,7 +9,7 @@
 #include "ComLynxWire.hpp"
 #include "version.hpp"
 
-std::vector<std::wstring> gDroppedFiles;
+std::vector<std::wstring> gArgs;
 
 wchar_t gClassName[] = L"FelixWindowClass";
 
@@ -25,13 +25,13 @@ void handleFileDrop( HDROP hDrop )
 #endif
 
   uint32_t cnt = DragQueryFile( hDrop, ~0, nullptr, 0 );
-  gDroppedFiles.resize( cnt );
+  gArgs.resize( cnt );
 
   for ( uint32_t i = 0; i < cnt; ++i )
   {
     uint32_t size = DragQueryFile( hDrop, i, nullptr, 0 );
-    gDroppedFiles[i].resize( size + 1 );
-    DragQueryFile( hDrop, i, gDroppedFiles[i].data(), size + 1 );
+    gArgs[i].resize( size + 1 );
+    DragQueryFile( hDrop, i, gArgs[i].data(), size + 1 );
   }
 
   DragFinish( hDrop );
@@ -83,8 +83,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 {
   L_SET_LOGLEVEL( Log::LL_DEBUG );
 
-  std::vector<std::wstring> args;
-
   LPWSTR* szArgList;
   int argCount;
 
@@ -93,7 +91,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   {
     for ( int i = 1; i < argCount; i++ )
     {
-      args.emplace_back( szArgList[i] );
+      gArgs.emplace_back( szArgList[i] );
     }
 
     LocalFree( szArgList );
@@ -139,8 +137,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
-    manager->doArgs( args );
-
     while ( manager->doRun() )
     {
       while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
@@ -157,10 +153,10 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
       manager->processKeys();
 
-      if ( !gDroppedFiles.empty() )
+      if ( !gArgs.empty() )
       {
-        manager->doArgs( gDroppedFiles );
-        gDroppedFiles.clear();
+        manager->doArgs( gArgs );
+        gArgs.clear();
       }
 
       manager->update();
