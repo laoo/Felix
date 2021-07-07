@@ -175,6 +175,8 @@ void Manager::reset()
     for ( size_t i = 0; i < mInstancesCount; ++i )
     {
       mInstances.push_back( std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink( (int)i ), getInputSource( (int)i ), std::span<InputFile>{ inputs.data(), inputs.size() } ) );
+      if ( !log.empty() )
+        mInstances.back()->setLog( log );
     }
 
     mRenderThread = std::thread{ [this]
