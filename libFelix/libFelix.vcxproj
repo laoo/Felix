@@ -81,6 +81,7 @@
     <ClInclude Include="IVideoSink.hpp" />
     <ClInclude Include="KernelEscape.hpp" />
     <ClInclude Include="Log.hpp" />
+    <ClInclude Include="MemoryUnit.hpp" />
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="ParallelPort.hpp" />

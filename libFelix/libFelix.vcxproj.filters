@@ -73,5 +73,6 @@
     <ClInclude Include="Utility.hpp" />
     <ClInclude Include="VidOperator.hpp" />
     <ClInclude Include="IInputSource.hpp" />
+    <ClInclude Include="MemoryUnit.hpp" />
   </ItemGroup>
 </Project>

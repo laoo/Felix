@@ -55,13 +55,13 @@ void Core::injectFile( InputFile const & file )
   switch ( file.getType() )
   {
   case InputFile::FileType::BS93:
-    if ( auto runAddress = file.getBS93()->load( mRAM.data() ) )
+    if ( auto runAddress = file.getBS93()->load( { mRAM.data(), mRAM.size() } ) )
     {
       pulseReset( runAddress );
     }
     break;
   case InputFile::FileType::BIOS:
-    file.getBIOS()->load( mROM.data() );
+    file.getBIOS()->load( { mROM.data(), mROM.size() } );
     pulseReset();
     break;
   case InputFile::FileType::CART:
@@ -434,10 +434,10 @@ void Core::handlePatch( uint16_t address )
     {
       struct Accessor : public IEscape::IAccessor
       {
-        Accessor( std::array<uint8_t, 65536> & ram, Mikey & mikey, Suzy & suzy, CPUState & state, ActionQueue & actionQueue, uint64_t currentTick ) : currentTick{ currentTick }, ram{ ram }, mikey{ mikey }, suzy{ suzy }, s{ state }, actionQueue{ actionQueue }{}
+        Accessor( std::array<MemU, 65536> & ram, Mikey & mikey, Suzy & suzy, CPUState & state, ActionQueue & actionQueue, uint64_t currentTick ) : currentTick{ currentTick }, ram{ ram }, mikey{ mikey }, suzy{ suzy }, s{ state }, actionQueue{ actionQueue }{}
 
         uint64_t currentTick;
-        std::array<uint8_t, 65536> & ram;
+        std::array<MemU, 65536> & ram;
         Mikey & mikey;
         Suzy & suzy;
         CPUState & s;
@@ -576,12 +576,12 @@ uint8_t Core::readKernel( uint16_t address )
 {
   if ( address >= 0x1fa )
   {
-    uint8_t * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
+    MemU * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
     return ptr[address];
   }
   else if ( address < 0x1f8 )
   {
-    uint8_t * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
+    MemU * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
     return ptr[address];
   }
   else if ( address == 0x1f9 )

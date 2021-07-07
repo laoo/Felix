@@ -1,5 +1,7 @@
 #pragma once
 
+struct MemU;
+
 class ImageBIOS
 {
 public:
@@ -7,7 +9,7 @@ public:
 public:
   ImageBIOS( std::vector<uint8_t> data );
 
-  void load( uint8_t * memory ) const;
+  void load( std::span<MemU> memory ) const;
 
 private:
   std::vector<uint8_t> const mData;

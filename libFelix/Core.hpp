@@ -6,6 +6,7 @@
 #include "Suzy.hpp"
 #include "Utility.hpp"
 #include "ComLynxFwd.hpp"
+#include "MemoryUnit.hpp"
 
 class Mikey;
 class CPU;
@@ -80,8 +81,8 @@ private:
   friend class ParallelPort;
 
 private:
-  std::array<uint8_t,65536> mRAM;
-  std::array<uint8_t, 512> mROM;
+  std::array<MemU, 65536> mRAM;
+  std::array<MemU, 512> mROM;
   std::array<PageType, 256> mPageTypes;
   std::array<std::shared_ptr<IEscape>, 16> mEscapes;
   uint64_t mCurrentTick;
