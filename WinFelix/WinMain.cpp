@@ -9,33 +9,9 @@
 #include "ComLynxWire.hpp"
 #include "version.hpp"
 
-std::vector<std::wstring> gArgs;
 
 wchar_t gClassName[] = L"FelixWindowClass";
 
-
-void handleFileDrop( HDROP hDrop )
-{
-#ifdef _WIN64
-  auto h = GlobalAlloc( GMEM_MOVEABLE, 0 );
-  uintptr_t hptr = reinterpret_cast<uintptr_t>( h );
-  GlobalFree( h );
-  uintptr_t hdropptr = reinterpret_cast<uintptr_t>( hDrop );
-  hDrop = reinterpret_cast<HDROP>( hptr & 0xffffffff00000000 | hdropptr & 0xffffffff );
-#endif
-
-  uint32_t cnt = DragQueryFile( hDrop, ~0, nullptr, 0 );
-  gArgs.resize( cnt );
-
-  for ( uint32_t i = 0; i < cnt; ++i )
-  {
-    uint32_t size = DragQueryFile( hDrop, i, nullptr, 0 );
-    gArgs[i].resize( size + 1 );
-    DragQueryFile( hDrop, i, gArgs[i].data(), size + 1 );
-  }
-
-  DragFinish( hDrop );
-}
 
 LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
@@ -57,15 +33,6 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
     SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( manager ) );
     break;
   }
-  case WM_CLOSE:
-    DestroyWindow( hwnd );
-    break;
-  case WM_DESTROY:
-    PostQuitMessage( 0 );
-    break;
-  case WM_DROPFILES:
-    handleFileDrop( (HDROP)wParam );
-    break;
   default:
     if ( Manager* manager = reinterpret_cast<Manager*>( GetWindowLongPtr( hwnd, GWLP_USERDATA ) ) )
     {
@@ -83,6 +50,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 {
   L_SET_LOGLEVEL( Log::LL_DEBUG );
 
+  std::vector<std::wstring> args;
+
   LPWSTR* szArgList;
   int argCount;
 
@@ -91,15 +60,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   {
     for ( int i = 1; i < argCount; i++ )
     {
-      gArgs.emplace_back( szArgList[i] );
+      args.emplace_back( szArgList[i] );
     }
 
     LocalFree( szArgList );
   }
 
   std::shared_ptr<Manager> manager = std::make_shared<Manager>();
-  MSG msg;
 
+  MSG msg;
   try
   {
 
@@ -137,6 +106,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
+    manager->doArgs( std::move( args ) );
+
     while ( manager->doRun() )
     {
       while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
@@ -150,14 +121,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
       if ( msg.message == WM_QUIT )
         break;
-
-      manager->processKeys();
-
-      if ( !gArgs.empty() )
-      {
-        manager->doArgs( gArgs );
-        gArgs.clear();
-      }
 
       manager->update();
 

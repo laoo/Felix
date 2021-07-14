@@ -25,12 +25,13 @@ public:
   bool doRun() const;
   bool horizontalView() const;
 
-  void processKeys();
 
   std::shared_ptr<IInputSource> getInputSource( int instance );
 
 private:
   void stopThreads();
+  void handleFileDrop( HDROP hDrop );
+  void processKeys();
 
 private:
 

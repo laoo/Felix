@@ -19,6 +19,7 @@ Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpda
 
 void Manager::update()
 {
+  processKeys();
   if ( mDoUpdate )
     reset();
   mDoUpdate = false;
@@ -38,8 +39,24 @@ void Manager::initialize( HWND hWnd )
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-  assert( mRenderer );
-  return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  switch ( msg )
+  {
+  case WM_CLOSE:
+    DestroyWindow( hWnd );
+    break;
+  case WM_DESTROY:
+    PostQuitMessage( 0 );
+    break;
+  case WM_DROPFILES:
+    handleFileDrop( (HDROP)wParam );
+  reset();
+    break;
+  default:
+    assert( mRenderer );
+    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  }
+
+  return 0;
 }
 
 Manager::~Manager()
@@ -206,6 +223,30 @@ void Manager::stopThreads()
   if ( mRenderThread.joinable() )
     mRenderThread.join();
   mRenderThread = {};
+}
+
+void Manager::handleFileDrop( HDROP hDrop )
+{
+#ifdef _WIN64
+  auto h = GlobalAlloc( GMEM_MOVEABLE, 0 );
+  uintptr_t hptr = reinterpret_cast<uintptr_t>( h );
+  GlobalFree( h );
+  uintptr_t hdropptr = reinterpret_cast<uintptr_t>( hDrop );
+  hDrop = reinterpret_cast<HDROP>( hptr & 0xffffffff00000000 | hdropptr & 0xffffffff );
+#endif
+
+  uint32_t cnt = DragQueryFile( hDrop, ~0, nullptr, 0 );
+  mArgs.resize( cnt );
+
+  for ( uint32_t i = 0; i < cnt; ++i )
+  {
+    uint32_t size = DragQueryFile( hDrop, i, nullptr, 0 );
+    mArgs[i].resize( size + 1 );
+    DragQueryFile( hDrop, i, mArgs[i].data(), size + 1 );
+  }
+
+  DragFinish( hDrop );
+  mDoUpdate = true;
 }
 
 Manager::InputSource::InputSource() : KeyInput{}
