@@ -112,7 +112,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -154,7 +154,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -202,6 +202,9 @@
     </ProjectReference>
     <ProjectReference Include="..\libFelix\libFelix.vcxproj">
       <Project>{f73558bd-d0f3-4ad9-b123-7cc346a21a70}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\lua.vcxproj">
+      <Project>{d0242abd-a0bf-4500-ac25-5d3de0359bca}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
