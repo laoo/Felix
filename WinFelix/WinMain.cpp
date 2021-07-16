@@ -44,7 +44,28 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
   return 0;
 }
 
+int loop( Manager & manager )
+{
+  MSG msg{};
 
+  while ( manager.doRun() )
+  {
+    while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
+    {
+      TranslateMessage( &msg );
+      DispatchMessage( &msg );
+
+      if ( msg.message == WM_QUIT )
+        return (int)msg.wParam;
+    }
+
+    manager.update();
+
+    std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+  }
+
+  return 0;
+}
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
@@ -66,9 +87,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     LocalFree( szArgList );
   }
 
-  std::shared_ptr<Manager> manager = std::make_shared<Manager>();
+  Manager manager{};
 
-  MSG msg;
   try
   {
 
@@ -95,9 +115,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     std::wstring name = L"Felix " + std::wstring{ version_string };
 
-    auto winConfig = manager->getWinConfig();
+    auto winConfig = manager.getWinConfig();
 
-    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, winConfig.mainWindow.x, winConfig.mainWindow.y, winConfig.mainWindow.width, winConfig.mainWindow.height, nullptr, nullptr, hInstance, manager.get() );
+    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, winConfig.mainWindow.x, winConfig.mainWindow.y, winConfig.mainWindow.width, winConfig.mainWindow.height, nullptr, nullptr, hInstance, &manager );
 
     if ( hwnd == nullptr )
     {
@@ -108,26 +128,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
-    manager->doArgs( std::move( args ) );
+    manager.doArgs( std::move( args ) );
 
-    while ( manager->doRun() )
-    {
-      while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
-      {
-        TranslateMessage( &msg );
-        DispatchMessage( &msg );
-
-        if ( msg.message == WM_QUIT )
-          break;
-      }
-
-      if ( msg.message == WM_QUIT )
-        break;
-
-      manager->update();
-
-      std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-    }
+    return loop( manager );
   }
   catch ( sol::error const& err )
   {
@@ -138,6 +141,4 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   {
     return -1;
   }
-
-  return (int)msg.wParam;
 }
