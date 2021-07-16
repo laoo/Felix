@@ -1,6 +1,8 @@
 #pragma once
 
 #include "IInputSource.hpp"
+#include "WinConfig.hpp"
+
 class WinRenderer;
 class WinAudioOut;
 class ComLynxWire;
@@ -15,6 +17,7 @@ public:
   void update();
   void reset();
   void doArgs( std::vector<std::wstring> args );
+  WinConfig const& getWinConfig();
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
@@ -32,7 +35,7 @@ private:
   void stopThreads();
   void handleFileDrop( HDROP hDrop );
   void processKeys();
-
+  static std::filesystem::path getAppDataFolder();
 private:
 
   struct InputSource : public IInputSource, public KeyInput
@@ -58,6 +61,7 @@ private:
   std::shared_ptr<ComLynxWire> mComLynxWire;
   std::vector<std::shared_ptr<Core>> mInstances;
   std::vector<std::wstring> mArgs;
-
+  std::filesystem::path mAppDataFolder;
+  WinConfig mWinConfig;
 
 };

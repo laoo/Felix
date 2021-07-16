@@ -7,7 +7,7 @@
 #include "Core.hpp"
 #include "imgui.h"
 
-Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}
+Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }
 {
   mIntputSources[0] = std::make_shared<InputSource>();
   mIntputSources[1] = std::make_shared<InputSource>();
@@ -15,6 +15,9 @@ Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpda
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
   mComLynxWire = std::make_shared<ComLynxWire>();
+
+  std::filesystem::create_directories( mAppDataFolder );
+  mWinConfig = WinConfig::load( mAppDataFolder );
 }
 
 void Manager::update()
@@ -31,6 +34,11 @@ void Manager::doArgs( std::vector<std::wstring> args )
   reset();
 }
 
+WinConfig const& Manager::getWinConfig()
+{
+  return mWinConfig;
+}
+
 void Manager::initialize( HWND hWnd )
 {
   assert( mRenderer );
@@ -39,9 +47,16 @@ void Manager::initialize( HWND hWnd )
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
+  RECT r;
   switch ( msg )
   {
   case WM_CLOSE:
+    GetWindowRect( hWnd, &r );
+    mWinConfig.mainWindow.x = r.left;
+    mWinConfig.mainWindow.y = r.top;
+    mWinConfig.mainWindow.width = r.right - r.left;
+    mWinConfig.mainWindow.height = r.bottom - r.top;
+    mWinConfig.serialize( mAppDataFolder );
     DestroyWindow( hWnd );
     break;
   case WM_DESTROY:
@@ -149,6 +164,24 @@ void Manager::processKeys()
   mIntputSources[1]->opt2 = keys[VK_NEXT] & 0x80;
   mIntputSources[1]->a = keys[VK_RCONTROL] & 0x80;
   mIntputSources[1]->b = keys[VK_RSHIFT] & 0x80;
+}
+
+std::filesystem::path Manager::getAppDataFolder()
+{
+  wchar_t* path_tmp;
+  auto ret = SHGetKnownFolderPath( FOLDERID_LocalAppData, 0, nullptr, &path_tmp );
+
+  if ( ret == S_OK )
+  {
+    std::filesystem::path result = path_tmp;
+    CoTaskMemFree( path_tmp );
+    return result / APP_NAME;
+  }
+  else
+  {
+    CoTaskMemFree( path_tmp );
+    return {};
+  }
 }
 
 std::shared_ptr<IInputSource> Manager::getInputSource( int instance )

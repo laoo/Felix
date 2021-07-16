@@ -19,6 +19,7 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <Windows.h>
+#include <Shlobj.h>
 #pragma warning(push)
 #pragma warning( disable: 4005 )
 #include <d3d11.h>
@@ -30,3 +31,6 @@ template<typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 #endif
+
+#include "sol/sol.hpp"
+

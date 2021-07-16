@@ -9,7 +9,6 @@
 #include "ComLynxWire.hpp"
 #include "version.hpp"
 
-
 wchar_t gClassName[] = L"FelixWindowClass";
 
 
@@ -44,6 +43,7 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 
   return 0;
 }
+
 
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
@@ -95,7 +95,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     std::wstring name = L"Felix " + std::wstring{ version_string };
 
-    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 320*3, 210*3, nullptr, nullptr, hInstance, manager.get() );
+    auto winConfig = manager->getWinConfig();
+
+    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, winConfig.mainWindow.x, winConfig.mainWindow.y, winConfig.mainWindow.width, winConfig.mainWindow.height, nullptr, nullptr, hInstance, manager.get() );
 
     if ( hwnd == nullptr )
     {
@@ -126,6 +128,11 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
       std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
+  }
+  catch ( sol::error const& err )
+  {
+    L_ERROR << err.what();
+    return -1;
   }
   catch ( std::runtime_error const& )
   {
