@@ -23,10 +23,10 @@ InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
     fin.read( ( char* )data.data(), size );
   }
 
-  if ( auto pBIOS = checkBIOS( std::move( data ) ) )
+  if ( auto pLnx = checkLnx( std::move( data ) ) )
   {
-    mType = FileType::BIOS;
-    mBIOS = std::move( pBIOS );
+    mType = FileType::CART;
+    mCart = std::move( pLnx );
     return;
   }
   else if ( auto pBS93 = checkBS93( std::move( data ) ) )
@@ -41,10 +41,10 @@ InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
     mCart = std::move( pLyx );
     return;
   }
-  else if ( auto pLnx = checkLnx( std::move( data ) ) )
+  else if ( auto pBIOS = checkBIOS( std::move( data ) ) )
   {
-    mType = FileType::CART;
-    mCart = std::move( pLnx );
+    mType = FileType::BIOS;
+    mBIOS = std::move( pBIOS );
     return;
   }
 }
