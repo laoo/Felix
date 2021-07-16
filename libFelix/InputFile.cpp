@@ -123,7 +123,6 @@ std::shared_ptr<ImageCart const> InputFile::checkLyx( std::vector<uint8_t>&& dat
   // If value is greater than 5 it is not a correct header
   if ( blockcount > 5 )
   {
-    L_ERROR << "Bad number of encrypted blocks: " << blockcount;
     return {};
   }
 
