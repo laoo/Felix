@@ -277,7 +277,6 @@ private:
   void writeSPRCTL0( uint8_t value );
   void writeSPRCTL1( uint8_t value );
   void writeSPRCOLL( uint8_t value );
-  void writeCart( int number, uint8_t value );
   int bpp() const;
 
 private:

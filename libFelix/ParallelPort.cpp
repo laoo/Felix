@@ -36,13 +36,13 @@ void ParallelPort::setData( uint8_t value )
   }
 }
 
-uint8_t ParallelPort::getData() const
+uint8_t ParallelPort::getData( uint64_t tick ) const
 {
   uint8_t result{};
 
   if ( ( mOutputMask & Mask::AUDIN ) == 0 )
   {
-    result |= mCore.getCartridge().getAudIn() ? Mask::AUDIN : 0;
+    result |= mCore.getCartridge().getAudIn( tick ) ? Mask::AUDIN : 0;
   }
   else
   {

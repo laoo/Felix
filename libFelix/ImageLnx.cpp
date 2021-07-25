@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ImageLnx.hpp"
 
-ImageLnx::ImageLnx( std::vector<uint8_t> data ) : ImageCart{ std::move( data ) }, mHeader{ ( Header const* )mData.data() }
+ImageLnx::ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data ) : ImageCart{ std::move( data ), path }, mHeader{ ( Header const* )mData.data() }
 {
   auto const* pImageData = mData.data() + sizeof( Header );
   size_t imageDataSize = mData.size() - sizeof( Header );
@@ -23,4 +23,7 @@ ImageLnx::ImageLnx( std::vector<uint8_t> data ) : ImageCart{ std::move( data ) }
     mBank0A ={ std::span<uint8_t const>{ pImageData + bank0AOffset, bank0ASize }, ( uint32_t )mHeader->pageSizeBank0 * 256 };
   if ( bank1Size )
     mBank1A ={ std::span<uint8_t const>{ pImageData + bank1AOffset, bank1ASize }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
+
+  mSD = mHeader->sd();
+  mEEPROM = mHeader->eeprom();
 }

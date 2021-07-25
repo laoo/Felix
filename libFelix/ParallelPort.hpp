@@ -22,7 +22,7 @@ public:
   uint8_t getDirection() const;
 
   void setData( uint8_t value );
-  uint8_t getData() const;
+  uint8_t getData( uint64_t tick ) const;
 
   struct Mask
   {

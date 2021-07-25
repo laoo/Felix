@@ -180,9 +180,9 @@ uint8_t Suzy::read( uint16_t address )
     return input.pause ? SWITCHES::PAUSE_SWITCH : 0;
   }
   case RCART0:
-    return mCore.getCartridge().peekRCART0();
+    return mCore.getCartridge().peekRCART0( mAccessTick );
   case RCART1:
-    return mCore.getCartridge().peekRCART1();
+    return mCore.getCartridge().peekRCART1( mAccessTick );
   default:
     return uint8_t( 0xff );
   }
@@ -403,10 +403,10 @@ void Suzy::write( uint16_t address, uint8_t value )
       mSpriteStop = ( SPRSYS::SPRITESTOP & value ) != 0;
       break;
     case RCART0:
-      writeCart( 0, value );
+      mCore.getCartridge().pokeRCART0( value );
       break;
     case RCART1:
-      writeCart( 1, value );
+      mCore.getCartridge().pokeRCART1( value );
       break;
     default:
     assert( false );
@@ -436,10 +436,6 @@ void Suzy::writeSPRCTL1( uint8_t value )
 void Suzy::writeSPRCOLL( uint8_t value )
 {
   mSprColl = value;
-}
-
-void Suzy::writeCart( int number, uint8_t value )
-{
 }
 
 int Suzy::bpp() const

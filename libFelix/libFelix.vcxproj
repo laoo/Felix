@@ -31,6 +31,7 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
     <ClCompile Include="Encryption.cpp" />
+    <ClCompile Include="GameDrive.cpp" />
     <ClCompile Include="ImageBIOS.cpp" />
     <ClCompile Include="ImageBS93.cpp" />
     <ClCompile Include="ImageCart.cpp" />
@@ -70,6 +71,7 @@
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="DisplayLine.hpp" />
     <ClInclude Include="Encryption.hpp" />
+    <ClInclude Include="GameDrive.hpp" />
     <ClInclude Include="IEscape.hpp" />
     <ClInclude Include="IInputSource.hpp" />
     <ClInclude Include="ImageBIOS.hpp" />

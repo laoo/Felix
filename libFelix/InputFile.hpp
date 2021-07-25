@@ -29,7 +29,7 @@ private:
   std::shared_ptr<ImageBS93 const> checkBS93( std::vector<uint8_t> && data ) const;
   std::shared_ptr<ImageBIOS const> checkBIOS( std::vector<uint8_t> && data ) const;
   std::shared_ptr<ImageCart const> checkLyx( std::vector<uint8_t> && data ) const;
-  std::shared_ptr<ImageCart const> checkLnx( std::vector<uint8_t> && data ) const;
+  std::shared_ptr<ImageCart const> checkLnx( std::filesystem::path const& path, std::vector<uint8_t> && data ) const;
 
 private:
   FileType mType;

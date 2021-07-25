@@ -199,7 +199,7 @@ uint8_t Mikey::read( uint16_t address )
   case IODIR:
     return mParallelPort.getDirection();
   case IODAT:
-    return mParallelPort.getData();
+    return mParallelPort.getData( mAccessTick );
   case MIKEYHREV:
     return 0x01;
   case SERCTL:

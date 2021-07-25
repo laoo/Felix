@@ -29,6 +29,7 @@
     <ClCompile Include="SuzyProcess.cpp" />
     <ClCompile Include="TimerCore.cpp" />
     <ClCompile Include="VidOperator.cpp" />
+    <ClCompile Include="GameDrive.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp" />
@@ -74,5 +75,6 @@
     <ClInclude Include="VidOperator.hpp" />
     <ClInclude Include="IInputSource.hpp" />
     <ClInclude Include="MemoryUnit.hpp" />
+    <ClInclude Include="GameDrive.hpp" />
   </ItemGroup>
 </Project>
