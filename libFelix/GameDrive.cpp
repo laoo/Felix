@@ -46,6 +46,9 @@ GameDrive::GDCoroutine GameDrive::process()
   std::filesystem::path base = mBasePath;
   std::filesystem::path path{};
   std::fstream file{};
+  size_t bytesRead{};
+  static constexpr uint64_t byteReadLatency = 234;
+  static constexpr uint64_t blockReadLatency = 163 * 47 * 16;
 
   for ( ;; )
   {
@@ -77,6 +80,7 @@ GameDrive::GDCoroutine GameDrive::process()
       {
         file.open( path, std::ios::binary | std::ios::in );
         co_await putResult( FRESULT::OK );
+        bytesRead = 0;
       }
       else
       {
@@ -100,11 +104,10 @@ GameDrive::GDCoroutine GameDrive::process()
       int32_t size = co_await getByte();
       size |= ( co_await getByte() ) << 8;
 
-      uint64_t latency = 163 * 47 * 16;
       while ( size-- >= 0 )
       {
+        uint64_t latency = ( ( bytesRead++ ) & 0x7fff ) == 0 ? blockReadLatency : byteReadLatency;
         co_await putByte( (uint8_t)file.get(), latency );
-        latency = 234;
       }
       co_await putResult( FRESULT::OK );
       break;
