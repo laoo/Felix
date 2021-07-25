@@ -403,10 +403,10 @@ void Suzy::write( uint16_t address, uint8_t value )
       mSpriteStop = ( SPRSYS::SPRITESTOP & value ) != 0;
       break;
     case RCART0:
-      mCore.getCartridge().pokeRCART0( value );
+      mCore.getCartridge().pokeRCART0( mAccessTick, value );
       break;
     case RCART1:
-      mCore.getCartridge().pokeRCART1( value );
+      mCore.getCartridge().pokeRCART1( mAccessTick, value );
       break;
     default:
     assert( false );

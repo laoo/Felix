@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "GameDrive.hpp"
 
-GameDrive::GameDrive( std::filesystem::path const& imagePath ) : mBasePath{ imagePath.parent_path() }, mBuffer{}, mGDCoroutine{ process() }, mHasOutput{}, mRunning{}
+GameDrive::GameDrive( std::filesystem::path const& imagePath ) : mBasePath{ imagePath.parent_path() }, mBuffer{}, mGDCoroutine{ process() }, mReadTick{}, mRunning{}
 {
 }
 
@@ -11,7 +11,7 @@ GameDrive::~GameDrive()
 
 bool GameDrive::hasOutput( uint64_t tick ) const
 {
-  return mHasOutput;
+  return mReadTick.has_value() && *mReadTick < tick;
 }
 
 bool GameDrive::running() const
@@ -19,10 +19,11 @@ bool GameDrive::running() const
   return mRunning;
 }
 
-void GameDrive::put( uint8_t value )
+void GameDrive::put( uint64_t tick, uint8_t value )
 {
-  if ( !mHasOutput )
+  if ( !mReadTick.has_value() )
   {
+    mLastTick = tick;
     mBuffer.value = value;
     mGDCoroutine.resume();
   }
@@ -30,8 +31,9 @@ void GameDrive::put( uint8_t value )
 
 uint8_t GameDrive::get( uint64_t tick )
 {
-  if ( mHasOutput )
+  if ( mReadTick.has_value() )
   {
+    mLastTick = tick;
     mGDCoroutine.resume();
     return mBuffer.value;
   }
@@ -47,19 +49,19 @@ GameDrive::GDCoroutine GameDrive::process()
 
   for ( ;; )
   {
-    switch ( (ECommandByte)co_await getCommand() )
+    switch ( (ECommandByte)co_await getByte() )
     {
     case ECommandByte::OpenDir:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::ReadDir:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::OpenFile:
     {
       if ( file.is_open() )
       {
-        co_yield FRESULT::NOT_READY;
+        co_await putResult( FRESULT::NOT_READY );
         break;
       }
       std::string fname{};
@@ -74,54 +76,56 @@ GameDrive::GDCoroutine GameDrive::process()
       if ( std::filesystem::exists( path ) )
       {
         file.open( path, std::ios::binary | std::ios::in );
-        co_yield FRESULT::OK;
+        co_await putResult( FRESULT::OK );
       }
       else
       {
-        co_yield FRESULT::NO_FILE;
+        co_await putResult( FRESULT::NO_FILE );
       }
       break;
     }
     case ECommandByte::GetSize:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::Seek:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::Read:
     {
       if ( !file.is_open() )
       {
-        co_yield FRESULT::NOT_OPENED;
+        co_await putResult( FRESULT::NOT_OPENED );
         break;
       }
       int32_t size = co_await getByte();
       size |= ( co_await getByte() ) << 8;
 
+      uint64_t latency = 163 * 47 * 16;
       while ( size-- >= 0 )
       {
-        co_yield (uint8_t)file.get();
+        co_await putByte( (uint8_t)file.get(), latency );
+        latency = 234;
       }
-      co_yield FRESULT::OK;
+      co_await putResult( FRESULT::OK );
       break;
     }
     case ECommandByte::Write:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::Close:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::ProgramFile:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::ClearBlocks:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::LowPowerMode:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     default:
-      co_yield FRESULT::NOT_ENABLED;
+      co_await putResult( FRESULT::NOT_ENABLED );
       break;
     }
   }

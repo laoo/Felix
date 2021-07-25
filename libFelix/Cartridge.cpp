@@ -86,15 +86,15 @@ uint8_t Cartridge::peekRCART1( uint64_t tick )
   return peek( mBank1 );
 }
 
-void Cartridge::pokeRCART0( uint8_t value )
+void Cartridge::pokeRCART0( uint64_t tick, uint8_t value )
 {
 }
 
-void Cartridge::pokeRCART1( uint8_t value )
+void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
 {
   if ( mGameDrive )
   {
-    return mGameDrive->put( value );
+    return mGameDrive->put( tick, value );
   }
 }
 

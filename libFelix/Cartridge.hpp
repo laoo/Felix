@@ -21,8 +21,8 @@ public:
   uint8_t peekRCART0( uint64_t tick );
   uint8_t peekRCART1( uint64_t tick );
 
-  void pokeRCART0( uint8_t value );
-  void pokeRCART1( uint8_t value );
+  void pokeRCART0( uint64_t tick, uint8_t value );
+  void pokeRCART1( uint64_t tick, uint8_t value );
 
 private:
   uint8_t peek( CartBank const& bank );
