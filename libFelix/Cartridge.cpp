@@ -20,9 +20,6 @@ bool Cartridge::getAudIn( uint64_t tick ) const
 void Cartridge::setAudIn( bool value )
 {
   //TODO: here add support for GD classic storage selection
-  if ( mGameDrive )
-    return;
-
   if ( mAudIn == value )
     return;
 
@@ -71,14 +68,19 @@ void Cartridge::setPower( bool value )
 
 uint8_t Cartridge::peekRCART0( uint64_t tick )
 {
-  if ( mGameDrive && mGameDrive->running() )
+  if ( mGameDrive )
   {
-    return mGameDrive->get( tick );
+    if ( mGameDrive->hasOutput( tick ) )
+    {
+      return mGameDrive->get( tick );
+    }
+    else if ( auto bank = mGameDrive->getBank( tick ) )
+    {
+      return peek( *bank );
+    }
   }
-  else
-  {
-    return peek( mBank0 );
-  }
+
+  return peek( mBank0 );
 }
 
 uint8_t Cartridge::peekRCART1( uint64_t tick )

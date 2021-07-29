@@ -13,7 +13,18 @@ Suzy::Suzy( Core & core, std::shared_ptr<IInputSource> inputSource ) : mCore{ co
 
 uint64_t Suzy::requestAccess( uint64_t tick, uint16_t address )
 {
-  mAccessTick = tick + 5;
+  address &= 0xff;
+
+  switch ( address )
+  {
+  case RCART0:
+  case RCART1:
+    mAccessTick = tick + 14;
+    break;
+  default:
+    mAccessTick = tick + 5;
+  }
+
   return mAccessTick;
 }
 

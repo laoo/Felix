@@ -1,6 +1,8 @@
 #pragma once
 #include "Utility.hpp"
 
+class CartBank;
+
 class GameDrive
 {
 public:
@@ -33,16 +35,16 @@ public:
   };
 
   bool hasOutput( uint64_t tick ) const;
-  bool running() const;
 
   void put( uint64_t tick, uint8_t value );
   uint8_t get( uint64_t tick );
+  CartBank* getBank( uint64_t tick ) const;
 
   GameDrive( std::filesystem::path const& imagePath );
   ~GameDrive();
 
 private:
-
+  std::array<uint8_t, 2048 * 256> mMemoryBank;
   std::filesystem::path mBasePath;
 
   struct Buffer
@@ -51,6 +53,7 @@ private:
     void await_suspend( std::coroutine_handle<> c ) {}
     void await_resume() {}
     uint8_t value;
+    bool ready;
   } mBuffer;
 
   auto& getByte()
@@ -60,7 +63,7 @@ private:
       uint8_t await_resume() { return value; }
     };
     mReadTick = std::nullopt;
-    mRunning = true;
+    mBuffer.ready = true;
     return static_cast<GetByte&>( mBuffer );
   }
 
@@ -72,7 +75,6 @@ private:
     mLastTick += latency;
     mReadTick = mLastTick;
     mBuffer.value = (uint8_t)value;
-    mRunning = true;
     return static_cast<PutResult&>( mBuffer );
   }
 
@@ -83,8 +85,7 @@ private:
     };
     mLastTick += latency;
     mReadTick = mLastTick;
-    mBuffer.value = (uint8_t)value;
-    mRunning = true;
+    mBuffer.value = value;
     return static_cast<PutByte&>( mBuffer );
   }
 
@@ -124,9 +125,12 @@ private:
     handle mCoro;
   } const mGDCoroutine;
 
-private:
-  GDCoroutine process();
   uint64_t mLastTick;
   std::optional<uint64_t> mReadTick;
-  bool mRunning;
+  std::shared_ptr<CartBank> mProgrammedBank;
+
+  private:
+  GDCoroutine process();
+  std::chrono::steady_clock::time_point mBaseTime;
+  double mLastTimePoint;
 };
