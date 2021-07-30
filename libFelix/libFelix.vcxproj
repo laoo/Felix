@@ -41,6 +41,7 @@
     <ClCompile Include="KernelEscape.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Mikey.cpp" />
+    <ClCompile Include="Monitor.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -85,6 +86,7 @@
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="MemoryUnit.hpp" />
     <ClInclude Include="Mikey.hpp" />
+    <ClInclude Include="Monitor.hpp" />
     <ClInclude Include="Opcodes.hpp" />
     <ClInclude Include="ParallelPort.hpp" />
     <ClInclude Include="pch.hpp" />

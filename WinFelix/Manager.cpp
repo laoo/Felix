@@ -5,6 +5,7 @@
 #include "WinAudioOut.hpp"
 #include "ComLynxWire.hpp"
 #include "Core.hpp"
+#include "Monitor.hpp"
 #include "imgui.h"
 
 Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }
@@ -204,6 +205,7 @@ void Manager::reset()
   for ( auto const& arg : mArgs )
   {
     std::filesystem::path path{ arg };
+    path = std::filesystem::absolute( path );
     if ( path.has_extension() && path.extension() == ".log" )
     {
       log = path;
@@ -213,6 +215,7 @@ void Manager::reset()
     InputFile file{ path };
     if ( file.valid() )
     {
+      //mMonitor = std::make_unique<Monitor>( path.parent_path() );
       inputs.push_back( file );
     }
   }

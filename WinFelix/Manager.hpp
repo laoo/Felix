@@ -7,6 +7,7 @@ class WinRenderer;
 class WinAudioOut;
 class ComLynxWire;
 class Core;
+class Monitor;
 
 class Manager
 {
@@ -59,6 +60,7 @@ private:
   std::shared_ptr<WinRenderer> mRenderer;
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
+  std::unique_ptr<Monitor> mMonitor;
   std::vector<std::shared_ptr<Core>> mInstances;
   std::vector<std::wstring> mArgs;
   std::filesystem::path mAppDataFolder;
