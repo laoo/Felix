@@ -33,9 +33,9 @@ uint8_t GameDrive::get( uint64_t tick )
 {
   mLastTick = tick;
   mReadTick = std::nullopt;
+  auto result = mBuffer.value;
   mGDCoroutine.resume();
-
-  return mBuffer.value;
+  return result;
 }
 
 CartBank* GameDrive::getBank( uint64_t tick ) const
@@ -136,7 +136,8 @@ GameDrive::GDCoroutine GameDrive::process()
         while ( size-- > 0 )
         {
           uint64_t latency = ( ( bytesRead++ ) & 0x7fff ) == 0 ? blockReadLatency : byteReadLatency;
-          co_await putByte( (uint8_t)file.get(), latency );
+          uint8_t b = file.get();
+          co_await putByte( b, latency );
         }
         co_await putResult( FRESULT::OK );
       }
