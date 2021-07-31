@@ -50,7 +50,7 @@ GameDrive::GDCoroutine GameDrive::process()
   std::fstream file{};
   size_t bytesRead{};
   static constexpr uint64_t byteReadLatency = 120;
-  static constexpr uint64_t blockReadLatency = 163 * 47 * 16;
+  static constexpr uint64_t blockReadLatency = 159 * 5 * 16;
   static constexpr uint64_t programByteLatency = 34;
 
   for ( ;; )
@@ -125,7 +125,7 @@ GameDrive::GDCoroutine GameDrive::process()
 
       if ( !file.is_open() )
       {
-        while ( size-- >= 0 )
+        while ( size-- > 0 )
         {
           co_await putByte( 0 );
         }
@@ -133,7 +133,7 @@ GameDrive::GDCoroutine GameDrive::process()
       }
       else
       {
-        while ( size-- >= 0 )
+        while ( size-- > 0 )
         {
           uint64_t latency = ( ( bytesRead++ ) & 0x7fff ) == 0 ? blockReadLatency : byteReadLatency;
           co_await putByte( (uint8_t)file.get(), latency );
