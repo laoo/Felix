@@ -11,7 +11,7 @@
 #include "Log.hpp"
 #include "Ex.hpp"
 
-Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}
+Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}
 {
   mIntputSources[0] = std::make_shared<InputSource>();
   mIntputSources[1] = std::make_shared<InputSource>();
@@ -221,7 +221,6 @@ std::shared_ptr<IInputSource> Manager::getInputSource( int instance )
 
 void Manager::processLua( std::filesystem::path const& path, std::vector<InputFile>& inputs )
 {
-  std::filesystem::path log{};
   sol::state lua;
 
   auto decHex = [this]( sol::table const& tab, bool hex )
@@ -267,6 +266,23 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     mMonitor = std::make_unique<Monitor>( std::move( entries ) );
   };
 
+  lua["Log"] = [this]( sol::table const& tab )
+  {
+    if ( sol::optional<std::string> opt = tab["path"] )
+    {
+      mLogPath = *opt;
+    }
+    else
+    {
+      throw Ex{} << "path = \"path/to/log\" required";
+    }
+
+    if ( sol::optional<uint64_t> opt = tab["start_cycle"] )
+    {
+      mLogStartCycle = *opt;
+    }
+  };
+
   lua.script_file( path.string() );
 
   if ( sol::optional<std::string> opt = lua["lnx"] )
@@ -284,7 +300,6 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
 
   if ( sol::optional<std::string> opt = lua["log"] )
   {
-    mLogPath = *opt;
   }
   if ( sol::optional<std::string> opt = lua["lab"] )
   {
@@ -337,7 +352,7 @@ void Manager::reset()
     {
       mInstances.push_back( std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink( (int)i ), getInputSource( (int)i ), std::span<InputFile>{ inputs.data(), inputs.size() } ) );
       if ( !mLogPath.empty() )
-        mInstances.back()->setLog( mLogPath );
+        mInstances.back()->setLog( mLogPath, mLogStartCycle );
     }
 
     mRenderThread = std::thread{ [this]

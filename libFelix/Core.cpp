@@ -73,9 +73,9 @@ void Core::injectFile( InputFile const & file )
   }
 }
 
-void Core::setLog( std::filesystem::path const & path )
+void Core::setLog( std::filesystem::path const & path, uint64_t startCycle )
 {
-  mCpu->setLog( path );
+  mCpu->setLog( path, startCycle );
 }
 
 void Core::pulseReset( std::optional<uint16_t> resetAddress )

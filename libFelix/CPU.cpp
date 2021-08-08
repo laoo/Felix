@@ -46,10 +46,10 @@ bool CPU::isHiccup()
   }
 }
 
-void CPU::setLog( std::filesystem::path const & path )
+void CPU::setLog( std::filesystem::path const & path, uint64_t startCycle )
 {
-  mTrace = true;
   mFtrace = std::ofstream{ path };
+  mStartCycle = startCycle;
 }
 
 CPUState & CPU::state()
@@ -57,7 +57,7 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU() : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{ false }
+CPU::CPU() : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mStartCycle{ ~0ull }, mTrace{}
 {
 }
 
@@ -2028,9 +2028,10 @@ void CPU::cpy( uint8_t value )
 
 void CPU::trace1()
 {
-  if ( !mTrace )
+  if ( mState.tick < mStartCycle )
     return;
 
+  mTrace = true;
   off = sprintf( buf.data(), "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%04x P:%c%c1%c%c%c%c%c ", mState.tick, mState.pc, mState.a, mState.x, mState.y, mState.s, ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' ) );
 }
 

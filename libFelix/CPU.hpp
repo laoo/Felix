@@ -50,7 +50,7 @@ public:
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
   int interruptedMask() const;
-  void setLog( std::filesystem::path const & path );
+  void setLog( std::filesystem::path const & path, uint64_t startCycle );
 
   CPUState & state();
 
@@ -165,6 +165,7 @@ private:
   Response mRes;
   bool mTrace;
   std::ofstream mFtrace;
+  uint64_t mStartCycle;
 
   Execute execute();
   bool isHiccup();

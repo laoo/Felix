@@ -69,6 +69,7 @@ private:
   std::vector<std::wstring> mArgs;
   std::filesystem::path mAppDataFolder;
   std::filesystem::path mLogPath;
+  uint64_t mLogStartCycle;
   WinConfig mWinConfig;
   std::atomic_bool mPaused;
 

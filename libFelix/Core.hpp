@@ -30,7 +30,7 @@ public:
   void advance( uint64_t ticks );
 
   void injectFile( InputFile const& file );
-  void setLog( std::filesystem::path const & path );
+  void setLog( std::filesystem::path const & path, uint64_t startCycle );
 
   void enterMonitor();
 

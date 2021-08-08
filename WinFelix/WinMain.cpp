@@ -135,10 +135,12 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
   catch ( sol::error const& err )
   {
     L_ERROR << err.what();
+    MessageBoxA( nullptr, err.what(), "Error", 0 );
     return -1;
   }
   catch ( std::exception const& ex )
   {
+    L_ERROR << ex.what();
     MessageBoxA( nullptr, ex.what(), "Error", 0 );
     return -1;
   }
