@@ -291,9 +291,15 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     mSymbols = std::make_unique<SymbolSource>( *opt );
   }
 
-  if ( mSymbols && mMonitor )
-    mMonitor->populateSymbols( *mSymbols );
-
+  if ( mSymbols )
+  {
+    if ( mMonitor )
+      mMonitor->populateSymbols( *mSymbols );
+  }
+  else
+  {
+    mMonitor.reset();
+  }
 }
 
 void Manager::reset()
