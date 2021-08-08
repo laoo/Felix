@@ -5,19 +5,21 @@
 #pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
 #endif
 
-WinImgui::WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext ) : mhWnd{ hWnd }, md3dDevice{ std::move( pD3DDevice) }, md3dDeviceContext{ std::move( pDeviceContext ) },
+WinImgui::WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext, std::filesystem::path const& iniPath ) : mhWnd{ hWnd }, md3dDevice{ std::move( pD3DDevice) }, md3dDeviceContext{ std::move( pDeviceContext ) },
   mTime{}, mTicksPerSecond{}, mLastMouseCursor{ ImGuiMouseCursor_COUNT },
-  mVertexBufferSize{ 5000 }, mIndexBufferSize{ 10000 }
+  mVertexBufferSize{ 5000 }, mIndexBufferSize{ 10000 }, mIniFilePath{ ( iniPath / "imgui.ini" ).string() }
 {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.IniFilename = mIniFilePath.c_str();
 
   if ( !::QueryPerformanceFrequency( (LARGE_INTEGER *)&mTicksPerSecond ) )
     throw std::exception{};
   if ( !::QueryPerformanceCounter( (LARGE_INTEGER *)&mTime ) )
     throw std::exception{};
 
-  ImGuiIO& io = ImGui::GetIO();
   io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
   io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
   io.BackendPlatformName = "imgui_impl_win32";

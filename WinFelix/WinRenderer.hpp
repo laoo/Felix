@@ -15,7 +15,7 @@ public:
   ~WinRenderer();
 
   void setInstances( int instances );
-  void initialize( HWND hWnd );
+  void initialize( HWND hWnd, std::filesystem::path const& iniPath );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
   std::shared_ptr<IVideoSink> getVideoSink( int instance ) const;

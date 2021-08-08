@@ -22,3 +22,4 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/case_conv.hpp>

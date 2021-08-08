@@ -6,9 +6,12 @@
 #include "ComLynxWire.hpp"
 #include "Core.hpp"
 #include "Monitor.hpp"
+#include "SymbolSource.hpp"
 #include "imgui.h"
+#include "Log.hpp"
+#include "Ex.hpp"
 
-Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }
+Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}
 {
   mIntputSources[0] = std::make_shared<InputSource>();
   mIntputSources[1] = std::make_shared<InputSource>();
@@ -24,6 +27,7 @@ Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpda
 void Manager::update()
 {
   processKeys();
+
   if ( mDoUpdate )
     reset();
   mDoUpdate = false;
@@ -43,7 +47,7 @@ WinConfig const& Manager::getWinConfig()
 void Manager::initialize( HWND hWnd )
 {
   assert( mRenderer );
-  mRenderer->initialize( hWnd );
+  mRenderer->initialize( hWnd, mAppDataFolder );
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -122,7 +126,16 @@ void Manager::drawGui( int left, int top, int right, int bottom )
     ImGui::PopStyleVar();
   }
 
-  //ImGui::ShowDemoWindow();
+  if ( mMonitor && mInstances[0] )
+  {
+    if ( ImGui::Begin( "Monitor" ) )
+    {
+      for ( auto sv : mMonitor->sample( *mInstances[0] ) )
+        ImGui::Text( sv.data() );
+    }
+    ImGui::End();
+  }
+
 }
 
 void Manager::horizontalView( bool horizontal )
@@ -165,6 +178,18 @@ void Manager::processKeys()
   mIntputSources[1]->opt2 = keys[VK_NEXT] & 0x80;
   mIntputSources[1]->a = keys[VK_RCONTROL] & 0x80;
   mIntputSources[1]->b = keys[VK_RSHIFT] & 0x80;
+
+  if ( keys[VK_F9] & 0x80 )
+  {
+    mPaused = false;
+    L_INFO << "UnPause";
+  }
+  if ( keys[VK_F10] & 0x80 )
+  {
+    mPaused = true;
+    L_INFO << "Pause";
+  }
+
 }
 
 std::filesystem::path Manager::getAppDataFolder()
@@ -193,22 +218,99 @@ std::shared_ptr<IInputSource> Manager::getInputSource( int instance )
     return {};
 }
 
+
+void Manager::processLua( std::filesystem::path const& path, std::vector<InputFile>& inputs )
+{
+  std::filesystem::path log{};
+  sol::state lua;
+
+  auto decHex = [this]( sol::table const& tab, bool hex )
+  {
+    Monitor::Entry e{ hex };
+
+    if ( sol::optional<std::string> opt = tab["label"] )
+      e.name = *opt;
+    else throw Ex{} << "Monitor entry required label";
+
+    if ( sol::optional<int> opt = tab["size"] )
+      e.size = *opt;
+
+    return e;
+  };
+
+  lua["Dec"] = [&]( sol::table const& tab ) { return decHex( tab, false ); };
+  lua["Hex"] = [&]( sol::table const& tab ) { return decHex( tab, true ); };
+
+  lua["Monitor"] = [this]( sol::table const& tab )
+  {
+    std::vector<Monitor::Entry> entries;
+
+    for ( auto kv : tab )
+    {
+      sol::object const& value = kv.second;
+      sol::type t = value.get_type();
+
+      switch ( t )
+      {
+      case sol::type::userdata:
+        if ( value.is<Monitor::Entry>() )
+        {
+          entries.push_back( value.as<Monitor::Entry>() );
+        }
+        else throw Ex{} << "Unknown type in Monitor";
+        break;
+      default:
+        throw Ex{} << "Unsupported argument to Monitor";
+      }
+    }
+
+    mMonitor = std::make_unique<Monitor>( std::move( entries ) );
+  };
+
+  lua.script_file( path.string() );
+
+  if ( sol::optional<std::string> opt = lua["lnx"] )
+  {
+    InputFile file{ *opt };
+    if ( file.valid() )
+    {
+      inputs.push_back( file );
+    }
+  }
+  else
+  {
+    throw Ex{} << "Set lnx file using 'lnx = path'";
+  }
+
+  if ( sol::optional<std::string> opt = lua["log"] )
+  {
+    mLogPath = *opt;
+  }
+  if ( sol::optional<std::string> opt = lua["lab"] )
+  {
+    mSymbols = std::make_unique<SymbolSource>( *opt );
+  }
+
+  if ( mSymbols && mMonitor )
+    mMonitor->populateSymbols( *mSymbols );
+
+}
+
 void Manager::reset()
 {
   stopThreads();
   mProcessThreads.store( true );
   mInstances.clear();
 
-  std::filesystem::path log{};
   std::vector<InputFile> inputs;
 
   for ( auto const& arg : mArgs )
   {
     std::filesystem::path path{ arg };
     path = std::filesystem::absolute( path );
-    if ( path.has_extension() && path.extension() == ".log" )
+    if ( path.has_extension() && path.extension() == ".lua" )
     {
-      log = path;
+      processLua( path, inputs );
       continue;
     }
 
@@ -228,8 +330,8 @@ void Manager::reset()
     for ( size_t i = 0; i < mInstancesCount; ++i )
     {
       mInstances.push_back( std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink( (int)i ), getInputSource( (int)i ), std::span<InputFile>{ inputs.data(), inputs.size() } ) );
-      if ( !log.empty() )
-        mInstances.back()->setLog( log );
+      if ( !mLogPath.empty() )
+        mInstances.back()->setLog( mLogPath );
     }
 
     mRenderThread = std::thread{ [this]
@@ -244,7 +346,8 @@ void Manager::reset()
     {
       while ( mProcessThreads.load() )
       {
-        mAudioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ mInstances.data(), mInstances.size() } );
+        if ( !mPaused.load() )
+          mAudioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ mInstances.data(), mInstances.size() } );
       }
     } };
   }

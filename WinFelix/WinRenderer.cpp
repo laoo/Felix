@@ -81,7 +81,7 @@ void WinRenderer::setInstances( int instances )
   }
 }
 
-void WinRenderer::initialize( HWND hWnd )
+void WinRenderer::initialize( HWND hWnd, std::filesystem::path const& iniPath )
 {
   mHWnd = hWnd;
 
@@ -170,7 +170,7 @@ void WinRenderer::initialize( HWND hWnd )
   }
 
 
-  mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext } );
+  mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext, iniPath } );
 }
 
 std::shared_ptr<IVideoSink> WinRenderer::getVideoSink( int instance ) const

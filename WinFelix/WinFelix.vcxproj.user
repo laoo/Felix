@@ -5,9 +5,14 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2\out\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>d:\home\LynxSandbox\out\2.lnx</LocalDebuggerCommandArguments>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">
+    <LocalDebuggerCommandArguments>d:\home\lynxdemo2\felix.lua</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>d:\home\LynxSandbox\out\</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2\</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>d:\home\lynxdemo2\felix.lua</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

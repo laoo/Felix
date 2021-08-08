@@ -3,7 +3,7 @@
 class WinImgui
 {
 public:
-  WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext );
+  WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext, std::filesystem::path const& iniPath );
   ~WinImgui();
 
   void win32_NewFrame();
@@ -48,4 +48,5 @@ private:
   ComPtr<ID3D11RasterizerState>           mRasterizerState;
   ComPtr<ID3D11BlendState>                mBlendState;
   ComPtr<ID3D11DepthStencilState>         mDepthStencilState;
+  std::string mIniFilePath;
 };

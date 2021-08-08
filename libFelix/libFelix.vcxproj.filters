@@ -31,6 +31,7 @@
     <ClCompile Include="VidOperator.cpp" />
     <ClCompile Include="Monitor.cpp" />
     <ClCompile Include="GameDrive.cpp" />
+    <ClCompile Include="SymbolSource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp" />
@@ -78,5 +79,8 @@
     <ClInclude Include="MemoryUnit.hpp" />
     <ClInclude Include="Monitor.hpp" />
     <ClInclude Include="GameDrive.hpp" />
+    <ClInclude Include="SymbolSource.hpp" />
+    <ClInclude Include="Ex.hpp" />
+    <ClInclude Include="generator.hpp" />
   </ItemGroup>
 </Project>

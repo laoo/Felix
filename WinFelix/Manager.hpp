@@ -8,6 +8,8 @@ class WinAudioOut;
 class ComLynxWire;
 class Core;
 class Monitor;
+class SymbolSource;
+class InputFile;
 
 class Manager
 {
@@ -33,6 +35,7 @@ public:
   std::shared_ptr<IInputSource> getInputSource( int instance );
 
 private:
+  void processLua( std::filesystem::path const& path, std::vector<InputFile>& inputs );
   void stopThreads();
   void handleFileDrop( HDROP hDrop );
   void processKeys();
@@ -61,9 +64,12 @@ private:
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
   std::unique_ptr<Monitor> mMonitor;
+  std::unique_ptr<SymbolSource> mSymbols;
   std::vector<std::shared_ptr<Core>> mInstances;
   std::vector<std::wstring> mArgs;
   std::filesystem::path mAppDataFolder;
+  std::filesystem::path mLogPath;
   WinConfig mWinConfig;
+  std::atomic_bool mPaused;
 
 };

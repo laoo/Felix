@@ -137,8 +137,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     L_ERROR << err.what();
     return -1;
   }
-  catch ( std::runtime_error const& )
+  catch ( std::exception const& ex )
   {
+    MessageBoxA( nullptr, ex.what(), "Error", 0 );
     return -1;
   }
 }

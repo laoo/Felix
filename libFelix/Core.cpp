@@ -628,3 +628,8 @@ void Core::writeMAPCTL( uint8_t value )
   mPageTypes[0xfd] = mMapCtl.mikeyDisable ? PageType::RAM : PageType::MIKEY;
   mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
 }
+
+uint8_t Core::sampleRam( uint16_t addr ) const
+{
+  return mRAM[addr];
+}

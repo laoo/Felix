@@ -1,187 +1,90 @@
 #include "pch.hpp"
 #include "Monitor.hpp"
 #include "Log.hpp"
+#include "SymbolSource.hpp"
+#include "Core.hpp"
 
-Monitor::Monitor( std::filesystem::path const& sourceFolder )
+Monitor::Monitor( std::vector<Entry> entries ) : mEntries{ std::move( entries ) }
 {
-
-  for ( auto& p : std::filesystem::directory_iterator( sourceFolder ) )
-  {
-    if ( p.path().extension() == ".lst" )
-    {
-      parseLst( p.path() );
-    }
-  }
 }
 
 Monitor::~Monitor()
 {
 }
 
-void Monitor::parseLst( std::filesystem::path const& lstPath )
+void Monitor::populateSymbols( SymbolSource const& symbols )
 {
-  std::ifstream fin{ lstPath, std::ios::binary };
-  std::string line;
-  mWatchLabel.clear();
-  while ( std::getline( fin, line ) && !line.empty() )
+  for ( auto & e : mEntries )
   {
-    parseLine( line );
+    e.address = symbols.reqSymbol( e.name );
   }
 }
 
-void Monitor::parseLine( std::string const& line )
+cppcoro::generator<std::string_view> Monitor::sample( Core const& core )
 {
-  uint16_t address{};
-  int lineNumber{};
+  char buf[128];
 
-  struct
-  {
-    std::string::const_iterator begin;
-    std::string::const_iterator end;
-    char const* operator()()
-    {
-      if ( begin < end )
-        return &*begin++;
-      else
-        return nullptr;
-    }
-  } get{ line.cbegin(), line.cend() };
+  uint64_t value;
 
-  for ( ;; )
+  for ( auto const& e : mEntries )
   {
-    if ( auto c = get() )
+    switch ( e.size )
     {
-      if ( isspace( *c ) )
-        continue;
-      else if ( isdigit( *c ) )
+    case 1:
+      value = core.sampleRam( e.address );
+      if ( e.hex )
       {
-        lineNumber = *c - '0';
-        break;
-      }
-      else
-        return;
-    }
-    else
-      return;
-  }
-
-  for ( ;; )
-  {
-    if ( auto c = get() )
-    {
-      if ( isdigit( *c ) )
-      {
-        lineNumber = 10 * lineNumber + *c - '0';
-        continue;
-      }
-      else if ( isspace( *c ) )
-      {
-        break;
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: $%02llx", e.name.c_str(), value ) };
       }
       else
       {
-        return;
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: %llu", e.name.c_str(), value ) };
       }
-    }
-    else
-      return;
-  }
-
-  for ( auto c = get.begin; c != get.end; ++c )
-  {
-    if ( isspace( *c ) )
-      continue;
-    else if ( *c == '*' )
-    {
-      get.begin = c + 1;
-      std::string cmd;
-
-      for ( ;; )
-      {
-        if ( auto c = get() )
-        {
-          if ( isspace( *c ) )
-            break;
-          cmd += *c;
-        }
-      }
-
-      if ( cmd == "simple_watch" )
-      {
-        mWatchLabel = &*get.begin;
-        mWatchLabel = boost::algorithm::trim_copy( mWatchLabel );
-      }
-      else
-        L_ERROR << "Unknown monitor command " << cmd;
       break;
-    }
-    else
-    {
+    case 2:
+      value = core.sampleRam( e.address );
+      value |= core.sampleRam( e.address + 1 ) << 8;
+      if ( e.hex )
+      {
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: $%04llx", e.name.c_str(), value ) };
+      }
+      else
+      {
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: %llu", e.name.c_str(), value ) };
+      }
+      break;
+    case 3:
+      value = core.sampleRam( e.address );
+      value |= core.sampleRam( e.address + 1 ) << 8;
+      value |= core.sampleRam( e.address + 2 ) << 16;
+      if ( e.hex )
+      {
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: $%06llx", e.name.c_str(), value ) };
+      }
+      else
+      {
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: %llu", e.name.c_str(), value ) };
+      }
+      break;
+    case 4:
+      value = core.sampleRam( e.address );
+      value |= core.sampleRam( e.address + 1 ) << 8;
+      value |= core.sampleRam( e.address + 2 ) << 16;
+      value |= core.sampleRam( e.address + 3 ) << 24;
+      if ( e.hex )
+      {
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: $%08llx", e.name.c_str(), value ) };
+      }
+      else
+      {
+        co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: %llu", e.name.c_str(), value ) };
+      }
+      break;
+    default:
+      co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: bad size %d", e.name.c_str(), e.size ) };
       break;
     }
   }
 
-  for ( auto c = get.begin; c != get.end; ++c )
-  {
-    if ( isspace( *c ) )
-      continue;
-    else if ( *c == '=' )
-    {
-      get.begin = c + 2;
-      break;
-    }
-    else
-    {
-      break;
-    }
-  }
-
-  for ( ;; )
-  {
-    for ( int i = 0; i < 4; ++i )
-    {
-      if ( auto c = get() )
-      {
-        if ( isxdigit( *c ) )
-        {
-          if ( isdigit( *c ) )
-            address = 16 * address + *c - '0';
-          else
-            address = 16 * address + 10 + *c - ( isupper( *c ) ? 'A' : 'a' );
-        }
-        else
-          return;
-      }
-      else
-        return;
-    }
-
-    if ( address == 0xffff )
-    {
-      get(); //>
-      get(); //space
-      continue;
-    }
-
-    if ( auto c = get() )
-    {
-      if ( isspace( *c ) )
-      {
-        break;
-      }
-      else if ( *c == '-' )
-      {
-        get();  //adr
-        get();  //adr
-        get();  //adr
-        get();  //adr
-        get();  //>
-        get();  //space
-        break;
-      }
-      else
-        return;
-    }
-  }
 }
 
