@@ -15,6 +15,10 @@ AddressMapper::AddressMapper() : mLabels{}
   }
 }
 
+AddressMapper::~AddressMapper()
+{
+}
+
 char const * AddressMapper::addressLabel( uint16_t address ) const
 {
   return mData.data() + mLabels[address];

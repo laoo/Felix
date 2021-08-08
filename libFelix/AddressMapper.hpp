@@ -4,6 +4,7 @@ class AddressMapper
 {
 public:
   AddressMapper();
+  ~AddressMapper();
   char const * addressLabel( uint16_t address ) const;
 
 private:

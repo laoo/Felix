@@ -633,3 +633,8 @@ uint8_t Core::sampleRam( uint16_t addr ) const
 {
   return mRAM[addr];
 }
+
+uint64_t Core::tick() const
+{
+  return mCurrentTick;
+}

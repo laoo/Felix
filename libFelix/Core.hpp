@@ -36,6 +36,7 @@ public:
 
   //Not thread safe. Used only for monitoring
   uint8_t sampleRam( uint16_t addr ) const;
+  uint64_t tick() const;
 
 
 private:

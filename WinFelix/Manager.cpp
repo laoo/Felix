@@ -130,6 +130,7 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   {
     if ( ImGui::Begin( "Monitor" ) )
     {
+      ImGui::Text( "Tick: %u", mInstances[0]->tick() );
       for ( auto sv : mMonitor->sample( *mInstances[0] ) )
         ImGui::Text( sv.data() );
     }
@@ -277,7 +278,7 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
       throw Ex{} << "path = \"path/to/log\" required";
     }
 
-    if ( sol::optional<uint64_t> opt = tab["start_cycle"] )
+    if ( sol::optional<uint64_t> opt = tab["start_tick"] )
     {
       mLogStartCycle = *opt;
     }

@@ -50,6 +50,7 @@ void CPU::setLog( std::filesystem::path const & path, uint64_t startCycle )
 {
   mFtrace = std::ofstream{ path };
   mStartCycle = startCycle;
+  mAddressMapper = std::make_unique<AddressMapper>();
 }
 
 CPUState & CPU::state()
@@ -58,6 +59,10 @@ CPUState & CPU::state()
 }
 
 CPU::CPU() : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mStartCycle{ ~0ull }, mTrace{}
+{
+}
+
+CPU::~CPU()
 {
 }
 
@@ -2650,10 +2655,10 @@ void CPU::trace2()
   case Opcode::RIN_ORA:
   case Opcode::RIN_ADC:
   case Opcode::RIN_SBC:
-    sprintf( buf.data() + off, "($%02x)\t;[%s]=$%02x\n", mState.fa, mapper.addressLabel( mState.t ), mState.m1 );
+    sprintf( buf.data() + off, "($%02x)\t;[%s]=$%02x\n", mState.fa, mAddressMapper->addressLabel( mState.t ), mState.m1 );
     break;
   case Opcode::WIN_STA:
-    sprintf( buf.data() + off, "($%02x)\t;[%s]\n", mState.eal, mapper.addressLabel( mState.t ) );
+    sprintf( buf.data() + off, "($%02x)\t;[%s]\n", mState.eal, mAddressMapper->addressLabel( mState.t ) );
     break;
   case Opcode::RIX_AND:
   case Opcode::RIX_CMP:
@@ -2662,10 +2667,10 @@ void CPU::trace2()
   case Opcode::RIX_ORA:
   case Opcode::RIX_ADC:
   case Opcode::RIX_SBC:
-    sprintf( buf.data() + off, "($%02x,x)\t;[%s]=$%02x\n", mState.fa, mapper.addressLabel( mState.t ), mState.m1 );
+    sprintf( buf.data() + off, "($%02x,x)\t;[%s]=$%02x\n", mState.fa, mAddressMapper->addressLabel( mState.t ), mState.m1 );
     break;
   case Opcode::WIX_STA:
-    sprintf( buf.data() + off, "($%02x,x)\t;[%s]\n", mState.fa, mapper.addressLabel( mState.t ) );
+    sprintf( buf.data() + off, "($%02x,x)\t;[%s]\n", mState.fa, mAddressMapper->addressLabel( mState.t ) );
     break;
   case Opcode::RIY_AND:
   case Opcode::RIY_CMP:
@@ -2674,10 +2679,10 @@ void CPU::trace2()
   case Opcode::RIY_ORA:
   case Opcode::RIY_ADC:
   case Opcode::RIY_SBC:
-    sprintf( buf.data() + off, "($%02x),y\t;[%s]=$%02x\n", mState.fa, mapper.addressLabel( mState.ea ), mState.m1 );
+    sprintf( buf.data() + off, "($%02x),y\t;[%s]=$%02x\n", mState.fa, mAddressMapper->addressLabel( mState.ea ), mState.m1 );
     break;
   case Opcode::WIY_STA:
-    sprintf( buf.data() + off, "($%02x),y\t;[%s]\n", mState.fa, mapper.addressLabel( mState.ea ) );
+    sprintf( buf.data() + off, "($%02x),y\t;[%s]\n", mState.fa, mAddressMapper->addressLabel( mState.ea ) );
     break;
   case Opcode::RAB_AND:
   case Opcode::RAB_BIT:
@@ -2691,7 +2696,7 @@ void CPU::trace2()
   case Opcode::RAB_ORA:
   case Opcode::RAB_ADC:
   case Opcode::RAB_SBC:
-    sprintf( buf.data() + off, "%s\t;=$%02x\n", mapper.addressLabel( mState.ea ), mState.m1 );
+    sprintf( buf.data() + off, "%s\t;=$%02x\n", mAddressMapper->addressLabel( mState.ea ), mState.m1 );
     break;
   case Opcode::MAB_ASL:
   case Opcode::MAB_DEC:
@@ -2701,7 +2706,7 @@ void CPU::trace2()
   case Opcode::MAB_ROR:
   case Opcode::MAB_TRB:
   case Opcode::MAB_TSB:
-    sprintf( buf.data() + off, "%s\t;=$%02x->$%02x\n", mapper.addressLabel( mState.ea ), mState.m1, mState.m2 );
+    sprintf( buf.data() + off, "%s\t;=$%02x->$%02x\n", mAddressMapper->addressLabel( mState.ea ), mState.m1, mState.m2 );
     break;
   case Opcode::WAB_STA:
   case Opcode::WAB_STX:
@@ -2712,7 +2717,7 @@ void CPU::trace2()
   case Opcode::UND_4_dc:
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
-    sprintf( buf.data() + off, "%s\n", mapper.addressLabel( mState.ea ) );
+    sprintf( buf.data() + off, "%s\n", mAddressMapper->addressLabel( mState.ea ) );
     break;
   case Opcode::RAX_AND:
   case Opcode::RAX_BIT:
@@ -2723,7 +2728,7 @@ void CPU::trace2()
   case Opcode::RAX_ORA:
   case Opcode::RAX_ADC:
   case Opcode::RAX_SBC:
-    sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x\n", mState.fa, mapper.addressLabel( mState.t ), mState.m1 );
+    sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x\n", mState.fa, mAddressMapper->addressLabel( mState.t ), mState.m1 );
     break;
   case Opcode::MAX_ASL:
   case Opcode::MAX_DEC:
@@ -2731,11 +2736,11 @@ void CPU::trace2()
   case Opcode::MAX_LSR:
   case Opcode::MAX_ROL:
   case Opcode::MAX_ROR:
-    sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x->$%02x\n", mState.fa, mapper.addressLabel( mState.t ), mState.m1, mState.m2 );
+    sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x->$%02x\n", mState.fa, mAddressMapper->addressLabel( mState.t ), mState.m1, mState.m2 );
     break;
   case Opcode::WAX_STA:
   case Opcode::WAX_STZ:
-    sprintf( buf.data() + off, "$%04x,x\t;[%s]\n", mState.fa, mapper.addressLabel( mState.t ) );
+    sprintf( buf.data() + off, "$%04x,x\t;[%s]\n", mState.fa, mAddressMapper->addressLabel( mState.t ) );
     break;
   case Opcode::RAY_AND:
   case Opcode::RAY_CMP:
@@ -2745,16 +2750,16 @@ void CPU::trace2()
   case Opcode::RAY_ORA:
   case Opcode::RAY_ADC:
   case Opcode::RAY_SBC:
-    sprintf( buf.data() + off, "$%04x,y\t;[%s]=$%02x\n", mState.fa, mapper.addressLabel( mState.t ), mState.m1 );
+    sprintf( buf.data() + off, "$%04x,y\t;[%s]=$%02x\n", mState.fa, mAddressMapper->addressLabel( mState.t ), mState.m1 );
     break;
   case Opcode::WAY_STA:
-    sprintf( buf.data() + off, "$%04x,y\t;[%s]\n", mState.fa, mapper.addressLabel( mState.t ) );
+    sprintf( buf.data() + off, "$%04x,y\t;[%s]\n", mState.fa, mAddressMapper->addressLabel( mState.t ) );
     break;
   case Opcode::JMX_JMP:
-    sprintf( buf.data() + off, "($%04x,x)\t;[%s]\n", mState.fa, mapper.addressLabel( mState.ea ) );
+    sprintf( buf.data() + off, "($%04x,x)\t;[%s]\n", mState.fa, mAddressMapper->addressLabel( mState.ea ) );
     break;
   case Opcode::JMI_JMP:
-    sprintf( buf.data() + off, "($%04x)\t;[%s]\n", mState.fa, mapper.addressLabel( mState.t ) );
+    sprintf( buf.data() + off, "($%04x)\t;[%s]\n", mState.fa, mAddressMapper->addressLabel( mState.t ) );
     break;
   case Opcode::IMP_ASL:
   case Opcode::IMP_CLC:

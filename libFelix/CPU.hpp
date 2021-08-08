@@ -6,6 +6,7 @@
 enum class Opcode : uint8_t;
 struct CpuTrace;
 struct TraceRequest;
+class AddressMapper;
 
 class CPU
 {
@@ -42,6 +43,7 @@ public:
 
 
   CPU();
+  ~CPU();
 
   Request const& advance();
 
@@ -166,6 +168,7 @@ private:
   bool mTrace;
   std::ofstream mFtrace;
   uint64_t mStartCycle;
+  std::unique_ptr<AddressMapper> mAddressMapper;
 
   Execute execute();
   bool isHiccup();
