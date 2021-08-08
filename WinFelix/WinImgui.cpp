@@ -57,6 +57,7 @@ WinImgui::WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11Dev
 
 WinImgui::~WinImgui()
 {
+  ImGui::DestroyContext();
 }
 
 
