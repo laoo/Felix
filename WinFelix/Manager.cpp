@@ -69,7 +69,14 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     break;
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
-  reset();
+    reset();
+    break;
+  case WM_COPYDATA:
+    if ( handleCopyData( std::bit_cast<COPYDATASTRUCT const*>( lParam ) ) )
+    {
+      reset();
+      return true;
+    }
     break;
   default:
     assert( mRenderer );
@@ -409,6 +416,32 @@ void Manager::handleFileDrop( HDROP hDrop )
   DragFinish( hDrop );
   mDoUpdate = true;
 }
+
+bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
+{
+  if ( copy )
+  {
+    std::span<wchar_t const> span{ (wchar_t const*)copy->lpData, copy->cbData / sizeof( wchar_t ) };
+
+    mArgs.clear();
+    for ( wchar_t const* ptr = span.data(); ptr < span.data() + span.size(); )
+    {
+      if ( size_t size = std::wcslen( ptr ) )
+      {
+        mArgs.push_back( { ptr, size } );
+        ptr += size;
+      }
+      else
+      {
+        break;
+      }
+    }
+
+    return true;
+  }
+  return false;
+}
+
 
 Manager::InputSource::InputSource() : KeyInput{}
 {

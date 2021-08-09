@@ -38,6 +38,7 @@ private:
   void processLua( std::filesystem::path const& path, std::vector<InputFile>& inputs );
   void stopThreads();
   void handleFileDrop( HDROP hDrop );
+  bool handleCopyData( COPYDATASTRUCT const* copy );
   void processKeys();
   static std::filesystem::path getAppDataFolder();
 private:

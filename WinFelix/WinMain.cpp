@@ -67,6 +67,30 @@ int loop( Manager & manager )
   return 0;
 }
 
+bool checkInstance( std::wstring const& name, std::vector<std::wstring> const& args )
+{
+  if ( auto hwnd = FindWindowW( gClassName, name.c_str() ) )
+  {
+    std::vector<wchar_t> buffer;
+    for ( auto const& arg : args )
+    {
+      std::copy( arg.cbegin(), arg.cend(), std::back_inserter( buffer ) );
+      buffer.push_back( 0 );
+    }
+    buffer.push_back( 0 );
+
+    COPYDATASTRUCT cds;
+    cds.dwData = 0;
+    cds.cbData = (DWORD)buffer.size() * sizeof( wchar_t );
+    cds.lpData = buffer.data();
+    SendMessage( hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>( &cds ) );
+    SetForegroundWindow( hwnd );
+    return true;
+  }
+  
+  return false;
+}
+
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
   L_SET_LOGLEVEL( Log::LL_DEBUG );
@@ -114,6 +138,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 
     std::wstring name = L"Felix " + std::wstring{ version_string };
+
+    if ( checkInstance( name, args ) )
+      return 0;
 
     auto winConfig = manager.getWinConfig();
 

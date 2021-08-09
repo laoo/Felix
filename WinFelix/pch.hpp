@@ -13,6 +13,7 @@
 #include <span>
 #include <string>
 #include <vector>
+#include <cwchar>
 
 #include <boost/rational.hpp>
 
