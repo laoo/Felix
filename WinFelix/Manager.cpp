@@ -10,8 +10,10 @@
 #include "imgui.h"
 #include "Log.hpp"
 #include "Ex.hpp"
+#include "CPUState.hpp"
 
-Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true }, mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}
+Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true },
+  mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}
 {
   mIntputSources[0] = std::make_shared<InputSource>();
   mIntputSources[1] = std::make_shared<InputSource>();
@@ -22,6 +24,9 @@ Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpda
 
   std::filesystem::create_directories( mAppDataFolder );
   mWinConfig = WinConfig::load( mAppDataFolder );
+
+  mLua.open_libraries( sol::lib::base );
+
 }
 
 void Manager::update()
@@ -140,6 +145,14 @@ void Manager::drawGui( int left, int top, int right, int bottom )
       ImGui::Text( "Tick: %u", mInstances[0]->tick() );
       for ( auto sv : mMonitor->sample( *mInstances[0] ) )
         ImGui::Text( sv.data() );
+      if ( mMonit )
+      {
+        std::scoped_lock<std::mutex> l{ mMutex };
+        mMonit.call( []( std::string const& txt )
+        {
+          ImGui::Text( txt.c_str() );
+        } );
+      }
     }
     ImGui::End();
   }
@@ -226,11 +239,18 @@ std::shared_ptr<IInputSource> Manager::getInputSource( int instance )
     return {};
 }
 
+void Manager::Escape::call( uint8_t data, IAccessor & accessor )
+{
+  if ( data < manager.mEscapes.size() && manager.mEscapes[data].valid() )
+  {
+    std::scoped_lock<std::mutex> l{ manager.mMutex };
+    manager.mEscapes[data].call( &accessor );
+  }
+}
+
 
 void Manager::processLua( std::filesystem::path const& path, std::vector<InputFile>& inputs )
 {
-  sol::state lua;
-
   auto decHex = [this]( sol::table const& tab, bool hex )
   {
     Monitor::Entry e{ hex };
@@ -245,10 +265,10 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     return e;
   };
 
-  lua["Dec"] = [&]( sol::table const& tab ) { return decHex( tab, false ); };
-  lua["Hex"] = [&]( sol::table const& tab ) { return decHex( tab, true ); };
+  mLua["Dec"] = [&]( sol::table const& tab ) { return decHex( tab, false ); };
+  mLua["Hex"] = [&]( sol::table const& tab ) { return decHex( tab, true ); };
 
-  lua["Monitor"] = [this]( sol::table const& tab )
+  mLua["Monitor"] = [this]( sol::table const& tab )
   {
     std::vector<Monitor::Entry> entries;
 
@@ -274,7 +294,7 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     mMonitor = std::make_unique<Monitor>( std::move( entries ) );
   };
 
-  lua["Log"] = [this]( sol::table const& tab )
+  mLua["Log"] = [this]( sol::table const& tab )
   {
     if ( sol::optional<std::string> opt = tab["path"] )
     {
@@ -291,9 +311,14 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     }
   };
 
-  lua.script_file( path.string() );
+  mLua["tick"] = [this]( IEscape::IAccessor * acc )
+  {
+    return acc->state().tick;
+  };
 
-  if ( sol::optional<std::string> opt = lua["lnx"] )
+  mLua.script_file( path.string() );
+
+  if ( sol::optional<std::string> opt = mLua["lnx"] )
   {
     InputFile file{ *opt };
     if ( file.valid() )
@@ -306,10 +331,10 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     throw Ex{} << "Set lnx file using 'lnx = path'";
   }
 
-  if ( sol::optional<std::string> opt = lua["log"] )
+  if ( sol::optional<std::string> opt = mLua["log"] )
   {
   }
-  if ( sol::optional<std::string> opt = lua["lab"] )
+  if ( sol::optional<std::string> opt = mLua["lab"] )
   {
     mSymbols = std::make_unique<SymbolSource>( *opt );
   }
@@ -322,6 +347,30 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
   else
   {
     mMonitor.reset();
+  }
+
+  if ( auto esc = mLua["escapes"]; esc.valid() && esc.get_type() == sol::type::table )
+  {
+    auto escTab = mLua.get<sol::table>( "escapes" );
+    for ( auto kv : escTab )
+    {
+      sol::object const& value = kv.second;
+      sol::type t = value.get_type();
+
+      if ( t == sol::type::function )
+      {
+        size_t id = kv.first.as<size_t>();
+        while ( mEscapes.size() <= id )
+          mEscapes.push_back( sol::nil );
+
+        mEscapes[id] = (sol::function)value;
+      }
+    }
+  }
+
+  if ( auto esc = mLua["monit"]; esc.valid() && esc.get_type() == sol::type::function )
+  {
+    mMonit = mLua.get<sol::function>( "monit" );
   }
 }
 
@@ -362,6 +411,8 @@ void Manager::reset()
       if ( !mLogPath.empty() )
         mInstances.back()->setLog( mLogPath, mLogStartCycle );
     }
+
+    mInstances[0]->setEscape( 0, std::make_shared<Escape>( *this ) );
 
     mRenderThread = std::thread{ [this]
     {

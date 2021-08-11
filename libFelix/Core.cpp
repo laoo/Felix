@@ -13,6 +13,7 @@
 #include "Log.hpp"
 #include "DefaultROM.hpp"
 #include "KernelEscape.hpp"
+#include "Ex.hpp"
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
@@ -76,6 +77,14 @@ void Core::injectFile( InputFile const & file )
 void Core::setLog( std::filesystem::path const & path, uint64_t startCycle )
 {
   mCpu->setLog( path, startCycle );
+}
+
+void Core::setEscape( size_t idx, std::shared_ptr<IEscape> esc )
+{
+  if ( idx >= 0x10 )
+    throw Ex{} << "Bad escape index " << idx;
+
+  mEscapes[idx] = std::move( esc );
 }
 
 void Core::pulseReset( std::optional<uint16_t> resetAddress )

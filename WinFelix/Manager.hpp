@@ -1,7 +1,9 @@
 #pragma once
 
 #include "IInputSource.hpp"
+#include "IEscape.hpp"
 #include "WinConfig.hpp"
+
 
 class WinRenderer;
 class WinAudioOut;
@@ -31,7 +33,6 @@ public:
   bool doRun() const;
   bool horizontalView() const;
 
-
   std::shared_ptr<IInputSource> getInputSource( int instance );
 
 private:
@@ -49,6 +50,14 @@ private:
     ~InputSource() override = default;
 
     KeyInput getInput() const override;
+  };
+
+  struct Escape : IEscape
+  {
+    Manager & manager;
+    Escape( Manager & manager ) : manager{ manager } {}
+    ~Escape() override = default;
+    void call( uint8_t data, IAccessor & accessor ) override;
   };
 
   bool mEmulationRunning;
@@ -73,5 +82,8 @@ private:
   uint64_t mLogStartCycle;
   WinConfig mWinConfig;
   std::atomic_bool mPaused;
-
+  sol::state mLua;
+  std::vector<sol::function> mEscapes;
+  sol::function mMonit;
+  std::mutex mMutex;
 };

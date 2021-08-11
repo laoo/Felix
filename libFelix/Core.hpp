@@ -31,6 +31,7 @@ public:
 
   void injectFile( InputFile const& file );
   void setLog( std::filesystem::path const & path, uint64_t startCycle );
+  void setEscape( size_t idx, std::shared_ptr<IEscape> esc );
 
   void enterMonitor();
 
