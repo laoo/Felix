@@ -25,8 +25,7 @@ Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpda
   std::filesystem::create_directories( mAppDataFolder );
   mWinConfig = WinConfig::load( mAppDataFolder );
 
-  mLua.open_libraries( sol::lib::base );
-
+  mLua.open_libraries( sol::lib::base, sol::lib::io );
 }
 
 void Manager::update()
@@ -311,10 +310,15 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     }
   };
 
-  mLua["tick"] = [this]( IEscape::IAccessor * acc )
-  {
-    return acc->state().tick;
-  };
+  mLua["tick"] = [this]( IEscape::IAccessor * acc ) { return acc->state().tick; };
+  mLua["getA"] = [this]( IEscape::IAccessor * acc ) { return std::string( (char*)&acc->state().a, 1 ); };
+  mLua["getX"] = [this]( IEscape::IAccessor * acc ) { return acc->state().x; };
+  mLua["getY"] = [this]( IEscape::IAccessor * acc ) { return acc->state().y; };
+  mLua["setA"] = [this]( IEscape::IAccessor * acc, int a ) { acc->state().a = (uint8_t)a; };
+  mLua["setX"] = [this]( IEscape::IAccessor * acc, int x ) { acc->state().x = (uint8_t)x; };
+  mLua["setY"] = [this]( IEscape::IAccessor * acc, int y ) { acc->state().y = (uint8_t)y; };
+  mLua["peek"] = [this]( IEscape::IAccessor * acc, uint16_t addr ) { return acc->readRAM( addr ); };
+  mLua["poke"] = [this]( IEscape::IAccessor * acc, uint16_t addr, uint8_t value ) { return acc->writeRAM( addr, value ); };
 
   mLua.script_file( path.string() );
 
@@ -395,7 +399,6 @@ void Manager::reset()
     InputFile file{ path };
     if ( file.valid() )
     {
-      //mMonitor = std::make_unique<Monitor>( path.parent_path() );
       inputs.push_back( file );
     }
   }
