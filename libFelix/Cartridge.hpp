@@ -27,6 +27,8 @@ public:
 private:
   uint8_t peek( CartBank const& bank );
 
+  uint8_t incrementCounter( uint8_t value );
+
 
   std::shared_ptr<ImageCart const> mCart;
   std::unique_ptr<GameDrive> mGameDrive;

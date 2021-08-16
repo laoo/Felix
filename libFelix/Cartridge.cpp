@@ -72,20 +72,21 @@ uint8_t Cartridge::peekRCART0( uint64_t tick )
   {
     if ( mGameDrive->hasOutput( tick ) )
     {
-      return mGameDrive->get( tick );
+      return incrementCounter( mGameDrive->get( tick ) );
+
     }
     else if ( auto bank = mGameDrive->getBank( tick ) )
     {
-      return peek( *bank );
+      return incrementCounter( peek( *bank ) );
     }
   }
 
-  return peek( mBank0 );
+  return incrementCounter( peek( mBank0 ) );
 }
 
 uint8_t Cartridge::peekRCART1( uint64_t tick )
 {
-  return peek( mBank1 );
+  return incrementCounter( peek( mBank1 ) );
 }
 
 void Cartridge::pokeRCART0( uint64_t tick, uint8_t value )
@@ -102,11 +103,16 @@ void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
 
 uint8_t Cartridge::peek( CartBank const & bank )
 {
-  uint8_t result = bank( mShiftRegister, mCounter );
+  return bank( mShiftRegister, mCounter );
+}
+
+uint8_t Cartridge::incrementCounter( uint8_t value )
+{
   if ( !mCurrentStrobe )
   {
     //it's 11 bits, but it's masked anyway
     mCounter++;
   }
-  return result;
+
+  return value;
 }
