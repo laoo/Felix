@@ -48,19 +48,35 @@ GameDrive::GDCoroutine GameDrive::process()
   std::filesystem::path base = mBasePath;
   std::filesystem::path path{};
   std::fstream file{};
-  size_t bytesRead{};
+  std::vector<uint8_t> finData{};
+  size_t fileOffset{};
   static constexpr uint64_t byteReadLatency = 120;
   static constexpr uint64_t blockReadLatency = 159 * 5 * 16;
   static constexpr uint64_t programByteLatency = 34;
 
+  auto readByte = [&]()
+  {
+    if ( fileOffset < finData.size() )
+    {
+      return finData[fileOffset++];
+    }
+    else
+    {
+      return uint8_t{};
+    }
+  };
+
   for ( ;; )
   {
-    switch ( (ECommandByte)co_await getByte() )
+    auto cmd = (ECommandByte)co_await getByte();
+    switch ( cmd )
     {
     case ECommandByte::OpenDir:
+      L_DEBUG << "GD OpenDir NYI";
       co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::ReadDir:
+      L_DEBUG << "GD ReadDir NYI";
       co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::OpenFile:
@@ -69,6 +85,8 @@ GameDrive::GDCoroutine GameDrive::process()
       {
         file.close();
       }
+      finData.clear();
+      fileOffset = 0;
       std::string fname{};
       for ( ;; )
       {
@@ -82,38 +100,51 @@ GameDrive::GDCoroutine GameDrive::process()
       path = base / fname;
       if ( std::filesystem::exists( path ) )
       {
+        L_DEBUG << "GD Open file " << path;
         file.open( path, std::ios::binary | std::ios::in );
+        uint32_t size = (uint32_t)std::filesystem::file_size( path );
+        finData.resize( size );
+        file.read( (char*)finData.data(), finData.size() );
+        file.close();
         co_await putResult( file.good() ? FRESULT::OK : FRESULT::NOT_OPENED );
-        bytesRead = 0;
       }
       else
       {
+        L_DEBUG << "GD File " << path << " open error";
         co_await putResult( FRESULT::NO_FILE );
       }
       break;
     }
     case ECommandByte::GetSize:
     {
-      uint32_t size = file.is_open() ? (uint32_t)std::filesystem::file_size( path ) : 0;
+      uint32_t size =  file.is_open() ? (uint32_t)std::filesystem::file_size( path ) : (uint32_t)finData.size();
+      L_DEBUG << "GD File size " << size;
       co_await putByte( (uint8_t)( ( size >> 0 ) & 0xff ) );
       co_await putByte( (uint8_t)( ( size >> 8 ) & 0xff ) );
       co_await putByte( (uint8_t)( ( size >> 16 ) & 0xff ) );
       co_await putByte( (uint8_t)( ( size >> 24 ) & 0xff ) );
-    }
       break;
+    }
     case ECommandByte::Seek:
     {
       uint32_t offset = co_await getByte();
       offset |= ( co_await getByte() ) << 8;
       offset |= ( co_await getByte() ) << 16;
       offset |= ( co_await getByte() ) << 24;
-      if ( !file.is_open() )
+      if ( finData.empty() )
       {
+        L_DEBUG << "GD File seek not opened";
         co_await putResult( FRESULT::NOT_OPENED );
       }
       else
       {
-        file.seekg( offset );
+        if ( offset > finData.size() )
+        {
+          L_DEBUG << "GD File resized from " << finData.size() << " to " << offset;
+          finData.resize( offset );
+        }
+        L_DEBUG << "GD File seek " << offset;
+        fileOffset = offset;
         co_await putResult( FRESULT::OK );
       }
     }
@@ -123,37 +154,42 @@ GameDrive::GDCoroutine GameDrive::process()
       int32_t size = co_await getByte();
       size |= ( co_await getByte() ) << 8;
 
-      if ( !file.is_open() )
+      if ( fileOffset < finData.size() && fileOffset + size <= finData.size() )
       {
-        while ( size-- > 0 )
-        {
-          co_await putByte( 0 );
-        }
-        co_await putResult( FRESULT::NOT_OPENED );
+        L_DEBUG << "GD Read " << size << "\t[" << fileOffset << "," << fileOffset + size << ")\t\t$" << std::hex << size << "\t[$" << fileOffset << ",$" << fileOffset + size << ")";
+      }
+      else if ( fileOffset < finData.size() && fileOffset + size > finData.size() )
+      {
+        L_DEBUG << "GD Read " << size << "\t[" << fileOffset << "," << finData.size() << ") | " << fileOffset + size - finData.size() << " * 0\t\t$" << std::hex << size << "\t[$" << fileOffset << ",$" << finData.size() << ") | $" << fileOffset + size - finData.size() << " * 0";
       }
       else
       {
-        while ( size-- > 0 )
-        {
-          uint64_t latency = ( ( bytesRead++ ) & 0x7fff ) == 0 ? blockReadLatency : byteReadLatency;
-          uint8_t b = file.get();
-          co_await putByte( b, latency );
-        }
-        co_await putResult( FRESULT::OK );
+        L_DEBUG << "GD Read " << size << "\t" << size << " * 0\t\t$" << std::hex << size << "\t$" << size << " * 0";
       }
+
+      while ( size-- > 0 )
+      {
+        co_await putByte( readByte(), byteReadLatency );
+      }
+      co_await putResult( finData.empty() ? FRESULT::NOT_OPENED : FRESULT::OK );
       break;
     }
     case ECommandByte::Write:
+      L_DEBUG << "GD Write NYI";
       co_await putResult( FRESULT::NOT_ENABLED );
       break;
     case ECommandByte::Close:
-      if ( !file.is_open() )
+      if ( finData.empty() )
       {
+        L_DEBUG << "GD Close not opened";
         co_await putResult( FRESULT::NOT_OPENED );
       }
       else
       {
         file.close();
+        finData.clear();
+        fileOffset = 0;
+        L_DEBUG << "GD Close";
         co_await putResult( FRESULT::OK );
       }
       break;
@@ -164,16 +200,35 @@ GameDrive::GDCoroutine GameDrive::process()
       size_t blockSize = 256 * co_await getByte();
       size_t blockCount = co_await getByte();
       blockCount |= (size_t)( co_await getByte() ) << 8; //unused hight byte of block count
-      if ( !file.is_open() )
+      if ( finData.empty() )
       {
+        L_DEBUG << "GD Program not opened";
         co_await putResult( FRESULT::NOT_OPENED );
       }
       else
       {
         blockCount = std::max( blockCount, 256ull );
+        size_t size = blockCount * blockSize;
+
+        if ( fileOffset < finData.size() && fileOffset + size <= finData.size() )
+        {
+          L_DEBUG << "GD Program " << size << "\t[" << fileOffset << "," << fileOffset + size << ") to start:" << startBlock << ", blockSize:" << blockSize << ", blockCount:" << blockCount << "\t\t$" << size << "\t[$" << fileOffset << ",$" << fileOffset + size << ") to start:$" << startBlock << ", blockSize:$" << blockSize << ", blockCount:$" << blockCount;
+        }
+        else if ( fileOffset < finData.size() && fileOffset + size > finData.size() )
+        {
+          L_DEBUG << "GD Read " << size << "\t[" << fileOffset << "," << finData.size() << ") | " << fileOffset + size - finData.size() << " * 0 to start:" << startBlock << ", blockSize:" << blockSize << ", blockCount:" << blockCount << "\t\t$" << size << "\t[$" << fileOffset << ",$" << finData.size() << ") | $" << fileOffset + size - finData.size() << " * 0 to start:$" << startBlock << ", blockSize:$" << blockSize << ", blockCount:$" << blockCount;
+        }
+        else
+        {
+          L_DEBUG << "GD Read " << size << "\t" << size << " * 0 to start:" << startBlock << ", blockSize:" << blockSize << ", blockCount:" << blockCount << "\t\t$" << size << "\t$" << size << " * 0 to start:$" << startBlock << ", blockSize:$" << blockSize << ", blockCount:$" << blockCount;
+        }
+
         for ( size_t i = 0; i < blockCount; ++i )
         {
-          file.read( std::bit_cast<char*>( mMemoryBank.data() ) + 2048 * ( startBlock + i ), blockSize );
+          for ( size_t j = 0; j < blockSize; ++j )
+          {
+            mMemoryBank[2048 * ( startBlock + i ) + j] = readByte();
+          }
         }
         mProgrammedBank = std::make_shared<CartBank>( std::span<uint8_t const>{ mMemoryBank.data(), mMemoryBank.size() } );
         {
@@ -192,8 +247,8 @@ GameDrive::GDCoroutine GameDrive::process()
           mLastTimePoint = timePoint;
         }
       }
-    }
       break;
+    }
     case ECommandByte::ClearBlocks:
     {
       size_t startBlock = co_await getByte();
@@ -204,13 +259,17 @@ GameDrive::GDCoroutine GameDrive::process()
       {
         std::fill_n( mMemoryBank.data() + 2048 * ( startBlock + i ), 2048, 0 );
       }
+      L_DEBUG << "GD Clear start:" << startBlock << ", blockCount:" << blockCount;
+
       co_await putResult( FRESULT::OK );
+      break;
     }
-    break;
     case ECommandByte::LowPowerMode:
+      L_DEBUG << "GD LowPowerMode NYI";
       co_await putResult( FRESULT::NOT_ENABLED );
       break;
     default:
+      L_DEBUG << "GD Unknown command " << (int)cmd;
       co_await putResult( FRESULT::NOT_ENABLED );
       break;
     }
