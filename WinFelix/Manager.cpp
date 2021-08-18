@@ -11,6 +11,7 @@
 #include "Log.hpp"
 #include "Ex.hpp"
 #include "CPUState.hpp"
+#include "VideoEncoder.hpp"
 
 Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true },
   mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}
@@ -291,6 +292,34 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     }
 
     mMonitor = std::make_unique<Monitor>( std::move( entries ) );
+  };
+
+  mLua["Encoder"] = [this]( sol::table const& tab )
+  {
+    std::filesystem::path path;
+    int vbitrate{}, abitrate{}, vscale{};
+    if ( sol::optional<std::string> opt = tab["path"] )
+      path = *opt;
+    else throw Ex{} << "path = \"path/to/file.mp4\" required";
+
+    if ( sol::optional<int> opt = tab["video_bitrate"] )
+      vbitrate = *opt;
+    else throw Ex{} << "video_bitrate required";
+
+    if ( sol::optional<int> opt = tab["audio_bitrate"] )
+      abitrate = *opt;
+    else throw Ex{} << "audio_bitrate required";
+
+    if ( sol::optional<int> opt = tab["video_scale"] )
+      vscale = *opt;
+    else throw Ex{} << "video_scale required";
+
+    if ( vscale % 2 == 1 )
+      throw Ex{} << "video_scale must be even number";
+
+    mEncoder.reset( new VideoEncoder( path, vbitrate, abitrate, 160 * vscale, 102 * vscale ) );
+    mRenderer->setEncoder( mEncoder );
+    mAudioOut->setEncoder( mEncoder );
   };
 
   mLua["Log"] = [this]( sol::table const& tab )

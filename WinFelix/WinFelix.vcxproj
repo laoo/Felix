@@ -259,6 +259,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="VideoEncoder.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinConfig.cpp" />
     <ClCompile Include="WinImgui.cpp" />
@@ -266,9 +267,11 @@
     <ClCompile Include="WinRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="IEncoder.hpp" />
     <ClInclude Include="Manager.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="version.hpp" />
+    <ClInclude Include="VideoEncoder.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinConfig.hpp" />
     <ClInclude Include="WinImgui.hpp" />

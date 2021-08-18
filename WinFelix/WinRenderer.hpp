@@ -6,6 +6,7 @@
 struct RenderFrame;
 class WinImgui;
 class Manager;
+class IEncoder;
 
 class WinRenderer
 {
@@ -15,6 +16,7 @@ public:
   ~WinRenderer();
 
   void setInstances( int instances );
+  void setEncoder( std::shared_ptr<IEncoder> encoder );
   void initialize( HWND hWnd, std::filesystem::path const& iniPath );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
@@ -28,7 +30,7 @@ private:
     int32_t posx;
     int32_t posy;
     int32_t scale;
-    int32_t fill;
+    uint32_t vscale;
   };
 
   struct Pixel
@@ -47,6 +49,7 @@ private:
 
 
   void updateSourceTexture( int instance, std::shared_ptr<RenderFrame> frame );
+  void updateVscale( uint32_t vScale );
 
   int sizing( RECT & rect );
 
@@ -108,6 +111,19 @@ private:
   ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
   std::array<ComPtr<ID3D11Texture2D>,2> mSources;
   std::array<ComPtr<ID3D11ShaderResourceView>,2> mSourceSRVs;
+
+  ComPtr<ID3D11Texture2D>           mPreStagingY;
+  ComPtr<ID3D11Texture2D>           mPreStagingU;
+  ComPtr<ID3D11Texture2D>           mPreStagingV;
+  ComPtr<ID3D11Texture2D>           mStagingY;
+  ComPtr<ID3D11Texture2D>           mStagingU;
+  ComPtr<ID3D11Texture2D>           mStagingV;
+  ComPtr<ID3D11UnorderedAccessView> mPreStagingYUAV;
+  ComPtr<ID3D11UnorderedAccessView> mPreStagingUUAV;
+  ComPtr<ID3D11UnorderedAccessView> mPreStagingVUAV;
+
   SizeManager mSizeManager;
   boost::rational<int32_t> mRefreshRate;
+  std::shared_ptr<IEncoder> mEncoder;
+  uint32_t mVScale;
 };

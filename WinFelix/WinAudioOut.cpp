@@ -2,6 +2,7 @@
 #include "WinAudioOut.hpp"
 #include "Core.hpp"
 #include "Log.hpp"
+#include "IEncoder.hpp"
 
 WinAudioOut::WinAudioOut()
 {
@@ -68,6 +69,11 @@ WinAudioOut::~WinAudioOut()
   }
 }
 
+void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )
+{
+  mEncoder = std::move( pEncoder );
+}
+
 void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
 {
   DWORD retval = WaitForSingleObject( mEvent, 1000 );
@@ -109,6 +115,10 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
       pfData[i * mMixFormat->nChannels + 0] = mSamplesBuffer[i].left / 32768.0f;
       pfData[i * mMixFormat->nChannels + 1] = mSamplesBuffer[i].right / 32768.0f;
     }
+
+    if ( mEncoder )
+      mEncoder->pushAudioBuffer( std::span<float const>( pfData, framesAvailable * mMixFormat->nChannels ) );
+
     hr = mRenderClient->ReleaseBuffer( framesAvailable, 0 );
   }
 }

@@ -16,6 +16,7 @@
 #include "Utility.hpp"
 
 class Core;
+class IEncoder;
 
 class WinAudioOut
 {
@@ -24,6 +25,7 @@ public:
   WinAudioOut();
   ~WinAudioOut();
 
+  void setEncoder( std::shared_ptr<IEncoder> pEncoder );
   void fillBuffer( std::span<std::shared_ptr<Core> const> instances );
 
 private:
@@ -31,6 +33,7 @@ private:
   ComPtr<IMMDevice> mDevice;
   ComPtr<IAudioClient> mAudioClient;
   ComPtr<IAudioRenderClient> mRenderClient;
+  std::shared_ptr<IEncoder> mEncoder;
   HANDLE mEvent;
 
   uint32_t mBufferSize;

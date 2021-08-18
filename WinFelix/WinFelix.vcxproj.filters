@@ -8,6 +8,7 @@
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="WinRenderer.cpp" />
     <ClCompile Include="WinConfig.cpp" />
+    <ClCompile Include="VideoEncoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -17,6 +18,8 @@
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
     <ClInclude Include="WinConfig.hpp" />
+    <ClInclude Include="VideoEncoder.hpp" />
+    <ClInclude Include="IEncoder.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />

@@ -5,6 +5,7 @@
 #include "WinImgui.hpp"
 #include "renderer.hxx"
 #include "Log.hpp"
+#include "IEncoder.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
@@ -60,7 +61,7 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}
+WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}
 {
   for ( int i = 0; i < mInstances.size(); ++i )
   {
@@ -79,6 +80,11 @@ void WinRenderer::setInstances( int instances )
     mInstancesCount = instances;
     mSizeManager = {};
   }
+}
+
+void WinRenderer::setEncoder( std::shared_ptr<IEncoder> encoder )
+{
+  mEncoder = std::move( encoder );
 }
 
 void WinRenderer::initialize( HWND hWnd, std::filesystem::path const& iniPath )
@@ -169,6 +175,7 @@ void WinRenderer::initialize( HWND hWnd, std::filesystem::path const& iniPath )
     V_THROW( mD3DDevice->CreateShaderResourceView( mSources[i].Get(), NULL, mSourceSRVs[i].ReleaseAndGetAddressOf() ) );
   }
 
+  updateVscale( 1 );
 
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext, iniPath } );
 }
@@ -186,8 +193,6 @@ void WinRenderer::render( Manager & config )
   RECT r;
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
-
-
 
   if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) )
   {
@@ -221,9 +226,13 @@ void WinRenderer::render( Manager & config )
     }
   }
 
+  if ( mEncoder )
+    updateVscale( mEncoder->width() / 160 );
+
   UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, mBackBufferUAV.GetAddressOf(), nullptr );
+  std::array<ID3D11UnorderedAccessView*, 4> uavs{ mBackBufferUAV.Get(), mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
 
   for ( int i = 0; i < mInstancesCount; ++i )
   {
@@ -232,17 +241,43 @@ void WinRenderer::render( Manager & config )
       updateSourceTexture( i, std::move( frame ) );
     }
 
-    CBPosSize cbPosSize{ mSizeManager.instanceXOff( i ), mSizeManager.instanceYOff( i ), mSizeManager.scale() };
+    CBPosSize cbPosSize{ mSizeManager.instanceXOff( i ), mSizeManager.instanceYOff( i ), mSizeManager.scale(), mVScale };
     mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
     mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRVs[i].GetAddressOf() );
     mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
     mImmediateContext->Dispatch( 5, 51, 1 );
+
+    uavs[0] = nullptr;
+    uavs[1] = nullptr;
+    uavs[2] = nullptr;
+    uavs[3] = nullptr;
+    mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
   }
 
+  if ( mEncoder )
+  {
+    mImmediateContext->CopyResource( mStagingY.Get(), mPreStagingY.Get() );
+    mImmediateContext->CopyResource( mStagingU.Get(), mPreStagingU.Get() );
+    mImmediateContext->CopyResource( mStagingV.Get(), mPreStagingV.Get() );
 
-  std::array<ID3D11UnorderedAccessView * const, 1> uav{};
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.data(), nullptr );
+    D3D11_MAPPED_SUBRESOURCE resY, resU, resV;
+    mImmediateContext->Map( mStagingY.Get(), 0, D3D11_MAP_READ, 0, &resY );
+    mImmediateContext->Map( mStagingU.Get(), 0, D3D11_MAP_READ, 0, &resU );
+    mImmediateContext->Map( mStagingV.Get(), 0, D3D11_MAP_READ, 0, &resV );
+
+    if ( !mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch ) )
+    {
+      mEncoder->startEncoding();
+      bool res = mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch );
+      assert( res );
+    }
+
+    mImmediateContext->Unmap( mStagingY.Get(), 0 );
+    mImmediateContext->Unmap( mStagingU.Get(), 0 );
+    mImmediateContext->Unmap( mStagingV.Get(), 0 );
+  }
+
 
   {
     RECT r;
@@ -369,6 +404,50 @@ void WinRenderer::updateSourceTexture( int instance, std::shared_ptr<RenderFrame
   }
 
   mImmediateContext->Unmap( mSources[instance].Get(), 0 );
+}
+
+void WinRenderer::updateVscale( uint32_t vScale )
+{
+  if ( mVScale == vScale )
+    return;
+
+  mVScale = vScale;
+
+  uint32_t width = 160 * mVScale;
+  uint32_t height = 102 * mVScale;
+
+  {
+    D3D11_TEXTURE2D_DESC descsrc{ width, height, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_UNORDERED_ACCESS };
+    V_THROW( mD3DDevice->CreateTexture2D( &descsrc, nullptr, mPreStagingY.ReleaseAndGetAddressOf() ) );
+    V_THROW( mD3DDevice->CreateUnorderedAccessView( mPreStagingY.Get(), NULL, mPreStagingYUAV.ReleaseAndGetAddressOf() ) );
+  }
+
+  {
+    D3D11_TEXTURE2D_DESC descsrc{ width, height, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_STAGING, 0, D3D11_CPU_ACCESS_READ };
+    V_THROW( mD3DDevice->CreateTexture2D( &descsrc, nullptr, mStagingY.ReleaseAndGetAddressOf() ) );
+  }
+
+  {
+    D3D11_TEXTURE2D_DESC descsrc{ width / 2, height / 2, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_UNORDERED_ACCESS };
+    V_THROW( mD3DDevice->CreateTexture2D( &descsrc, nullptr, mPreStagingU.ReleaseAndGetAddressOf() ) );
+    V_THROW( mD3DDevice->CreateUnorderedAccessView( mPreStagingU.Get(), NULL, mPreStagingUUAV.ReleaseAndGetAddressOf() ) );
+  }
+
+  {
+    D3D11_TEXTURE2D_DESC descsrc{ width / 2, height / 2, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_STAGING, 0, D3D11_CPU_ACCESS_READ };
+    V_THROW( mD3DDevice->CreateTexture2D( &descsrc, nullptr, mStagingU.ReleaseAndGetAddressOf() ) );
+  }
+
+  {
+    D3D11_TEXTURE2D_DESC descsrc{ width / 2, height / 2, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_UNORDERED_ACCESS };
+    V_THROW( mD3DDevice->CreateTexture2D( &descsrc, nullptr, mPreStagingV.ReleaseAndGetAddressOf() ) );
+    V_THROW( mD3DDevice->CreateUnorderedAccessView( mPreStagingV.Get(), NULL, mPreStagingVUAV.ReleaseAndGetAddressOf() ) );
+  }
+
+  {
+    D3D11_TEXTURE2D_DESC descsrc{ width / 2, height / 2, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_STAGING, 0, D3D11_CPU_ACCESS_READ };
+    V_THROW( mD3DDevice->CreateTexture2D( &descsrc, nullptr, mStagingV.ReleaseAndGetAddressOf() ) );
+  }
 }
 
 std::shared_ptr<RenderFrame> WinRenderer::Instance::pullNextFrame()

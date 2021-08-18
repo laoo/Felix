@@ -12,6 +12,7 @@ class Core;
 class Monitor;
 class SymbolSource;
 class InputFile;
+class IEncoder;
 
 class Manager
 {
@@ -74,6 +75,7 @@ private:
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
   std::unique_ptr<Monitor> mMonitor;
+  std::shared_ptr<IEncoder> mEncoder;
   std::unique_ptr<SymbolSource> mSymbols;
   std::vector<std::shared_ptr<Core>> mInstances;
   std::vector<std::wstring> mArgs;
