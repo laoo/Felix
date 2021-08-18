@@ -140,15 +140,15 @@ GameDrive::GDCoroutine GameDrive::process()
       {
         if ( offset > finData.size() )
         {
-          L_DEBUG << "GD File resized from " << finData.size() << " to " << offset;
+          L_DEBUG << "GD File resized from " << finData.size() << " to " << offset << std::hex << "($" << offset << ")";
           finData.resize( offset );
         }
         L_DEBUG << "GD File seek " << offset;
         fileOffset = offset;
         co_await putResult( FRESULT::OK );
       }
-    }
       break;
+    }
     case ECommandByte::Read:
     {
       int32_t size = co_await getByte();
