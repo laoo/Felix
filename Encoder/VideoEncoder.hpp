@@ -54,7 +54,7 @@ public:
   uint32_t height() const override;
   virtual uint32_t vscale() const;
 
-  void startEncoding() override;
+  void startEncoding();
   bool writeFrame( uint8_t const* y, int ystride, uint8_t const* u, int ustride, uint8_t const* v, int vstride ) override;
 
 private:

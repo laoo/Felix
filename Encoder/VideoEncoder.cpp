@@ -357,7 +357,11 @@ void VideoEncoder::openVideo( int width, int height, int bitrate )
 bool VideoEncoder::writeFrame( uint8_t const* y, int ystride, uint8_t const* u, int ustride, uint8_t const* v, int vstride )
 {
   if ( !mFormatContext )
-    return false;
+  {
+    startEncoding();
+    if ( !mFormatContext )
+      return false;
+  }
 
   /* when we pass a frame to the encoder, it may keep a reference to it
    * internally; make sure we do not overwrite it here */
