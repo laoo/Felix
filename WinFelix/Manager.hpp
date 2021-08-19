@@ -69,6 +69,7 @@ private:
   std::array<std::shared_ptr<InputSource>, 2> mIntputSources;
   std::atomic<bool> mProcessThreads;
   int mInstancesCount;
+  HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;
   std::shared_ptr<WinRenderer> mRenderer;

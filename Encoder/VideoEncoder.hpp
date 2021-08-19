@@ -1,5 +1,30 @@
 #pragma once
 
+#include <filesystem>
+#include <span>
+#include <mutex>
+#include <queue>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define __STDC_CONSTANT_MACROS
+
+
+
+#include <libavutil/avassert.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/opt.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/timestamp.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #ifdef __cplusplus
@@ -15,7 +40,7 @@ extern "C" {
 
 #define SAMPLE_RATE 48000 /* 25 images/s */
 
-#include "IEncoder.hpp"
+#include "API/IEncoder.hpp"
 
 class VideoEncoder : public IEncoder
 {

@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <APP_NAME>Felix</APP_NAME>
+    <BOOST_PATH>$(LOCAL_PATH)boost_1_76_0\</BOOST_PATH>
   </PropertyGroup>
   <PropertyGroup>
     <OutDir>$(SolutionDir)out\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
@@ -11,15 +12,9 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)libextern;c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\include\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="APP_NAME">

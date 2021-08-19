@@ -1,6 +1,6 @@
-#include "pch.hpp"
 #include "VideoEncoder.hpp"
 #include "Ex.hpp"
+#include <cassert>
 
 VideoEncoder::VideoEncoder( std::filesystem::path const& path, int vbitrate, int abitrate, int width, int height ) : mPath{ path }, mVbitrate{ vbitrate }, mAbitrate{ abitrate }, mFormatContext{}, mAudioCodec{}, mVideoCodec{}, mWidth{ width }, mHeight{ height }, mMutex{}
 {
@@ -412,3 +412,13 @@ bool VideoEncoder::writeFrame( uint8_t const* y, int ystride, uint8_t const* u, 
   return true;
 }
 
+IEncoder* createEncoder( char const* path, int vbitrate, int abitrate, int width, int height )
+{
+  return new VideoEncoder( path, vbitrate, abitrate, width, height );
+}
+
+void disposeEncoder( IEncoder* encoder )
+{
+  if ( encoder )
+    delete encoder;
+}

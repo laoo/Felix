@@ -11,7 +11,7 @@
 #include "Log.hpp"
 #include "Ex.hpp"
 #include "CPUState.hpp"
-#include "VideoEncoder.hpp"
+#include "IEncoder.hpp"
 
 Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true },
   mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}
@@ -317,7 +317,17 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     if ( vscale % 2 == 1 )
       throw Ex{} << "video_scale must be even number";
 
-    mEncoder.reset( new VideoEncoder( path, vbitrate, abitrate, 160 * vscale, 102 * vscale ) );
+    static PCREATE_ENCODER s_createEncoder = nullptr;
+    static PDISPOSE_ENCODER s_disposeEncoder = nullptr;
+
+    mEncoderMod = ::LoadLibrary( L"Encoder.dll" );
+    if ( mEncoderMod == nullptr )
+      throw Ex{} << "Encoder.dll not found";
+
+    s_createEncoder = (PCREATE_ENCODER)GetProcAddress( mEncoderMod, "createEncoder" );
+    s_disposeEncoder = (PDISPOSE_ENCODER)GetProcAddress( mEncoderMod, "disposeEncoder" );
+
+    mEncoder = std::shared_ptr<IEncoder>( s_createEncoder( path.string().c_str(), vbitrate, abitrate, 160 * vscale, 102 * vscale ), s_disposeEncoder );
     mRenderer->setEncoder( mEncoder );
     mAudioOut->setEncoder( mEncoder );
   };

@@ -34,25 +34,3 @@ using ComPtr = Microsoft::WRL::ComPtr<T>;
 #endif
 
 #include "sol/sol.hpp"
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define __STDC_CONSTANT_MACROS
-
-
-
-#include <libavutil/avassert.h>
-#include <libavutil/channel_layout.h>
-#include <libavutil/opt.h>
-#include <libavutil/mathematics.h>
-#include <libavutil/timestamp.h>
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-#include <libswresample/swresample.h>
-
-#ifdef __cplusplus
-}
-#endif

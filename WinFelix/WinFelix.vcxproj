@@ -152,7 +152,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;$(SolutionDir)Encoder\API;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -213,7 +213,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;$(SolutionDir)Encoder\API;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -239,7 +239,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;$(SolutionDir)Encoder\API;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -259,7 +259,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="VideoEncoder.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinConfig.cpp" />
     <ClCompile Include="WinImgui.cpp" />
@@ -267,11 +266,9 @@
     <ClCompile Include="WinRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IEncoder.hpp" />
     <ClInclude Include="Manager.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="version.hpp" />
-    <ClInclude Include="VideoEncoder.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinConfig.hpp" />
     <ClInclude Include="WinImgui.hpp" />
@@ -288,6 +285,9 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Encoder\Encoder.vcxproj">
+      <Project>{14586c3f-0d43-4d2b-b5d9-43141bcb515c}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\imgui.vcxproj">
       <Project>{121b3d6e-b957-40fa-b554-8fdd1fba17cf}</Project>
     </ProjectReference>
