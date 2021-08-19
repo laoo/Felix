@@ -54,11 +54,11 @@ public:
   uint32_t height() const override;
   virtual uint32_t vscale() const;
 
-  void startEncoding();
+  void startEncoding( int fpsNumerator, int fpsDenominator ) override;
   bool writeFrame( uint8_t const* y, int ystride, uint8_t const* u, int ustride, uint8_t const* v, int vstride ) override;
 
 private:
-  void openVideo( int width, int height, int bitrate );
+  void openVideo( int width, int height, int bitrate, AVRational fps );
   void openAudio( int bitrate );
   int pushFrame( AVCodecContext *c, AVStream *st, AVFrame const* frame );
   static std::shared_ptr<AVFrame> allocVideoFrame( enum AVPixelFormat pix_fmt, int width, int height );

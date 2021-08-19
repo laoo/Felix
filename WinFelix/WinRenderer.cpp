@@ -266,7 +266,11 @@ void WinRenderer::render( Manager & config )
     mImmediateContext->Map( mStagingU.Get(), 0, D3D11_MAP_READ, 0, &resU );
     mImmediateContext->Map( mStagingV.Get(), 0, D3D11_MAP_READ, 0, &resV );
 
-    mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch );
+    if ( !mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch ) )
+    {
+      mEncoder->startEncoding( mRefreshRate.numerator(), mRefreshRate.denominator() );
+      mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch );
+    }
 
     mImmediateContext->Unmap( mStagingY.Get(), 0 );
     mImmediateContext->Unmap( mStagingU.Get(), 0 );

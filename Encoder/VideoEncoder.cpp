@@ -38,7 +38,7 @@ void VideoEncoder::pushAudioBuffer( std::span<float const> buf )
   }
 }
 
-void VideoEncoder::startEncoding()
+void VideoEncoder::startEncoding( int fpsNumerator, int fpsDenominator )
 {
   AVDictionary *opt = NULL;
 
@@ -49,7 +49,7 @@ void VideoEncoder::startEncoding()
 
   /* Add the audio and video streams using the default format codecs
    * and initialize the codecs. */
-  openVideo( mWidth, mHeight, mVbitrate );
+  openVideo( mWidth, mHeight, mVbitrate, AVRational{ fpsDenominator, fpsNumerator } );
   openAudio( mAbitrate );
 
   /* open the output file, if needed */
@@ -264,7 +264,7 @@ std::shared_ptr<AVFrame> VideoEncoder::allocVideoFrame( enum AVPixelFormat pix_f
   return picture;
 }
 
-void VideoEncoder::openVideo( int width, int height, int bitrate )
+void VideoEncoder::openVideo( int width, int height, int bitrate, AVRational fps )
 {
   /* find the encoder */
   mVideoCodec = avcodec_find_encoder( mFormatContext->oformat->video_codec );
@@ -303,7 +303,7 @@ void VideoEncoder::openVideo( int width, int height, int bitrate )
     * of which frame timestamps are represented. For fixed-fps content,
     * timebase should be 1/framerate and timestamp increments should be
     * identical to 1. */
-  mVideoStream->st->time_base = AVRational{ 1, 60 };
+  mVideoStream->st->time_base = fps;
   c.time_base       = mVideoStream->st->time_base;
 
   c.gop_size      = 12; /* emit one intra frame every twelve frames at most */
@@ -357,11 +357,7 @@ void VideoEncoder::openVideo( int width, int height, int bitrate )
 bool VideoEncoder::writeFrame( uint8_t const* y, int ystride, uint8_t const* u, int ustride, uint8_t const* v, int vstride )
 {
   if ( !mFormatContext )
-  {
-    startEncoding();
-    if ( !mFormatContext )
-      return false;
-  }
+    return false;
 
   /* when we pass a frame to the encoder, it may keep a reference to it
    * internally; make sure we do not overwrite it here */
