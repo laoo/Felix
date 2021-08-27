@@ -22,7 +22,10 @@ struct RenderFrame
     std::array<uint16_t, LINE_BUFFER_SIZE> lineBuffer;
   };
 
-  RenderFrame() : id{ sId++ }, currentRow{} {}
+  RenderFrame() : id{ sId++ }, currentRow{}
+  {
+    std::fill( sizes.begin(), sizes.end(), 0 );
+  }
 
   std::array<int, 105> sizes;
   std::array<Row, 105> rows;
