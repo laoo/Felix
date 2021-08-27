@@ -27,6 +27,7 @@ public:
   void dispCtl( bool dispColor, bool dispFlip, bool dmaEnable );
   void setPBKUP( uint8_t value );
 
+  void firstHblank( uint64_t tick, uint8_t hbackup );
   DMARequest hblank( uint64_t tick, int row );
   DMARequest pushData( uint64_t tick, uint64_t data );
   void updatePalette( uint64_t tick, uint8_t reg, uint8_t value );

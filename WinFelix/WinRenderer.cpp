@@ -25,6 +25,7 @@ struct RenderFrame
   RenderFrame() : id{ sId++ }, currentRow{}
   {
     std::fill( sizes.begin(), sizes.end(), 0 );
+    newRow( 104 );
   }
 
   std::array<int, 105> sizes;
@@ -309,7 +310,7 @@ void WinRenderer::render( Manager & config )
   mSwapChain->Present( 1, 0 );
 }
 
-void WinRenderer::Instance::newFrame( uint64_t tick )
+void WinRenderer::Instance::newFrame( uint64_t tick, uint8_t hbackup )
 {
   mFrameTicks = tick - mBeginTick;
   mBeginTick = tick;
@@ -647,7 +648,7 @@ WinRenderer::SizeManager::operator bool() const
   return mWinWidth != 0 && mWinHeight != 0;
 }
 
-WinRenderer::Instance::Instance() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mFrameTicks{ ~0ull }
+WinRenderer::Instance::Instance() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mBeginTick{}, mLastTick{}, mFrameTicks{ ~0ull }
 {
   for ( uint32_t i = 0; i < 256; ++i )
   {

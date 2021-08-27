@@ -5,7 +5,7 @@ class IVideoSink
 public:
   virtual ~IVideoSink() = default;
 
-  virtual void newFrame( uint64_t tick ) = 0;
+  virtual void newFrame( uint64_t tick, uint8_t hbackup ) = 0;
   //row counts from 104 to 0
   virtual void newRow( uint64_t tick, int row ) = 0;
 
