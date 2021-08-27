@@ -64,7 +64,7 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}
+WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}, mVScale{~0u}
 {
   for ( int i = 0; i < mInstances.size(); ++i )
   {
@@ -178,7 +178,7 @@ void WinRenderer::initialize( HWND hWnd, std::filesystem::path const& iniPath )
     V_THROW( mD3DDevice->CreateShaderResourceView( mSources[i].Get(), NULL, mSourceSRVs[i].ReleaseAndGetAddressOf() ) );
   }
 
-  updateVscale( 1 );
+  updateVscale( 0 );
 
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext, iniPath } );
 }
@@ -415,8 +415,8 @@ void WinRenderer::updateVscale( uint32_t vScale )
 
   mVScale = vScale;
 
-  uint32_t width = 160 * mVScale;
-  uint32_t height = 102 * mVScale;
+  uint32_t width = 160 * std::max( 1u, mVScale );
+  uint32_t height = 102 * std::max( 1u, mVScale );
 
   {
     D3D11_TEXTURE2D_DESC descsrc{ width, height, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_UNORDERED_ACCESS };

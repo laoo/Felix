@@ -33,9 +33,10 @@ void main( uint3 DT : SV_DispatchThreadID )
     }
   }
 
-  float3 yuv = rgb2yuv( src[DT.xy].rgb );
-
+  if ( vsize > 0 )
   {
+    float3 yuv = rgb2yuv( src[DT.xy].rgb );
+
     for ( uint y = 0; y < vsize; ++y )
     {
       for ( uint x = 0; x < vsize; ++x )
@@ -43,15 +44,13 @@ void main( uint3 DT : SV_DispatchThreadID )
         dstY[DT.xy * vsize + uint2( x, y )] = yuv.r;
       }
     }
-  }
 
-  {
-    for ( uint y = 0; y < vsize / 2; ++y )
+    for ( uint yh = 0; yh < vsize / 2; ++yh )
     {
       for ( uint x = 0; x < vsize / 2; ++x )
       {
-        dstU[DT.xy * vsize / 2 + uint2( x, y )] = yuv.g;
-        dstV[DT.xy * vsize / 2 + uint2( x, y )] = yuv.b;
+        dstU[DT.xy * vsize / 2 + uint2( x, yh )] = yuv.g;
+        dstV[DT.xy * vsize / 2 + uint2( x, yh )] = yuv.b;
       }
     }
   }
