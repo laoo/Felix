@@ -19,7 +19,8 @@ Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoS
     {
       mDisplayGenerator->updateDispAddr( tick, mDisplayRegs.dispAdr );
     }
-    else if ( cnt == 104 )
+
+    if ( cnt == 104 )
     {
       mDisplayGenerator->firstHblank( tick, mTimers[0x00]->getBackup( tick ) );
     }

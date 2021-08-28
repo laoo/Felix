@@ -514,7 +514,7 @@ void Core::enqueueSampling()
   mSamplesRemainder += 16000000 % mSPS;
   if ( mSamplesRemainder > mSPS )
   {
-    mSamplesRemainder &= mSPS;
+    mSamplesRemainder %= mSPS;
     ticks += 1;
   }
 
