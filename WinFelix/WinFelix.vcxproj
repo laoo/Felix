@@ -249,7 +249,7 @@
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)out\$(Platform)_$(Configuration)\VersionTool\VersionTool.exe $(ProjectDir)version.hpp "$(GIT_PATH)"</Command>
+      <Command>$(SolutionDir)out\$(Platform)_Release\VersionTool\VersionTool.exe $(ProjectDir)version.hpp "$(GIT_PATH)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
