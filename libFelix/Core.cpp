@@ -550,27 +550,6 @@ int Core::advanceAudio()
   }
 }
 
-void Core::advance( uint64_t ticks )
-{
-  mActionQueue.push( { Action::BATCH_END, mCurrentTick + ticks } );
-
-  for ( ;; )
-  {
-    if ( mActionQueue.head().getTick() <= mCurrentTick )
-    {
-      if ( executeSequencedAction( mActionQueue.pop() ) == SequencedActionResult::BAIL_OUT )
-        return;
-    }
-    else
-    {
-      if ( executeSuzyAction() )
-      {
-        executeCPUAction();
-      }
-    }
-  }
-}
-
 void Core::enterMonitor()
 {
 }
