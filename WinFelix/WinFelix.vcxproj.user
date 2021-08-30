@@ -1,18 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>d:\home\lynxdemo2\out\main.lnx</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>j:\lynx\Homebrew\2048.LYX</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2\out\</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2\</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerEnvironment>PATH=%PATH%;c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\bin\</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">
-    <LocalDebuggerCommandArguments>d:\home\lynxdemo2\felix.lua</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>j:\lynx\rainbow60.lyx</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2\</LocalDebuggerWorkingDirectory>
     <LocalDebuggerEnvironment>PATH=%PATH%;c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\bin\</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>d:\home\lynxdemo2\felix.lua</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>j:\lynx\rainbow60.lyx</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2</LocalDebuggerWorkingDirectory>
     <LocalDebuggerEnvironment>PATH=%PATH%;c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\bin\</LocalDebuggerEnvironment>

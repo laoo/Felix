@@ -80,7 +80,7 @@ private:
   void requestDisplayDMA( uint64_t tick, uint16_t address );
   void runSuzy();
   Cartridge & getCartridge();
-  void newFrame();
+  void newLine( int rowNr );
 
   friend class Mikey;
   friend class Suzy;

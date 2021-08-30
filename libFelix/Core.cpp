@@ -566,10 +566,14 @@ Cartridge & Core::getCartridge()
   return *mCartridge;
 }
 
-void Core::newFrame()
+void Core::newLine( int rowNr )
 {
-  mGlobalSamplesEmittedPerFrame = mGlobalSamplesEmitted - mGlobalSamplesEmittedSnapshot;
-  mGlobalSamplesEmittedSnapshot = mGlobalSamplesEmitted;
+
+  if ( rowNr == 0 )
+  {
+    mGlobalSamplesEmittedPerFrame = mGlobalSamplesEmitted - mGlobalSamplesEmittedSnapshot;
+    mGlobalSamplesEmittedSnapshot = mGlobalSamplesEmitted;
+  }
 }
 
 uint8_t Core::readKernel( uint16_t address )

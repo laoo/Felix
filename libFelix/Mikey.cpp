@@ -19,11 +19,10 @@ Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoS
     {
       mDisplayGenerator->updateDispAddr( tick, mDisplayRegs.dispAdr );
     }
-
+    mCore.newLine( cnt );
     if ( cnt == 104 )
     {
       mDisplayGenerator->firstHblank( tick, mTimers[0x00]->getBackup( tick ) );
-      mCore.newFrame();
     }
     else if ( auto dma = mDisplayGenerator->hblank( tick, cnt ) )
     {
