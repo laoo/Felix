@@ -17,6 +17,8 @@ public:
 
 private:
 
+  int correctedSPS( int64_t samplesEmittedPerFrame, int64_t renderingTimeQPC );
+
   ComPtr<IMMDevice> mDevice;
   ComPtr<IAudioClient> mAudioClient;
   ComPtr<IAudioClock> mAudioClock;
@@ -24,14 +26,12 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   HANDLE mEvent;
 
-
-  boost::rational<int64_t> mFrequency;
-  boost::rational<int64_t> mQPCRatio;
+  double mTimeToFrames;
 
   uint32_t mBufferSize;
   std::vector<AudioSample> mSamplesBuffer;
 
   WAVEFORMATEX * mMixFormat;
-  int64_t mSamplesDelta;
-  int64_t mSamplesDeltaDelta;
+  int32_t mSamplesDelta;
+  int32_t mSamplesDeltaDelta;
 };
