@@ -65,12 +65,16 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}, mVScale{~0u}
+WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}, mVScale{ ~0u }
 {
   for ( int i = 0; i < mInstances.size(); ++i )
   {
     mInstances[i] = std::make_shared<Instance>();
   }
+
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+  mLastRenderTimePoint = l.QuadPart;
 }
 
 WinRenderer::~WinRenderer()
@@ -192,11 +196,25 @@ std::shared_ptr<IVideoSink> WinRenderer::getVideoSink( int instance ) const
     return {};
 }
 
-void WinRenderer::render( Manager & config )
+int64_t WinRenderer::render( Manager& config )
+{
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+
+  internalRender( config );
+
+  mSwapChain->Present( 1, 0 );
+
+  auto result = l.QuadPart - mLastRenderTimePoint;
+  mLastRenderTimePoint = l.QuadPart;
+  return result;
+}
+
+bool WinRenderer::internalRender( Manager & config )
 {
   RECT r;
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
-    return;
+    return false;
 
   if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) )
   {
@@ -204,7 +222,7 @@ void WinRenderer::render( Manager & config )
 
     if ( !mSizeManager )
     {
-      return;
+      return false;
     }
 
     mBackBufferUAV.Reset();
@@ -231,7 +249,13 @@ void WinRenderer::render( Manager & config )
   }
 
   if ( mEncoder )
-    updateVscale( mEncoder->width() / 160 );
+  {
+    uint32_t encoderScale = mEncoder->width() / 160;
+    if ( encoderScale != mVScale )
+    {
+      updateVscale( encoderScale );
+    }
+  }
 
   UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
@@ -307,7 +331,7 @@ void WinRenderer::render( Manager & config )
     mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
   }
 
-  mSwapChain->Present( 1, 0 );
+  return true;
 }
 
 void WinRenderer::Instance::newFrame( uint64_t tick, uint8_t hbackup )
@@ -411,9 +435,6 @@ void WinRenderer::updateSourceTexture( int instance, std::shared_ptr<RenderFrame
 
 void WinRenderer::updateVscale( uint32_t vScale )
 {
-  if ( mVScale == vScale )
-    return;
-
   mVScale = vScale;
 
   uint32_t width = 160 * std::max( 1u, mVScale );

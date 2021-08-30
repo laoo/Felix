@@ -1,8 +1,10 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cassert>
 #include <cstdint>
+#include <cwchar>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -12,8 +14,9 @@
 #include <queue>
 #include <span>
 #include <string>
+#include <thread>
+#include <utility>
 #include <vector>
-#include <cwchar>
 
 #include <boost/rational.hpp>
 
@@ -21,6 +24,9 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <Shlobj.h>
+#include <atlbase.h>
+#include <AudioClient.h>
+#include <MMDeviceAPI.h>
 #pragma warning(push)
 #pragma warning( disable: 4005 )
 #include <d3d11.h>

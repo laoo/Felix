@@ -19,7 +19,7 @@ static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
 Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, std::span<InputFile> inputs ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
   mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) },
-  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
+  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
 
@@ -213,6 +213,7 @@ Core::SequencedActionResult Core::executeSequencedAction( SequencedAction seqAct
     break;
   case Action::SAMPLE_AUDIO:
     mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
+    mGlobalSamplesEmitted += 1;
     if ( mSamplesEmitted >= mOutputSamples.size() )
       return SequencedActionResult::BAIL_OUT;
     enqueueSampling();
@@ -554,10 +555,21 @@ void Core::enterMonitor()
 {
 }
 
+int64_t Core::globalSamplesEmittedPerFrame() const
+{
+  return mGlobalSamplesEmittedPerFrame;
+}
+
 Cartridge & Core::getCartridge()
 {
   assert( mCartridge );
   return *mCartridge;
+}
+
+void Core::newFrame()
+{
+  mGlobalSamplesEmittedPerFrame = mGlobalSamplesEmitted - mGlobalSamplesEmittedSnapshot;
+  mGlobalSamplesEmittedSnapshot = mGlobalSamplesEmitted;
 }
 
 uint8_t Core::readKernel( uint16_t address )

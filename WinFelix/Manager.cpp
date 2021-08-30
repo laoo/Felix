@@ -14,7 +14,7 @@
 #include "IEncoder.hpp"
 
 Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true },
-  mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}
+  mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}, mRenderingTime{}
 {
   mIntputSources[0] = std::make_shared<InputSource>();
   mIntputSources[1] = std::make_shared<InputSource>();
@@ -460,7 +460,9 @@ void Manager::reset()
     {
       while ( mProcessThreads.load() )
       {
-        mRenderer->render( *this );
+        auto renderingTime = mRenderer->render( *this );
+        std::scoped_lock<std::mutex> l{ mMutex };
+        mRenderingTime = renderingTime;
       }
     } };
 
@@ -469,7 +471,14 @@ void Manager::reset()
       while ( mProcessThreads.load() )
       {
         if ( !mPaused.load() )
-          mAudioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ mInstances.data(), mInstances.size() } );
+        {
+          int64_t renderingTime;
+          {
+            std::scoped_lock<std::mutex> l{ mMutex };
+            renderingTime = mRenderingTime;
+          }
+          mAudioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ mInstances.data(), mInstances.size() }, renderingTime );
+        }
       }
     } };
   }

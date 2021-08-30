@@ -47,6 +47,25 @@ WinAudioOut::WinAudioOut()
   if ( FAILED( hr ) )
     throw std::exception{};
 
+  hr = mAudioClient->GetService( __uuidof( IAudioClock ), reinterpret_cast<void**>( mAudioClock.ReleaseAndGetAddressOf() ) );
+  if ( FAILED( hr ) )
+    throw std::exception{};
+
+  //bytes per second
+  uint64_t frequency;
+  hr = mAudioClock->GetFrequency( &frequency );
+  if ( FAILED( hr ) )
+    throw std::exception{};
+
+  //samples per second
+  mFrequency = boost::rational<int64_t>{ std::bit_cast<int64_t>( frequency ), mMixFormat->nBlockAlign };
+
+  LARGE_INTEGER l;
+  QueryPerformanceFrequency( &l );
+  mQPCRatio = boost::rational<int64_t>{ 1, l.QuadPart };
+
+  mSamplesDelta = mSamplesDeltaDelta = 0;
+
   mAudioClient->Start();
 }
 
@@ -74,9 +93,9 @@ void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )
   mEncoder = std::move( pEncoder );
 }
 
-void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
+void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances, int64_t renderingTimeQPC )
 {
-  DWORD retval = WaitForSingleObject( mEvent, 1000 );
+  DWORD retval = WaitForSingleObject( mEvent, 100 );
   if ( retval != WAIT_OBJECT_0 )
     return;
 
@@ -84,7 +103,6 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
   uint32_t padding{};
   hr = mAudioClient->GetCurrentPadding( &padding );
   uint32_t framesAvailable = mBufferSize - padding;
-  //L_TRACE << "AUD " << mBufferSize << " - " << padding << " = " << framesAvailable;
   if ( framesAvailable > 0 )
   {
     if ( mSamplesBuffer.size() < framesAvailable * instances.size() )
@@ -94,7 +112,7 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
 
     for ( size_t i = 0; i < instances.size(); ++i )
     {
-      instances[i]->setAudioOut( mMixFormat->nSamplesPerSec, std::span<AudioSample>{ mSamplesBuffer.data() + framesAvailable * i, framesAvailable } );
+      instances[i]->setAudioOut( mMixFormat->nSamplesPerSec, std::span<AudioSample>{mSamplesBuffer.data() + framesAvailable * i, framesAvailable});
     }
 
     for ( int finished = 0; finished < instances.size(); )
@@ -103,6 +121,21 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
       {
         finished += instances[i]->advanceAudio();
       }
+    }
+
+    auto samplesEmittedPerFrame = instances[0]->globalSamplesEmittedPerFrame();
+    if ( samplesEmittedPerFrame != 0 && renderingTimeQPC != 0 )
+    {
+      auto renderingTime = mQPCRatio * renderingTimeQPC;
+      auto samplesPerRenderingTimeR = renderingTime * mFrequency;
+      auto samplesPerRenderingTimeI = samplesPerRenderingTimeR.numerator() / samplesPerRenderingTimeR.denominator();
+
+      auto newDelta = samplesPerRenderingTimeI - samplesEmittedPerFrame;
+      mSamplesDeltaDelta = newDelta - mSamplesDelta;
+      mSamplesDelta = newDelta;
+
+      L_DEBUG << "SPF: " << samplesEmittedPerFrame << "\t\tSPR: " << samplesPerRenderingTimeI << "\t\td: " << mSamplesDelta << "\t\tdd: " << mSamplesDeltaDelta;
+
     }
 
     BYTE *pData;
@@ -122,6 +155,7 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances )
     hr = mRenderClient->ReleaseBuffer( framesAvailable, 0 );
   }
 }
+
 
 
 

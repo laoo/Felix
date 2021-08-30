@@ -89,4 +89,5 @@ private:
   std::vector<sol::function> mEscapes;
   sol::function mMonit;
   std::mutex mMutex;
+  int64_t mRenderingTime;
 };

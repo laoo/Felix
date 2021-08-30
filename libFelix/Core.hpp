@@ -33,6 +33,7 @@ public:
   void setEscape( size_t idx, std::shared_ptr<IEscape> esc );
 
   void enterMonitor();
+  int64_t globalSamplesEmittedPerFrame() const;
 
   //Not thread safe. Used only for monitoring
   uint8_t sampleRam( uint16_t addr ) const;
@@ -79,6 +80,7 @@ private:
   void requestDisplayDMA( uint64_t tick, uint16_t address );
   void runSuzy();
   Cartridge & getCartridge();
+  void newFrame();
 
   friend class Mikey;
   friend class Suzy;
@@ -94,6 +96,9 @@ private:
   int mSPS;
   std::span<AudioSample> mOutputSamples;
   uint32_t mSamplesEmitted;
+  uint64_t mGlobalSamplesEmitted;
+  uint64_t mGlobalSamplesEmittedSnapshot;
+  int64_t mGlobalSamplesEmittedPerFrame;
   ActionQueue mActionQueue;
   std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Cartridge> mCartridge;

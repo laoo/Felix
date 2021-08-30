@@ -22,7 +22,7 @@ public:
 
   std::shared_ptr<IVideoSink> getVideoSink( int instance ) const;
 
-  void render( Manager & config );
+  int64_t render( Manager & config );
 
 private:
   struct CBPosSize
@@ -52,6 +52,7 @@ private:
   void updateVscale( uint32_t vScale );
 
   int sizing( RECT & rect );
+  bool internalRender( Manager& config );
 
   class SizeManager
   {
@@ -125,5 +126,6 @@ private:
   SizeManager mSizeManager;
   boost::rational<int32_t> mRefreshRate;
   std::shared_ptr<IEncoder> mEncoder;
+  int64_t mLastRenderTimePoint;
   uint32_t mVScale;
 };
