@@ -60,9 +60,11 @@ WinAudioOut::WinAudioOut()
   LARGE_INTEGER l;
   QueryPerformanceFrequency( &l );
 
-  mTimeToFrames = ( (double)frequency / (double)mMixFormat->nBlockAlign ) / (double)l.QuadPart;
+  mTimeToSamples = (double)frequency / (double)(l.QuadPart * mMixFormat->nBlockAlign);
 
   mSamplesDelta = mSamplesDeltaDelta = 0;
+
+  std::fill( mWindow.begin(), mWindow.end(), 0 );
 
   mAudioClient->Start();
 }
@@ -102,14 +104,28 @@ int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t rende
   if ( renderingTimeQPC == 0 )
     return baseResult;
 
-  auto samplesPerRenderingTimeR = renderingTimeQPC * mTimeToFrames;
+  auto samplesPerRenderingTimeR = renderingTimeQPC * mTimeToSamples;
   auto samplesPerRenderingTimeI = (int32_t)std::round( samplesPerRenderingTimeR );
 
   auto newDelta = samplesPerRenderingTimeI - (int32_t)samplesEmittedPerFrame;
   mSamplesDeltaDelta = newDelta - mSamplesDelta;
   mSamplesDelta = newDelta;
 
-  L_DEBUG << "SPF: " << samplesEmittedPerFrame << "\t\tSPR: " << samplesPerRenderingTimeI << "\t\td: " << mSamplesDelta << "\t\tdd: " << mSamplesDeltaDelta;
+  int sum = 0;
+  for ( size_t i = 0; i < mWindow.size() - 1; ++i )
+  {
+    sum += mWindow[i];
+    mWindow[i] = mWindow[i + 1];
+  }
+  sum += mWindow.back();
+
+  int avg = sum / (int)mWindow.size();
+
+  mWindow.back() = samplesPerRenderingTimeI;
+
+  double ratio = (double)avg / samplesEmittedPerFrame;
+
+  L_DEBUG << "SPF: " << samplesEmittedPerFrame << "\t\tSPR: " << samplesPerRenderingTimeI << "\t\tavg: " << avg << "\t" << ratio;
 
   return baseResult;
 }

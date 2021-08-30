@@ -26,7 +26,7 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   HANDLE mEvent;
 
-  double mTimeToFrames;
+  double mTimeToSamples;
 
   uint32_t mBufferSize;
   std::vector<AudioSample> mSamplesBuffer;
@@ -34,4 +34,6 @@ private:
   WAVEFORMATEX * mMixFormat;
   int32_t mSamplesDelta;
   int32_t mSamplesDeltaDelta;
+
+  std::array<int, 32> mWindow;
 };
