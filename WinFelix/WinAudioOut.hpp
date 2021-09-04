@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utility.hpp"
+#include "wav.h"
 
 class Core;
 class IEncoder;
@@ -14,6 +15,7 @@ public:
 
   void setEncoder( std::shared_ptr<IEncoder> pEncoder );
   void fillBuffer( std::span<std::shared_ptr<Core> const> instances, int64_t renderingTime );
+  void setWavOut( std::filesystem::path path );
 
 private:
 
@@ -24,6 +26,7 @@ private:
   ComPtr<IAudioClock> mAudioClock;
   ComPtr<IAudioRenderClient> mRenderClient;
   std::shared_ptr<IEncoder> mEncoder;
+  WavFile* mWav;
   HANDLE mEvent;
 
   double mTimeToSamples;

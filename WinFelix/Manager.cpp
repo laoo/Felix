@@ -332,6 +332,16 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
     mAudioOut->setEncoder( mEncoder );
   };
 
+  mLua["WavOut"] = [this]( sol::table const& tab )
+  {
+    std::filesystem::path path;
+    if ( sol::optional<std::string> opt = tab["path"] )
+      path = *opt;
+    else throw Ex{} << "path = \"path/to/file.wav\" required";
+
+    mAudioOut->setWavOut( std::move( path ) );
+  };
+
   mLua["Log"] = [this]( sol::table const& tab )
   {
     if ( sol::optional<std::string> opt = tab["path"] )

@@ -8,3 +8,6 @@
 [submodule "sol2"]
 	path = sol2
 	url = https://github.com/ThePhD/sol2.git
+[submodule "libwav"]
+	path = libwav
+	url = https://github.com/brglng/libwav.git

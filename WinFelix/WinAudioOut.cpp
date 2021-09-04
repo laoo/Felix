@@ -4,7 +4,7 @@
 #include "Log.hpp"
 #include "IEncoder.hpp"
 
-WinAudioOut::WinAudioOut()
+WinAudioOut::WinAudioOut() : mWav{}
 {
   CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
@@ -86,6 +86,12 @@ WinAudioOut::~WinAudioOut()
     CoTaskMemFree( mMixFormat );
     mMixFormat = nullptr;
   }
+
+  if ( mWav )
+  {
+    wav_close( mWav );
+    mWav = nullptr;
+  }
 }
 
 void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )
@@ -93,6 +99,25 @@ void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )
   mEncoder = std::move( pEncoder );
 }
 
+void WinAudioOut::setWavOut( std::filesystem::path path )
+{
+  mWav = wav_open( path.string().c_str(), WAV_OPEN_WRITE );
+  if ( wav_err()->code != WAV_OK )
+  {
+    L_ERROR << "Error opening wav file " << path.string() << ": " << wav_err()->message;
+    if ( mWav )
+    {
+      wav_close( mWav );
+      mWav = nullptr;
+    }
+    return;
+  }
+
+  wav_set_format( mWav, WAV_FORMAT_IEEE_FLOAT );
+  wav_set_num_channels( mWav, mMixFormat->nChannels );
+  wav_set_sample_rate( mWav, mMixFormat->nSamplesPerSec );
+  wav_set_sample_size( mWav, sizeof(float) );
+}
 
 int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t renderingTimeQPC )
 {
@@ -175,6 +200,9 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances, 
 
     if ( mEncoder )
       mEncoder->pushAudioBuffer( std::span<float const>( pfData, framesAvailable * mMixFormat->nChannels ) );
+
+    if ( mWav )
+      wav_write( mWav, pfData, framesAvailable );
 
     hr = mRenderClient->ReleaseBuffer( framesAvailable, 0 );
   }
