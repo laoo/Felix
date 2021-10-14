@@ -116,7 +116,7 @@ int main( int argc, char** argv )
     return -1;
   }
 
-  std::regex rx{ R"reg(^v(\d+)\.(\d+)(?:-(\d+)-g(.*))?)reg" };
+  std::regex rx{ R"reg(^v(\d+)\.(\d+)\.(\d+)(?:-(\d+)-g(.*))?)reg" };
   std::smatch sm;
   if ( std::regex_search( line, sm, rx ) )
   {
@@ -125,13 +125,20 @@ int main( int argc, char** argv )
     ss << "static constexpr auto version_major = " << sm.str( 1 ) << ";" << std::endl;
     ss << "static constexpr auto version_minor = " << sm.str( 2 ) << ";" << std::endl;
     ss << "static constexpr auto version_patch = " << sm.str( 3 ) << ";" << std::endl;
-    ss << "static constexpr auto version_string = L\"" << sm.str( 1 ) << "." << sm.str( 2 ) << "." << sm.str( 3 ) << " (" << sm.str( 4 ) << ")\"" << ";" << std::endl;
+    if ( sm.str( 4 ) == "0" )
+    {
+      ss << "static constexpr auto version_string = L\"" << sm.str( 1 ) << "." << sm.str( 2 ) << "." << sm.str( 3 ) << "\"" << ";" << std::endl;
+    }
+    else
+    {
+      ss << "static constexpr auto version_string = L\"" << sm.str( 1 ) << "." << sm.str( 2 ) << "." << sm.str( 3 ) << " (" << sm.str( 4 ) << "G" << sm.str( 5 ) << ")\"" << ";" << std::endl;
+    }
     newString = ss.str();
   }
 
   {
     std::stringstream ss;
-    ss << "Compiling Felix " << sm.str( 1 ) << "." << sm.str( 2 ) << "." << sm.str( 3 ) << " (" << sm.str( 4 ) << ")" << std::endl;
+    ss << "Compiling Felix " << sm.str( 1 ) << "." << sm.str( 2 ) << "." << sm.str( 3 ) << " (" << sm.str( 4 ) << "-" << sm.str( 5 ) << ")" << std::endl;
     std::cout << ss.str();
   }
 
