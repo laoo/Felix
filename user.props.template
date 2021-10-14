@@ -3,13 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <GIT_PATH>c:\Program Files\Git\bin\git.exe</GIT_PATH>
-    <BOOST_PATH>c:\local\boost_1_76_0\</BOOST_PATH>
+    <LOCAL_PATH>c:\local\</LOCAL_PATH>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
-  <ItemGroup>
-    <BuildMacro Include="GIT_PATH">
-      <Value>$(GIT_PATH)</Value>
-    </BuildMacro>
-  </ItemGroup>
 </Project>
