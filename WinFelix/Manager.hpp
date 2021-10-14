@@ -29,12 +29,7 @@ public:
 
   void drawGui( int left, int top, int right, int bottom );
 
-  void horizontalView( bool horizontal );
-
   bool doRun() const;
-  bool horizontalView() const;
-
-  std::shared_ptr<IInputSource> getInputSource( int instance );
 
 private:
   void processLua( std::filesystem::path const& path, std::vector<InputFile>& inputs );
@@ -62,13 +57,11 @@ private:
   };
 
   bool mEmulationRunning;
-  bool mHorizontalView;
 
   bool mDoUpdate;
 
-  std::array<std::shared_ptr<InputSource>, 2> mIntputSources;
+  std::shared_ptr<InputSource> mIntputSource;
   std::atomic<bool> mProcessThreads;
-  int mInstancesCount;
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;
@@ -78,7 +71,7 @@ private:
   std::unique_ptr<Monitor> mMonitor;
   std::shared_ptr<IEncoder> mEncoder;
   std::unique_ptr<SymbolSource> mSymbols;
-  std::vector<std::shared_ptr<Core>> mInstances;
+  std::shared_ptr<Core> mInstance;
   std::vector<std::wstring> mArgs;
   std::filesystem::path mAppDataFolder;
   std::filesystem::path mLogPath;

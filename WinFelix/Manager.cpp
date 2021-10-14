@@ -13,12 +13,9 @@
 #include "CPUState.hpp"
 #include "IEncoder.hpp"
 
-Manager::Manager() : mEmulationRunning{ true }, mHorizontalView{ true }, mDoUpdate{ false }, mIntputSources{}, mProcessThreads{ true },
-  mInstancesCount{ 1 }, mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}, mRenderingTime{}
+Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{ true },
+  mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}, mRenderingTime{}
 {
-  mIntputSources[0] = std::make_shared<InputSource>();
-  mIntputSources[1] = std::make_shared<InputSource>();
-
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
   mComLynxWire = std::make_shared<ComLynxWire>();
@@ -100,50 +97,12 @@ void Manager::drawGui( int left, int top, int right, int bottom )
 {
   ImGuiIO & io = ImGui::GetIO();
 
-  bool hovered = io.MousePos.x > left && io.MousePos.y > top && io.MousePos.x < right && io.MousePos.y < bottom;
-
-  if ( hovered )
-  {
-    ImGui::PushStyleVar( ImGuiStyleVar_Alpha, std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
-    if ( ImGui::BeginMainMenuBar() )
-    {
-      ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 1.0f );
-      if ( ImGui::BeginMenu( "File" ) )
-      {
-        if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
-        {
-          mEmulationRunning = false;
-        }
-        ImGui::EndMenu();
-      }
-      if ( ImGui::BeginMenu( "View" ) )
-      {
-        ImGui::Checkbox( "Horizontal", &mHorizontalView );
-        ImGui::EndMenu();
-      }
-      if ( ImGui::BeginMenu( "Options" ) )
-      {
-        bool doubleInstance = mInstancesCount > 1;
-        if ( ImGui::Checkbox( "Double Instance", &doubleInstance ) )
-        {
-          mInstancesCount = doubleInstance ? 2 : 1;
-          mDoUpdate = true;
-        }
-        
-        ImGui::EndMenu();
-      }
-      ImGui::EndMainMenuBar();
-      ImGui::PopStyleVar();
-    }
-    ImGui::PopStyleVar();
-  }
-
-  if ( mMonitor && mInstances[0] )
+  if ( mMonitor && mInstance )
   {
     if ( ImGui::Begin( "Monitor" ) )
     {
-      ImGui::Text( "Tick: %u", mInstances[0]->tick() );
-      for ( auto sv : mMonitor->sample( *mInstances[0] ) )
+      ImGui::Text( "Tick: %u", mInstance->tick() );
+      for ( auto sv : mMonitor->sample( *mInstance ) )
         ImGui::Text( sv.data() );
       if ( mMonit )
       {
@@ -159,19 +118,9 @@ void Manager::drawGui( int left, int top, int right, int bottom )
 
 }
 
-void Manager::horizontalView( bool horizontal )
-{
-  mHorizontalView = horizontal;
-}
-
 bool Manager::doRun() const
 {
   return mEmulationRunning;
-}
-
-bool Manager::horizontalView() const
-{
-  return mHorizontalView;
 }
 
 void Manager::processKeys()
@@ -180,25 +129,15 @@ void Manager::processKeys()
   if ( !GetKeyboardState( keys.data() ) )
     return;
 
-  mIntputSources[0]->left = keys['A'] & 0x80;
-  mIntputSources[0]->up = keys['W'] & 0x80;
-  mIntputSources[0]->right = keys['D'] & 0x80;
-  mIntputSources[0]->down = keys['S'] & 0x80;
-  mIntputSources[0]->opt1 = keys['1'] & 0x80;
-  mIntputSources[0]->pause = keys['2'] & 0x80;
-  mIntputSources[0]->opt2 = keys['3'] & 0x80;
-  mIntputSources[0]->a = keys[VK_LCONTROL] & 0x80;
-  mIntputSources[0]->b = keys[VK_LSHIFT] & 0x80;
-
-  mIntputSources[1]->left = keys[VK_LEFT] & 0x80;
-  mIntputSources[1]->up = keys[VK_UP] & 0x80;
-  mIntputSources[1]->right = keys[VK_RIGHT] & 0x80;
-  mIntputSources[1]->down = keys[VK_DOWN] & 0x80;
-  mIntputSources[1]->opt1 = keys[VK_DELETE] & 0x80;
-  mIntputSources[1]->pause = keys[VK_END] & 0x80;
-  mIntputSources[1]->opt2 = keys[VK_NEXT] & 0x80;
-  mIntputSources[1]->a = keys[VK_RCONTROL] & 0x80;
-  mIntputSources[1]->b = keys[VK_RSHIFT] & 0x80;
+  mIntputSource->left = keys[VK_LEFT] & 0x80;
+  mIntputSource->up = keys[VK_UP] & 0x80;
+  mIntputSource->right = keys[VK_RIGHT] & 0x80;
+  mIntputSource->down = keys[VK_DOWN] & 0x80;
+  mIntputSource->opt1 = keys['1'] & 0x80;
+  mIntputSource->pause = keys['2'] & 0x80;
+  mIntputSource->opt2 = keys['3'] & 0x80;
+  mIntputSource->a = keys['Z'] & 0x80;
+  mIntputSource->b = keys['X'] & 0x80;
 
   if ( keys[VK_F9] & 0x80 )
   {
@@ -229,14 +168,6 @@ std::filesystem::path Manager::getAppDataFolder()
     CoTaskMemFree( path_tmp );
     return {};
   }
-}
-
-std::shared_ptr<IInputSource> Manager::getInputSource( int instance )
-{
-  if ( instance >= 0 && instance < mIntputSources.size() )
-    return mIntputSources[instance];
-  else
-    return {};
 }
 
 void Manager::Escape::call( uint8_t data, IAccessor & accessor )
@@ -431,7 +362,7 @@ void Manager::reset()
 {
   stopThreads();
   mProcessThreads.store( true );
-  mInstances.clear();
+  mInstance.reset();
 
   std::vector<InputFile> inputs;
 
@@ -455,16 +386,11 @@ void Manager::reset()
   if ( !inputs.empty() )
   {
 
-    mRenderer->setInstances( mInstancesCount );
+    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, std::span<InputFile>{ inputs.data(), inputs.size() } );
+    if ( !mLogPath.empty() )
+      mInstance->setLog( mLogPath, mLogStartCycle );
 
-    for ( size_t i = 0; i < mInstancesCount; ++i )
-    {
-      mInstances.push_back( std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink( (int)i ), getInputSource( (int)i ), std::span<InputFile>{ inputs.data(), inputs.size() } ) );
-      if ( !mLogPath.empty() )
-        mInstances.back()->setLog( mLogPath, mLogStartCycle );
-    }
-
-    mInstances[0]->setEscape( 0, std::make_shared<Escape>( *this ) );
+    mInstance->setEscape( 0, std::make_shared<Escape>( *this ) );
 
     mRenderThread = std::thread{ [this]
     {
@@ -487,7 +413,7 @@ void Manager::reset()
             std::scoped_lock<std::mutex> l{ mMutex };
             renderingTime = mRenderingTime;
           }
-          mAudioOut->fillBuffer( std::span<std::shared_ptr<Core> const>{ mInstances.data(), mInstances.size() }, renderingTime );
+          mAudioOut->fillBuffer( mInstance, renderingTime );
         }
       }
     } };

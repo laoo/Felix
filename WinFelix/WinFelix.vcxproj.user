@@ -7,13 +7,13 @@
     <LocalDebuggerEnvironment>PATH=%PATH%;c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\bin\</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">
-    <LocalDebuggerCommandArguments>j:\lynx\rainbow60.lyx</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>d:\home\lynxdemo2\felix.lua</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2\</LocalDebuggerWorkingDirectory>
     <LocalDebuggerEnvironment>PATH=%PATH%;c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\bin\</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>j:\lynx\rainbow60.lyx</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>d:\home\lynxdemo2\felix.lua</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>d:\home\lynxdemo2</LocalDebuggerWorkingDirectory>
     <LocalDebuggerEnvironment>PATH=%PATH%;c:\local\ffmpeg-4.3.1-2020-11-19-full_build-shared\bin\</LocalDebuggerEnvironment>

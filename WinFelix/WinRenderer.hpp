@@ -15,12 +15,11 @@ public:
   WinRenderer();
   ~WinRenderer();
 
-  void setInstances( int instances );
   void setEncoder( std::shared_ptr<IEncoder> encoder );
   void initialize( HWND hWnd, std::filesystem::path const& iniPath );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
-  std::shared_ptr<IVideoSink> getVideoSink( int instance ) const;
+  std::shared_ptr<IVideoSink> getVideoSink() const;
 
   int64_t render( Manager & config );
 
@@ -48,7 +47,7 @@ private:
   };
 
 
-  void updateSourceTexture( int instance, std::shared_ptr<RenderFrame> frame );
+  void updateSourceTexture( std::shared_ptr<RenderFrame> frame );
   void updateVscale( uint32_t vScale );
 
   int sizing( RECT & rect );
@@ -58,24 +57,21 @@ private:
   {
   public:
     SizeManager();
-    SizeManager( int instances, bool horizontal, int windowWidth, int windowHeight );
+    SizeManager( int windowWidth, int windowHeight );
 
     int windowWidth() const;
     int windowHeight() const;
-    int minWindowWidth( std::optional<bool> horizontal = std::nullopt ) const;
-    int minWindowHeight( std::optional<bool> horizontal = std::nullopt ) const;
-    int instanceXOff( int instance ) const;
-    int instanceYOff( int instance ) const;
+    int minWindowWidth() const;
+    int minWindowHeight() const;
+    int xOff() const;
+    int yOff() const;
     int scale() const;
-    bool horizontal() const;
     explicit operator bool() const;
 
   private:
     int mWinWidth;
     int mWinHeight;
     int mScale;
-    int mInstances;
-    bool mHorizontal;
   };
 
   struct Instance : public IVideoSink
@@ -99,8 +95,7 @@ private:
   };
 
 private:
-  std::array<std::shared_ptr<Instance>,2> mInstances;
-  std::atomic<int> mInstancesCount;
+  std::shared_ptr<Instance> mInstance;
   HWND mHWnd;
   std::unique_ptr<WinImgui>         mImgui;
   ComPtr<ID3D11Device>              mD3DDevice;
@@ -110,8 +105,8 @@ private:
   ComPtr<ID3D11Buffer>              mPosSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
   ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
-  std::array<ComPtr<ID3D11Texture2D>,2> mSources;
-  std::array<ComPtr<ID3D11ShaderResourceView>,2> mSourceSRVs;
+  ComPtr<ID3D11Texture2D>           mSource;
+  ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
 
   ComPtr<ID3D11Texture2D>           mPreStagingY;
   ComPtr<ID3D11Texture2D>           mPreStagingU;

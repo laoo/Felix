@@ -33,8 +33,7 @@
     <ClCompile Include="CartBank.cpp" />
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="ColOperator.cpp" />
-    <ClCompile Include="ComLynxCoarse.cpp" />
-    <ClCompile Include="ComLynxDetailed.cpp" />
+    <ClCompile Include="ComLynx.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
@@ -71,9 +70,6 @@
     <ClInclude Include="Cartridge.hpp" />
     <ClInclude Include="ColOperator.hpp" />
     <ClInclude Include="ComLynx.hpp" />
-    <ClInclude Include="ComLynxCoarse.hpp" />
-    <ClInclude Include="ComLynxDetailed.hpp" />
-    <ClInclude Include="ComLynxFwd.hpp" />
     <ClInclude Include="ComLynxWire.hpp" />
     <ClInclude Include="Core.hpp" />
     <ClInclude Include="CPU.hpp" />

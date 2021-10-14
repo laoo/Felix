@@ -65,13 +65,8 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}, mVScale{ ~0u }
+WinRenderer::WinRenderer() : mInstance{ std::make_shared<Instance>() }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}, mVScale{ ~0u }
 {
-  for ( int i = 0; i < mInstances.size(); ++i )
-  {
-    mInstances[i] = std::make_shared<Instance>();
-  }
-
   LARGE_INTEGER l;
   QueryPerformanceCounter( &l );
   mLastRenderTimePoint = l.QuadPart;
@@ -79,15 +74,6 @@ WinRenderer::WinRenderer() : mInstances{}, mInstancesCount{ 1 }, mHWnd{}, mSizeM
 
 WinRenderer::~WinRenderer()
 {
-}
-
-void WinRenderer::setInstances( int instances )
-{
-  if ( instances >= 0 && instances <= mInstances.size() )
-  {
-    mInstancesCount = instances;
-    mSizeManager = {};
-  }
 }
 
 void WinRenderer::setEncoder( std::shared_ptr<IEncoder> encoder )
@@ -177,23 +163,17 @@ void WinRenderer::initialize( HWND hWnd, std::filesystem::path const& iniPath )
   desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
   desc.MiscFlags = 0;
 
-  for ( size_t i = 0; i < mInstances.size(); ++i )
-  {
-    mD3DDevice->CreateTexture2D( &desc, nullptr, mSources[i].ReleaseAndGetAddressOf() );
-    V_THROW( mD3DDevice->CreateShaderResourceView( mSources[i].Get(), NULL, mSourceSRVs[i].ReleaseAndGetAddressOf() ) );
-  }
+  mD3DDevice->CreateTexture2D( &desc, nullptr, mSource.ReleaseAndGetAddressOf() );
+  V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
   updateVscale( 0 );
 
   mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext, iniPath } );
 }
 
-std::shared_ptr<IVideoSink> WinRenderer::getVideoSink( int instance ) const
+std::shared_ptr<IVideoSink> WinRenderer::getVideoSink() const
 {
-  if ( instance >= 0 && instance < mInstances.size() )
-    return mInstances[instance];
-  else
-    return {};
+  return mInstance;
 }
 
 int64_t WinRenderer::render( Manager& config )
@@ -218,7 +198,7 @@ bool WinRenderer::internalRender( Manager & config )
 
   if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) )
   {
-    mSizeManager = SizeManager{ mInstancesCount, config.horizontalView(), r.right, r.bottom };
+    mSizeManager = SizeManager{ r.right, r.bottom };
 
     if ( !mSizeManager )
     {
@@ -236,18 +216,6 @@ bool WinRenderer::internalRender( Manager & config )
     V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
   }
 
-  if ( config.horizontalView() != mSizeManager.horizontal() )
-  {
-    if ( r.right >= mSizeManager.minWindowWidth( config.horizontalView() ) && r.bottom >= mSizeManager.minWindowHeight( config.horizontalView() ) )
-    {
-      mSizeManager = SizeManager{ mInstancesCount, config.horizontalView(), r.right, r.bottom };
-    }
-    else
-    {
-      config.horizontalView( mSizeManager.horizontal() );
-    }
-  }
-
   if ( mEncoder )
   {
     uint32_t encoderScale = mEncoder->width() / 160;
@@ -262,17 +230,16 @@ bool WinRenderer::internalRender( Manager & config )
   std::array<ID3D11UnorderedAccessView*, 4> uavs{ mBackBufferUAV.Get(), mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
   mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
 
-  for ( int i = 0; i < mInstancesCount; ++i )
   {
-    if ( auto frame = mInstances[i]->pullNextFrame() )
+    if ( auto frame = mInstance->pullNextFrame() )
     {
-      updateSourceTexture( i, std::move( frame ) );
+      updateSourceTexture( std::move( frame ) );
     }
 
-    CBPosSize cbPosSize{ mSizeManager.instanceXOff( i ), mSizeManager.instanceYOff( i ), mSizeManager.scale(), mVScale };
+    CBPosSize cbPosSize{ mSizeManager.xOff(), mSizeManager.yOff(), mSizeManager.scale(), mVScale };
     mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-    mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRVs[i].GetAddressOf() );
+    mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
     mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
     mImmediateContext->Dispatch( 5, 51, 1 );
 
@@ -400,14 +367,10 @@ void WinRenderer::Instance::updatePalette( uint16_t reg, uint8_t value )
   }
 }
 
-void WinRenderer::updateSourceTexture( int instance, std::shared_ptr<RenderFrame> frame )
+void WinRenderer::updateSourceTexture( std::shared_ptr<RenderFrame> frame )
 {
-  assert( frame && instance >= 0 && instance < mInstances.size() );
-
-  auto & inst = mInstances[instance];
-
   D3D11_MAPPED_SUBRESOURCE map;
-  mImmediateContext->Map( mSources[instance].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
+  mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
   size_t pitch = map.RowPitch / sizeof( DPixel );
 
   for ( int i = 0; i < (int)frame->rows.size(); ++i )
@@ -421,16 +384,16 @@ void WinRenderer::updateSourceTexture( int instance, std::shared_ptr<RenderFrame
       uint16_t v = row.lineBuffer[j];
       if ( std::bit_cast<int16_t>( v ) < 0 )
       {
-        *dst++ = inst->mPalette[(uint8_t)v];
+        *dst++ = mInstance->mPalette[(uint8_t)v];
       }
       else
       {
-        inst->updatePalette( v >> 8, (uint8_t)v );
+        mInstance->updatePalette( v >> 8, (uint8_t)v );
       }
     }
   }
 
-  mImmediateContext->Unmap( mSources[instance].Get(), 0 );
+  mImmediateContext->Unmap( mSource.Get(), 0 );
 }
 
 void WinRenderer::updateVscale( uint32_t vScale )
@@ -551,37 +514,16 @@ void WinRenderer::Instance::updateColorReg( uint8_t reg, uint8_t value )
   }
 }
 
-WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }, mInstances{ 1 }, mHorizontal{ true }
+WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }
 {
 }
 
-WinRenderer::SizeManager::SizeManager( int instances, bool horizontal, int windowWidth, int windowHeight ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }, mInstances{ instances }, mHorizontal{ horizontal }
+WinRenderer::SizeManager::SizeManager( int windowWidth, int windowHeight ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }
 {
-  if ( mInstances < 1 || mInstances > 2 )
-    throw std::runtime_error{ "Bad emulation instances numer" };
-
   int sx, sy;
-  switch ( mInstances )
-  {
-  case 2:
-    if ( mHorizontal )
-    {
-      sx = (std::max)( 1, mWinWidth / 2 / 160 );
-      sy = (std::max)( 1, mWinHeight / 102 );
-    }
-    else
-    {
-      sx = (std::max)( 1, mWinWidth / 160 );
-      sy = (std::max)( 1, mWinHeight / 2 / 102 );
-    }
-    mScale = (std::min)( sx, sy );
-    break;
-  default:
-    sx = (std::max)( 1, mWinWidth / 160 );
-    sy = (std::max)( 1, mWinHeight / 102 );
-    mScale = (std::min)( sx, sy );
-    break;
-  }
+  sx = (std::max)( 1, mWinWidth / 160 );
+  sy = (std::max)( 1, mWinHeight / 102 );
+  mScale = (std::min)( sx, sy );
 }
 
 int WinRenderer::SizeManager::windowWidth() const
@@ -594,74 +536,29 @@ int WinRenderer::SizeManager::windowHeight() const
   return mWinHeight;
 }
 
-int WinRenderer::SizeManager::minWindowWidth( std::optional<bool> horizontal ) const
+int WinRenderer::SizeManager::minWindowWidth() const
 {
-  switch ( mInstances )
-  {
-  case 2:
-    if ( horizontal.value_or( mHorizontal ) )
-    {
-      return 160 * 2;
-    }
-    else
-    {
-      return 160;
-    }
-  default:
-    return 160;
-  }
+  return 160;
 }
 
-int WinRenderer::SizeManager::minWindowHeight( std::optional<bool> horizontal ) const
+int WinRenderer::SizeManager::minWindowHeight() const
 {
-  switch ( mInstances )
-  {
-  case 2:
-    if ( horizontal.value_or( mHorizontal ) )
-    {
-      return 102;
-    }
-    else
-    {
-      return 102 * 2;
-    }
-  default:
-    return 102;
-  }
+  return 102;
 }
 
-int WinRenderer::SizeManager::instanceXOff( int instance ) const
+int WinRenderer::SizeManager::xOff() const
 {
-  if ( mInstances == 2 && mHorizontal )
-  {
-    return ( ( instance == 1 ? 3 : 1 ) * mWinWidth - 320 * mScale ) / 4;
-  }
-  else
-  {
-    return ( mWinWidth - 160 * mScale ) / 2;
-  }
+  return ( mWinWidth - 160 * mScale ) / 2;
 }
 
-int WinRenderer::SizeManager::instanceYOff( int instance ) const
+int WinRenderer::SizeManager::yOff() const
 {
-  if ( mInstances == 2 && !mHorizontal )
-  {
-    return ( ( instance == 1 ? 3 : 1 ) * mWinHeight - 204 * mScale ) / 4;
-  }
-  else
-  {
-    return ( mWinHeight - 102 * mScale ) / 2;
-  }
+  return ( mWinHeight - 102 * mScale ) / 2;
 }
 
 int WinRenderer::SizeManager::scale() const
 {
   return mScale;
-}
-
-bool WinRenderer::SizeManager::horizontal() const
-{
-  return mHorizontal;
 }
 
 WinRenderer::SizeManager::operator bool() const

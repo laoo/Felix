@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ComLynxFwd.hpp"
+#include "ComLynx.hpp"
 
 class Cartridge;
 class Core;

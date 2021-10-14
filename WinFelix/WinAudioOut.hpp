@@ -14,7 +14,7 @@ public:
   ~WinAudioOut();
 
   void setEncoder( std::shared_ptr<IEncoder> pEncoder );
-  void fillBuffer( std::span<std::shared_ptr<Core> const> instances, int64_t renderingTime );
+  void fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTime );
   void setWavOut( std::filesystem::path path );
 
 private:

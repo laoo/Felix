@@ -5,7 +5,7 @@
 #include "DisplayGenerator.hpp"
 #include "Suzy.hpp"
 #include "Utility.hpp"
-#include "ComLynxFwd.hpp"
+#include "ComLynx.hpp"
 #include "MemoryUnit.hpp"
 
 class Mikey;
@@ -62,7 +62,6 @@ private:
   enum class SequencedActionResult
   {
     CARRY_ON,
-    SWITCH_INSTANCE,
     BAIL_OUT
   } executeSequencedAction( SequencedAction );
   bool executeSuzyAction();

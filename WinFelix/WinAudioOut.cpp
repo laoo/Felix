@@ -155,7 +155,7 @@ int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t rende
   return baseResult;
 }
 
-void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances, int64_t renderingTimeQPC )
+void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTimeQPC )
 {
   DWORD retval = WaitForSingleObject( mEvent, 100 );
   if ( retval != WAIT_OBJECT_0 )
@@ -165,27 +165,19 @@ void WinAudioOut::fillBuffer( std::span<std::shared_ptr<Core> const> instances, 
   uint32_t padding{};
   hr = mAudioClient->GetCurrentPadding( &padding );
   uint32_t framesAvailable = mBufferSize - padding;
+
   if ( framesAvailable > 0 )
   {
-    if ( mSamplesBuffer.size() < framesAvailable * instances.size() )
+    if ( mSamplesBuffer.size() < framesAvailable )
     {
-      mSamplesBuffer.resize( framesAvailable * instances.size() );
+      mSamplesBuffer.resize( framesAvailable );
     }
 
-    auto sps = correctedSPS( instances[0]->globalSamplesEmittedPerFrame(), renderingTimeQPC );
+    auto sps = correctedSPS( instance->globalSamplesEmittedPerFrame(), renderingTimeQPC );
 
-    for ( size_t i = 0; i < instances.size(); ++i )
-    {
-      instances[i]->setAudioOut( sps, std::span<AudioSample>{mSamplesBuffer.data() + framesAvailable * i, framesAvailable} );
-    }
+    instance->setAudioOut( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable } );
 
-    for ( int finished = 0; finished < instances.size(); )
-    {
-      for ( size_t i = 0; i < instances.size(); ++i )
-      {
-        finished += instances[i]->advanceAudio();
-      }
-    }
+    instance->advanceAudio();
 
     BYTE *pData;
     hr = mRenderClient->GetBuffer( framesAvailable, &pData );

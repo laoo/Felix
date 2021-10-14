@@ -179,6 +179,7 @@ Core::SequencedActionResult Core::executeSequencedAction( SequencedAction seqAct
   case Action::FIRE_TIMER1:
   case Action::FIRE_TIMER2:
   case Action::FIRE_TIMER3:
+  case Action::FIRE_TIMER4:
   case Action::FIRE_TIMER5:
   case Action::FIRE_TIMER6:
   case Action::FIRE_TIMER7:
@@ -192,13 +193,6 @@ Core::SequencedActionResult Core::executeSequencedAction( SequencedAction seqAct
       mActionQueue.push( newAction );
     }
     break;
-  case Action::FIRE_TIMER4:
-    //serial timer causes instance switch
-    if ( auto newAction = mMikey->fireTimer( seqAction.getTick(), 4 ) )
-    {
-      mActionQueue.push( newAction );
-    }
-    return SequencedActionResult::SWITCH_INSTANCE;
   case Action::ASSERT_IRQ:
     mCpu->assertInterrupt( CPUState::I_IRQ );
     break;
@@ -535,8 +529,6 @@ int Core::advanceAudio()
           return 0;
         else
           break;
-      case SequencedActionResult::SWITCH_INSTANCE:
-        return 0;
       case SequencedActionResult::BAIL_OUT:
         return 1;
       }
