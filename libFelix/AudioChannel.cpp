@@ -15,7 +15,7 @@ SequencedAction AudioChannel::setVolume( int8_t value )
 
 SequencedAction AudioChannel::setFeedback( uint8_t value )
 {
-  mTapSelector = ( mTapSelector & 0b0011'1100'0000 ) | ( value & 0b0011'1111 ) | ( ( value & 0b1100'0000 ) << 4 );
+  mTapSelector = ( mTapSelector & 0b0011'1100'0000 ) | ( value & 0b0011'1111 ) | ( ( (int)value & 0b1100'0000 ) << 4 );
   return {};
 }
 
@@ -50,7 +50,7 @@ SequencedAction AudioChannel::setCounter( uint64_t tick, uint8_t value )
 
 SequencedAction AudioChannel::setOther( uint64_t tick, uint8_t value )
 {
-  mShiftRegister = mShiftRegister & 0b0000'1111'1111 | ( value & 0b11110000 << 4 );
+  mShiftRegister = mShiftRegister & 0b0000'1111'1111 | ( ( (int)value & 0b1111'0000 ) << 4 );
   return mTimer.setControlB( tick, value & 0b0000'1111 );
 }
 
