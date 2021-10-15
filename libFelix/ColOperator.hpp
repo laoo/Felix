@@ -35,7 +35,7 @@ public:
 
   MemOp process( int hpos, uint8_t pixel );
   void receiveHiColl( uint8_t value );
-  uint8_t hiColl() const;
+  std::optional<uint8_t> hiColl() const;
 
   typedef bool( *processFunT )( uint8_t );
 

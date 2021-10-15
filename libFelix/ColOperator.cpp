@@ -107,7 +107,7 @@ void ColOperator::receiveHiColl( uint8_t value )
   }
 }
 
-uint8_t ColOperator::hiColl() const
+std::optional<uint8_t> ColOperator::hiColl() const
 {
-  return mHiColl;
+  return mDepositoryUpdatable[mSpriteType] ? mHiColl : std::optional<uint8_t>{};
 }
