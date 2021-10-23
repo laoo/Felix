@@ -2658,7 +2658,7 @@ void CPU::trace2()
     sprintf( buf.data() + off, "($%02x)\t;[%s]=$%02x\n", mState.fa, mAddressMapper->addressLabel( mState.t ), mState.m1 );
     break;
   case Opcode::WIN_STA:
-    sprintf( buf.data() + off, "($%02x)\t;[%s]\n", mState.eal, mAddressMapper->addressLabel( mState.t ) );
+    sprintf( buf.data() + off, "($%02x)\t;[%s]\n", mState.fa, mAddressMapper->addressLabel( mState.t ) );
     break;
   case Opcode::RIX_AND:
   case Opcode::RIX_CMP:
