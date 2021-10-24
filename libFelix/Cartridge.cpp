@@ -109,6 +109,8 @@ void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
 
 uint8_t Cartridge::peek( CartBank const & bank )
 {
+  sprintf( mCommentBuffer.data(), "Cart read from %02x:%03x", mShiftRegister, mCounter );
+  mTraceHelper->setTraceComment( mCommentBuffer.data() );
   return bank( mShiftRegister, mCounter );
 }
 
