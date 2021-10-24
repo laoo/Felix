@@ -6,7 +6,7 @@
 enum class Opcode : uint8_t;
 struct CpuTrace;
 struct TraceRequest;
-class AddressMapper;
+class TraceHelper;
 
 class CPU
 {
@@ -52,7 +52,7 @@ public:
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
   int interruptedMask() const;
-  void setLog( std::filesystem::path const & path, uint64_t startCycle );
+  void setLog( std::filesystem::path const & path, uint64_t startCycle, std::shared_ptr<TraceHelper> traceHelper );
 
   CPUState & state();
 
@@ -168,7 +168,7 @@ private:
   bool mTrace;
   std::ofstream mFtrace;
   uint64_t mStartCycle;
-  std::unique_ptr<AddressMapper> mAddressMapper;
+  std::shared_ptr<TraceHelper> mTraceHelper;
 
   Execute execute();
   bool isHiccup();

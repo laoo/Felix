@@ -13,12 +13,13 @@
 #include "Log.hpp"
 #include "DefaultROM.hpp"
 #include "KernelEscape.hpp"
+#include "TraceHelper.hpp"
 #include "Ex.hpp"
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
 Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, std::span<InputFile> inputs ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-  mCpu{ std::make_shared<CPU>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>() ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) },
+  mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) },
   mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
@@ -66,7 +67,7 @@ void Core::injectFile( InputFile const & file )
     pulseReset();
     break;
   case InputFile::FileType::CART:
-    mCartridge = std::make_shared<Cartridge>( file.getCart() );
+    mCartridge = std::make_shared<Cartridge>( file.getCart(), mTraceHelper );
     pulseReset();
     break;
   default:
@@ -76,7 +77,7 @@ void Core::injectFile( InputFile const & file )
 
 void Core::setLog( std::filesystem::path const & path, uint64_t startCycle )
 {
-  mCpu->setLog( path, startCycle );
+  mCpu->setLog( path, startCycle, mTraceHelper );
 }
 
 void Core::setEscape( size_t idx, std::shared_ptr<IEscape> esc )

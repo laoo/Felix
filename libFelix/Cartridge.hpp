@@ -3,11 +3,12 @@
 #include "ImageCart.hpp"
 
 class GameDrive;
+class TraceHelper;
 
 class Cartridge
 {
 public:
-  Cartridge( std::shared_ptr<ImageCart const> cart );
+  Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper );
   ~Cartridge();
 
   bool getAudIn( uint64_t tick ) const;
@@ -29,9 +30,10 @@ private:
 
   uint8_t incrementCounter( uint8_t value );
 
-
+  std::array<char, 256> mCommentBuffer;
   std::shared_ptr<ImageCart const> mCart;
   std::unique_ptr<GameDrive> mGameDrive;
+  std::shared_ptr<TraceHelper> mTraceHelper;
   uint32_t mShiftRegister;
   uint16_t mCounter;
   bool mAudIn;

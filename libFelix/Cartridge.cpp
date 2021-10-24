@@ -1,8 +1,10 @@
 #include "pch.hpp"
 #include "Cartridge.hpp"
 #include "GameDrive.hpp"
+#include "TraceHelper.hpp"
 
-Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart ) : mCart{ std::move( cart ) }, mGameDrive{ mCart->sd() ? std::make_unique<GameDrive>( mCart->path() ) : std::unique_ptr<GameDrive>() },
+Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) : mCart{ std::move( cart ) }, mGameDrive{ mCart->sd() ? std::make_unique<GameDrive>( mCart->path() ) : std::unique_ptr<GameDrive>() },
+  mTraceHelper{ std::move( traceHelper ) },
   mShiftRegister{}, mCounter{}, mAudIn{}, mCurrentStrobe{}, mAddressData{},
   mBank0{ mCart->getBank0() }, mBank1{ mCart->getBank1() }
 {
@@ -54,9 +56,13 @@ void Cartridge::setCartAddressStrobe( bool value )
 
   if ( value && !mCurrentStrobe )
   {
-    mShiftRegister <<= 1;
-    mShiftRegister += mAddressData ? 1 : 0;
-    mShiftRegister &= 0xff;
+    uint32_t oldShift = mShiftRegister;
+    uint32_t shiftBit = mAddressData ? 1 : 0;
+
+    mShiftRegister = ( ( oldShift << 1 ) | shiftBit ) & 0xff;
+
+    sprintf( mCommentBuffer.data(), "shift reg $%02x <- %d = $%02x", oldShift, shiftBit, mShiftRegister );
+    mTraceHelper->setTraceComment( mCommentBuffer.data() );
   }
 
   mCurrentStrobe = value;

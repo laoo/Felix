@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="ActionQueue.cpp" />
-    <ClCompile Include="AddressMapper.cpp" />
+    <ClCompile Include="TraceHelper.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="CartBank.cpp" />
     <ClCompile Include="Cartridge.cpp" />
@@ -35,7 +35,7 @@
   <ItemGroup>
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="ActionQueue.hpp" />
-    <ClInclude Include="AddressMapper.hpp" />
+    <ClInclude Include="TraceHelper.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="CartBank.hpp" />
     <ClInclude Include="Cartridge.hpp" />
