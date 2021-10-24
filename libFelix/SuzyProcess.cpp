@@ -43,7 +43,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
     scb.scbnext.h = co_await suzyFetchSCB( scb.tmpadr++ );
 
     if ( suzy.mSkipSprite )
-      co_return;
+      continue;
 
     scb.sprdline.l = co_await suzyFetchSCB( scb.tmpadr++ );
     scb.sprdline.h = co_await suzyFetchSCB( scb.tmpadr++ );
