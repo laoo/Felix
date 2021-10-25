@@ -111,7 +111,7 @@ uint8_t SuzyMath::peek( uint64_t tick, uint8_t offset )
 
 void SuzyMath::mul( uint64_t tick )
 {
-  mFinishTick = tick + ( ( mSignMath && mAccumulate ) ? 54 : 44 );
+  mFinishTick = tick + ( ( mSignMath || mAccumulate ) ? 54 : 44 );
   mOp = Op::MULTIPLY;
 }
 
