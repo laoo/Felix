@@ -46,7 +46,7 @@ int countl_zero( uint16_t value )
 
 }
 
-SuzyMath::SuzyMath() : mArea{}, mFinishTick{}, mSignAB{}, mSignCD{}, mOp{}, mUnsafeAccess{}, mSignMath{}, mAccumulate{}, mMathWarning{}, mMathCarry{}
+SuzyMath::SuzyMath() : mArea{}, mFinishTick{}, mSignAB{}, mSignCD{}, mUnsafeAccess{}, mSignMath{}, mAccumulate{}, mMathWarning{}, mMathCarry{}
 {
   std::fill( mArea.begin(), mArea.end(), 0xff );
 }
@@ -86,40 +86,22 @@ uint8_t SuzyMath::peek( uint64_t tick, uint8_t offset )
 {
   assert( ( offset >= 0x50 ) && ( offset < 0x70 ) );
 
-  int index = offset - 0x50;
-
   if ( tick < mFinishTick )
   {
     mUnsafeAccess = true;
-    return mArea[index];
   }
 
-  switch ( mOp )
-  {
-  case Op::MULTIPLY:
-    mul();
-    break;
-  case Op::DIVIDE:
-    div();
-    break;
-  case Op::NONE:
-    break;
-  }
-
+  size_t index = offset - 0x50;
   return mArea[index];
 }
 
 void SuzyMath::mul( uint64_t tick )
 {
   mFinishTick = tick + ( ( mSignMath || mAccumulate ) ? 54 : 44 );
-  mOp = Op::MULTIPLY;
-}
 
-void SuzyMath::mul()
-{
   mMathWarning = false;
 
-  uint32_t result = ( uint32_t )ab() * ( uint32_t )cd();
+  uint32_t result = (uint32_t)ab() * (uint32_t)cd();
 
   if ( mSignMath )
   {
@@ -135,12 +117,10 @@ void SuzyMath::mul()
 
   if ( mAccumulate )
   {
-    uint64_t acc = ( uint64_t )jklm() + ( uint64_t )result;
+    uint64_t acc = (uint64_t)jklm() + (uint64_t)result;
     mMathWarning = mMathCarry = acc > std::numeric_limits<uint32_t>::max();
-    jklm( ( uint32_t )acc );
+    jklm( (uint32_t)acc );
   }
-
-  mOp = Op::NONE;
 }
 
 void SuzyMath::div( uint64_t tick )
@@ -148,11 +128,7 @@ void SuzyMath::div( uint64_t tick )
   // "Divides take 176 + 14*N ticks where N is the number of most significant zeros in the divisor."
   uint64_t n = countl_zero( np() );
   mFinishTick = tick + 176 + 14 * n;
-  mOp = Op::DIVIDE;
-}
 
-void SuzyMath::div()
-{
   mMathWarning = false;
 
   if ( np() != 0 )
@@ -167,8 +143,6 @@ void SuzyMath::div()
 
     mMathWarning = mMathCarry = true;
   }
-
-  mOp = Op::NONE;
 }
 
 void SuzyMath::signAB()
@@ -201,7 +175,7 @@ bool SuzyMath::accumulate() const
 
 bool SuzyMath::working( uint64_t tick ) const
 {
-  return mOp != Op::NONE && tick < mFinishTick;
+  return tick < mFinishTick;
 }
 
 bool SuzyMath::warning() const

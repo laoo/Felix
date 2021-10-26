@@ -40,9 +40,6 @@ private:
   void cd( uint16_t value );
   void np( uint16_t value );
 
-  void mul();
-  void div();
-
 private:
 
   alignas( 8 ) std::array<uint8_t, 32> mArea;
@@ -50,12 +47,6 @@ private:
   uint64_t mFinishTick;
   int mSignAB;
   int mSignCD;
-  enum class Op
-  {
-    NONE,
-    MULTIPLY,
-    DIVIDE
-  } mOp;
   bool mUnsafeAccess;
   bool mSignMath;           //Signmath: 0 = unsigned math, 1 = signed math.
   bool mAccumulate;         //OK to accumvlate : 0 = do not accumulate, 1 = yes, accumulate.
