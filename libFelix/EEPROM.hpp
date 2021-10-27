@@ -2,15 +2,16 @@
 #include "Utility.hpp"
 
 class ImageCart;
+class TraceHelper;
 
 class EEPROM
 {
 public:
 
-  EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit );
+  EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper );
   ~EEPROM();
 
-  static std::unique_ptr<EEPROM> create( ImageCart const& cart );
+  static std::unique_ptr<EEPROM> create( ImageCart const& cart, std::shared_ptr<TraceHelper> traceHelper );
 
   void tick( uint64_t tick, bool cs, bool audin );
   std::optional<bool> output( uint64_t tick ) const;
@@ -134,8 +135,10 @@ private:
     handle mCoro;
   } const mEECoroutine;
 
+
   private:
     EECoroutine process();
+    std::shared_ptr<TraceHelper> mTraceHelper;
     std::vector<uint8_t> mData;
     int mAddressBits;
     int mDataBits;

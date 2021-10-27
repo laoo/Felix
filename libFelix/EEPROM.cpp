@@ -1,8 +1,9 @@
 #include "pch.hpp"
 #include "EEPROM.hpp"
 #include "ImageCart.hpp"
+#include "TraceHelper.hpp"
 
-EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit ) : mEECoroutine{ process() }, mData{}, mAddressBits{}, mDataBits{}, mWriteEnable{}
+EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper ) : mEECoroutine{ process() }, mTraceHelper{ std::move( traceHelper ) }, mData{}, mAddressBits{}, mDataBits{}, mWriteEnable{}
 {
   assert( eeType != 0 );
 
@@ -24,7 +25,7 @@ EEPROM::~EEPROM()
 {
 }
 
-std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart )
+std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart, std::shared_ptr<TraceHelper> traceHelper )
 {
   auto ee = cart.eeprom();
 
@@ -33,7 +34,7 @@ std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart )
     auto path = cart.path();
     path.replace_extension( ".sav" );
 
-    return std::make_unique<EEPROM>( std::move( path ), ee.type(), ee.is16Bit() );
+    return std::make_unique<EEPROM>( std::move( path ), ee.type(), ee.is16Bit(), std::move( traceHelper ) );
   }
   else
   {
@@ -71,15 +72,24 @@ EEPROM::EECoroutine EEPROM::process()
       if ( !co_await start() )
         continue;
 
-      int cmd = co_await input() << 1;
-      cmd |= co_await input();
+      mTraceHelper->comment( "EEPROM: read start bit." );
+
+      int cmd1 = co_await input();
+      mTraceHelper->comment( "EEPROM: read cmd bit 1={}.", cmd1 );
+      int cmd0 = co_await input();
+      mTraceHelper->comment( "EEPROM: read cmd bit 0={}.", cmd0 );
+
+      int cmd = ( cmd1 << 1 ) | cmd0;
 
       int address = 0;
       for ( int i = 0; i < mAddressBits; ++i )
       {
         address <<= 1;
-        address |= co_await input();
+        int bit = co_await input();
+        address |= bit;
+        mTraceHelper->comment( "EEPROM: read address bit {}={}.", mAddressBits-i-1, cmd0 );
       }
+
 
       int data = 0;
 
@@ -90,6 +100,7 @@ EEPROM::EECoroutine EEPROM::process()
         {
         case 0b00:  //EWDS
           ewds();
+          mTraceHelper->comment( "EEPROM: EWDS." );
           break;
         case 0b01:  //WRAL
           for ( int i = 0; i < mDataBits; ++i )
@@ -113,6 +124,7 @@ EEPROM::EECoroutine EEPROM::process()
           data |= co_await input();
         }
         write( address, data );
+        mTraceHelper->comment( "EEPROM ${:x}<-${:x}.", address,data );
         break;
       case 0b10: //READ
         co_yield 0;
