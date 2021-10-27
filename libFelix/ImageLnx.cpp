@@ -24,6 +24,5 @@ ImageLnx::ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data
   if ( bank1Size )
     mBank1A ={ std::span<uint8_t const>{ pImageData + bank1AOffset, bank1ASize }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
 
-  mSD = mHeader->sd();
-  mEEPROM = mHeader->eeprom();
+  mEEPROM = ImageCart::EEPROM{ mHeader->eepromBits };
 }

@@ -18,17 +18,6 @@ public:
     uint8_t                  audBits;
     uint8_t                  eepromBits;
     std::array<uint8_t, 3>   spare;
-
-    bool sd() const
-    {
-      return ( eepromBits & 0x40 ) != 0;
-    }
-
-    bool eeprom() const
-    {
-      return ( eepromBits & 0x01 ) != 0;
-    }
-
   } header{};
 
   ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data );

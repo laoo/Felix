@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "GameDrive.hpp"
 #include "CartBank.hpp"
+#include "ImageCart.hpp"
 #include "Log.hpp"
 
 GameDrive::GameDrive( std::filesystem::path const& imagePath ) : mMemoryBank{}, mBasePath { imagePath.parent_path() }, mBuffer{}, mGDCoroutine{ process() }, mReadTick{}
@@ -11,6 +12,18 @@ GameDrive::GameDrive( std::filesystem::path const& imagePath ) : mMemoryBank{}, 
 
 GameDrive::~GameDrive()
 {
+}
+
+std::unique_ptr<GameDrive> GameDrive::create( ImageCart const& cart )
+{
+  if ( cart.eeprom().sd() )
+  {
+    return std::make_unique<GameDrive>( cart.path() );
+  }
+  else
+  {
+    return {};
+  }
 }
 
 bool GameDrive::hasOutput( uint64_t tick ) const

@@ -1,9 +1,10 @@
 #include "pch.hpp"
 #include "Cartridge.hpp"
 #include "GameDrive.hpp"
+#include "EEPROM.hpp"
 #include "TraceHelper.hpp"
 
-Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) : mCart{ std::move( cart ) }, mGameDrive{ mCart->sd() ? std::make_unique<GameDrive>( mCart->path() ) : std::unique_ptr<GameDrive>() },
+Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) : mCart{ std::move( cart ) }, mGameDrive{ GameDrive::create( *mCart ) }, mEEPROM{ EEPROM::create( *mCart ) },
   mTraceHelper{ std::move( traceHelper ) },
   mShiftRegister{}, mCounter{}, mAudIn{}, mCurrentStrobe{}, mAddressData{},
   mBank0{ mCart->getBank0() }, mBank1{ mCart->getBank1() }
