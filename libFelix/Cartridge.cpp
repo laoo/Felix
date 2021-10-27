@@ -17,7 +17,20 @@ Cartridge::~Cartridge()
 
 bool Cartridge::getAudIn( uint64_t tick ) const
 {
-  return mGameDrive ? mGameDrive->hasOutput( tick ) : mAudIn;
+  if ( mGameDrive && mGameDrive->hasOutput( tick ) )
+  {
+    return true;
+  }
+
+  if ( mEEPROM )
+  {
+    if ( auto opt = mEEPROM->output( tick ) )
+    {
+      return *opt;
+    }
+  }
+
+  return mAudIn;
 }
 
 void Cartridge::setAudIn( bool value )
@@ -79,21 +92,28 @@ uint8_t Cartridge::peekRCART0( uint64_t tick )
   {
     if ( mGameDrive->hasOutput( tick ) )
     {
-      return incrementCounter( mGameDrive->get( tick ) );
-
+      auto result = mGameDrive->get( tick );
+      incrementCounter( tick );
+      return result;
     }
     else if ( auto bank = mGameDrive->getBank( tick ) )
     {
-      return incrementCounter( peek( *bank ) );
+      auto result = peek( *bank );
+      incrementCounter( tick );
+      return result;
     }
   }
 
-  return incrementCounter( peek( mBank0 ) );
+  auto result = peek( mBank0 );
+  incrementCounter( tick );
+  return result;
 }
 
 uint8_t Cartridge::peekRCART1( uint64_t tick )
 {
-  return incrementCounter( peek( mBank1 ) );
+  auto result = peek( mBank1 );
+  incrementCounter( tick );
+  return result;
 }
 
 void Cartridge::pokeRCART0( uint64_t tick, uint8_t value )
@@ -115,13 +135,15 @@ uint8_t Cartridge::peek( CartBank const & bank )
   return bank( mShiftRegister, mCounter );
 }
 
-uint8_t Cartridge::incrementCounter( uint8_t value )
+void Cartridge::incrementCounter( uint64_t tick )
 {
   if ( !mCurrentStrobe )
   {
     //it's 11 bits, but it's masked anyway
     mCounter++;
+    if ( mEEPROM && ( mCounter & 0b10 ) != 0 )
+    {
+      mEEPROM->tick( tick, ( mCounter & 0x80 ) != 0, mAudIn );
+    }
   }
-
-  return value;
 }

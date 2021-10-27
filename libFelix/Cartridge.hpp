@@ -29,7 +29,7 @@ public:
 private:
   uint8_t peek( CartBank const& bank );
 
-  uint8_t incrementCounter( uint8_t value );
+  void incrementCounter( uint64_t tick );
 
   std::array<char, 256> mCommentBuffer;
   std::shared_ptr<ImageCart const> mCart;
