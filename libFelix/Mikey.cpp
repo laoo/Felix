@@ -113,6 +113,11 @@ Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoS
   mAudioChannels[0x1] = std::make_unique<AudioChannel>( *mTimers[0x9] );
   mAudioChannels[0x2] = std::make_unique<AudioChannel>( *mTimers[0xa] );
   mAudioChannels[0x3] = std::make_unique<AudioChannel>( *mTimers[0xb] );
+
+  std::fill(mPalette.begin(), mPalette.end(), 0xff);
+  for (int i = 0; i < 32; ++i) {
+    mDisplayGenerator->updatePalette(0, i, 0xff);
+  }
 }
 
 Mikey::~Mikey()
@@ -140,7 +145,7 @@ uint64_t Mikey::requestAccess( uint64_t tick, uint16_t address )
     auto nextTick = mAccessTick & ~0xfull + ( timer * 16 / 12 );
     mAccessTick = nextTick < mAccessTick ? nextTick + 16 : nextTick;
   }
-  
+
   return mAccessTick;
 }
 
@@ -227,6 +232,7 @@ uint8_t Mikey::read( uint16_t address )
   case GREEN + 0x0d:
   case GREEN + 0x0e:
   case GREEN + 0x0f:
+      return mPalette[address - GREEN] & 0x0f;
   case BLUERED + 0x00:
   case BLUERED + 0x01:
   case BLUERED + 0x02:
