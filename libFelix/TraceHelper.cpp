@@ -1,18 +1,8 @@
 #include "pch.hpp"
 #include "TraceHelper.hpp"
 
-TraceHelper::TraceHelper() : mLabels{}, mTraceComment{}
+TraceHelper::TraceHelper() : mLabels{}, mTraceComment{}, mData{}, mCommentView{}, mCommentCursor{}, mEnabled{}
 {
-  char buf[256];
-  for ( size_t i = 0; i < 65536; ++i )
-  {
-    mLabels[i] = (uint32_t)mData.size();
-    char const * ptr = map( (uint16_t)i, buf );
-    do
-    {
-      mData.push_back( *ptr );
-    } while ( *ptr++ );
-  }
 }
 
 TraceHelper::~TraceHelper()
@@ -24,16 +14,47 @@ char const * TraceHelper::addressLabel( uint16_t address ) const
   return mData.data() + mLabels[address];
 }
 
-void TraceHelper::setTraceComment( char const* comment )
+void TraceHelper::enable()
 {
-  mTraceComment = comment;
+  mEnabled = true;
+
+  if ( !mData.empty() )
+    return;
+
+  char buf[256];
+  for ( size_t i = 0; i < 65536; ++i )
+  {
+    mLabels[i] = (uint32_t)mData.size();
+    char const* ptr = map( (uint16_t)i, buf );
+    do
+    {
+      mData.push_back( *ptr );
+    } while ( *ptr++ );
+  }
 }
 
-char const* TraceHelper::getTraceComment()
+void TraceHelper::disable()
 {
-  char const* result = mTraceComment;
-  mTraceComment = nullptr;
-  return result;
+  mEnabled = false;
+}
+
+std::shared_ptr<std::string_view> TraceHelper::getTraceComment()
+{
+  if ( mCommentCursor )
+  {
+    mCommentView = std::string_view{ mTraceComment.data(), mCommentCursor };
+    return std::shared_ptr<std::string_view>{
+      &mCommentView,
+        [this]( auto p )
+      {
+        mCommentCursor = 0;
+      }
+    };
+  }
+  else
+  {
+    return {};
+  }
 }
 
 char const * TraceHelper::map( uint16_t address, char * dest ) const

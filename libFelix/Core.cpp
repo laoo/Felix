@@ -24,7 +24,7 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
 
-  mEscapes[0xf] = std::make_shared<KernelEscape>();
+  mEscapes[0xf] = std::make_shared<KernelEscape>( mTraceHelper );
 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
   {

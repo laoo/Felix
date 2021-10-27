@@ -2,14 +2,17 @@
 #include "KernelEscape.hpp"
 #include "CPUState.hpp"
 #include "Encryption.hpp"
+#include "TraceHelper.hpp"
 #include "Log.hpp"
 
-KernelEscape::KernelEscape()
+KernelEscape::KernelEscape( std::shared_ptr<TraceHelper> traceHelper ) : mTraceHelper{ std::move( traceHelper ) }
 {
 }
 
 void KernelEscape::call( uint8_t data, IAccessor & acc )
 {
+  mTraceHelper->disable();
+
   switch ( data )
   {
   case 0xff:
@@ -27,6 +30,8 @@ void KernelEscape::call( uint8_t data, IAccessor & acc )
   default:
     break;
   }
+
+  mTraceHelper->enable();
 }
 
 void KernelEscape::shift( IAccessor & acc )

@@ -4,8 +4,7 @@
 #include "EEPROM.hpp"
 #include "TraceHelper.hpp"
 
-Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) : mCart{ std::move( cart ) }, mGameDrive{ GameDrive::create( *mCart ) }, mEEPROM{ EEPROM::create( *mCart ) },
-  mTraceHelper{ std::move( traceHelper ) },
+Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) : mTraceHelper{ std::move( traceHelper ) }, mCart{ std::move( cart ) }, mGameDrive{ GameDrive::create( *mCart ) }, mEEPROM{ EEPROM::create( *mCart, mTraceHelper ) },
   mShiftRegister{}, mCounter{}, mAudIn{}, mCurrentStrobe{}, mAddressData{},
   mBank0{ mCart->getBank0() }, mBank1{ mCart->getBank1() }
 {
@@ -75,8 +74,7 @@ void Cartridge::setCartAddressStrobe( bool value )
 
     mShiftRegister = ( ( oldShift << 1 ) | shiftBit ) & 0xff;
 
-    sprintf( mCommentBuffer.data(), "shift reg $%02x <- %d = $%02x", oldShift, shiftBit, mShiftRegister );
-    mTraceHelper->setTraceComment( mCommentBuffer.data() );
+    mTraceHelper->comment( "shift reg ${:02x} <- {} = ${:02x}.", oldShift, shiftBit, mShiftRegister );
   }
 
   mCurrentStrobe = value;
@@ -130,8 +128,7 @@ void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
 
 uint8_t Cartridge::peek( CartBank const & bank )
 {
-  sprintf( mCommentBuffer.data(), "Cart read from %02x:%03x", mShiftRegister, mCounter );
-  mTraceHelper->setTraceComment( mCommentBuffer.data() );
+  mTraceHelper->comment( "Cart read from ${:02x}:${:03x}.", mShiftRegister, mCounter );
   return bank( mShiftRegister, mCounter );
 }
 

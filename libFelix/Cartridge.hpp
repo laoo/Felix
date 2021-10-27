@@ -31,11 +31,10 @@ private:
 
   void incrementCounter( uint64_t tick );
 
-  std::array<char, 256> mCommentBuffer;
+  std::shared_ptr<TraceHelper> mTraceHelper;
   std::shared_ptr<ImageCart const> mCart;
   std::unique_ptr<GameDrive> mGameDrive;
   std::unique_ptr<EEPROM> mEEPROM;
-  std::shared_ptr<TraceHelper> mTraceHelper;
   uint32_t mShiftRegister;
   uint16_t mCounter;
   bool mAudIn;

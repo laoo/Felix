@@ -256,7 +256,7 @@ private:
   void trace2();
 
 private:
-  std::array<char, 256> buf;
-  int off;
+  std::array<char, 1024> buf;
+  int64_t off;
 };
 
