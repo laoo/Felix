@@ -2,6 +2,7 @@
 #include "Utility.hpp"
 
 class CartBank;
+class ImageCart;
 
 class GameDrive
 {
@@ -42,6 +43,8 @@ public:
 
   GameDrive( std::filesystem::path const& imagePath );
   ~GameDrive();
+
+  static std::unique_ptr<GameDrive> create( ImageCart const& cart );
 
 private:
   std::array<uint8_t, 2048 * 256> mMemoryBank;
