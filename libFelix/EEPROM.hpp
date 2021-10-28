@@ -148,7 +148,8 @@ private:
     std::filesystem::path mImagePath;
     std::shared_ptr<TraceHelper> mTraceHelper;
     std::vector<uint8_t> mData;
-    int mAddressBits;
+    int mOpcodeBits;  //command with address
+    int mAddressMask;
     int mDataBits;
     bool mWriteEnable;
     bool mChanged;

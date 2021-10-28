@@ -4,17 +4,43 @@
 #include "TraceHelper.hpp"
 
 EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper ) : mEECoroutine{ process() }, mImagePath{ std::move( imagePath ) },
-  mTraceHelper{ std::move( traceHelper ) }, mData{}, mAddressBits{}, mDataBits{}, mWriteEnable{}, mChanged{ true }
+  mTraceHelper{ std::move( traceHelper ) }, mData{}, mOpcodeBits{}, mAddressMask{}, mDataBits{}, mWriteEnable{}, mChanged{ true }
 {
-  assert( eeType != 0 );
+  assert( eeType > 0 && eeType < 6 );
 
-  mAddressBits = 6 + eeType;
-  mData.resize( 1ull << mAddressBits );
+  switch ( eeType & 0x7 )
+  {
+  case 1: //93C46
+    mOpcodeBits = 9;
+    mAddressMask = 0x7F;
+    break;
+  case 2: //93C56
+    mOpcodeBits = 11;
+    mAddressMask = 0xFF;
+    break;
+  case 3: // 93C66
+    mOpcodeBits = 11;
+    mAddressMask = 0x1FF;
+    break;
+  case 4: // 93C76
+    mOpcodeBits = 13;
+    mAddressMask = 0x3FF;
+    break;
+  case 5: // 93C86
+    mOpcodeBits = 13;
+    mAddressMask = 0x7FF;
+    break;
+  default:
+    break;
+  }
+
+  mData.resize( mAddressMask + 1 );
   std::fill( mData.begin(), mData.end(), 0xff );
 
   if ( is16Bit )
   {
-    mAddressBits -= 1;
+    mOpcodeBits -= 1;
+    mAddressMask >>= 1;
     mDataBits = 16;
   }
   else
@@ -50,7 +76,7 @@ std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart, std::shared_ptr<T
 {
   auto ee = cart.eeprom();
 
-  if ( ee.type() != 0 )
+  if ( ee.type() > 0 && ee.type() < 6 )
   {
     auto path = cart.path();
     path.replace_extension( path.extension().string() + ".e2p" );
@@ -95,28 +121,23 @@ EEPROM::EECoroutine EEPROM::process()
 
       mTraceHelper->comment( "EEPROM: fetch start bit." );
 
-      int cmd1 = co_await input();
-      mTraceHelper->comment( "EEPROM: fetch cmd bit 1={}.", cmd1 );
-      int cmd0 = co_await input();
-      mTraceHelper->comment( "EEPROM: fetch cmd bit 0={}.", cmd0 );
-
-      int cmd = ( cmd1 << 1 ) | cmd0;
-
-      int address = 0;
-      for ( int i = 0; i < mAddressBits; ++i )
+      int opcode = 0;
+      for ( int i = 0; i < mOpcodeBits; ++i )
       {
-        address <<= 1;
+        opcode <<= 1;
         int bit = co_await input();
-        address |= bit;
-        mTraceHelper->comment( "EEPROM: fetch address bit {}={}.", mAddressBits - i - 1, bit );
+        opcode |= bit;
+        mTraceHelper->comment( "EEPROM: fetch opcode bit {}={}.", mOpcodeBits - i - 1, bit );
       }
 
+      int cmd = opcode >> ( mOpcodeBits - 2 );
+      int address = opcode & mAddressMask;
       int data = 0;
 
       switch ( cmd )
       {
       case 0b00:
-        switch ( address >> ( mAddressBits - 2 ) )
+        switch ( address >> ( mOpcodeBits - 4 ) )
         {
         case 0b00:  //EWDS
           ewds();
