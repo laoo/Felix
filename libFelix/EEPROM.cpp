@@ -52,7 +52,7 @@ std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart, std::shared_ptr<T
   if ( ee.type() != 0 )
   {
     auto path = cart.path();
-    path.replace_extension( ".eeprom" );
+    path.replace_extension( path.extension().string() + ".e2p" );
 
     return std::make_unique<EEPROM>( std::move( path ), ee.type(), ee.is16Bit(), std::move( traceHelper ) );
   }
