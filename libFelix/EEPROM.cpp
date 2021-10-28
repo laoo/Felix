@@ -4,7 +4,7 @@
 #include "TraceHelper.hpp"
 
 EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper ) : mEECoroutine{ process() }, mImagePath{ std::move( imagePath ) },
-  mTraceHelper{ std::move( traceHelper ) }, mData{}, mAddressBits{}, mDataBits{}, mWriteEnable{}, mChanged{}
+  mTraceHelper{ std::move( traceHelper ) }, mData{}, mAddressBits{}, mDataBits{}, mWriteEnable{}, mChanged{ true }
 {
   assert( eeType != 0 );
 
@@ -27,6 +27,7 @@ EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::
     auto size = std::min( std::filesystem::file_size( mImagePath ), mData.size() );
     std::ifstream fin{ mImagePath, std::ios::binary };
     fin.read( (char*)mData.data(), size );
+    mChanged = false;
   }
 }
 
