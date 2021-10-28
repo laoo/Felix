@@ -3,12 +3,14 @@
 #include "ImageCart.hpp"
 #include "TraceHelper.hpp"
 
-EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper ) : mEECoroutine{ process() }, mTraceHelper{ std::move( traceHelper ) }, mData{}, mAddressBits{}, mDataBits{}, mWriteEnable{}
+EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper ) : mEECoroutine{ process() }, mImagePath{ std::move( imagePath ) },
+  mTraceHelper{ std::move( traceHelper ) }, mData{}, mAddressBits{}, mDataBits{}, mWriteEnable{}, mChanged{}
 {
   assert( eeType != 0 );
 
   mAddressBits = 6 + eeType;
   mData.resize( 1ull << mAddressBits );
+  std::fill( mData.begin(), mData.end(), 0xff );
 
   if ( is16Bit )
   {
@@ -20,10 +22,27 @@ EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::
     mDataBits = 8;
   }
 
+  if ( std::filesystem::exists( mImagePath ) )
+  {
+    auto size = std::min( std::filesystem::file_size( mImagePath ), mData.size() );
+    std::ifstream fin{ mImagePath, std::ios::binary };
+    fin.read( (char*)mData.data(), size );
+  }
 }
 
 EEPROM::~EEPROM()
 {
+  if ( mChanged )
+  {
+    try
+    {
+      std::ofstream fout{ mImagePath, std::ios::binary };
+      fout.write( (char const*)mData.data(), mData.size() );
+    }
+    catch ( ... )
+    {
+    }
+  }
 }
 
 std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart, std::shared_ptr<TraceHelper> traceHelper )
@@ -33,7 +52,7 @@ std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart, std::shared_ptr<T
   if ( ee.type() != 0 )
   {
     auto path = cart.path();
-    path.replace_extension( ".sav" );
+    path.replace_extension( ".eeprom" );
 
     return std::make_unique<EEPROM>( std::move( path ), ee.type(), ee.is16Bit(), std::move( traceHelper ) );
   }
@@ -201,8 +220,16 @@ void EEPROM::write( int address, int data, bool erase )
       address <<= 1;
       if ( address < mData.size() )
       {
-        mData[address] = data & 0xff;
-        mData[address + 1] = ( data >> 8 ) & 0xff;
+        if ( mData[address] != ( data & 0xff ) )
+        {
+          mChanged = true;
+          mData[address] = data & 0xff;
+        }
+        if ( mData[address + 1] != ( ( data >> 8 ) & 0xff ) )
+        {
+          mChanged = true;
+          mData[address + 1] = ( data >> 8 ) & 0xff;
+        }
       }
       if ( erase )
         mTraceHelper->comment( "EEPROM: ERASE16 ${:x}", address );
@@ -249,6 +276,7 @@ void EEPROM::eral()
   {
     mTraceHelper->comment( "EEPROM: ERAL." );
     std::fill( mData.begin(), mData.end(), 0xff );
+    mChanged = true;
     mIO.busyUntil = mIO.currentTick + ERAL_TICKS;
   }
   else
@@ -275,6 +303,7 @@ void EEPROM::wral( int data )
       mTraceHelper->comment( "EEPROM: WRAL8 ${:x}.", data );
     }
 
+    mChanged = true;
     mIO.busyUntil = mIO.currentTick + WRAL_TICKS;
   }
   else

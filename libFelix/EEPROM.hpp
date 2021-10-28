@@ -145,11 +145,13 @@ private:
 
   private:
     EECoroutine process();
+    std::filesystem::path mImagePath;
     std::shared_ptr<TraceHelper> mTraceHelper;
     std::vector<uint8_t> mData;
     int mAddressBits;
     int mDataBits;
     bool mWriteEnable;
+    bool mChanged;
 
     static constexpr uint64_t WRITE_TICKS = 10 * 16;
     static constexpr uint64_t ERAL_TICKS = 15 * 16;
