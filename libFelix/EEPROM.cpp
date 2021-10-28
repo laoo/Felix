@@ -8,9 +8,11 @@ EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::
   assert( eeType != 0 );
 
   mAddressBits = 6 + eeType;
+  mData.resize( 1ull << mAddressBits );
+
   if ( is16Bit )
   {
-    mAddressBits >>= 1;
+    mAddressBits -= 1;
     mDataBits = 16;
   }
   else
@@ -18,7 +20,6 @@ EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::
     mDataBits = 8;
   }
 
-  mData.resize( 1ull << mAddressBits );
 }
 
 EEPROM::~EEPROM()
@@ -130,7 +131,7 @@ EEPROM::EECoroutine EEPROM::process()
         data = read( address );
         for ( int i = 0; i < mDataBits; ++i )
         {
-          int bit = data >> ( mDataBits - i - 1 );
+          int bit = ( data >> ( mDataBits - i - 1 ) ) & 1;
           mTraceHelper->comment( "EEPROM: emit data bit {}={}.", mDataBits - i - 1, bit );
           co_yield bit;
         }
@@ -163,7 +164,7 @@ int EEPROM::read( int address ) const
     if ( address < mData.size() )
     {
       data = mData[address];
-      data |= mData[address + 1];
+      data |= ( mData[address + 1] ) << 8;
     }
     mTraceHelper->comment( "EEPROM: READ16 ${:x} from ${:x}.", data, address );
     return data;

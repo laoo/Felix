@@ -116,6 +116,7 @@ uint8_t Cartridge::peekRCART1( uint64_t tick )
 
 void Cartridge::pokeRCART0( uint64_t tick, uint8_t value )
 {
+  mTraceHelper->comment( "RCART0 poke ${:03x}.",  mCounter );
   incrementCounter( tick );
 }
 

@@ -48,5 +48,5 @@ int ImageCart::EEPROM::type() const
 
 bool ImageCart::EEPROM::is16Bit() const
 {
-  return ( bits & 0x80 ) != 0;
+  return ( bits & 0x80 ) == 0;
 }
