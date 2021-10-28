@@ -116,10 +116,12 @@ uint8_t Cartridge::peekRCART1( uint64_t tick )
 
 void Cartridge::pokeRCART0( uint64_t tick, uint8_t value )
 {
+  incrementCounter( tick );
 }
 
 void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
 {
+  incrementCounter( tick );
   if ( mGameDrive )
   {
     return mGameDrive->put( tick, value );
@@ -136,11 +138,11 @@ void Cartridge::incrementCounter( uint64_t tick )
 {
   if ( !mCurrentStrobe )
   {
-    //it's 11 bits, but it's masked anyway
-    mCounter++;
-    if ( mEEPROM && ( mCounter & 0b10 ) != 0 )
+    if ( mEEPROM && ( mCounter & 0b11 ) == 0b10 )
     {
       mEEPROM->tick( tick, ( mCounter & 0x80 ) != 0, mAudIn );
     }
+    //it's 11 bits, but it's masked anyway
+    mCounter++;
   }
 }

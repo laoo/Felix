@@ -72,12 +72,12 @@ EEPROM::EECoroutine EEPROM::process()
       if ( !co_await start() )
         continue;
 
-      mTraceHelper->comment( "EEPROM: read start bit." );
+      mTraceHelper->comment( "EEPROM: fetch start bit." );
 
       int cmd1 = co_await input();
-      mTraceHelper->comment( "EEPROM: read cmd bit 1={}.", cmd1 );
+      mTraceHelper->comment( "EEPROM: fetch cmd bit 1={}.", cmd1 );
       int cmd0 = co_await input();
-      mTraceHelper->comment( "EEPROM: read cmd bit 0={}.", cmd0 );
+      mTraceHelper->comment( "EEPROM: fetch cmd bit 0={}.", cmd0 );
 
       int cmd = ( cmd1 << 1 ) | cmd0;
 
@@ -87,9 +87,8 @@ EEPROM::EECoroutine EEPROM::process()
         address <<= 1;
         int bit = co_await input();
         address |= bit;
-        mTraceHelper->comment( "EEPROM: read address bit {}={}.", mAddressBits-i-1, cmd0 );
+        mTraceHelper->comment( "EEPROM: fetch address bit {}={}.", mAddressBits - i - 1, bit );
       }
-
 
       int data = 0;
 
@@ -100,7 +99,6 @@ EEPROM::EECoroutine EEPROM::process()
         {
         case 0b00:  //EWDS
           ewds();
-          mTraceHelper->comment( "EEPROM: EWDS." );
           break;
         case 0b01:  //WRAL
           for ( int i = 0; i < mDataBits; ++i )
@@ -121,17 +119,20 @@ EEPROM::EECoroutine EEPROM::process()
         for ( int i = 0; i < mDataBits; ++i )
         {
           data <<= 1;
-          data |= co_await input();
+          int bit = co_await input();
+          data |= bit;
+          mTraceHelper->comment( "EEPROM: fetch data bit {}={}.", mDataBits - i - 1, bit );
         }
         write( address, data );
-        mTraceHelper->comment( "EEPROM ${:x}<-${:x}.", address,data );
         break;
       case 0b10: //READ
         co_yield 0;
         data = read( address );
         for ( int i = 0; i < mDataBits; ++i )
         {
-          co_yield data >> ( mDataBits - i - 1 );
+          int bit = data >> ( mDataBits - i - 1 );
+          mTraceHelper->comment( "EEPROM: emit data bit {}={}.", mDataBits - i - 1, bit );
+          co_yield bit;
         }
         break;
       case 0b11: //ERASE
@@ -141,11 +142,13 @@ EEPROM::EECoroutine EEPROM::process()
 
       while ( !co_await finish() )
       {
+        mTraceHelper->comment( "EEPROM: wait for /CS." );
         //repeat until cs is down
       }
     }
     catch ( [[maybe_unused]] NoCS const& )
     {
+      mTraceHelper->comment( "EEPROM: unexpected /CS." );
       mIO.started = false;
     }
   }
@@ -162,6 +165,7 @@ int EEPROM::read( int address ) const
       data = mData[address];
       data |= mData[address + 1];
     }
+    mTraceHelper->comment( "EEPROM: READ16 ${:x} from ${:x}.", data, address );
     return data;
   }
   else
@@ -171,21 +175,23 @@ int EEPROM::read( int address ) const
     {
       data = mData[address];
     }
+    mTraceHelper->comment( "EEPROM: READ8 ${:x} from ${:x}.", data, address );
     return data;
   }
 }
 
 void EEPROM::ewen()
 {
+  mTraceHelper->comment( "EEPROM: EWEN." );
   mWriteEnable = true;
 }
 
 void EEPROM::erase( int address )
 {
-  write( address, 0xffff );
+  write( address, 0xffff, true );
 }
 
-void EEPROM::write( int address, int data )
+void EEPROM::write( int address, int data, bool erase )
 {
   if ( mWriteEnable )
   {
@@ -197,6 +203,10 @@ void EEPROM::write( int address, int data )
         mData[address] = data & 0xff;
         mData[address + 1] = ( data >> 8 ) & 0xff;
       }
+      if ( erase )
+        mTraceHelper->comment( "EEPROM: ERASE16 ${:x}", address );
+      else
+        mTraceHelper->comment( "EEPROM: WRITE16 ${:x} to ${:x}.", data, address );
     }
     else
     {
@@ -204,20 +214,46 @@ void EEPROM::write( int address, int data )
       {
         mData[address] = data & 0xff;
       }
+      if ( erase )
+        mTraceHelper->comment( "EEPROM: ERASE8 ${:x}", address );
+      else
+        mTraceHelper->comment( "EEPROM: WRITE8 ${:x} to ${:x}.", data, address );
+    }
+
+    mIO.busyUntil = mIO.currentTick + WRITE_TICKS;
+  }
+  else
+  {
+    if ( mDataBits == 16 )
+    {
+      address <<= 1;
+      if ( erase )
+        mTraceHelper->comment( "EEPROM: ERASE16 ${:x} DISABLED.", address );
+      else
+        mTraceHelper->comment( "EEPROM: WRITE16 ${:x} to ${:x} DISABLED.", data, address );
+    }
+    else
+    {
+      if ( erase )
+        mTraceHelper->comment( "EEPROM: ERASE8 ${:x} DISABLED.", address );
+      else
+        mTraceHelper->comment( "EEPROM: WRITE8 ${:x} to ${:x} DISABLED.", data, address );
     }
   }
-
-  mIO.busyUntil = mIO.currentTick + WRITE_TICKS;
 }
 
 void EEPROM::eral()
 {
   if ( mWriteEnable )
   {
+    mTraceHelper->comment( "EEPROM: ERAL." );
     std::fill( mData.begin(), mData.end(), 0xff );
+    mIO.busyUntil = mIO.currentTick + ERAL_TICKS;
   }
-
-  mIO.busyUntil = mIO.currentTick + ERAL_TICKS;
+  else
+  {
+    mTraceHelper->comment( "EEPROM: ERAL DISABLED." );
+  }
 }
 
 void EEPROM::wral( int data )
@@ -230,17 +266,31 @@ void EEPROM::wral( int data )
       uint16_t* end = (uint16_t*)( mData.data() + mData.size() );
 
       std::fill( begin, end, data & 0xffff );
+      mTraceHelper->comment( "EEPROM: WRAL16 ${:x}.", data );
     }
     else
     {
       std::fill( mData.begin(), mData.end(), data & 0xff );
+      mTraceHelper->comment( "EEPROM: WRAL8 ${:x}.", data );
+    }
+
+    mIO.busyUntil = mIO.currentTick + WRAL_TICKS;
+  }
+  else
+  {
+    if ( mDataBits == 16 )
+    {
+      mTraceHelper->comment( "EEPROM: WRAL16 ${:x} DISABLED.", data );
+    }
+    else
+    {
+      mTraceHelper->comment( "EEPROM: WRAL8 ${:x} DISABLED.", data );
     }
   }
-
-  mIO.busyUntil = mIO.currentTick + WRAL_TICKS;
 }
 
 void EEPROM::ewds()
 {
+  mTraceHelper->comment( "EEPROM: EWDS." );
   mWriteEnable = false;
 }

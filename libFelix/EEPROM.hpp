@@ -78,9 +78,16 @@ private:
     {
       bool await_resume()
       {
-        started = false;
-        output = true;
-        return !cs;
+        if ( cs )
+        {
+          return false;
+        }
+        else
+        {
+          started = false;
+          output = true;
+          return true;
+        }
       }
     };
     return static_cast<Finish&>( mIO );
@@ -89,7 +96,7 @@ private:
   int read( int address ) const;
   void ewen();
   void erase( int address );
-  void write( int address, int data );
+  void write( int address, int data, bool erase = false );
   void eral();
   void wral( int data );
   void ewds();
