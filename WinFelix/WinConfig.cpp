@@ -16,6 +16,8 @@ WinConfig WinConfig::load( std::filesystem::path path )
   result.mainWindow.width = lua["mainWindow"]["width"].get_or( 960 );
   result.mainWindow.height = lua["mainWindow"]["height"].get_or( 630 );
 
+  result.singleInstance = lua["singleInstance"].get_or( false );
+
   return result;
 }
 
@@ -30,5 +32,6 @@ void WinConfig::serialize( std::filesystem::path path )
   fout << "\ty = " << mainWindow.y << ";\n";
   fout << "\twidth = " << mainWindow.width << ";\n";
   fout << "\theight = " << mainWindow.height << ";\n";
-  fout << "};";
+  fout << "};\n";
+  fout << "singleInstance = " << ( singleInstance ? "true;\n" : "false;\n" );
 }

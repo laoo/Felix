@@ -10,6 +10,8 @@ struct WinConfig
     int height;
   } mainWindow;
 
+  bool singleInstance;
+
   static WinConfig load( std::filesystem::path path );
   void serialize( std::filesystem::path path );
 };

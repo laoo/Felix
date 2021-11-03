@@ -139,10 +139,10 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     std::wstring name = L"Felix " + std::wstring{ version_string };
 
-    if ( checkInstance( name, args ) )
-      return 0;
-
     auto winConfig = manager.getWinConfig();
+
+    if ( winConfig.singleInstance && checkInstance( name, args ) )
+      return 0;
 
     HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, winConfig.mainWindow.x, winConfig.mainWindow.y, winConfig.mainWindow.width, winConfig.mainWindow.height, nullptr, nullptr, hInstance, &manager );
 
