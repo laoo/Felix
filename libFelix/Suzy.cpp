@@ -350,6 +350,9 @@ void Suzy::write( uint16_t address, uint8_t value )
       mSCB.procadr.h = value;
       break;
 
+    case MATHM:
+      mMath.carry( false );
+      [[fallthrough]];
     case MATHD:
     case MATHB:
     case MATHP:
@@ -357,9 +360,6 @@ void Suzy::write( uint16_t address, uint8_t value )
     case MATHF:
     case MATHK:
       mMath.wpoke( mAccessTick, address & 0xff, value );
-      [[fallthrough]];
-    case MATHM:
-      mMath.carry( false );
       break;
     case MATHC:
       mMath.poke( mAccessTick, address & 0xff, value );
