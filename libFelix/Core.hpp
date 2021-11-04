@@ -81,6 +81,7 @@ private:
   void runSuzy();
   Cartridge & getCartridge();
   void newLine( int rowNr );
+  std::shared_ptr<TraceHelper> getTraceHelper() const;
 
   friend class Mikey;
   friend class Suzy;

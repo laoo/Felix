@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "SuzyMath.hpp"
-
+#include "TraceHelper.hpp"
 #include "Utility.hpp"
 
 namespace
@@ -35,8 +35,7 @@ uint16_t convertSigned( uint16_t value, int & sign )
 
 }
 
-
-SuzyMath::SuzyMath() : mArea{}, mFinishTick{}, mSignAB{}, mSignCD{}, mUnsafeAccess{}, mSignMath{}, mAccumulate{}, mMathWarning{}, mMathCarry{}
+SuzyMath::SuzyMath( std::shared_ptr<TraceHelper> traceHelper ) : mArea{}, mTraceHelper{ std::move( traceHelper ) }, mFinishTick{}, mSignAB{}, mSignCD{}, mUnsafeAccess{}, mSignMath{}, mAccumulate{}, mMathWarning{}, mMathCarry{}
 {
   std::fill( mArea.begin(), mArea.end(), 0xff );
 }
@@ -91,7 +90,9 @@ void SuzyMath::mul( uint64_t tick )
 
   mMathWarning = false;
 
-  uint32_t result = (uint32_t)ab() * (uint32_t)cd();
+  uint32_t valueAB = ab();
+  uint32_t valueCD = cd();
+  uint32_t result = valueAB * valueCD;
 
   if ( mSignMath )
   {
@@ -107,9 +108,19 @@ void SuzyMath::mul( uint64_t tick )
 
   if ( mAccumulate )
   {
-    uint64_t acc = (uint64_t)jklm() + (uint64_t)result;
-    mMathWarning = mMathCarry = acc > std::numeric_limits<uint32_t>::max();
-    jklm( (uint32_t)acc );
+    uint32_t valueJKLM = jklm();
+    uint32_t acc = valueJKLM + result;
+    mMathWarning = mMathCarry = ( acc & 0x80000000 ) != ( valueJKLM & 0x80000000 );
+    jklm( acc );
+
+    mTraceHelper->comment( "math: {} {:04x}*{:04x}={:08x}, acc = {:08x}", ( mSignMath ? 's' : 'u' ), valueAB, valueCD, result, (uint32_t)acc);
+
+    if ( mMathCarry )
+      mTraceHelper->comment( "carry" );
+  }
+  else
+  {
+    mTraceHelper->comment( "math: {:04x}*{:04x}={:08x}", valueAB, valueCD, result );
   }
 }
 
@@ -121,10 +132,25 @@ void SuzyMath::div( uint64_t tick )
 
   mMathWarning = false;
 
-  if ( np() != 0 )
+  uint32_t valueNP = np();
+  uint32_t valueEFGH = efgh();
+
+  if ( valueNP != 0 )
   {
-    abcd( efgh() / np() );
-    jklm( (uint16_t)( efgh() % np() ) );
+    uint32_t valueABCD = valueEFGH / valueNP;
+    uint32_t valueJKLM = valueEFGH % valueNP;
+
+    abcd( valueABCD );
+    jklm( valueJKLM );
+
+    if ( valueJKLM )
+    {
+      mTraceHelper->comment( "math: {0:08x}/{1:04x}={2:04x} + {3:08x}/{1:04x}", valueEFGH, valueNP, valueABCD, valueJKLM );
+    }
+    else
+    {
+      mTraceHelper->comment( "math: {:08x}/{:04x}={:04x}", valueEFGH, valueNP, valueABCD );
+    }
   }
   else
   {

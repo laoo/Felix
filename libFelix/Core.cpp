@@ -569,6 +569,11 @@ void Core::newLine( int rowNr )
   }
 }
 
+std::shared_ptr<TraceHelper> Core::getTraceHelper() const
+{
+  return mTraceHelper;
+}
+
 uint8_t Core::readKernel( uint16_t address )
 {
   if ( address >= 0x1fa )

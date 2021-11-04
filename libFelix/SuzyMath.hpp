@@ -1,9 +1,11 @@
 #pragma once
 
+class TraceHelper;
+
 class SuzyMath
 {
 public:
-  SuzyMath();
+  SuzyMath( std::shared_ptr<TraceHelper> traceHelper );
 
   bool poke( uint64_t tick, uint8_t offset, uint8_t value );
   void wpoke( uint64_t tick, uint8_t offset, uint16_t value );
@@ -44,6 +46,7 @@ private:
 
   alignas( 8 ) std::array<uint8_t, 32> mArea;
 
+  std::shared_ptr<TraceHelper> mTraceHelper;
   uint64_t mFinishTick;
   int mSignAB;
   int mSignCD;

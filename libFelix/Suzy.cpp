@@ -4,7 +4,7 @@
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"
 
-Suzy::Suzy( Core & core, std::shared_ptr<IInputSource> inputSource ) : mCore{ core }, mSCB{}, mMath{}, mInputSource{ inputSource }, mAccessTick{},
+Suzy::Suzy( Core & core, std::shared_ptr<IInputSource> inputSource ) : mCore{ core }, mSCB{}, mMath{ mCore.getTraceHelper() }, mInputSource{ inputSource }, mAccessTick{},
   mPalette{}, mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
   mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{}, mFred{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}
