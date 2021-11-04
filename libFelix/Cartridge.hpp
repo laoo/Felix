@@ -26,6 +26,8 @@ public:
   void pokeRCART0( uint64_t tick, uint8_t value );
   void pokeRCART1( uint64_t tick, uint8_t value );
 
+  ImageCart::Rotation rotation() const;
+
 private:
   uint8_t peek( CartBank const& bank );
 

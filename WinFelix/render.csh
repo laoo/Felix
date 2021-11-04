@@ -16,6 +16,8 @@ float3 rgb2yuv( float3 rgb )
 
 cbuffer cb : register( b0 )
 {
+  int2 rotx;
+  int2 roty;
   int2 off;
   int size;
   uint vsize;
@@ -29,7 +31,9 @@ void main( uint3 DT : SV_DispatchThreadID )
   {
     for ( int x = 0; x < size; ++x )
     {
-      dst[off + DT.xy * size + int2( x, y )]  = src[DT.xy];
+      int dtx = DT.x * rotx.x + DT.y * rotx.y;
+      int dty = DT.x * roty.x + DT.y * roty.y;
+      dst[off + int2( dtx, dty ) + int2( x, y )]  = src[DT.xy];
     }
   }
 

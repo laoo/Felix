@@ -7,6 +7,7 @@
 #include "Utility.hpp"
 #include "ComLynx.hpp"
 #include "MemoryUnit.hpp"
+#include "ImageCart.hpp"
 
 class Mikey;
 class CPU;
@@ -14,7 +15,6 @@ class Cartridge;
 class InputFile;
 class ImageBS93;
 class ImageBIOS;
-class ImageCart;
 class IEscape;
 class ComLynxWire;
 class TraceHelper;
@@ -35,6 +35,7 @@ public:
 
   void enterMonitor();
   int64_t globalSamplesEmittedPerFrame() const;
+  ImageCart::Rotation rotation() const;
 
   //Not thread safe. Used only for monitoring
   uint8_t sampleRam( uint16_t addr ) const;

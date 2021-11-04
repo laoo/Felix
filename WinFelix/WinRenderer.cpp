@@ -65,7 +65,7 @@ struct RenderFrame
 
 uint32_t RenderFrame::sId = 0;
 
-WinRenderer::WinRenderer() : mInstance{ std::make_shared<Instance>() }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}, mVScale{ ~0u }
+WinRenderer::WinRenderer() : mInstance{ std::make_shared<Instance>() }, mHWnd{}, mSizeManager{}, mRefreshRate{}, mEncoder{}, mVScale{ ~0u }, mRotation{}
 {
   LARGE_INTEGER l;
   QueryPerformanceCounter( &l );
@@ -196,9 +196,9 @@ bool WinRenderer::internalRender( Manager & config )
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return false;
 
-  if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) )
+  if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) || mSizeManager.rotation() != mRotation )
   {
-    mSizeManager = SizeManager{ r.right, r.bottom };
+    mSizeManager = SizeManager{ r.right, r.bottom, mRotation };
 
     if ( !mSizeManager )
     {
@@ -236,7 +236,12 @@ bool WinRenderer::internalRender( Manager & config )
       updateSourceTexture( std::move( frame ) );
     }
 
-    CBPosSize cbPosSize{ mSizeManager.xOff(), mSizeManager.yOff(), mSizeManager.scale(), mVScale };
+    CBPosSize cbPosSize{
+      mSizeManager.rotx1(), mSizeManager.rotx2(),
+      mSizeManager.roty1(), mSizeManager.roty2(),
+      mSizeManager.xOff(), mSizeManager.yOff(),
+      mSizeManager.scale(),
+      mVScale };
     mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
     mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
@@ -400,6 +405,9 @@ void WinRenderer::updateVscale( uint32_t vScale )
 {
   mVScale = vScale;
 
+  if ( mVScale == 0 )
+    return;
+
   uint32_t width = 160 * std::max( 1u, mVScale );
   uint32_t height = 102 * std::max( 1u, mVScale );
 
@@ -466,6 +474,11 @@ int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARA
   return 0;
 }
 
+void WinRenderer::setRotation( ImageCart::Rotation rotation )
+{
+  mRotation = rotation;
+}
+
 int WinRenderer::sizing( RECT & rect )
 {
   RECT wRect, cRect;
@@ -518,11 +531,22 @@ WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }
 {
 }
 
-WinRenderer::SizeManager::SizeManager( int windowWidth, int windowHeight ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }
+WinRenderer::SizeManager::SizeManager( int windowWidth, int windowHeight, ImageCart::Rotation rotation ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }, mRotation{ rotation }
 {
   int sx, sy;
-  sx = (std::max)( 1, mWinWidth / 160 );
-  sy = (std::max)( 1, mWinHeight / 102 );
+  switch ( mRotation )
+  {
+  case ImageCart::Rotation::LEFT:
+  case ImageCart::Rotation::RIGHT:
+    sx = (std::max)( 1, mWinWidth / 102 );
+    sy = (std::max)( 1, mWinHeight / 160 );
+    break;
+  default:
+    sx = (std::max)( 1, mWinWidth / 160 );
+    sy = (std::max)( 1, mWinHeight / 102 );
+    break;
+  }
+
   mScale = (std::min)( sx, sy );
 }
 
@@ -538,27 +562,100 @@ int WinRenderer::SizeManager::windowHeight() const
 
 int WinRenderer::SizeManager::minWindowWidth() const
 {
-  return 160;
+  return mRotation == ImageCart::Rotation::NORMAL ? 160 : 102;
 }
 
 int WinRenderer::SizeManager::minWindowHeight() const
 {
-  return 102;
+  return mRotation == ImageCart::Rotation::NORMAL ? 102 : 160;
 }
 
 int WinRenderer::SizeManager::xOff() const
 {
-  return ( mWinWidth - 160 * mScale ) / 2;
+  switch ( mRotation )
+  {
+  case ImageCart::Rotation::LEFT:
+    return ( mWinWidth + 102 * mScale ) / 2;
+  case ImageCart::Rotation::RIGHT:
+    return ( mWinWidth - 102 * mScale ) / 2;
+  default:
+    return ( mWinWidth - 160 * mScale ) / 2;
+  }
 }
 
 int WinRenderer::SizeManager::yOff() const
 {
-  return ( mWinHeight - 102 * mScale ) / 2;
+  switch ( mRotation )
+  {
+  case ImageCart::Rotation::LEFT:
+    return ( mWinHeight - 160 * mScale ) / 2;
+  case ImageCart::Rotation::RIGHT:
+    return ( mWinHeight + 160 * mScale ) / 2;
+  default:
+    return ( mWinHeight - 102 * mScale ) / 2;
+  }
 }
 
 int WinRenderer::SizeManager::scale() const
 {
   return mScale;
+}
+
+int WinRenderer::SizeManager::rotx1() const
+{
+  switch ( mRotation )
+  {
+  case ImageCart::Rotation::LEFT:
+    return 0;  //mScale * cos( 90 )
+  case ImageCart::Rotation::RIGHT:
+    return 0;  //mScale * cos( -90 )
+  default:
+    return mScale;  //mScale * cos( 0 )
+  }
+}
+
+int WinRenderer::SizeManager::rotx2() const
+{
+  switch ( mRotation )
+  {
+  case ImageCart::Rotation::LEFT:
+    return -mScale;  //mScale * -sin( 90 )
+  case ImageCart::Rotation::RIGHT:
+    return mScale;  //mScale * -sin( -90 )
+  default:
+    return 0;  //mScale * -sin( 0 )
+  }
+}
+
+int WinRenderer::SizeManager::roty1() const
+{
+  switch ( mRotation )
+  {
+  case ImageCart::Rotation::LEFT:
+    return mScale;  //mScale * sin( 90 )
+  case ImageCart::Rotation::RIGHT:
+    return -mScale;  //mScale * sin( -90 )
+  default:
+    return 0;  //mScale * sin( 0 )
+  }
+}
+
+int WinRenderer::SizeManager::roty2() const
+{
+  switch ( mRotation )
+  {
+  case ImageCart::Rotation::LEFT:
+    return 0;  //mScale * cos( 90 )
+  case ImageCart::Rotation::RIGHT:
+    return 0;  //mScale * cos( -90 )
+  default:
+    return mScale;  //mScale * cos( 0 )
+  }
+}
+
+ImageCart::Rotation WinRenderer::SizeManager::rotation() const
+{
+  return mRotation;
 }
 
 WinRenderer::SizeManager::operator bool() const

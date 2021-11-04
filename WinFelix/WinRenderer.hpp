@@ -2,6 +2,7 @@
 
 #include "IVideoSink.hpp"
 #include "DisplayGenerator.hpp"
+#include "ImageCart.hpp"
 
 struct RenderFrame;
 class WinImgui;
@@ -18,6 +19,7 @@ public:
   void setEncoder( std::shared_ptr<IEncoder> encoder );
   void initialize( HWND hWnd, std::filesystem::path const& iniPath );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+  void setRotation( ImageCart::Rotation rotation );
 
   std::shared_ptr<IVideoSink> getVideoSink() const;
 
@@ -28,7 +30,11 @@ private:
   {
     int32_t posx;
     int32_t posy;
-    int32_t scale;
+    int32_t rotx1;
+    int32_t rotx2;
+    int32_t roty1;
+    int32_t roty2;
+    int32_t size;
     uint32_t vscale;
   };
 
@@ -57,7 +63,7 @@ private:
   {
   public:
     SizeManager();
-    SizeManager( int windowWidth, int windowHeight );
+    SizeManager( int windowWidth, int windowHeight, ImageCart::Rotation rotation );
 
     int windowWidth() const;
     int windowHeight() const;
@@ -66,12 +72,18 @@ private:
     int xOff() const;
     int yOff() const;
     int scale() const;
+    int rotx1() const;
+    int rotx2() const;
+    int roty1() const;
+    int roty2() const;
+    ImageCart::Rotation rotation() const;
     explicit operator bool() const;
 
   private:
     int mWinWidth;
     int mWinHeight;
     int mScale;
+    ImageCart::Rotation mRotation;
   };
 
   struct Instance : public IVideoSink
@@ -123,4 +135,5 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   int64_t mLastRenderTimePoint;
   uint32_t mVScale;
+  ImageCart::Rotation mRotation;
 };

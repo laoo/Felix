@@ -387,6 +387,9 @@ void Manager::reset()
   {
 
     mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, std::span<InputFile>{ inputs.data(), inputs.size() } );
+
+    mRenderer->setRotation( mInstance->rotation() );
+
     if ( !mLogPath.empty() )
       mInstance->setLog( mLogPath, mLogStartCycle );
 

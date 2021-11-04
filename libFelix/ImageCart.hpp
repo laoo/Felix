@@ -15,6 +15,13 @@ public:
     bool is16Bit() const;
   };
 
+  enum class Rotation
+  {
+    NORMAL = 0,
+    LEFT = 1,
+    RIGHT = 2
+  };
+
   ImageCart( std::vector<uint8_t> data = {}, std::filesystem::path path = {} );
 
   CartBank getBank0() const;
@@ -23,6 +30,7 @@ public:
   CartBank getBank1A() const;
 
   EEPROM eeprom() const;
+  Rotation rotation() const;
   std::filesystem::path path() const;
 
 protected:
@@ -34,4 +42,5 @@ protected:
   CartBank mBank1;
   CartBank mBank1A;
   EEPROM mEEPROM;
+  Rotation mRotation;
 };
