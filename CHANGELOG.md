@@ -1,4 +1,8 @@
 
+## 0.4.4
+
+- support for rotation flag in LNX header
+
 ## 0.4.3
 
 - single instance feature can be disabled in configuration file in `c:\Users\[user-name]\AppData\Local\Felix\WinConfig.lua` and is disabled by default
