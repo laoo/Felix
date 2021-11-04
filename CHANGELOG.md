@@ -1,4 +1,9 @@
 
+## 0.4.3
+
+- single instance feature can be disabled in configuration file in `c:\Users\[user-name]\AppData\Local\Felix\WinConfig.lua` and is disabled by default
+- fixed a math bug that resolves the issue with apfel_2a.o
+
 ## 0.4.2
 
 - Suzy math corrections
