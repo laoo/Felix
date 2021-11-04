@@ -22,6 +22,8 @@ struct AudioSample
 
 #define popcnt(X) std::popcount(X)
 
+#define countl_zero(X) std::countl_zero(X)
+
 #else
 
 uint32_t popcnt( uint32_t x )
@@ -34,5 +36,18 @@ uint32_t popcnt( uint32_t x )
   }
   return v;
 }
+
+int countl_zero( uint16_t value )
+{
+  int significantZeros = 16;
+  while ( value > 0 )
+  {
+    significantZeros--;
+    value >>= 1;
+  }
+
+  return significantZeros;
+}
+
 
 #endif

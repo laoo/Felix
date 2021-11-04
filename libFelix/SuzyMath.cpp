@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "SuzyMath.hpp"
 
+#include "Utility.hpp"
 
 namespace
 {
@@ -32,19 +33,8 @@ uint16_t convertSigned( uint16_t value, int & sign )
   return value;
 }
 
-int countl_zero( uint16_t value )
-{
-  int significantZeros = 16;
-  while ( value > 0 )
-  {
-    significantZeros--;
-    value >>= 1;
-  }
-
-  return significantZeros;
 }
 
-}
 
 SuzyMath::SuzyMath() : mArea{}, mFinishTick{}, mSignAB{}, mSignCD{}, mUnsafeAccess{}, mSignMath{}, mAccumulate{}, mMathWarning{}, mMathCarry{}
 {
