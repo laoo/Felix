@@ -24,74 +24,16 @@ private:
   {
     bool await_ready() { return false; }
     void await_suspend( std::coroutine_handle<> c ) {}
-    void await_resume()
+    int await_resume()
     {
-      if ( started && !cs )
-        throw NoCS{};
+      return input ? 1 : 0;
     }
     uint64_t currentTick;
     uint64_t busyUntil;
+    bool cs;
     bool input;
     std::optional<bool> output;
-    bool cs;
-    bool started;
-  } mIO;
-
-  auto& start()
-  {
-    struct Start : public IO
-    {
-      bool await_resume()
-      {
-        if ( input && busyUntil < currentTick )
-        {
-          started = true;
-          output = std::nullopt;
-          return true;
-        }
-        else
-        {
-          return false;
-        }
-      }
-    };
-    return static_cast<Start&>( mIO );
-  }
-
-  auto& input()
-  {
-    struct Input : public IO
-    {
-      int await_resume()
-      {
-        if ( started && !cs )
-          throw NoCS{};
-        return input ? 1 : 0;
-      }
-    };
-    return static_cast<Input&>( mIO );
-  }
-
-  auto& finish()
-  {
-    struct Finish : public IO
-    {
-      bool await_resume()
-      {
-        if ( cs )
-        {
-          return false;
-        }
-        else
-        {
-          started = false;
-          output = true;
-          return true;
-        }
-      }
-    };
-    return static_cast<Finish&>( mIO );
-  }
+  } io;
 
   int read( int address ) const;
   void ewen();
@@ -101,6 +43,8 @@ private:
   void wral( int data );
   void ewds();
 
+  void startProgram( uint64_t duration );
+
   struct EECoroutine : private NonCopyable
   {
   public:
@@ -109,38 +53,77 @@ private:
 
     struct promise_type
     {
-      promise_type( EEPROM& ee ) : mEE{ ee } {}
-      auto get_return_object() { return EECoroutine{ std::coroutine_handle<promise_type>::from_promise( *this ) }; }
-      auto initial_suspend() { return std::suspend_never{}; }
-      void return_void() {}
-      void unhandled_exception() { std::terminate(); }
-      auto final_suspend() noexcept { return std::suspend_always{}; }
+      promise_type( EEPROM& ee ) : mEE{ ee }
+      {
+      }
+      auto get_return_object()
+      {
+        return EECoroutine{ std::coroutine_handle<promise_type>::from_promise( *this ) };
+      }
+      auto initial_suspend()
+      {
+        return std::suspend_never{};
+      }
+      void return_value( std::optional<bool> opt );
+      void unhandled_exception()
+      {
+        std::terminate();
+      }
+      auto final_suspend() noexcept
+      {
+        return std::suspend_always{};
+      }
       auto& yield_value( int value )
       {
-        mEE.mIO.output = value;
-        return mEE.mIO;
+        mEE.io.output = value;
+        return mEE.io;
       }
 
     private:
       EEPROM& mEE;
     };
 
+    EECoroutine() : mCoro{} {}
     EECoroutine( handle c ) : mCoro{ c } {}
+    EECoroutine & operator=( EECoroutine&& other )
+    {
+      std::swap( mCoro, other.mCoro );
+      return *this;
+    }
+
     ~EECoroutine()
+    {
+      reset();
+    }
+
+    void operator()()
+    {
+      if ( mCoro )
+      {
+        mCoro();
+        if ( mCoro.done() )
+        {
+          mCoro.destroy();
+          mCoro = nullptr;
+        }
+      }
+    }
+
+    explicit operator bool() const
+    {
+      return (bool)mCoro;
+    }
+
+    void reset()
     {
       if ( mCoro )
         mCoro.destroy();
-    }
-
-    void resume() const
-    {
-      assert( !mCoro.done() );
-      mCoro();
+      mCoro = nullptr;
     }
 
   private:
     handle mCoro;
-  } const mEECoroutine;
+  } mEECoroutine;
 
 
   private:
