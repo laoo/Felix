@@ -1,4 +1,8 @@
 
+## 0.4.5
+
+- EEPROM support reworked. Fixed bad write status
+
 ## 0.4.4
 
 - support for rotation flag in LNX header
