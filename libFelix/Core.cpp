@@ -14,7 +14,6 @@
 #include "DefaultROM.hpp"
 #include "KernelEscape.hpp"
 #include "TraceHelper.hpp"
-#include "Ex.hpp"
 
 static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
@@ -83,7 +82,10 @@ void Core::setLog( std::filesystem::path const & path, uint64_t startCycle )
 void Core::setEscape( size_t idx, std::shared_ptr<IEscape> esc )
 {
   if ( idx >= 0x10 )
-    throw Ex{} << "Bad escape index " << idx;
+  {
+    L_ERROR << "Bad escape index " << idx;
+    return;
+  }
 
   mEscapes[idx] = std::move( esc );
 }
