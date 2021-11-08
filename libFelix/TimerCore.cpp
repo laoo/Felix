@@ -67,7 +67,7 @@ uint8_t TimerCore::getCount( uint64_t tick )
 {
   if ( !mLinking )
   {
-      mValue = (uint8_t)((mBaseTick - tick) / ((1ull << mAudShift) * 16) - 1ull);
+      mValue = (uint8_t)(( mExpectedTick - tick) / ((1ull << mAudShift) * 16) - 1ull);
   }
 
   return mValue;
