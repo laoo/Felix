@@ -16,7 +16,10 @@ void Monitor::populateSymbols( SymbolSource const& symbols )
 {
   for ( auto & e : mEntries )
   {
-    e.address = symbols.reqSymbol( e.name );
+    if ( auto optSymbol = symbols.symbol( e.name ) )
+    {
+      e.address = *optSymbol;
+    }
   }
 }
 

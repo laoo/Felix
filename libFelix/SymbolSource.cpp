@@ -1,6 +1,5 @@
 #include "pch.hpp"
 #include "SymbolSource.hpp"
-#include "Ex.hpp"
 
 SymbolSource::SymbolSource( std::filesystem::path const& labPath ) : mSymbols{}
 {
@@ -33,15 +32,6 @@ std::optional<uint16_t> SymbolSource::symbol( std::string const& name ) const
   } );
 
   return it != mSymbols.cend() ? it->value : std::optional<uint16_t>{};
-}
-
-uint16_t SymbolSource::reqSymbol( std::string const& name ) const
-{
-  if ( auto opt = symbol( name ) )
-  {
-    return *opt;
-  }
-  else throw Ex{} << "Symbol " << name << " required";
 }
 
 SymbolSource::Symbol SymbolSource::parseLine( std::string const& line )

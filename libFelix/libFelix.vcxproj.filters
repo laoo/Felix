@@ -77,7 +77,6 @@
     <ClInclude Include="Monitor.hpp" />
     <ClInclude Include="GameDrive.hpp" />
     <ClInclude Include="SymbolSource.hpp" />
-    <ClInclude Include="Ex.hpp" />
     <ClInclude Include="generator.hpp" />
     <ClInclude Include="EEPROM.hpp" />
   </ItemGroup>

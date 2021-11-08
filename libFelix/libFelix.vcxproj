@@ -80,7 +80,6 @@
     <ClInclude Include="DisplayGenerator.hpp" />
     <ClInclude Include="DisplayLine.hpp" />
     <ClInclude Include="Encryption.hpp" />
-    <ClInclude Include="Ex.hpp" />
     <ClInclude Include="GameDrive.hpp" />
     <ClInclude Include="generator.hpp" />
     <ClInclude Include="IEscape.hpp" />

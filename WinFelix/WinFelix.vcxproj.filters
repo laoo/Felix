@@ -17,6 +17,7 @@
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
     <ClInclude Include="WinConfig.hpp" />
+    <ClInclude Include="Ex.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />

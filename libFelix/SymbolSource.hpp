@@ -17,7 +17,6 @@ public:
   SymbolSource( std::filesystem::path const& labPath );
   ~SymbolSource();
   std::optional<uint16_t> symbol( std::string const& name ) const;
-  uint16_t reqSymbol( std::string const& name ) const;
 
 private:
   Symbol parseLine( std::string const& line );
