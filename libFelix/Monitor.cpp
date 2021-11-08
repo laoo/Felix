@@ -46,7 +46,7 @@ cppcoro::generator<std::string_view> Monitor::sample( Core const& core )
       break;
     case 2:
       value = core.sampleRam( e.address );
-      value |= core.sampleRam( e.address + 1 ) << 8;
+      value |= (int)core.sampleRam( e.address + 1 ) << 8;
       if ( e.hex )
       {
         co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: $%04llx", e.name.c_str(), value ) };
@@ -58,8 +58,8 @@ cppcoro::generator<std::string_view> Monitor::sample( Core const& core )
       break;
     case 3:
       value = core.sampleRam( e.address );
-      value |= core.sampleRam( e.address + 1 ) << 8;
-      value |= core.sampleRam( e.address + 2 ) << 16;
+      value |= (int)core.sampleRam( e.address + 1 ) << 8;
+      value |= (int)core.sampleRam( e.address + 2 ) << 16;
       if ( e.hex )
       {
         co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: $%06llx", e.name.c_str(), value ) };
@@ -71,9 +71,9 @@ cppcoro::generator<std::string_view> Monitor::sample( Core const& core )
       break;
     case 4:
       value = core.sampleRam( e.address );
-      value |= core.sampleRam( e.address + 1 ) << 8;
-      value |= core.sampleRam( e.address + 2 ) << 16;
-      value |= core.sampleRam( e.address + 3 ) << 24;
+      value |= (int)core.sampleRam( e.address + 1 ) << 8;
+      value |= (int)core.sampleRam( e.address + 2 ) << 16;
+      value |= (int)core.sampleRam( e.address + 3 ) << 24;
       if ( e.hex )
       {
         co_yield std::string_view{ buf, (size_t)sprintf_s( buf, "%s: $%08llx", e.name.c_str(), value ) };
