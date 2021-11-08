@@ -1854,8 +1854,9 @@ CPU::Execute CPU::execute()
 
     do
     {
+      co_await fetchOpcode( state.pc );
       trace1();
-      co_await fetchOpcode( state.pc++ );
+      state.pc += 1;
     } while ( isHiccup() );
   }
 
