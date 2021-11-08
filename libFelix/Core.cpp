@@ -20,7 +20,7 @@ static constexpr uint32_t BAD_SEQ_ACCESS_ADDRESS = 0xbadc0ffeu;
 
 Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, std::span<InputFile> inputs ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
   mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) },
-  mMapCtl{}, mSequencedAccessAddress{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
+  mMapCtl{}, mLastAccessPage{ BAD_SEQ_ACCESS_ADDRESS }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
 
@@ -343,67 +343,56 @@ void Core::executeCPUAction()
   switch ( action )
   {
   case CPUAction::FETCH_OPCODE_RAM:
-    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCurrentTick += readTiming( req.address );
     mCpu->respond( mCurrentTick, mRAM[req.address] );
-    mSequencedAccessAddress = req.address + 1;
     break;
   case CPUAction::FETCH_OPERAND_RAM:
     [[fallthrough]];
   case CPUAction::READ_RAM:
-    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCurrentTick += readTiming( req.address );
     mCpu->respond( mRAM[req.address] );
-    mSequencedAccessAddress = req.address + 1;
     break;
   case CPUAction::WRITE_RAM:
-    mCurrentTick += 5;
+    mCurrentTick += writeTiming( req.address );
     mRAM[req.address] = req.value;
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_KENREL:
-    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCurrentTick += readTiming( req.address );
     mCpu->respond( mCurrentTick, readKernel( req.address & 0x1ff ) );
-    mSequencedAccessAddress = req.address + 1;
     break;
   case CPUAction::FETCH_OPERAND_KENREL:
     [[fallthrough]];
   case CPUAction::READ_KENREL:
-    mCurrentTick += ( req.address == mSequencedAccessAddress ) ? mFastCycleTick : 5;
+    mCurrentTick += readTiming( req.address );
     mCpu->respond( readKernel( req.address & 0x1ff ) );
-    mSequencedAccessAddress = req.address + 1;
     break;
   case CPUAction::WRITE_KENREL:
-    mCurrentTick += 5;
+    mCurrentTick += writeTiming( req.address );
     writeKernel( req.address & 0x1ff, req.value );
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_SUZY:
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
     mCpu->respond( mCurrentTick, mSuzy->read( req.address ) );
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPERAND_SUZY:
     [[fallthrough]];
   case CPUAction::READ_SUZY:
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
     mCpu->respond( mSuzy->read( req.address ) );
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::WRITE_SUZY:
     mCurrentTick = mSuzy->requestWrite( mCurrentTick, req.address );
     mSuzy->write( req.address, req.value );
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     mCpu->respond( mCurrentTick, mMikey->read( req.address ) );
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPERAND_MIKEY:
     [[fallthrough]];
   case CPUAction::READ_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     mCpu->respond( mMikey->read( req.address ) );
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::WRITE_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
@@ -411,18 +400,18 @@ void Core::executeCPUAction()
     {
       mActionQueue.push( mikeyAction );
     }
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::DISCARD_READ_RAM:
     [[fallthrough]];
+  case CPUAction::DISCARD_READ_KERNEL:
+    mCurrentTick += readTiming( req.address );
+    handlePatch( req.address );
+    break;
   case CPUAction::DISCARD_READ_SUZY:
     [[fallthrough]];
   case CPUAction::DISCARD_READ_MIKEY:
-    [[fallthrough]];
-  case CPUAction::DISCARD_READ_KERNEL:
     mCurrentTick += 5;
     handlePatch( req.address );
-    mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   }
 }
@@ -577,6 +566,20 @@ void Core::newLine( int rowNr )
 std::shared_ptr<TraceHelper> Core::getTraceHelper() const
 {
   return mTraceHelper;
+}
+
+uint64_t Core::readTiming( uint16_t address )
+{
+  uint32_t page = ( address >> 8 );
+  uint64_t result = page == mLastAccessPage ? mFastCycleTick : 5;
+  mLastAccessPage = page;
+  return result;
+}
+
+uint64_t Core::writeTiming( uint16_t address )
+{
+  mLastAccessPage = BAD_SEQ_ACCESS_ADDRESS;
+  return 5;
 }
 
 uint8_t Core::readKernel( uint16_t address )

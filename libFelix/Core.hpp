@@ -83,6 +83,8 @@ private:
   Cartridge & getCartridge();
   void newLine( int rowNr );
   std::shared_ptr<TraceHelper> getTraceHelper() const;
+  uint64_t readTiming( uint16_t address );
+  uint64_t writeTiming( uint16_t address );
 
   friend class Mikey;
   friend class Suzy;
@@ -112,7 +114,7 @@ private:
   MAPCTL mMapCtl;
   uint64_t mFastCycleTick;
   uint64_t mPatchMagickCodeAccumulator;
-  uint32_t mSequencedAccessAddress;
+  uint32_t mLastAccessPage;
   uint16_t mDMAAddress;
   std::shared_ptr<ISuzyProcess> mSuzyProcess;
   ISuzyProcess::Request const* mSuzyProcessRequest;
