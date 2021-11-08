@@ -47,7 +47,6 @@ bool SuzyMath::poke( uint64_t tick, uint8_t offset, uint8_t value )
   if ( tick < mFinishTick )
   {
     mUnsafeAccess = true;
-    return false;
   }
 
   size_t index = offset - 0x50;
@@ -62,8 +61,7 @@ void SuzyMath::wpoke( uint64_t tick, uint8_t offset, uint16_t value )
 
   if ( tick < mFinishTick )
   {
-    mUnsafeAccess = true;
-    return;
+    mUnsafeAccess = true;  
   }
 
   size_t index = offset - 0x50;
