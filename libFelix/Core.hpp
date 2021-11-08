@@ -83,6 +83,7 @@ private:
   Cartridge & getCartridge();
   void newLine( int rowNr );
   std::shared_ptr<TraceHelper> getTraceHelper() const;
+  uint64_t fetchTiming( uint16_t address );
   uint64_t readTiming( uint16_t address );
   uint64_t writeTiming( uint16_t address );
 
