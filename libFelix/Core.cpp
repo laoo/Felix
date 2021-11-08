@@ -571,9 +571,15 @@ std::shared_ptr<TraceHelper> Core::getTraceHelper() const
 uint64_t Core::readTiming( uint16_t address )
 {
   uint32_t page = ( address >> 8 );
-  uint64_t result = page == mLastAccessPage ? mFastCycleTick : 5;
-  mLastAccessPage = page;
-  return result;
+  if ( page == mLastAccessPage )
+  {
+    return mFastCycleTick;
+  }
+  else
+  {
+    mLastAccessPage = page;
+    return 5;
+  }
 }
 
 uint64_t Core::writeTiming( uint16_t address )
