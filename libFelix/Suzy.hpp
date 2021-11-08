@@ -44,7 +44,8 @@ class Suzy
 public:
   Suzy( Core & core, std::shared_ptr<IInputSource> inputSource );
 
-  uint64_t requestAccess( uint64_t tick, uint16_t address );
+  uint64_t requestRead( uint64_t tick, uint16_t address );
+  uint64_t requestWrite( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
   void write( uint16_t address, uint8_t value );
 

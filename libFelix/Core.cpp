@@ -377,19 +377,19 @@ void Core::executeCPUAction()
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPCODE_SUZY:
-    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
     mCpu->respond( mCurrentTick, mSuzy->read( req.address ) );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::FETCH_OPERAND_SUZY:
     [[fallthrough]];
   case CPUAction::READ_SUZY:
-    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
     mCpu->respond( mSuzy->read( req.address ) );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
   case CPUAction::WRITE_SUZY:
-    mCurrentTick = mSuzy->requestAccess( mCurrentTick, req.address );
+    mCurrentTick = mSuzy->requestWrite( mCurrentTick, req.address );
     mSuzy->write( req.address, req.value );
     mSequencedAccessAddress = BAD_SEQ_ACCESS_ADDRESS;
     break;
@@ -471,12 +471,12 @@ void Core::handlePatch( uint16_t address )
         }
         uint8_t readSuzy( uint16_t address ) const override
         {
-          suzy.requestAccess( currentTick, address );
+          suzy.requestRead( currentTick, address );
           return suzy.read( address );
         }
         void writeSuzy( uint16_t address, uint8_t value ) override
         {
-          suzy.requestAccess( currentTick, address );
+          suzy.requestWrite( currentTick, address );
           suzy.write( address, value );
         }
 
