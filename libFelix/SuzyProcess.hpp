@@ -83,11 +83,11 @@ private:
     return static_cast<SuzyWriteResponse &>( response );
   }
 
-  auto & suzyColRMW( uint32_t mask, uint16_t address, uint8_t value )
+  auto & suzyColRMW( uint32_t mask, uint16_t address, uint16_t value )
   {
     struct SuzyColRMWResponse : public Response
     {
-      uint8_t await_resume() { return (uint8_t)value; }
+      uint32_t await_resume() { return value; }
     };
     request = { Request::COLRMW, address, value, mask };
     return static_cast<SuzyColRMWResponse &>( response );

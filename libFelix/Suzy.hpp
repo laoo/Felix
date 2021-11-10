@@ -13,7 +13,7 @@ public:
   {
     uint32_t mask;
     uint16_t addr;
-    uint8_t value;
+    uint16_t value;
     enum Type
     {
       FINISH,
@@ -28,7 +28,7 @@ public:
       XOR
     } type;
 
-    Request( Type type = FINISH, uint16_t addr = 0, uint8_t value = 0, uint32_t mask = 0 ) : mask{ mask }, addr{ addr }, value{ value }, type{ type } {}
+    Request( Type type = FINISH, uint16_t addr = 0, uint16_t value = 0, uint32_t mask = 0 ) : mask{ mask }, addr{ addr }, value{ value }, type{ type } {}
   };
 
 

@@ -263,7 +263,7 @@ bool Core::executeSuzyAction()
     break;
   case ISuzyProcess::Request::WRITE:
   case ISuzyProcess::Request::WRITEFRED:
-    mRAM[mSuzyProcessRequest->addr] = mSuzyProcessRequest->value;
+    mRAM[mSuzyProcessRequest->addr] = (uint8_t)mSuzyProcessRequest->value;
     mCurrentTick += 5ull; //write byte
     break;
   case ISuzyProcess::Request::COLRMW:
@@ -272,22 +272,13 @@ bool Core::executeSuzyAction()
       const uint32_t value = *( (uint32_t const *)( mRAM.data() + mSuzyProcessRequest->addr ) );
 
       //broadcast
-      const uint8_t u8 = mSuzyProcessRequest->value;
-      const uint16_t u16 = mSuzyProcessRequest->value | ( mSuzyProcessRequest->value << 8 );
+      const uint32_t u16 = mSuzyProcessRequest->value;
       const uint32_t u32 = u16 | ( u16 << 16 );
 
       const uint32_t rmwvalue = ( value & ~mSuzyProcessRequest->mask ) | ( u32 & mSuzyProcessRequest->mask );
       *( (uint32_t *)( mRAM.data() + mSuzyProcessRequest->addr ) ) = rmwvalue;
 
-      const uint32_t resvalue = value & mSuzyProcessRequest->mask;
-      uint8_t result{};
-
-      //horizontal max
-      for ( int i = 0; i < 8; ++i )
-      {
-        result = std::max( result, (uint8_t)( resvalue >> ( i * 4 ) & 0x0f ) );
-      }
-      mSuzyProcess->respond( result );
+      mSuzyProcess->respond( rmwvalue );
     }
     mCurrentTick += 5ull + 7 * mFastCycleTick;  //read 4 bytes & write 4 bytes
     break;
