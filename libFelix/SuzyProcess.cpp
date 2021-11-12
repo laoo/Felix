@@ -173,7 +173,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
               if ( ( (uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT ) != ( (uint8_t)quadCycle[(size_t)suzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT ) )
                 sprhpos += dx;
 
-              while ( int const * pen = slp.getPen() )
+              while ( int const * penIndex = slp.getPenIndex() )
               {
                 if ( shifter.size() < 24 && slp.totalBits() > shifter.size() )
                 {
@@ -190,17 +190,17 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
                   // Stop horizontal loop if outside of screen bounds
                   if ( sprhpos >= 0 && sprhpos < Suzy::mScreenWidth )
                   {
+                    const uint8_t penNumber = suzy.mPalette[*penIndex];
+
                     if ( !suzy.mDisableCollisions )
                     {
-                      if ( auto memOp = colOp.process( sprhpos, *pen ) )
+                      if ( auto memOp = colOp.process( sprhpos, penNumber ) )
                       {
                         colOp.receiveHiColl( co_await suzyColRMW( memOp.mask, memOp.addr, memOp.value ) );
                       }
                     }
 
-                    const uint8_t pixel = suzy.mPalette[*pen];
-
-                    switch ( auto memOp = vidOp.process( sprhpos, pixel ) )
+                    switch ( auto memOp = vidOp.process( sprhpos, penNumber ) )
                     {
                     case VidOperator::MemOp::WRITE:
                       co_await suzyWrite( memOp.addr, memOp.value );

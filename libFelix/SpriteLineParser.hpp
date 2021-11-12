@@ -9,7 +9,7 @@ public:
   {
   }
 
-  int const* getPen()
+  int const* getPenIndex()
   {
     if ( mLiteral )
       return literalPen();
