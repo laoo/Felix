@@ -471,21 +471,6 @@ int Suzy::bpp() const
   return ( ( int )mBpp >> 6 ) + 1;
 }
 
-void Suzy::debugCollisions()
-{
-  std::ofstream fout{ std::format( "b:\\col\\col_{}.txt", mCore.tick() ), std::ios::binary };
-
-  for ( int y = 0; y < 102; ++y )
-  {
-    for ( int x = 0; x < 80; ++x )
-    {
-      auto byte = mCore.sampleRam( mSCB.collbas + y * 80 + x );
-      fout << std::hex << ( ( byte >> 4 ) & 0x0f ) << ( byte & 0x0f );
-    }
-    fout << '\n';
-  }
-}
-
 std::shared_ptr<ISuzyProcess> Suzy::suzyProcess()
 {
   return std::make_shared<SuzyProcess>( *this );

@@ -2,43 +2,184 @@
 #include "ColOperator.hpp"
 #include "SpriteTemplates.hpp"
 #include "Log.hpp"
+
 namespace
 {
 
-template<typename Type, int PIXEL>
-constexpr bool processFun()
+//whether collision buffer is written for each sprite pixel of each sprite type
+static constexpr std::array<std::array<bool, ColOperator::POSSIBLE_PIXELS>, ColOperator::SPRITE_TYPES> statesTables
 {
-  return Type::colliding( PIXEL ) && Type::collWrite;
-}
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::BACKGROUND>::colliding( 0xf )
+  },
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::BACKNONCOLL>::colliding( 0xf )
+  },
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::BSHADOW>::colliding( 0xf )
+  },
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::BOUNDARY>::colliding( 0xf )
+  },
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::NORMAL>::colliding( 0xf )
+  },
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::NONCOLL>::colliding( 0xf )
+  },
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::XOR>::colliding( 0xf )
+  },
+  std::array<bool, ColOperator::POSSIBLE_PIXELS>
+  {
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x0 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x1 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x2 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x3 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x4 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x5 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x6 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x7 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x8 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0x9 ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0xa ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0xb ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0xc ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0xd ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0xe ),
+    SuzySprite<Suzy::Sprite::SHADOW>::colliding( 0xf )
+  }
+};
 
-template<int... I>
-constexpr std::array<bool, ColOperator::STATES_SIZE> makeProcessStates( std::integer_sequence<int, I...> )
-{
-  return { processFun<SuzySprite<( Suzy::Sprite )( I / ColOperator::POSSIBLE_PIXELS )>, I % ColOperator::POSSIBLE_PIXELS>()... };
-}
-
-template<int... I>
-constexpr std::array<bool, 8> makeSpriteCollideable( std::integer_sequence<int, I...> )
-{
-  return { SuzySprite<( Suzy::Sprite )I>::collWrite... };
-}
-
-template<int... I>
-constexpr std::array<bool, 8> makeDepositoryUpdatable( std::integer_sequence<int, I...> )
-{
-  return { SuzySprite<( Suzy::Sprite )I>::collDep... };
-}
-
-//processing functions for each sprite type
-static constexpr std::array<bool, ColOperator::STATES_SIZE> procesStates = makeProcessStates( std::make_integer_sequence<int, ColOperator::STATES_SIZE>{} );
-//whether each sprite type is collideable
-static constexpr std::array<bool, ColOperator::SPRITE_TYPES> spriteCollideable = makeSpriteCollideable( std::make_integer_sequence<int, 8>{} );
 //whether collision depository is updatable for each sprite type
-static constexpr std::array<bool, ColOperator::SPRITE_TYPES> depositoryUpdatable = makeDepositoryUpdatable( std::make_integer_sequence<int, 8>{} );
+static constexpr std::array<bool, ColOperator::SPRITE_TYPES> depositoryUpdatable
+{
+  SuzySprite<Suzy::Sprite::BACKGROUND>::collDep,
+  SuzySprite<Suzy::Sprite::BACKNONCOLL>::collDep,
+  SuzySprite<Suzy::Sprite::BSHADOW>::collDep,
+  SuzySprite<Suzy::Sprite::BOUNDARY>::collDep,
+  SuzySprite<Suzy::Sprite::NORMAL>::collDep,
+  SuzySprite<Suzy::Sprite::NONCOLL>::collDep,
+  SuzySprite<Suzy::Sprite::XOR>::collDep,
+  SuzySprite<Suzy::Sprite::SHADOW>::collDep
+};
+
 }
 
 
-ColOperator::ColOperator( Suzy::Sprite spriteType, uint8_t sprColl ) : mSpriteType{ (size_t)spriteType }, mMask{}, mHiColl{}, mStoreOff{}, mColAdr{}, mColl{ (uint16_t)( ( sprColl & 0xf ) | ( ( sprColl & 0xf ) << 4 ) ) }
+ColOperator::ColOperator( Suzy::Sprite spriteType, uint8_t sprColl ) : mSpriteType{ (size_t)spriteType }, mCollidingColors{ statesTables[mSpriteType] }, mMask{}, mHiColl{}, mStoreOff{}, mColAdr{}, mColl{ (uint16_t)( ( sprColl & 0xf ) | ( ( sprColl & 0xf ) << 4 ) ) }
 {
   mColl |= mColl << 8;
 }
@@ -80,9 +221,8 @@ ColOperator::MemOp ColOperator::process( int hpos, uint8_t pixel )
   }
 
   assert( pixel < ColOperator::POSSIBLE_PIXELS );
-  size_t idx = mSpriteType * ColOperator::POSSIBLE_PIXELS + pixel;
 
-  if ( procesStates[idx] )
+  if ( mCollidingColors[pixel] )
   {
     if constexpr ( std::endian::native == std::endian::little )
     {
@@ -154,7 +294,6 @@ std::optional<uint8_t> ColOperator::hiColl() const
 
     auto t76543210 = t7654 > t3210 ? t7654 : t3210;
 
-    L_TRACE << "Deposit " << t76543210;
     return t76543210;
   }
   else

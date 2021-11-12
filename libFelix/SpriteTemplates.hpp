@@ -16,8 +16,6 @@ struct SuzySprite<Suzy::Sprite::BACKGROUND>
   static constexpr bool background = true;
   //whether collision buffer is read and collision depository updated
   static constexpr bool collDep = false;
-  //whether collision bufers is written
-  static constexpr bool collWrite = true;
 
   //whether given pixel is opaque
   static constexpr bool opaque( int pixel )
@@ -38,7 +36,6 @@ struct SuzySprite<Suzy::Sprite::BACKNONCOLL>
   static constexpr bool eor = false;
   static constexpr bool background = true;
   static constexpr bool collDep = false;
-  static constexpr bool collWrite = false;
 
   static constexpr bool opaque( int pixel )
   {
@@ -57,7 +54,6 @@ struct SuzySprite<Suzy::Sprite::BSHADOW>
   static constexpr bool eor = false;
   static constexpr bool background = false;
   static constexpr bool collDep = true;
-  static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )
   {
@@ -76,7 +72,6 @@ struct SuzySprite<Suzy::Sprite::BOUNDARY>
   static constexpr bool eor = false;
   static constexpr bool background = false;
   static constexpr bool collDep = true;
-  static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )
   {
@@ -95,7 +90,6 @@ struct SuzySprite<Suzy::Sprite::NORMAL>
   static constexpr bool eor = false;
   static constexpr bool background = false;
   static constexpr bool collDep = true;
-  static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )
   {
@@ -114,7 +108,6 @@ struct SuzySprite<Suzy::Sprite::NONCOLL>
   static constexpr bool eor = false;
   static constexpr bool background = false;
   static constexpr bool collDep = false;
-  static constexpr bool collWrite = false;
 
   static constexpr bool opaque( int pixel )
   {
@@ -132,7 +125,6 @@ struct SuzySprite<Suzy::Sprite::XOR>
 {
   static constexpr bool eor = true;
   static constexpr bool collDep = true;
-  static constexpr bool collWrite = true;
 
   static constexpr bool colliding( int pixel )
   {
@@ -146,7 +138,6 @@ struct SuzySprite<Suzy::Sprite::SHADOW>
   static constexpr bool eor = false;
   static constexpr bool background = false;
   static constexpr bool collDep = true;
-  static constexpr bool collWrite = true;
 
   static constexpr bool opaque( int pixel )
   {

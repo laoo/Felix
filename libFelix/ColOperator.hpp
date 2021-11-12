@@ -42,11 +42,11 @@ public:
   static constexpr size_t POSSIBLE_PIXELS = 16;
   static constexpr size_t SPRITE_TYPES = 8;
 
-  static constexpr size_t STATES_SIZE = POSSIBLE_PIXELS * SPRITE_TYPES;
-
 private:
   //sprite type
   size_t mSpriteType;
+  //table of colliding colors for given sprite type
+  std::array<bool, ColOperator::POSSIBLE_PIXELS> const& mCollidingColors;
   //mask of updated nibbles of collision buffer
   uint32_t mMask;
   //highest collistion number detected

@@ -256,7 +256,6 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
       if ( !suzy.mDisableCollisions && fred )
       {
         suzy.mFred = *fred & 0x0f;
-        //suzy.debugCollisions();
       }
     }
 
