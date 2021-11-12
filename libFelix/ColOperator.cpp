@@ -67,7 +67,7 @@ ColOperator::MemOp ColOperator::process( int hpos, uint8_t pixel )
   MemOp result{};
 
   int32_t hposfloor = ( hpos & ~7 ) >> 1;
-  int32_t hposrem = ( hpos & 7 ) << 2;
+  int32_t hposrem = hpos & 7;
 
   if ( mStoreOff != hposfloor )
   {
@@ -81,11 +81,19 @@ ColOperator::MemOp ColOperator::process( int hpos, uint8_t pixel )
 
   assert( pixel < ColOperator::POSSIBLE_PIXELS );
   size_t idx = mSpriteType * ColOperator::POSSIBLE_PIXELS + pixel;
+
   if ( procesStates[idx] )
   {
-    mMask |= 0xf0000000 >> hposrem;
+    if constexpr ( std::endian::native == std::endian::little )
+    {
+      mMask |= 0x0000000f << ( ( hposrem ^ 1 ) * 4 );
+    }
+    else
+    {
+      mMask |= 0xf0000000 >> ( hposrem * 4 );
+    }
   }
- 
+
   return result;
 }
 

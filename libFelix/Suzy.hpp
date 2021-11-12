@@ -280,6 +280,8 @@ private:
   void writeSPRCOLL( uint8_t value );
   int bpp() const;
 
+  void debugCollisions();
+
 private:
   Core & mCore;
   struct SCB

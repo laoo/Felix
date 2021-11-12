@@ -254,7 +254,10 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
       }
       auto fred = colOp.hiColl();
       if ( !suzy.mDisableCollisions && fred )
+      {
         suzy.mFred = *fred & 0x0f;
+        //suzy.debugCollisions();
+      }
     }
 
     if ( suzy.mEveron && mEveron )
