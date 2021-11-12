@@ -268,20 +268,18 @@ bool Core::executeSuzyAction()
     break;
   case ISuzyProcess::Request::COLRMW:
     {
-      assert( mSuzyProcessRequest->addr <= 0xfffc );
-      const uint32_t value = *( (uint32_t const *)( mRAM.data() + mSuzyProcessRequest->addr ) );
+      if ( mSuzyProcessRequest->addr > 0xfffc )
+        break;
 
-      //broadcast
       const uint32_t u16 = mSuzyProcessRequest->value;
       const uint32_t u32 = u16 | ( u16 << 16 );
-
-      const uint32_t maskedValue = value & ~mSuzyProcessRequest->mask;
-      const uint32_t outValue = value & mSuzyProcessRequest->mask;
       const uint32_t maskedU32 = u32 & mSuzyProcessRequest->mask;
 
-      const uint32_t rmwvalue = maskedValue | maskedU32;
+      const uint32_t value = *( (uint32_t const*)( mRAM.data() + mSuzyProcessRequest->addr ) );
+      const uint32_t maskedValue = value & ~mSuzyProcessRequest->mask;
+      const uint32_t outValue = value & mSuzyProcessRequest->mask;
 
-      *( (uint32_t *)( mRAM.data() + mSuzyProcessRequest->addr ) ) = rmwvalue;
+      *( (uint32_t *)( mRAM.data() + mSuzyProcessRequest->addr ) ) = maskedValue | maskedU32;
 
       mSuzyProcess->respond( outValue );
     }
