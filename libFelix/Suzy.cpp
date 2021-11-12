@@ -475,3 +475,43 @@ std::shared_ptr<ISuzyProcess> Suzy::suzyProcess()
 {
   return std::make_shared<SuzyProcess>( *this );
 }
+
+void Suzy::debugCollisions()
+{
+  std::ofstream fout{ std::format( "b:\\col\\col_{}.ppm", mCore.tick() ), std::ios::binary };
+
+  fout << "P3 " << 160 << ' ' << 102 << ' ' << 255 << '\n';
+
+  static const std::array<int, 16*3> colors =
+  {
+    0x00, 0x00, 0x00, //0x0 Black
+    0xFF, 0xFF, 0xFF, //0x1 White
+    0xFF, 0x00, 0x00, //0x4 Red
+    0x00, 0x80, 0x00, //0x9 Green
+    0x00, 0x00, 0xFF, //0xc Blue
+    0xFF, 0xFF, 0x00, //0x6 Yellow
+    0xFF, 0x00, 0xFF, //0xe Fuchsia
+    0x00, 0xFF, 0xFF, //0xa Aqua
+    0xC0, 0xC0, 0xC0, //0x2 Silver
+    0x80, 0x80, 0x80, //0x3 Gray
+    0x00, 0xFF, 0x00, //0x8 Lime
+    0x80, 0x00, 0x00, //0x5 Maroon
+    0x80, 0x80, 0x00, //0x7 Olive
+    0x00, 0x80, 0x80, //0xb Teal
+    0x00, 0x00, 0x80, //0xd Navy
+    0x80, 0x00, 0x80  //0xf Purple
+  };
+
+  for ( int y = 0; y < 102; ++y )
+  {
+    for ( int x = 0; x < 80; ++x )
+    {
+      auto byte = mCore.sampleRam( mSCB.collbas + y * 80 + x );
+      size_t idx = 3 * ( ( byte >> 4 ) & 0x0f );
+      fout << colors[idx] << ' ' << colors[idx + 1] << ' ' << colors[idx + 2] << ' ';
+      idx = 3 * ( byte & 0x0f );
+      fout << colors[idx] << ' ' << colors[idx + 1] << ' ' << colors[idx + 2] << ' ';
+    }
+    fout << '\n';
+  }
+}
