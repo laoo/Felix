@@ -150,7 +150,7 @@ int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t rende
 
   double ratio = (double)avg / samplesEmittedPerFrame;
 
-  L_DEBUG << "SPF: " << samplesEmittedPerFrame << "\t\tSPR: " << samplesPerRenderingTimeI << "\t\tavg: " << avg << "\t" << ratio;
+  //L_DEBUG << "SPF: " << samplesEmittedPerFrame << "\t\tSPR: " << samplesPerRenderingTimeI << "\t\tavg: " << avg << "\t" << ratio;
 
   return baseResult;
 }
