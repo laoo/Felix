@@ -276,13 +276,14 @@ bool Core::executeSuzyAction()
       const uint32_t u32 = u16 | ( u16 << 16 );
 
       const uint32_t maskedValue = value & ~mSuzyProcessRequest->mask;
+      const uint32_t outValue = value & mSuzyProcessRequest->mask;
       const uint32_t maskedU32 = u32 & mSuzyProcessRequest->mask;
 
       const uint32_t rmwvalue = maskedValue | maskedU32;
 
       *( (uint32_t *)( mRAM.data() + mSuzyProcessRequest->addr ) ) = rmwvalue;
 
-      mSuzyProcess->respond( value );
+      mSuzyProcess->respond( outValue );
     }
     mCurrentTick += 5ull + 7 * mFastCycleTick;  //read 4 bytes & write 4 bytes
     break;
