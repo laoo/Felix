@@ -1,3 +1,9 @@
+## 0.4.6
+
+- Fixed math bug related to unsafe register access (demo0006.o now works)
+- Fixed bug in counters
+- Slightly improved CPU timing
+- Fixed multiple errors related to hardware collisions (fixes Flappy Bird and other)
 
 ## 0.4.5
 
