@@ -190,15 +190,15 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
                   // Stop horizontal loop if outside of screen bounds
                   if ( sprhpos >= 0 && sprhpos < Suzy::mScreenWidth )
                   {
-                    uint8_t pixel = suzy.mPalette[*pen];
-
                     if ( !suzy.mDisableCollisions )
                     {
-                      if ( auto memOp = colOp.process( sprhpos, pixel ) )
+                      if ( auto memOp = colOp.process( sprhpos, *pen ) )
                       {
                         colOp.receiveHiColl( co_await suzyColRMW( memOp.mask, memOp.addr, memOp.value ) );
                       }
                     }
+
+                    const uint8_t pixel = suzy.mPalette[*pen];
 
                     switch ( auto memOp = vidOp.process( sprhpos, pixel ) )
                     {
