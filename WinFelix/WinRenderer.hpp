@@ -26,17 +26,6 @@ public:
   int64_t render( Manager & config );
 
 private:
-  struct CBPosSize
-  {
-    int32_t posx;
-    int32_t posy;
-    int32_t rotx1;
-    int32_t rotx2;
-    int32_t roty1;
-    int32_t roty2;
-    int32_t size;
-    uint32_t vscale;
-  };
 
   struct Pixel
   {
@@ -52,12 +41,11 @@ private:
     Pixel right;
   };
 
-
-  void updateSourceTexture( std::shared_ptr<RenderFrame> frame );
-  void updateVscale( uint32_t vScale );
-
-  int sizing( RECT & rect );
-  bool internalRender( Manager& config );
+  struct MappedTexture
+  {
+    DPixel* data;
+    uint32_t stride;
+  };
 
   class SizeManager
   {
@@ -106,34 +94,79 @@ private:
     std::shared_ptr<RenderFrame> pullNextFrame();
   };
 
-private:
-  std::shared_ptr<Instance> mInstance;
-  HWND mHWnd;
-  std::unique_ptr<WinImgui>         mImgui;
-  ComPtr<ID3D11Device>              mD3DDevice;
-  ComPtr<ID3D11DeviceContext>       mImmediateContext;
-  ComPtr<IDXGISwapChain>            mSwapChain;
-  ComPtr<ID3D11ComputeShader>       mRendererCS;
-  ComPtr<ID3D11Buffer>              mPosSizeCB;
-  ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
-  ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
-  ComPtr<ID3D11Texture2D>           mSource;
-  ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
+  class BaseRenderer
+  {
+  public:
+    BaseRenderer( HWND hWnd );
+    virtual ~BaseRenderer() = default;
 
-  ComPtr<ID3D11Texture2D>           mPreStagingY;
-  ComPtr<ID3D11Texture2D>           mPreStagingU;
-  ComPtr<ID3D11Texture2D>           mPreStagingV;
-  ComPtr<ID3D11Texture2D>           mStagingY;
-  ComPtr<ID3D11Texture2D>           mStagingU;
-  ComPtr<ID3D11Texture2D>           mStagingV;
-  ComPtr<ID3D11UnorderedAccessView> mPreStagingYUAV;
-  ComPtr<ID3D11UnorderedAccessView> mPreStagingUUAV;
-  ComPtr<ID3D11UnorderedAccessView> mPreStagingVUAV;
+    virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
+    virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
 
-  SizeManager mSizeManager;
-  boost::rational<int32_t> mRefreshRate;
-  std::shared_ptr<IEncoder> mEncoder;
+    std::shared_ptr<IVideoSink> getVideoSink() const;
+    void updateSourceTexture( std::shared_ptr<RenderFrame> frame, std::shared_ptr<MappedTexture> map );
+    int sizing( RECT& rect );
+    void setRotation( ImageCart::Rotation rotation );
+
+  protected:
+    HWND mHWnd;
+    std::shared_ptr<Instance> mInstance;
+    SizeManager mSizeManager;
+    ImageCart::Rotation mRotation;
+  };
+
+  class DX11Renderer : public BaseRenderer
+  {
+  public:
+    DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath );
+    ~DX11Renderer() = default;
+    void updateVscale( uint32_t vScale );
+    void render( Manager& config );
+    void internalRender( Manager& config );
+
+    void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
+    int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
+
+
+  private:
+    struct CBPosSize
+    {
+      int32_t posx;
+      int32_t posy;
+      int32_t rotx1;
+      int32_t rotx2;
+      int32_t roty1;
+      int32_t roty2;
+      int32_t size;
+      uint32_t vscale;
+    };
+
+    std::unique_ptr<WinImgui>         mImgui;
+    ComPtr<ID3D11Device>              mD3DDevice;
+    ComPtr<ID3D11DeviceContext>       mImmediateContext;
+    ComPtr<IDXGISwapChain>            mSwapChain;
+    ComPtr<ID3D11ComputeShader>       mRendererCS;
+    ComPtr<ID3D11Buffer>              mPosSizeCB;
+    ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
+    ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
+    ComPtr<ID3D11Texture2D>           mSource;
+    ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
+
+    ComPtr<ID3D11Texture2D>           mPreStagingY;
+    ComPtr<ID3D11Texture2D>           mPreStagingU;
+    ComPtr<ID3D11Texture2D>           mPreStagingV;
+    ComPtr<ID3D11Texture2D>           mStagingY;
+    ComPtr<ID3D11Texture2D>           mStagingU;
+    ComPtr<ID3D11Texture2D>           mStagingV;
+    ComPtr<ID3D11UnorderedAccessView> mPreStagingYUAV;
+    ComPtr<ID3D11UnorderedAccessView> mPreStagingUUAV;
+    ComPtr<ID3D11UnorderedAccessView> mPreStagingVUAV;
+    boost::rational<int32_t>          mRefreshRate;
+    std::shared_ptr<IEncoder>         mEncoder;
+    uint32_t mVScale;
+  };
+
+
+  std::shared_ptr<DX11Renderer> mRenderer;
   int64_t mLastRenderTimePoint;
-  uint32_t mVScale;
-  ImageCart::Rotation mRotation;
 };
