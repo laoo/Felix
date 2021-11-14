@@ -1,7 +1,7 @@
 ## 0.4.7
 
 - Fixed many games hanging after title screen
-- Got rid of D3DCompiler library (might fix some DXError problems)
+- Got rid of D3DCompiler library dependency (might fix some DXError problems)
 
 ## 0.4.6
 
