@@ -170,8 +170,6 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
               scb.tiltacum.h = 0;
               int hsizacum = left ? 0 : scb.hsizoff.w;
               int sprhpos = (int16_t)( scb.hposstrt - scb.hoff );
-              if ( ( (uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT ) != ( (uint8_t)quadCycle[(size_t)suzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_LEFT ) )
-                sprhpos += dx;
 
               while ( int const * penIndex = slp.getPenIndex() )
               {
