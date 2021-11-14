@@ -79,7 +79,7 @@ private:
 
   void setP( uint8_t value )
   {
-    mState.p = value;
+    mState.p = value & ~( 1 << bitB );
   }
 
   void setnz( uint8_t v )
