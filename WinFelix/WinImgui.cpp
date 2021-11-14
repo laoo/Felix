@@ -1,9 +1,8 @@
 #include "pch.hpp"
 #include "imgui.h"
 #include "WinImgui.hpp"
-#ifdef _MSC_VER
-#pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
-#endif
+#include "vertex.hxx"
+#include "pixel.hxx"
 
 WinImgui::WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext, std::filesystem::path const& iniPath ) : mhWnd{ hWnd }, md3dDevice{ std::move( pD3DDevice) }, md3dDeviceContext{ std::move( pDeviceContext ) },
   mTime{}, mTicksPerSecond{}, mLastMouseCursor{ ImGuiMouseCursor_COUNT },
@@ -112,39 +111,7 @@ void WinImgui::dx11_NewFrame()
 
   // Create the vertex shader
   {
-    static const char* vertexShader =
-      "cbuffer vertexBuffer : register(b0) \
-            {\
-            float4x4 ProjectionMatrix; \
-            };\
-            struct VS_INPUT\
-            {\
-            float2 pos : POSITION;\
-            float4 col : COLOR0;\
-            float2 uv  : TEXCOORD0;\
-            };\
-            \
-            struct PS_INPUT\
-            {\
-            float4 pos : SV_POSITION;\
-            float4 col : COLOR0;\
-            float2 uv  : TEXCOORD0;\
-            };\
-            \
-            PS_INPUT main(VS_INPUT input)\
-            {\
-            PS_INPUT output;\
-            output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));\
-            output.col = input.col;\
-            output.uv  = input.uv;\
-            return output;\
-            }";
-
-    ComPtr<ID3D10Blob> vertexShaderBlob;
-    D3DCompile( vertexShader, strlen( vertexShader ), NULL, NULL, NULL, "main", "vs_4_0", 0, 0, vertexShaderBlob.ReleaseAndGetAddressOf(), NULL );
-    if ( !vertexShaderBlob ) // NB: Pass ID3D10Blob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-      throw std::exception{};
-    if ( md3dDevice->CreateVertexShader( (DWORD*)vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), NULL, mVertexShader.ReleaseAndGetAddressOf() ) != S_OK )
+    if ( md3dDevice->CreateVertexShader( (DWORD*)g_Vertex, sizeof g_Vertex, NULL, mVertexShader.ReleaseAndGetAddressOf() ) != S_OK )
       throw std::exception{};
 
     // Create the input layout
@@ -154,7 +121,7 @@ void WinImgui::dx11_NewFrame()
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,   0, (size_t)( &( (ImDrawVert*)0 )->uv ),  D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, (size_t)( &( (ImDrawVert*)0 )->col ), D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
-    if ( md3dDevice->CreateInputLayout( local_layout, 3, vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), mInputLayout.ReleaseAndGetAddressOf() ) != S_OK )
+    if ( md3dDevice->CreateInputLayout( local_layout, 3, g_Vertex, sizeof g_Vertex, mInputLayout.ReleaseAndGetAddressOf() ) != S_OK )
       throw std::exception{};
 
     // Create the constant buffer
@@ -169,31 +136,8 @@ void WinImgui::dx11_NewFrame()
     }
   }
 
-  // Create the pixel shader
-  {
-    static const char* pixelShader =
-      "struct PS_INPUT\
-            {\
-            float4 pos : SV_POSITION;\
-            float4 col : COLOR0;\
-            float2 uv  : TEXCOORD0;\
-            };\
-            sampler sampler0;\
-            Texture2D texture0;\
-            \
-            float4 main(PS_INPUT input) : SV_Target\
-            {\
-            float4 out_col = input.col * texture0.Sample(sampler0, input.uv); \
-            return out_col; \
-            }";
-
-    ComPtr<ID3D10Blob> pixelShaderBlob;
-    D3DCompile( pixelShader, strlen( pixelShader ), NULL, NULL, NULL, "main", "ps_4_0", 0, 0, pixelShaderBlob.ReleaseAndGetAddressOf(), NULL );
-    if ( !pixelShaderBlob )  // NB: Pass ID3D10Blob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-      throw std::exception{};
-    if ( md3dDevice->CreatePixelShader( (DWORD*)pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(), NULL, mPixelShader.ReleaseAndGetAddressOf() ) != S_OK )
-      throw std::exception{};
-  }
+  if ( md3dDevice->CreatePixelShader( (DWORD*)g_Pixel, sizeof g_Pixel, NULL, mPixelShader.ReleaseAndGetAddressOf() ) != S_OK )
+    throw std::exception{};
 
   // Create the blending setup
   {

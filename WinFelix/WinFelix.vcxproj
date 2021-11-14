@@ -269,13 +269,32 @@
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="Manager.hpp" />
     <ClInclude Include="pch.hpp" />
+    <ClInclude Include="pixel.hxx" />
+    <ClInclude Include="renderer.hxx" />
     <ClInclude Include="version.hpp" />
+    <ClInclude Include="vertex.hxx" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinConfig.hpp" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="imgui.psh">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Pixel</ShaderType>
+      <VariableName>g_Pixel</VariableName>
+      <HeaderFileOutput>pixel.hxx</HeaderFileOutput>
+      <DisableOptimizations>false</DisableOptimizations>
+      <EnableDebuggingInformation>false</EnableDebuggingInformation>
+    </FxCompile>
+    <FxCompile Include="imgui.vsh">
+      <ShaderModel>4.0</ShaderModel>
+      <ShaderType>Vertex</ShaderType>
+      <VariableName>g_Vertex</VariableName>
+      <HeaderFileOutput>vertex.hxx</HeaderFileOutput>
+      <DisableOptimizations>false</DisableOptimizations>
+      <EnableDebuggingInformation>false</EnableDebuggingInformation>
+    </FxCompile>
     <FxCompile Include="render.csh">
       <ShaderModel>5.0</ShaderModel>
       <ShaderType>Compute</ShaderType>

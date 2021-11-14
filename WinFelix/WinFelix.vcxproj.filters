@@ -18,8 +18,13 @@
     <ClInclude Include="WinRenderer.hpp" />
     <ClInclude Include="WinConfig.hpp" />
     <ClInclude Include="Ex.hpp" />
+    <ClInclude Include="vertex.hxx" />
+    <ClInclude Include="renderer.hxx" />
+    <ClInclude Include="pixel.hxx" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />
+    <FxCompile Include="imgui.vsh" />
+    <FxCompile Include="imgui.psh" />
   </ItemGroup>
 </Project>
