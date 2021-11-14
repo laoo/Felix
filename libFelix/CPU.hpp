@@ -72,6 +72,18 @@ private:
   static constexpr int bitV = 6;
   static constexpr int bitN = 7;
 
+  /*
+    https://github.com/spacerace/6502/blob/master/doc/6502-asm-doc/the%20B%20flag%20and%20BRK%20instruction.txt:
+    No actual "B" flag exists inside the 6502's processor status register. The B
+    flag only exists in the status flag byte pushed to the stack. Naturally,
+    when the flags are restored (via PLP or RTI), the B bit is discarded.
+
+    Depending on the means, the B status flag will be pushed to the stack as
+    either 0 or 1.
+
+    software instructions BRK & PHP will push the B flag as being 1.
+    hardware interrupts IRQ & NMI will push the B flag as being 0.
+  */
   uint8_t getP() const
   {
     return mState.p | ( 1 << bit1 ) | ( mState.interrupt != 0 ? 0 : ( 1 << bitB ) );
