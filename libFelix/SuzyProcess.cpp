@@ -139,7 +139,9 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
         scb.tiltacum = 0;
         scb.vsizacum = up ? 0 : scb.vsizoff.w;
         scb.sprvpos = scb.vposstrt - scb.voff;
-        if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) != ((uint8_t)quadCycle[(size_t)suzy.mStartingQuadrant] & Suzy::SPRCTL1::DRAW_UP) )
+        // Comment in Handy:
+        // Take the sign of the first quad (0) as the basic sign, all other quads drawing in the other direction get offset by 1 pixel in the other direction, this fixes the squashed look on the multi-quad sprites.
+        if ( ((uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_UP) != ((uint8_t)quadCycle[0] & Suzy::SPRCTL1::DRAW_UP) )
           scb.sprvpos += dy;
 
         for ( ;; )
@@ -170,6 +172,10 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
               scb.tiltacum.h = 0;
               int hsizacum = left ? 0 : scb.hsizoff.w;
               int sprhpos = (int16_t)( scb.hposstrt - scb.hoff );
+              // Comment in Handy:
+              // Take the sign of the first quad (0) as the basic sign, all other quads drawing in the other direction get offset by 1 pixel in the other direction, this fixes the squashed look on the multi-quad sprites.
+              if ( ( (uint8_t)quadCycle[quadrant] & Suzy::SPRCTL1::DRAW_LEFT ) != ( (uint8_t)quadCycle[0] & Suzy::SPRCTL1::DRAW_LEFT ) )
+                sprhpos += dx;
 
               while ( int const * penIndex = slp.getPenIndex() )
               {
