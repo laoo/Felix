@@ -29,9 +29,9 @@ private:
 
   struct Pixel
   {
-    uint8_t r;
-    uint8_t g;
     uint8_t b;
+    uint8_t g;
+    uint8_t r;
     uint8_t x;
   };
 
@@ -39,12 +39,6 @@ private:
   {
     Pixel left;
     Pixel right;
-  };
-
-  struct MappedTexture
-  {
-    DPixel* data;
-    uint32_t stride;
   };
 
   class SizeManager
@@ -57,6 +51,8 @@ private:
     int windowHeight() const;
     int minWindowWidth() const;
     int minWindowHeight() const;
+    int width() const;
+    int height() const;
     int xOff() const;
     int yOff() const;
     int scale() const;
@@ -100,11 +96,11 @@ private:
     BaseRenderer( HWND hWnd );
     virtual ~BaseRenderer() = default;
 
+    virtual void render( Manager& config ) = 0;
     virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
     virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
 
     std::shared_ptr<IVideoSink> getVideoSink() const;
-    void updateSourceTexture( std::shared_ptr<RenderFrame> frame, std::shared_ptr<MappedTexture> map );
     int sizing( RECT& rect );
     void setRotation( ImageCart::Rotation rotation );
 
@@ -115,15 +111,39 @@ private:
     ImageCart::Rotation mRotation;
   };
 
+
+  class DX9Renderer : public BaseRenderer
+  {
+  public:
+    DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath );
+    ~DX9Renderer() = default;
+    void internalRender( Manager& config );
+
+    void render( Manager& config ) override;
+    void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
+    int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
+
+  private:
+
+    ComPtr<IDirect3D9Ex>              mD3D;
+    ComPtr<IDirect3DDevice9Ex>        mD3Device;
+    ComPtr<IDirect3DTexture9>         mSource;
+    int                               mSourceWidth;
+    int                               mSourceHeight;
+    RECT mRect;
+    std::vector<DPixel>               mTempBuffer;
+  };
+
+
   class DX11Renderer : public BaseRenderer
   {
   public:
     DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath );
     ~DX11Renderer() = default;
     void updateVscale( uint32_t vScale );
-    void render( Manager& config );
     void internalRender( Manager& config );
 
+    void render( Manager& config ) override;
     void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
     int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
@@ -167,6 +187,6 @@ private:
   };
 
 
-  std::shared_ptr<DX11Renderer> mRenderer;
+  std::shared_ptr<BaseRenderer> mRenderer;
   int64_t mLastRenderTimePoint;
 };

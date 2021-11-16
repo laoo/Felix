@@ -33,7 +33,7 @@ void main( uint3 DT : SV_DispatchThreadID )
     {
       int dtx = DT.x * rotx.x + DT.y * rotx.y;
       int dty = DT.x * roty.x + DT.y * roty.y;
-      dst[off + int2( dtx, dty ) + int2( x, y )]  = src[DT.xy];
+      dst[off + int2( dtx, dty ) + int2( x, y )]  = src[DT.xy].bgra;
     }
   }
 

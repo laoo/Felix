@@ -29,6 +29,7 @@
 #include <MMDeviceAPI.h>
 #pragma warning(push)
 #pragma warning( disable: 4005 )
+#include <d3d9.h>
 #include <d3d11.h>
 #pragma warning(pop)
 

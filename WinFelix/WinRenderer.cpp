@@ -84,7 +84,7 @@ void WinRenderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 
 void WinRenderer::initialize( HWND hWnd, std::filesystem::path const& iniPath )
 {
-  mRenderer = std::make_shared<WinRenderer::DX11Renderer>( hWnd, iniPath );
+  mRenderer = std::make_shared<WinRenderer::DX9Renderer>( hWnd, iniPath );
 }
 
 std::shared_ptr<IVideoSink> WinRenderer::getVideoSink() const
@@ -168,6 +168,16 @@ int WinRenderer::SizeManager::minWindowWidth() const
 int WinRenderer::SizeManager::minWindowHeight() const
 {
   return mRotation == ImageCart::Rotation::NORMAL ? 102 : 160;
+}
+
+int WinRenderer::SizeManager::width() const
+{
+  return minWindowWidth();
+}
+
+int WinRenderer::SizeManager::height() const
+{
+  return minWindowHeight();
 }
 
 int WinRenderer::SizeManager::xOff() const
@@ -378,29 +388,6 @@ std::shared_ptr<IVideoSink> WinRenderer::BaseRenderer::getVideoSink() const
   return mInstance;
 }
 
-void WinRenderer::BaseRenderer::updateSourceTexture( std::shared_ptr<RenderFrame> frame, std::shared_ptr<MappedTexture> map )
-{
-  for ( int i = 0; i < (int)frame->rows.size(); ++i )
-  {
-    auto const& row = frame->rows[i];
-    int size = frame->sizes[i];
-    DPixel* dst = map->data + std::max( 0, ( i - 3 ) ) * map->stride;
-
-    for ( int j = 0; j < size; ++j )
-    {
-      uint16_t v = row.lineBuffer[j];
-      if ( std::bit_cast<int16_t>( v ) < 0 )
-      {
-        *dst++ = mInstance->mPalette[(uint8_t)v];
-      }
-      else
-      {
-        mInstance->updatePalette( v >> 8, (uint8_t)v );
-      }
-    }
-  }
-}
-
 int WinRenderer::BaseRenderer::sizing( RECT& rect )
 {
   RECT wRect, cRect;
@@ -574,14 +561,36 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
   {
     if ( auto frame = mInstance->pullNextFrame() )
     {
-      D3D11_MAPPED_SUBRESOURCE map;
-      mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &map );
-      std::shared_ptr<MappedTexture> pMap{ new MappedTexture{ (DPixel*)map.pData, map.RowPitch / (uint32_t)sizeof( DPixel ) }, [this]( MappedTexture* p )
-      {
-        mImmediateContext->Unmap( mSource.Get(), 0 );
-      } };
+      D3D11_MAPPED_SUBRESOURCE d3dmap;
+      mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
 
-      updateSourceTexture( std::move( frame ), std::move( pMap ) );
+      struct MappedTexture
+      {
+        DPixel* data;
+        uint32_t stride;
+      } map{ (DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( DPixel ) };
+
+      for ( int i = 0; i < (int)frame->rows.size(); ++i )
+      {
+        auto const& row = frame->rows[i];
+        int size = frame->sizes[i];
+        DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
+
+        for ( int j = 0; j < size; ++j )
+        {
+          uint16_t v = row.lineBuffer[j];
+          if ( std::bit_cast<int16_t>( v ) < 0 )
+          {
+            *dst++ = mInstance->mPalette[(uint8_t)v];
+          }
+          else
+          {
+            mInstance->updatePalette( v >> 8, (uint8_t)v );
+          }
+        }
+      }
+
+      mImmediateContext->Unmap( mSource.Get(), 0 );
     }
 
     CBPosSize cbPosSize{
@@ -659,7 +668,10 @@ void WinRenderer::DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 
 int WinRenderer::DX11Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-  return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  if ( mImgui )
+    return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  
+  return 0;
 }
 
 void WinRenderer::DX11Renderer::updateVscale( uint32_t vScale )
@@ -706,5 +718,161 @@ void WinRenderer::DX11Renderer::updateVscale( uint32_t vScale )
   }
 }
 
+WinRenderer::DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mD3D{}, mD3Device{}, mRect{}, mSource{}, mSourceWidth{}, mSourceHeight{}
+{
+}
 
+void WinRenderer::DX9Renderer::render( Manager& config )
+{
+  internalRender( config );
+  mD3Device->PresentEx( nullptr, nullptr, nullptr, nullptr, 0 );
+}
 
+void WinRenderer::DX9Renderer::internalRender( Manager& config )
+{
+  if ( !mD3Device )
+  {
+    typedef HRESULT( WINAPI* LPDIRECT3DCREATE9EX )( UINT SDKVersion, IDirect3D9Ex** );
+    static LPDIRECT3DCREATE9EX s_Direct3DCreate9Ex = nullptr;
+    HMODULE hModD3D9 = ::LoadLibrary( L"d3d9.dll" );
+    if ( hModD3D9 == nullptr )
+      throw std::runtime_error{ "DXError" };
+
+    s_Direct3DCreate9Ex = (LPDIRECT3DCREATE9EX)GetProcAddress( hModD3D9, "Direct3DCreate9Ex" );
+
+    V_THROW( s_Direct3DCreate9Ex( D3D_SDK_VERSION, mD3D.ReleaseAndGetAddressOf() ) );
+
+    D3DPRESENT_PARAMETERS presentParams;
+    ZeroMemory( &presentParams, sizeof( presentParams ) );
+    presentParams.Windowed = TRUE;
+    presentParams.SwapEffect = D3DSWAPEFFECT_COPY;
+    presentParams.BackBufferFormat = D3DFMT_X8R8G8B8;
+    presentParams.BackBufferCount = 1;
+    presentParams.BackBufferWidth = 256;
+    presentParams.BackBufferHeight = 256;
+    presentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    presentParams.Flags = D3DPRESENTFLAG_VIDEO;
+
+    V_THROW( mD3D->CreateDeviceEx( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, nullptr, D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &presentParams, nullptr, mD3Device.ReleaseAndGetAddressOf() ) );
+  }
+
+  RECT r;
+  if ( ::GetClientRect( mHWnd, &r ) == 0 )
+    return;
+
+  if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) || mSizeManager.rotation() != mRotation )
+  {
+    mSizeManager = SizeManager{ r.right, r.bottom, mRotation };
+
+    if ( !mSizeManager )
+    {
+      return;
+    }
+
+    D3DPRESENT_PARAMETERS presentParams;
+    ZeroMemory( &presentParams, sizeof( presentParams ) );
+    presentParams.Windowed = TRUE;
+    presentParams.SwapEffect = D3DSWAPEFFECT_COPY;
+    presentParams.BackBufferFormat = D3DFMT_X8R8G8B8;
+    presentParams.EnableAutoDepthStencil = false;
+    presentParams.BackBufferCount = 1;
+    presentParams.hDeviceWindow = mHWnd;
+    presentParams.BackBufferWidth = mSizeManager.windowWidth();
+    presentParams.BackBufferHeight = mSizeManager.windowHeight();
+    presentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    HRESULT hr = mD3Device->ResetEx( &presentParams, nullptr );
+
+    HRESULT hung = D3DERR_DEVICELOST;
+
+    mRect = RECT{ mSizeManager.xOff(), mSizeManager.yOff(),  mSizeManager.xOff() + mSizeManager.width() * mSizeManager.scale(), mSizeManager.yOff() + mSizeManager.height() * mSizeManager.scale() };
+
+  }
+  
+
+  ComPtr<IDirect3DSurface9> rtSurface;
+  HRESULT hr = mD3Device->GetBackBuffer( 0, 0, D3DBACKBUFFER_TYPE_MONO, rtSurface.ReleaseAndGetAddressOf() );
+  hr = mD3Device->ColorFill( rtSurface.Get(), NULL, D3DCOLOR_XRGB( 255, 255, 255 ) );
+
+  if ( mSourceWidth != mSizeManager.width() || mSourceHeight != mSizeManager.height() )
+  {
+    hr = mD3Device->CreateTexture( mSizeManager.width(), mSizeManager.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, mSource.ReleaseAndGetAddressOf(), nullptr );
+    mSourceWidth = mSizeManager.width();
+    mSourceHeight = mSizeManager.height();
+    mTempBuffer.resize( mSourceHeight * mSourceWidth / 2 );
+  }
+
+  {
+    if ( auto frame = mInstance->pullNextFrame() )
+    {
+      struct MappedTexture
+      {
+        DPixel* data;
+        uint32_t stride;
+      } map{ mTempBuffer.data(), (uint32_t)mSourceWidth / 2 };
+
+      for ( int i = 0; i < (int)frame->rows.size(); ++i )
+      {
+        auto const& row = frame->rows[i];
+        int size = frame->sizes[i];
+        DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
+
+        for ( int j = 0; j < size; ++j )
+        {
+          uint16_t v = row.lineBuffer[j];
+          if ( std::bit_cast<int16_t>( v ) < 0 )
+          {
+            *dst++ = mInstance->mPalette[(uint8_t)v];
+          }
+          else
+          {
+            mInstance->updatePalette( v >> 8, (uint8_t)v );
+          }
+        }
+      }
+    }
+
+    ComPtr<IDirect3DTexture9> sysTexture;
+    HANDLE h = (HANDLE)mTempBuffer.data();
+
+    hr = mD3Device->CreateTexture( mSizeManager.width(), mSizeManager.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, sysTexture.ReleaseAndGetAddressOf(), &h );
+    hr = mD3Device->UpdateTexture( sysTexture.Get(), mSource.Get() );
+
+    ComPtr<IDirect3DSurface9> srcSurface;
+    mSource->GetSurfaceLevel( 0, srcSurface.ReleaseAndGetAddressOf() );
+    hr = mD3Device->StretchRect( srcSurface.Get(), nullptr, rtSurface.Get(), &mRect, D3DTEXF_POINT );
+  }
+
+  //{
+  //  RECT r;
+  //  GetWindowRect( mHWnd, &r );
+  //  POINT p{ r.left, r.top };
+  //  ScreenToClient( mHWnd, &p );
+  //  GetClientRect( mHWnd, &r );
+  //  r.left = p.x;
+  //  r.top = p.y;
+
+  //  mImgui->dx11_NewFrame();
+  //  mImgui->win32_NewFrame();
+
+  //  ImGui::NewFrame();
+
+  //  config.drawGui( r.left, r.top, r.right, r.bottom );
+
+  //  ImGui::Render();
+
+  //  mImmediateContext->OMSetRenderTargets( 1, mBackBufferRTV.GetAddressOf(), nullptr );
+  //  mImgui->dx11_RenderDrawData( ImGui::GetDrawData() );
+
+  //  std::array<ID3D11RenderTargetView* const, 1> rtv{};
+  //  mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
+  //}
+}
+
+void WinRenderer::DX9Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
+{
+}
+
+int WinRenderer::DX9Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+  return 0;
+}
