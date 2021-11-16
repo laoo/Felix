@@ -1,10 +1,10 @@
 #pragma once
 
-class WinImgui
+class WinImgui11
 {
 public:
-  WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext, std::filesystem::path const& iniPath );
-  ~WinImgui();
+  WinImgui11( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext, std::filesystem::path const& iniPath );
+  ~WinImgui11();
 
   void win32_NewFrame();
 

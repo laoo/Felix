@@ -4,7 +4,7 @@
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
-    <ClCompile Include="WinImgui.cpp" />
+    <ClCompile Include="WinImgui11.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="WinRenderer.cpp" />
     <ClCompile Include="WinConfig.cpp" />
@@ -14,7 +14,7 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="version.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
-    <ClInclude Include="WinImgui.hpp" />
+    <ClInclude Include="WinImgui11.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
     <ClInclude Include="WinConfig.hpp" />
     <ClInclude Include="Ex.hpp" />

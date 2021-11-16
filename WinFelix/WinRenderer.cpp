@@ -2,7 +2,7 @@
 #include "WinRenderer.hpp"
 #include "Manager.hpp"
 #include "imgui.h"
-#include "WinImgui.hpp"
+#include "WinImgui11.hpp"
 #include "renderer.hxx"
 #include "Log.hpp"
 #include "IEncoder.hpp"
@@ -522,7 +522,7 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
 
   updateVscale( 0 );
 
-  mImgui.reset( new WinImgui{ mHWnd, mD3DDevice, mImmediateContext, iniPath } );
+  mImgui.reset( new WinImgui11{ mHWnd, mD3DDevice, mImmediateContext, iniPath } );
 }
 
 void WinRenderer::DX11Renderer::render( Manager& config )

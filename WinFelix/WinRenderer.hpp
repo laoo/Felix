@@ -5,7 +5,7 @@
 #include "ImageCart.hpp"
 
 struct RenderFrame;
-class WinImgui;
+class WinImgui11;
 class Manager;
 class IEncoder;
 
@@ -141,7 +141,7 @@ private:
       uint32_t vscale;
     };
 
-    std::unique_ptr<WinImgui>         mImgui;
+    std::unique_ptr<WinImgui11>         mImgui;
     ComPtr<ID3D11Device>              mD3DDevice;
     ComPtr<ID3D11DeviceContext>       mImmediateContext;
     ComPtr<IDXGISwapChain>            mSwapChain;

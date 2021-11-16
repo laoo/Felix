@@ -1,10 +1,10 @@
 #include "pch.hpp"
 #include "imgui.h"
-#include "WinImgui.hpp"
+#include "WinImgui11.hpp"
 #include "vertex.hxx"
 #include "pixel.hxx"
 
-WinImgui::WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext, std::filesystem::path const& iniPath ) : mhWnd{ hWnd }, md3dDevice{ std::move( pD3DDevice) }, md3dDeviceContext{ std::move( pDeviceContext ) },
+WinImgui11::WinImgui11( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pDeviceContext, std::filesystem::path const& iniPath ) : mhWnd{ hWnd }, md3dDevice{ std::move( pD3DDevice) }, md3dDeviceContext{ std::move( pDeviceContext ) },
   mTime{}, mTicksPerSecond{}, mLastMouseCursor{ ImGuiMouseCursor_COUNT },
   mVertexBufferSize{ 5000 }, mIndexBufferSize{ 10000 }, mIniFilePath{ ( iniPath / "imgui.ini" ).string() }
 {
@@ -54,13 +54,13 @@ WinImgui::WinImgui( HWND hWnd, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11Dev
   ImGui::StyleColorsLight();
 }
 
-WinImgui::~WinImgui()
+WinImgui11::~WinImgui11()
 {
   ImGui::DestroyContext();
 }
 
 
-void WinImgui::win32_NewFrame()
+void WinImgui11::win32_NewFrame()
 {
   ImGuiIO& io = ImGui::GetIO();
   IM_ASSERT( io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer back-end. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame()." );
@@ -95,7 +95,7 @@ void WinImgui::win32_NewFrame()
   }
 }
 
-void WinImgui::dx11_NewFrame()
+void WinImgui11::dx11_NewFrame()
 {
   if ( mFontSampler )
     return;
@@ -183,7 +183,7 @@ void WinImgui::dx11_NewFrame()
   dx11_CreateFontsTexture();
 }
 
-void WinImgui::dx11_RenderDrawData( ImDrawData * draw_data )
+void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
 {
   // Avoid rendering when minimized
   if ( draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f )
@@ -363,7 +363,7 @@ void WinImgui::dx11_RenderDrawData( ImDrawData * draw_data )
   ctx->IASetInputLayout( old.InputLayout ); if ( old.InputLayout ) old.InputLayout->Release();
 }
 
-void WinImgui::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
+void WinImgui11::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
 {
   // Setup viewport
   D3D11_VIEWPORT vp;
@@ -399,7 +399,7 @@ void WinImgui::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceContext
 }
 
 
-bool WinImgui::win32_UpdateMouseCursor()
+bool WinImgui11::win32_UpdateMouseCursor()
 {
   ImGuiIO& io = ImGui::GetIO();
   if ( io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange )
@@ -431,7 +431,7 @@ bool WinImgui::win32_UpdateMouseCursor()
   return true;
 }
 
-void WinImgui::dx11_InvalidateDeviceObjects()
+void WinImgui11::dx11_InvalidateDeviceObjects()
 {
   if ( !md3dDevice )
     return;
@@ -450,7 +450,7 @@ void WinImgui::dx11_InvalidateDeviceObjects()
   if ( mVertexShader ) { mVertexShader.Reset(); }
 }
 
-void WinImgui::dx11_CreateFontsTexture()
+void WinImgui11::dx11_CreateFontsTexture()
 {
   // Build texture atlas
   ImGuiIO& io = ImGui::GetIO();
@@ -511,7 +511,7 @@ void WinImgui::dx11_CreateFontsTexture()
 }
 
 
-void WinImgui::win32_UpdateMousePos()
+void WinImgui11::win32_UpdateMousePos()
 {
   ImGuiIO& io = ImGui::GetIO();
 
@@ -538,7 +538,7 @@ void WinImgui::win32_UpdateMousePos()
 // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 // PS: In this Win32 handler, we use the capture API (GetCapture/SetCapture/ReleaseCapture) to be able to read mouse coordinates when dragging mouse outside of our window bounds.
 // PS: We treat DBLCLK messages as regular mouse down messages, so this code will work on windows classes that have the CS_DBLCLKS flag set. Our own example app code doesn't set this flag.
-int WinImgui::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+int WinImgui11::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
   if ( ImGui::GetCurrentContext() == NULL )
     return 0;
