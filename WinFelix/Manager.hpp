@@ -13,6 +13,7 @@ class Monitor;
 class SymbolSource;
 class InputFile;
 class IEncoder;
+struct ImGuiIO;
 
 class Manager
 {
@@ -26,6 +27,8 @@ public:
   WinConfig const& getWinConfig();
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
+
+  void mainMenu( ImGuiIO& io );
 
   void drawGui( int left, int top, int right, int bottom );
 

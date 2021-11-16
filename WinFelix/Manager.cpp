@@ -93,6 +93,26 @@ Manager::~Manager()
   stopThreads();
 }
 
+void Manager::mainMenu( ImGuiIO& io )
+{
+  ImGui::PushStyleVar( ImGuiStyleVar_Alpha, std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
+  if ( ImGui::BeginMainMenuBar() )
+  {
+    ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 1.0f );
+    if ( ImGui::BeginMenu( "File" ) )
+    {
+      if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
+      {
+        mEmulationRunning = false;
+      }
+      ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+    ImGui::PopStyleVar();
+  }
+  ImGui::PopStyleVar();
+}
+
 void Manager::drawGui( int left, int top, int right, int bottom )
 {
   ImGuiIO & io = ImGui::GetIO();
@@ -101,22 +121,7 @@ void Manager::drawGui( int left, int top, int right, int bottom )
 
   if ( hovered )
   {
-    ImGui::PushStyleVar( ImGuiStyleVar_Alpha, std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
-    if ( ImGui::BeginMainMenuBar() )
-    {
-      ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 1.0f );
-      if ( ImGui::BeginMenu( "File" ) )
-      {
-        if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
-        {
-          mEmulationRunning = false;
-        }
-        ImGui::EndMenu();
-      }
-      ImGui::EndMainMenuBar();
-      ImGui::PopStyleVar();
-    }
-    ImGui::PopStyleVar();
+    mainMenu( io );
   }
 
   if ( mMonitor && mInstance )
