@@ -1,3 +1,7 @@
+## 0.4.8
+
+- DX9 Renderer
+
 ## 0.4.7
 
 - Fixed many games hanging after title screen

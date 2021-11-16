@@ -6,6 +6,7 @@
 
 struct RenderFrame;
 class WinImgui11;
+class WinImgui9;
 class Manager;
 class IEncoder;
 
@@ -125,6 +126,8 @@ private:
 
   private:
 
+    std::filesystem::path const       mIniPath;
+    std::unique_ptr<WinImgui9>        mImgui;
     ComPtr<IDirect3D9Ex>              mD3D;
     ComPtr<IDirect3DDevice9Ex>        mD3Device;
     ComPtr<IDirect3DTexture9>         mSource;

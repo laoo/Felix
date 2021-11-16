@@ -8,6 +8,8 @@
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="WinRenderer.cpp" />
     <ClCompile Include="WinConfig.cpp" />
+    <ClCompile Include="WinImgui.cpp" />
+    <ClCompile Include="WinImgui9.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -21,6 +23,8 @@
     <ClInclude Include="vertex.hxx" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="pixel.hxx" />
+    <ClInclude Include="WinImgui.hpp" />
+    <ClInclude Include="WinImgui9.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />
