@@ -28,7 +28,7 @@ public:
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
-  void mainMenu( ImGuiIO& io );
+  bool mainMenu( ImGuiIO& io );
 
   void drawGui( int left, int top, int right, int bottom );
 
@@ -86,4 +86,5 @@ private:
   sol::function mMonit;
   std::mutex mMutex;
   int64_t mRenderingTime;
+  bool mOpenMenu;
 };

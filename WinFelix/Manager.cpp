@@ -14,7 +14,7 @@
 #include "IEncoder.hpp"
 
 Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{ true },
-  mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}, mRenderingTime{}
+  mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{}
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -93,36 +93,62 @@ Manager::~Manager()
   stopThreads();
 }
 
-void Manager::mainMenu( ImGuiIO& io )
+bool Manager::mainMenu( ImGuiIO& io )
 {
-  ImGui::PushStyleVar( ImGuiStyleVar_Alpha, std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
+  bool openMenu = false;
+  ImGui::PushStyleVar( ImGuiStyleVar_Alpha, mOpenMenu ? 1.0f : std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
   if ( ImGui::BeginMainMenuBar() )
   {
     ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 1.0f );
     if ( ImGui::BeginMenu( "File" ) )
     {
+      openMenu = true;
       if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
       {
         mEmulationRunning = false;
       }
       ImGui::EndMenu();
     }
+    if ( ImGui::BeginMenu( "System" ) )
+    {
+      openMenu = true;
+      ImGui::EndMenu();
+    }
+    if ( ImGui::BeginMenu( "Input" ) )
+    {
+      openMenu = true;
+      ImGui::EndMenu();
+    }
+    if ( ImGui::BeginMenu( "Video" ) )
+    {
+      openMenu = true;
+      ImGui::EndMenu();
+    }
+    if ( ImGui::BeginMenu( "Audio" ) )
+    {
+      openMenu = true;
+      ImGui::EndMenu();
+    }
     ImGui::EndMainMenuBar();
     ImGui::PopStyleVar();
   }
   ImGui::PopStyleVar();
+
+  return openMenu;
 }
 
 void Manager::drawGui( int left, int top, int right, int bottom )
 {
   ImGuiIO & io = ImGui::GetIO();
 
-  bool hovered = io.MousePos.x > left && io.MousePos.y > top && io.MousePos.x < right&& io.MousePos.y < bottom;
+  bool hovered = io.MousePos.x > left && io.MousePos.y > top && io.MousePos.x < right && io.MousePos.y < bottom;
 
-  if ( hovered )
+  if ( hovered || mOpenMenu )
   {
-    mainMenu( io );
+    mOpenMenu = mainMenu( io );
   }
+
+  L_DEBUG << mOpenMenu;
 
   if ( mMonitor && mInstance )
   {
