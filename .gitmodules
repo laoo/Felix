@@ -14,3 +14,6 @@
 [submodule "libextern/stb"]
 	path = libextern/stb
 	url = https://github.com/nothings/stb.git
+[submodule "libextern/imgui-filebrowser"]
+	path = libextern/imgui-filebrowser
+	url = https://github.com/AirGuanZ/imgui-filebrowser.git
