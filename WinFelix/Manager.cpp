@@ -13,6 +13,7 @@
 #include "Ex.hpp"
 #include "CPUState.hpp"
 #include "IEncoder.hpp"
+#include <imfilebrowser.h>
 
 Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{}, mJoinThreads{}, mPaused{},
   mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }
@@ -151,6 +152,9 @@ bool Manager::mainMenu( ImGuiIO& io )
       openMenu = true;
       if ( ImGui::MenuItem( "Open" ) )
       {
+        mFileBrowser->SetTitle( "Open Cartridge image file" );
+        mFileBrowser->SetTypeFilters( { ".lnx", ".lyx", ".o" } );
+        mFileBrowser->Open();
       }
       if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
       {
@@ -158,30 +162,18 @@ bool Manager::mainMenu( ImGuiIO& io )
       }
       ImGui::EndMenu();
     }
-    if ( ImGui::BeginMenu( "System" ) )
-    {
-      openMenu = true;
-      ImGui::EndMenu();
-    }
-    if ( ImGui::BeginMenu( "Input" ) )
-    {
-      openMenu = true;
-      ImGui::EndMenu();
-    }
-    if ( ImGui::BeginMenu( "Video" ) )
-    {
-      openMenu = true;
-      ImGui::EndMenu();
-    }
-    if ( ImGui::BeginMenu( "Audio" ) )
-    {
-      openMenu = true;
-      ImGui::EndMenu();
-    }
     ImGui::EndMainMenuBar();
     ImGui::PopStyleVar();
   }
   ImGui::PopStyleVar();
+
+  mFileBrowser->Display();
+  if ( mFileBrowser->HasSelected() )
+  {
+    mArgs = { mFileBrowser->GetSelected().wstring() };
+    mDoUpdate = true;
+    mFileBrowser->ClearSelected();
+  }
 
   return openMenu;
 }
@@ -494,7 +486,7 @@ void Manager::reset()
 
     mInstance->setEscape( 0, std::make_shared<Escape>( *this ) );
 
-      }
+  }
 
   mProcessThreads.store( true );
 }

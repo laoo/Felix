@@ -138,6 +138,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{88B0A14D-5C0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libextern", "libextern", "{85D85B3A-D982-4C06-B878-3266FD86B0C5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "imgui-filebrowser", "imgui-filebrowser", "{C84F75A3-3571-4A26-9C2F-B0BE678A3397}"
+	ProjectSection(SolutionItems) = preProject
+		libextern\imgui-filebrowser\imfilebrowser.h = libextern\imgui-filebrowser\imfilebrowser.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -238,6 +243,7 @@ Global
 		{D0242ABD-A0BF-4500-AC25-5D3DE0359BCA} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 		{121B3D6E-B957-40FA-B554-8FDD1FBA17CF} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 		{9EA01067-B994-4BBE-B340-E626EE249427} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
+		{C84F75A3-3571-4A26-9C2F-B0BE678A3397} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3B5A8028-FB31-42B8-8779-5CE2F6957369}

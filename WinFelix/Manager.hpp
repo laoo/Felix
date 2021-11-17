@@ -16,6 +16,11 @@ class IEncoder;
 class WinImgui;
 struct ImGuiIO;
 
+namespace ImGui
+{
+class FileBrowser;
+}
+
 class Manager
 {
 public:
@@ -90,4 +95,5 @@ private:
   std::mutex mMutex;
   int64_t mRenderingTime;
   bool mOpenMenu;
+  std::unique_ptr<ImGui::FileBrowser> mFileBrowser;
 };
