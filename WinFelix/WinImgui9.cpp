@@ -1,5 +1,4 @@
 #include "pch.hpp"
-#include "imgui.h"
 #include "WinImgui9.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
@@ -131,6 +130,28 @@ void WinImgui9::dx9_NewFrame()
 
   if ( !mFontTexture )
     dx9_CreateFontsTexture();
+}
+
+void* WinImgui9::createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt )
+{
+  IDirect3DTexture9* result;
+  V_THROW( md3dDevice->CreateTexture( width, height, 0, D3DUSAGE_AUTOGENMIPMAP, fmt == TextureFormat::BGRA ? D3DFMT_A8R8G8B8 : D3DFMT_A8B8G8R8, D3DPOOL_DEFAULT, &result, nullptr ) );
+
+  ComPtr<IDirect3DTexture9> sysTexture;
+  HANDLE h = (HANDLE)textureData;
+
+  V_THROW( md3dDevice->CreateTexture( width, height, 1, 0, fmt == TextureFormat::BGRA ? D3DFMT_A8R8G8B8 : D3DFMT_A8B8G8R8, D3DPOOL_SYSTEMMEM, sysTexture.ReleaseAndGetAddressOf(), &h ) );
+  V_THROW( md3dDevice->UpdateTexture( sysTexture.Get(), result ) );
+
+  return result;
+}
+
+void WinImgui9::deleteTextureRaw( void* textureData )
+{
+  if ( textureData )
+  {
+    static_cast<IDirect3DTexture9*>( textureData )->Release();
+  }
 }
 
 

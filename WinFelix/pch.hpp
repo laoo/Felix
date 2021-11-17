@@ -30,6 +30,9 @@
 #include <MMDeviceAPI.h>
 #pragma warning(push)
 #pragma warning( disable: 4005 )
+#ifndef NDEBUG
+#define D3D_DEBUG_INFO
+#endif
 #include <d3d9.h>
 #include <d3d11.h>
 #pragma warning(pop)

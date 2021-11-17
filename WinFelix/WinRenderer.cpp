@@ -510,7 +510,7 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
 
   updateVscale( 0 );
 
-  mImgui.reset( new WinImgui11{ mHWnd, mD3DDevice, mImmediateContext, iniPath } );
+  mImgui = std::make_shared<WinImgui11>( mHWnd, mD3DDevice, mImmediateContext, iniPath );
 }
 
 void WinRenderer::DX11Renderer::render( Manager& config )
@@ -543,6 +543,8 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
     V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
+
+    config.setWinImgui( mImgui );
   }
 
   if ( mEncoder )
@@ -756,7 +758,8 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
 
     V_THROW( mD3D->CreateDeviceEx( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, nullptr, D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &presentParams, nullptr, mD3Device.ReleaseAndGetAddressOf() ) );
 
-    mImgui.reset( new WinImgui9{ mHWnd, mD3Device, mIniPath } );
+    mImgui = std::make_shared<WinImgui9>( mHWnd, mD3Device, mIniPath );
+    config.setWinImgui( mImgui );
   }
 
   RECT r;

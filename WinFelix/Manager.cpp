@@ -2,6 +2,7 @@
 #include "Manager.hpp"
 #include "InputFile.hpp"
 #include "WinRenderer.hpp"
+#include "WinImgui.hpp"
 #include "WinAudioOut.hpp"
 #include "ComLynxWire.hpp"
 #include "Core.hpp"
@@ -50,6 +51,7 @@ void Manager::initialize( HWND hWnd )
 {
   assert( mRenderer );
   mRenderer->initialize( hWnd, mAppDataFolder );
+
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -88,6 +90,10 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
   return 0;
 }
 
+void Manager::setWinImgui( std::shared_ptr<WinImgui> winImgui )
+{
+}
+
 Manager::~Manager()
 {
   stopThreads();
@@ -103,6 +109,9 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::BeginMenu( "File" ) )
     {
       openMenu = true;
+      if ( ImGui::MenuItem( "Open" ) )
+      {
+      }
       if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
       {
         mEmulationRunning = false;
@@ -147,8 +156,6 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   {
     mOpenMenu = mainMenu( io );
   }
-
-  L_DEBUG << mOpenMenu;
 
   if ( mMonitor && mInstance )
   {

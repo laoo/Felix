@@ -6,10 +6,13 @@ class WinImgui9 : public WinImgui
 {
 public:
   WinImgui9( HWND hWnd, ComPtr<IDirect3DDevice9> pD3DDevice, std::filesystem::path const& iniPath );
-  ~WinImgui9();
+  ~WinImgui9() override;
 
   void     dx9_NewFrame();
   void     dx9_RenderDrawData( ImDrawData* draw_data );
+
+  void* createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt ) override;
+  void deleteTextureRaw( void* textureData ) override;
 
 private:
   void dx9_CreateFontsTexture();

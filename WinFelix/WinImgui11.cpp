@@ -1,5 +1,4 @@
 #include "pch.hpp"
-#include "imgui.h"
 #include "WinImgui11.hpp"
 #include "vertex.hxx"
 #include "pixel.hxx"
@@ -274,6 +273,15 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
   ctx->IASetIndexBuffer( old.IndexBuffer, old.IndexBufferFormat, old.IndexBufferOffset ); if ( old.IndexBuffer ) old.IndexBuffer->Release();
   ctx->IASetVertexBuffers( 0, 1, &old.VertexBuffer, &old.VertexBufferStride, &old.VertexBufferOffset ); if ( old.VertexBuffer ) old.VertexBuffer->Release();
   ctx->IASetInputLayout( old.InputLayout ); if ( old.InputLayout ) old.InputLayout->Release();
+}
+
+void* WinImgui11::createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt )
+{
+    return nullptr;
+}
+
+void WinImgui11::deleteTextureRaw( void* textureData )
+{
 }
 
 void WinImgui11::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
