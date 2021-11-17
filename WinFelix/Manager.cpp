@@ -14,8 +14,8 @@
 #include "CPUState.hpp"
 #include "IEncoder.hpp"
 
-Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{ true },
-  mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mPaused{}, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{}
+Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{}, mJoinThreads{}, mPaused{},
+  mRenderThread{}, mAudioThread{}, mAppDataFolder{ getAppDataFolder() }, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -25,6 +25,46 @@ Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSourc
   mWinConfig = WinConfig::load( mAppDataFolder );
 
   mLua.open_libraries( sol::lib::base, sol::lib::io );
+
+  mRenderThread = std::thread{ [this]
+  {
+    while ( !mJoinThreads.load() )
+    {
+      if ( mProcessThreads.load() )
+      {
+        auto renderingTime = mRenderer->render( *this );
+        std::scoped_lock<std::mutex> l{ mMutex };
+        mRenderingTime = renderingTime;
+      }
+      else
+      {
+        std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+      }
+    }
+  } };
+
+  mAudioThread = std::thread{ [this]
+  {
+    while ( !mJoinThreads.load() )
+    {
+      if ( mProcessThreads.load() )
+      {
+        if ( !mPaused.load() )
+        {
+          int64_t renderingTime;
+          {
+            std::scoped_lock<std::mutex> l{ mMutex };
+            renderingTime = mRenderingTime;
+          }
+          mAudioOut->fillBuffer( mInstance, renderingTime );
+        }
+      }
+      else
+      {
+        std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+      }
+    }
+  } };
 }
 
 void Manager::update()
@@ -420,8 +460,7 @@ void Manager::processLua( std::filesystem::path const& path, std::vector<InputFi
 
 void Manager::reset()
 {
-  stopThreads();
-  mProcessThreads.store( true );
+  mProcessThreads.store( false );
   mInstance.reset();
 
   std::vector<InputFile> inputs;
@@ -455,37 +494,14 @@ void Manager::reset()
 
     mInstance->setEscape( 0, std::make_shared<Escape>( *this ) );
 
-    mRenderThread = std::thread{ [this]
-    {
-      while ( mProcessThreads.load() )
-      {
-        auto renderingTime = mRenderer->render( *this );
-        std::scoped_lock<std::mutex> l{ mMutex };
-        mRenderingTime = renderingTime;
       }
-    } };
 
-    mAudioThread = std::thread{ [this]
-    {
-      while ( mProcessThreads.load() )
-      {
-        if ( !mPaused.load() )
-        {
-          int64_t renderingTime;
-          {
-            std::scoped_lock<std::mutex> l{ mMutex };
-            renderingTime = mRenderingTime;
-          }
-          mAudioOut->fillBuffer( mInstance, renderingTime );
-        }
-      }
-    } };
-  }
+  mProcessThreads.store( true );
 }
 
 void Manager::stopThreads()
 {
-  mProcessThreads.store( 0 );
+  mJoinThreads.store( true );
   if ( mAudioThread.joinable() )
     mAudioThread.join();
   mAudioThread = {};

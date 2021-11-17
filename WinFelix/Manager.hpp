@@ -66,7 +66,9 @@ private:
   bool mDoUpdate;
 
   std::shared_ptr<InputSource> mIntputSource;
-  std::atomic<bool> mProcessThreads;
+  std::atomic_bool mProcessThreads;
+  std::atomic_bool mJoinThreads;
+  std::atomic_bool mPaused;
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;
@@ -82,7 +84,6 @@ private:
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;
   WinConfig mWinConfig;
-  std::atomic_bool mPaused;
   sol::state mLua;
   std::vector<sol::function> mEscapes;
   sol::function mMonit;
