@@ -85,7 +85,14 @@ void WinRenderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 
 void WinRenderer::initialize( HWND hWnd, std::filesystem::path const& iniPath )
 {
-  mRenderer = std::make_shared<WinRenderer::DX9Renderer>( hWnd, iniPath );
+  try
+  {
+    mRenderer = std::make_shared<WinRenderer::DX11Renderer>( hWnd, iniPath );
+  }
+  catch( ... )
+  {
+    mRenderer = std::make_shared<WinRenderer::DX9Renderer>( hWnd, iniPath );
+  }
 }
 
 std::shared_ptr<IVideoSink> WinRenderer::getVideoSink() const
@@ -505,7 +512,10 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
   desc.MiscFlags = 0;
 
-  mD3DDevice->CreateTexture2D( &desc, nullptr, mSource.ReleaseAndGetAddressOf() );
+  std::vector<uint32_t> buf;
+  buf.resize( desc.Width* desc.Height, ~0 );
+  D3D11_SUBRESOURCE_DATA data{ buf.data(), desc.Width * sizeof( uint32_t ), 0 };
+  mD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
   updateVscale( 0 );
@@ -788,8 +798,6 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
     presentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
     V_THROW( mD3Device->ResetEx( &presentParams, nullptr ) );
 
-    HRESULT hung = D3DERR_DEVICELOST;
-
     mRect = RECT{ mSizeManager.xOff(), mSizeManager.yOff(),  mSizeManager.xOff() + mSizeManager.width() * mSizeManager.scale(), mSizeManager.yOff() + mSizeManager.height() * mSizeManager.scale() };
 
   }
@@ -804,7 +812,7 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
     V_THROW( mD3Device->CreateTexture( mSizeManager.width(), mSizeManager.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, mSource.ReleaseAndGetAddressOf(), nullptr ) );
     mSourceWidth = mSizeManager.width();
     mSourceHeight = mSizeManager.height();
-    mTempBuffer.resize( mSourceHeight * mSourceWidth / 2 );
+    mTempBuffer.resize( mSourceHeight * mSourceWidth / 2, DPixel{ Pixel{ 0xff, 0xff, 0xff, 0xff }, Pixel{ 0xff, 0xff, 0xff, 0xff } } );
   }
 
   {

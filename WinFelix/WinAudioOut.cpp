@@ -173,6 +173,9 @@ void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingT
       mSamplesBuffer.resize( framesAvailable );
     }
 
+    if ( !instance )
+      return;
+
     auto sps = correctedSPS( instance->globalSamplesEmittedPerFrame(), renderingTimeQPC );
 
     instance->setAudioOut( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable } );
