@@ -152,7 +152,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;$(SolutionDir)Encoder\API;$(SolutionDir)\libwav\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -213,7 +213,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;$(SolutionDir)Encoder\API;$(SolutionDir)\libwav\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -239,7 +239,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;$(SolutionDir)libFelix;$(SolutionDir)sol2\include\;$(SolutionDir)lua\;$(SolutionDir)Encoder\API;$(SolutionDir)\libwav\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -312,16 +312,16 @@
     <ProjectReference Include="..\Encoder\Encoder.vcxproj">
       <Project>{14586c3f-0d43-4d2b-b5d9-43141bcb515c}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\imgui.vcxproj">
+    <ProjectReference Include="..\libextern\imgui.vcxproj">
       <Project>{121b3d6e-b957-40fa-b554-8fdd1fba17cf}</Project>
     </ProjectReference>
     <ProjectReference Include="..\libFelix\libFelix.vcxproj">
       <Project>{f73558bd-d0f3-4ad9-b123-7cc346a21a70}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\libwav.vcxproj">
+    <ProjectReference Include="..\libextern\libwav.vcxproj">
       <Project>{9ea01067-b994-4bbe-b340-e626ee249427}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\lua.vcxproj">
+    <ProjectReference Include="..\libextern\lua.vcxproj">
       <Project>{d0242abd-a0bf-4500-ac25-5d3de0359bca}</Project>
     </ProjectReference>
   </ItemGroup>

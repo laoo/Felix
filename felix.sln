@@ -14,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "helpers", "helpers", "{01B8
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFelix", "libFelix\libFelix.vcxproj", "{F73558BD-D0F3-4AD9-B123-7CC346A21A70}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sol", "sol", "{500C37F9-B7EF-41AA-BF69-59E417608FD5}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sol", "libextern\sol", "{500C37F9-B7EF-41AA-BF69-59E417608FD5}"
 	ProjectSection(SolutionItems) = preProject
 		sol2\include\sol\as_args.hpp = sol2\include\sol\as_args.hpp
 		sol2\include\sol\as_returns.hpp = sol2\include\sol\as_returns.hpp
@@ -122,13 +122,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sol", "sol", "{500C37F9-B7E
 		sol2\include\sol\wrapper.hpp = sol2\include\sol\wrapper.hpp
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua", "lua.vcxproj", "{D0242ABD-A0BF-4500-AC25-5D3DE0359BCA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua", "libextern\lua.vcxproj", "{D0242ABD-A0BF-4500-AC25-5D3DE0359BCA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "imgui.vcxproj", "{121B3D6E-B957-40FA-B554-8FDD1FBA17CF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "libextern\imgui.vcxproj", "{121B3D6E-B957-40FA-B554-8FDD1FBA17CF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Encoder", "Encoder\Encoder.vcxproj", "{14586C3F-0D43-4D2B-B5D9-43141BCB515C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libwav", "libwav.vcxproj", "{9EA01067-B994-4BBE-B340-E626EE249427}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libwav", "libextern\libwav.vcxproj", "{9EA01067-B994-4BBE-B340-E626EE249427}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{88B0A14D-5C01-4FA8-9C4A-E82A8998D508}"
 	ProjectSection(SolutionItems) = preProject

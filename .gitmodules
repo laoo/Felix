@@ -1,13 +1,13 @@
 [submodule "imgui"]
-	path = imgui
+	path = libextern/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "lua"]
-	path = lua
+	path = libextern/lua
 	url = https://github.com/lua/lua.git
 	branch = v5.4.0
 [submodule "sol2"]
-	path = sol2
+	path = libextern/sol2
 	url = https://github.com/ThePhD/sol2.git
 [submodule "libwav"]
-	path = libwav
+	path = libextern/libwav
 	url = https://github.com/brglng/libwav.git
