@@ -14,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "helpers", "helpers", "{01B8
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFelix", "libFelix\libFelix.vcxproj", "{F73558BD-D0F3-4AD9-B123-7CC346A21A70}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sol", "libextern\sol", "{500C37F9-B7EF-41AA-BF69-59E417608FD5}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sol", "sol", "{500C37F9-B7EF-41AA-BF69-59E417608FD5}"
 	ProjectSection(SolutionItems) = preProject
 		sol2\include\sol\as_args.hpp = sol2\include\sol\as_args.hpp
 		sol2\include\sol\as_returns.hpp = sol2\include\sol\as_returns.hpp
@@ -136,6 +136,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{88B0A14D-5C0
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libextern", "libextern", "{85D85B3A-D982-4C06-B878-3266FD86B0C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -232,6 +234,10 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97} = {01B87F5A-7A71-4C3B-9578-B8F939BF4438}
+		{500C37F9-B7EF-41AA-BF69-59E417608FD5} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
+		{D0242ABD-A0BF-4500-AC25-5D3DE0359BCA} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
+		{121B3D6E-B957-40FA-B554-8FDD1FBA17CF} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
+		{9EA01067-B994-4BBE-B340-E626EE249427} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3B5A8028-FB31-42B8-8779-5CE2F6957369}
