@@ -11,9 +11,6 @@
 [submodule "libwav"]
 	path = libextern/libwav
 	url = https://github.com/brglng/libwav.git
-[submodule "libextern/ImFileDialog"]
-	path = libextern/ImFileDialog
-	url = https://github.com/dfranx/ImFileDialog
 [submodule "libextern/stb"]
 	path = libextern/stb
 	url = https://github.com/nothings/stb.git
