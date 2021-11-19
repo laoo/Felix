@@ -57,7 +57,6 @@ VidOperator::VidOperator( Suzy::Sprite spriteType ) :
 VidOperator::MemOp VidOperator::flush()
 {
   mOp.addr = mVidAdr + mOff;
-  mOp.op |= MemOp::MODIFY;
   return mOp;
 }
 

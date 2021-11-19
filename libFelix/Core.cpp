@@ -294,8 +294,9 @@ bool Core::executeSuzyAction()
     break;
   case ISuzyProcess::Request::XOR:
     {
-      auto value = mRAM[mSuzyProcessRequest->addr] ^ mSuzyProcessRequest->value;
-      mRAM[mSuzyProcessRequest->addr] = (uint8_t)value;
+      auto ramValue = mRAM[mSuzyProcessRequest->addr];
+      auto xorValue = ramValue ^ mSuzyProcessRequest->value;
+      mRAM[mSuzyProcessRequest->addr] = (uint8_t)xorValue;
     }
     mCurrentTick += 5ull + mFastCycleTick; //read & write byte
     break;
