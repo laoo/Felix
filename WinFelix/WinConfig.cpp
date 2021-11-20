@@ -1,24 +1,33 @@
 #include "pch.hpp"
 #include "WinConfig.hpp"
 
-WinConfig WinConfig::load( std::filesystem::path path )
+std::shared_ptr<WinConfig> WinConfig::load( std::filesystem::path path )
 {
   sol::state lua;
-  WinConfig result{};
+  auto result{ std::make_shared<WinConfig>() };
 
   path /= "WinConfig.lua";
 
-  if ( std::filesystem::exists( path ) )
-    lua.script_file( path.string() );
+  try
+  {
+    if ( std::filesystem::exists( path ) )
+      lua.script_file( path.string() );
 
-  result.mainWindow.x = lua["mainWindow"]["x"].get_or( CW_USEDEFAULT );
-  result.mainWindow.y = lua["mainWindow"]["y"].get_or( CW_USEDEFAULT );
-  result.mainWindow.width = lua["mainWindow"]["width"].get_or( 960 );
-  result.mainWindow.height = lua["mainWindow"]["height"].get_or( 630 );
-
-  result.singleInstance = lua["singleInstance"].get_or( false );
+    result->load( lua );
+  }
+  catch( ... )
+  {
+  }
 
   return result;
+}
+
+void WinConfig::load( sol::state const& lua )
+{
+  mainWindow.x = lua["mainWindow"]["x"].get_or( CW_USEDEFAULT );
+  mainWindow.y = lua["mainWindow"]["y"].get_or( CW_USEDEFAULT );
+  mainWindow.width = lua["mainWindow"]["width"].get_or( 960 );
+  mainWindow.height = lua["mainWindow"]["height"].get_or( 630 );
 }
 
 void WinConfig::serialize( std::filesystem::path path )
@@ -33,5 +42,4 @@ void WinConfig::serialize( std::filesystem::path path )
   fout << "\twidth = " << mainWindow.width << ";\n";
   fout << "\theight = " << mainWindow.height << ";\n";
   fout << "};\n";
-  fout << "singleInstance = " << ( singleInstance ? "true;\n" : "false;\n" );
 }

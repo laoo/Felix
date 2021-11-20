@@ -22,7 +22,7 @@ class TraceHelper;
 class Core
 {
 public:
-  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, std::span<InputFile> inputs );
+  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel );
   ~Core();
 
 

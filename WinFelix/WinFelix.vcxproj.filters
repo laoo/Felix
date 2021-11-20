@@ -10,6 +10,8 @@
     <ClCompile Include="WinConfig.cpp" />
     <ClCompile Include="WinImgui.cpp" />
     <ClCompile Include="WinImgui9.cpp" />
+    <ClCompile Include="ConfigProvider.cpp" />
+    <ClCompile Include="SysConfig.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -25,6 +27,8 @@
     <ClInclude Include="pixel.hxx" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui9.hpp" />
+    <ClInclude Include="ConfigProvider.hpp" />
+    <ClInclude Include="SysConfig.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />

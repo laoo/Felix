@@ -8,6 +8,9 @@
 #include "Manager.hpp"
 #include "ComLynxWire.hpp"
 #include "version.hpp"
+#include "ConfigProvider.hpp"
+#include "WinConfig.hpp"
+#include "SysConfig.hpp"
 
 wchar_t gClassName[] = L"FelixWindowClass";
 
@@ -67,15 +70,14 @@ int loop( Manager & manager )
   return 0;
 }
 
-bool checkInstance( std::wstring const& name, std::vector<std::wstring> const& args )
+bool checkInstance( std::wstring const& name, std::wstring const& arg )
 {
   if ( auto hwnd = FindWindowW( gClassName, name.c_str() ) )
   {
     std::vector<wchar_t> buffer;
-    for ( auto const& arg : args )
+    if ( !arg.empty() )
     {
       std::copy( arg.cbegin(), arg.cend(), std::back_inserter( buffer ) );
-      buffer.push_back( 0 );
     }
     buffer.push_back( 0 );
 
@@ -91,25 +93,31 @@ bool checkInstance( std::wstring const& name, std::vector<std::wstring> const& a
   return false;
 }
 
-int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
+
+std::wstring getCommandArg()
 {
-  L_SET_LOGLEVEL( Log::LL_DEBUG );
-
-  std::vector<std::wstring> args;
-
   LPWSTR* szArgList;
   int argCount;
 
   szArgList = CommandLineToArgvW( GetCommandLine(), &argCount );
-  if ( szArgList != NULL )
+  BOOST_SCOPE_EXIT_ALL( = )
   {
-    for ( int i = 1; i < argCount; i++ )
-    {
-      args.emplace_back( szArgList[i] );
-    }
-
     LocalFree( szArgList );
+  };
+
+  if ( szArgList != NULL && argCount > 1 )
+  {
+    return std::wstring{ szArgList[1] };
   }
+
+  return {};
+}
+
+int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
+{
+  L_SET_LOGLEVEL( Log::LL_DEBUG );
+
+  std::wstring arg = getCommandArg();
 
   Manager manager{};
 
@@ -139,12 +147,12 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     std::wstring name = L"Felix " + std::wstring{ version_string };
 
-    auto winConfig = manager.getWinConfig();
+    auto winConfig = gConfigProvider.winConfig();
 
-    if ( winConfig.singleInstance && checkInstance( name, args ) )
+    if ( gConfigProvider.sysConfig()->singleInstance && checkInstance( name, arg ) )
       return 0;
 
-    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, winConfig.mainWindow.x, winConfig.mainWindow.y, winConfig.mainWindow.width, winConfig.mainWindow.height, nullptr, nullptr, hInstance, &manager );
+    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, winConfig->mainWindow.x, winConfig->mainWindow.y, winConfig->mainWindow.width, winConfig->mainWindow.height, nullptr, nullptr, hInstance, &manager );
 
     if ( hwnd == nullptr )
     {
@@ -155,7 +163,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
     UpdateWindow( hwnd );
     DragAcceptFiles( hwnd, TRUE );
 
-    manager.doArgs( std::move( args ) );
+    manager.doArg( std::move( arg ) );
 
     return loop( manager );
   }

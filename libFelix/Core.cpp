@@ -17,9 +17,11 @@
 
 static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 
-Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, std::span<InputFile> inputs ) : mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{},
-  mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() }, mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire }, mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) },
-  mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE }, mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
+Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel ) :
+  mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
+  mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
+  mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
+  mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
 {
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
 
@@ -45,10 +47,9 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
     }
   }
 
-  for ( auto const& input : inputs )
-  {
-    injectFile( input );
-  }
+  injectFile( inputFile );
+  if ( kernel )
+    injectFile( *kernel );
 }
 
 void Core::injectFile( InputFile const & file )

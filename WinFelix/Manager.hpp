@@ -2,8 +2,6 @@
 
 #include "IInputSource.hpp"
 #include "IEscape.hpp"
-#include "WinConfig.hpp"
-
 
 class WinRenderer;
 class WinAudioOut;
@@ -29,8 +27,7 @@ public:
 
   void update();
   void reset();
-  void doArgs( std::vector<std::wstring> args );
-  WinConfig const& getWinConfig();
+  void doArg( std::wstring arg );
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
   void setWinImgui( std::shared_ptr<WinImgui> winImgui );
@@ -42,12 +39,12 @@ public:
   bool doRun() const;
 
 private:
-  void processLua( std::filesystem::path const& path, std::vector<InputFile>& inputs );
+  std::optional<InputFile> processLua( std::filesystem::path const& path );
+  std::optional<InputFile> computeInputFile();
   void stopThreads();
   void handleFileDrop( HDROP hDrop );
   bool handleCopyData( COPYDATASTRUCT const* copy );
   void processKeys();
-  static std::filesystem::path getAppDataFolder();
 private:
 
   struct InputSource : public IInputSource, public KeyInput
@@ -84,11 +81,9 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   std::unique_ptr<SymbolSource> mSymbols;
   std::shared_ptr<Core> mInstance;
-  std::vector<std::wstring> mArgs;
-  std::filesystem::path mAppDataFolder;
+  std::wstring mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;
-  WinConfig mWinConfig;
   sol::state mLua;
   std::vector<sol::function> mEscapes;
   sol::function mMonit;

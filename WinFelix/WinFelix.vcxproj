@@ -147,12 +147,14 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConfigProvider.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SysConfig.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinConfig.cpp" />
     <ClCompile Include="WinImgui.cpp" />
@@ -162,11 +164,13 @@
     <ClCompile Include="WinRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConfigProvider.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="Manager.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="pixel.hxx" />
     <ClInclude Include="renderer.hxx" />
+    <ClInclude Include="SysConfig.hpp" />
     <ClInclude Include="version.hpp" />
     <ClInclude Include="vertex.hxx" />
     <ClInclude Include="WinAudioOut.hpp" />
