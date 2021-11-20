@@ -192,7 +192,7 @@ bool Manager::mainMenu( ImGuiIO& io )
       }
       ImGui::EndMenu();
     }
-    if ( ImGui::BeginMenu( "System" ) )
+    if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
       if ( ImGui::BeginMenu( "Kernel" ) )
