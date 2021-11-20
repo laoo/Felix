@@ -37,7 +37,10 @@ void SysConfig::serialize( std::filesystem::path path )
 
 void SysConfig::load( sol::state const& lua )
 {
-  singleInstance = lua["singleInstance"].get_or( false );
-  kernel.useExternal = lua["kernel.useExternal"].get_or( false );
-  kernel.path = lua["kernel.path"].get_or( std::string{} );
+  if ( sol::optional<bool> opt = lua["singleInstance"] )
+    singleInstance = *opt;
+  if ( sol::optional<bool> opt = lua["kernel"]["useExternal"] )
+    kernel.useExternal = *opt;
+  if ( sol::optional<std::string> opt = lua["kernel"]["path"] )
+    kernel.path = *opt;
 }
