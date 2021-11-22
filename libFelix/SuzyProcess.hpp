@@ -19,9 +19,13 @@ public:
   Request const* advance() override;
   void respond( uint32_t value ) override;
 
-  void setFinish();
-
 private:
+
+  void setFinish()
+  {
+    mSuzy.mSpriteWorking = false;
+    request = { Request::FINISH };
+  }
 
   auto & suzyRead( uint16_t address )
   {
@@ -159,7 +163,6 @@ private:
 
 private:
   Suzy & mSuzy;
-  Suzy::SCB & mScb;
 
   Request request;
   Response response;

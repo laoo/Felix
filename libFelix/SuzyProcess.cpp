@@ -5,31 +5,15 @@
 #include "Log.hpp"
 #include "SpriteLineParser.hpp"
 
-SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mScb{ mSuzy.mSCB }, mProcessCoroutine{ process() }, request{}, response{}, mEveron{}
+SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mProcessCoroutine{ process() }, request{}, response{}, mEveron{}
 {
 }
 
-SuzyProcess::Request const * SuzyProcess::advance()
-{
-  mProcessCoroutine.resume();
-  return &request;
-}
-
-void SuzyProcess::respond( uint32_t value )
-{
-  response.value = value;
-}
-
-void SuzyProcess::setFinish()
-{
-  mSuzy.mSpriteWorking = false;
-  request = { Request::FINISH };
-}
 
 SuzyProcess::ProcessCoroutine SuzyProcess::process()
 {
-  auto & scb = mScb;
   auto & suzy = mSuzy;
+  auto & scb = mSuzy.mSCB;
 
   while ( ( scb.scbnext & 0xff00 ) != 0 )
   {
