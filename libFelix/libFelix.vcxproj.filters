@@ -48,7 +48,6 @@
     <ClInclude Include="CPUState.hpp" />
     <ClInclude Include="DefaultROM.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
-    <ClInclude Include="DisplayLine.hpp" />
     <ClInclude Include="Encryption.hpp" />
     <ClInclude Include="IEscape.hpp" />
     <ClInclude Include="ImageBIOS.hpp" />
