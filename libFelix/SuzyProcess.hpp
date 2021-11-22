@@ -22,7 +22,11 @@ public:
 
   Request const* advance() override
   {
-    mProcessCoroutine.resume();
+    if ( mSuzy.mSpriteWorking )
+      mProcessCoroutine.resume();
+    else
+      setFinish();
+
     return &request;
   }
 
