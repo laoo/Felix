@@ -10,6 +10,9 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
   auto & suzy = mSuzy;
   auto & scb = mSuzy.mSCB;
 
+  if ( !suzy.mSpriteWorking )
+    co_return;
+
   while ( ( scb.scbnext & 0xff00 ) != 0 )
   {
     scb.scbadr = scb.scbnext;
