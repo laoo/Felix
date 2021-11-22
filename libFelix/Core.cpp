@@ -15,13 +15,13 @@
 #include "KernelEscape.hpp"
 #include "TraceHelper.hpp"
 #include "DebugRAM.hpp"
-
+#include "ScriptDebugger.hpp"
 uint8_t* gDebugRAM;
 
 static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 
-Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel ) :
-  mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
+Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebugger> scriptDebugger ) :
+  mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mScriptDebugger{ std::move( scriptDebugger ) }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
   mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
   mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
@@ -346,72 +346,69 @@ void Core::executeCPUAction()
   switch ( action )
   {
   case CPUAction::FETCH_OPCODE_RAM:
-    mCpu->respond( mCurrentTick, mRAM[req.address] );
+    mCpu->respond( mCurrentTick, fetchRAM( req.address ) );
     mCurrentTick += fetchTiming( req.address );
     break;
   case CPUAction::FETCH_OPERAND_RAM:
-    mCpu->respond( mRAM[req.address] );
+    mCpu->respond( readRAM( req.address ) );
     mCurrentTick += fetchTiming( req.address );
     break;
   case CPUAction::READ_RAM:
-    mCpu->respond( mRAM[req.address] );
+    mCpu->respond( readRAM( req.address ) );
     mCurrentTick += readTiming( req.address );
     break;
   case CPUAction::WRITE_RAM:
-    mRAM[req.address] = req.value;
+    writeRAM( req.address, req.value );
     mCurrentTick += writeTiming( req.address );
     break;
   case CPUAction::FETCH_OPCODE_KENREL:
-    mCpu->respond( mCurrentTick, readKernel( req.address & 0x1ff ) );
+    mCpu->respond( mCurrentTick, readROM( req.address & 0x1ff, true ) );
     mCurrentTick += fetchTiming( req.address );
     break;
   case CPUAction::FETCH_OPERAND_KENREL:
-    mCpu->respond( readKernel( req.address & 0x1ff ) );
+    mCpu->respond( readROM( req.address & 0x1ff, false ) );
     mCurrentTick += fetchTiming( req.address );
     break;
   case CPUAction::READ_KENREL:
-    mCpu->respond( readKernel( req.address & 0x1ff ) );
+    mCpu->respond( readROM( req.address & 0x1ff, false ) );
     mCurrentTick += readTiming( req.address );
     break;
   case CPUAction::WRITE_KENREL:
-    writeKernel( req.address & 0x1ff, req.value );
+    writeROM( req.address & 0x1ff, req.value );
     mCurrentTick += writeTiming( req.address );
     break;
   case CPUAction::FETCH_OPCODE_SUZY:
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
-    mCpu->respond( mCurrentTick, mSuzy->read( req.address ) );
+    mCpu->respond( mCurrentTick, readSuzy( req.address ) );
     break;
   case CPUAction::FETCH_OPERAND_SUZY:
     [[fallthrough]];
   case CPUAction::READ_SUZY:
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
-    mCpu->respond( mSuzy->read( req.address ) );
+    mCpu->respond( readSuzy( req.address ) );
     mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   case CPUAction::WRITE_SUZY:
     mCurrentTick = mSuzy->requestWrite( mCurrentTick, req.address );
-    mSuzy->write( req.address, req.value );
+    writeSuzy( req.address, req.value );
     mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   case CPUAction::FETCH_OPCODE_MIKEY:
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
-    mCpu->respond( mCurrentTick, mMikey->read( req.address ) );
+    mCpu->respond( mCurrentTick, readMikey( req.address ) );
     break;
   case CPUAction::FETCH_OPERAND_MIKEY:
     [[fallthrough]];
   case CPUAction::READ_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
-    mCpu->respond( mMikey->read( req.address ) );
+    mCpu->respond( readMikey( req.address ) );
     mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   case CPUAction::WRITE_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
-    if ( auto mikeyAction = mMikey->write( req.address, req.value ) )
-    {
-      mActionQueue.push( mikeyAction );
-    }
+    writeMikey( req.address, req.value );
     mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   case CPUAction::DISCARD_READ_RAM:
@@ -611,51 +608,133 @@ uint64_t Core::writeTiming( uint16_t address )
   return 5;
 }
 
-uint8_t Core::readKernel( uint16_t address )
+uint8_t Core::fetchRAM( uint16_t address )
+{
+  uint8_t sourceByte = mRAM[address];
+  uint8_t filteredByte = mScriptDebugger->executeRAM( *this, address, sourceByte );
+  return filteredByte;
+}
+
+uint8_t Core::fetchROM( uint16_t address )
+{
+  uint8_t sourceByte = mROM[address];
+  uint8_t filteredByte = mScriptDebugger->executeROM( *this, address, sourceByte );
+  return filteredByte;
+}
+
+uint8_t Core::readRAM( uint16_t address )
+{
+  uint8_t sourceByte = mRAM[address];
+  uint8_t filteredByte = mScriptDebugger->readRAM( *this, address, sourceByte );
+  return filteredByte;
+}
+
+uint8_t Core::readROM( uint16_t address )
+{
+  uint8_t sourceByte = mROM[address];
+  uint8_t filteredByte = mScriptDebugger->readROM( *this, address, sourceByte );
+  return filteredByte;
+}
+
+void Core::writeRAM( uint16_t address, uint8_t value )
+{
+  uint8_t filteredByte = mScriptDebugger->writeRAM( *this, address, value );
+  mRAM[address] = filteredByte;
+}
+
+uint8_t Core::readMikey( uint16_t address )
+{
+  mCurrentTick = mMikey->requestAccess( mCurrentTick, address );
+  uint8_t sourceByte = mMikey->read( address );
+  uint8_t filteredByte = mScriptDebugger->readMikey( *this, address, sourceByte );
+  return filteredByte;
+}
+
+void Core::writeMikey( uint16_t address, uint8_t value )
+{
+  uint8_t filteredByte = mScriptDebugger->writeMikey( *this, address, value );
+  if ( auto mikeyAction = mMikey->write( address, filteredByte ) )
+  {
+    mActionQueue.push( mikeyAction );
+  }
+}
+
+uint8_t Core::readSuzy( uint16_t address )
+{
+  uint8_t sourceByte = mSuzy->read( address );
+  uint8_t filteredByte = mScriptDebugger->readSuzy( *this, address, sourceByte );
+  return filteredByte;
+}
+
+void Core::writeSuzy( uint16_t address, uint8_t value )
+{
+  uint8_t filteredByte = mScriptDebugger->writeSuzy( *this, address, value );
+  mSuzy->write( address, filteredByte );
+}
+
+uint8_t Core::readROM( uint16_t address, bool isFetch )
 {
   if ( address >= 0x1fa )
   {
-    uint8_t * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
-    return ptr[address];
+    if ( mMapCtl.vectorSpaceDisable )
+    {
+      return isFetch ? fetchRAM( address + 0xfe00 ) : readRAM( address + 0xfe00 );
+    }
+    else
+    {
+      return isFetch ? fetchROM( address ) : readROM( address );
+    }
   }
   else if ( address < 0x1f8 )
   {
-    uint8_t * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
-    return ptr[address];
+    if ( mMapCtl.kernelDisable )
+    {
+      return isFetch ? fetchRAM( address + 0xfe00 ) : readRAM( address + 0xfe00 );
+    }
+    else
+    {
+      return isFetch ? fetchROM( address ) : readROM( address );
+    }
   }
   else if ( address == 0x1f9 )
   {
-    return 0xf0 | //high nibble of MAPCTL is set
+    uint8_t result = 0xf0 | //high nibble of MAPCTL is set
       ( mMapCtl.vectorSpaceDisable ? 0x08 : 0x00 ) |
       ( mMapCtl.kernelDisable ? 0x04 : 0x00 ) |
       ( mMapCtl.mikeyDisable ? 0x02 : 0x00 ) |
       ( mMapCtl.suzyDisable ? 0x01 : 0x00 );
+
+    return mScriptDebugger->readMapCtl( *this, result );
   }
   else
   {
     //there is always RAM at 0xfff8
-    return mRAM[0xfe00 + address];
+    return isFetch ? fetchRAM( address + 0xfe00 ) : readRAM( address + 0xfe00 );
   }
 }
 
-void Core::writeKernel( uint16_t address, uint8_t value )
+void Core::writeROM( uint16_t address, uint8_t value )
 {
   if ( address >= 0x1fa && mMapCtl.vectorSpaceDisable || address < 0x1f8 && mMapCtl.kernelDisable || address == 0x1f8 )
   {
-    mRAM[0xfe00 + address] = value;
+    writeRAM( 0xfe00 + address, value );
   }
   else if ( address == 0x1f9 )
   {
+    value = mScriptDebugger->writeMapCtl( *this, value );
     writeMAPCTL( value );
   }
   else
   {
-    return; //ignore write to ROM
+    mScriptDebugger->writeROM( *this, address, value );
+    //ignore write to ROM
   }
 }
 
 void Core::writeMAPCTL( uint8_t value )
 {
+  value = mScriptDebugger->writeMapCtl( *this, value );
+
   mMapCtl.sequentialDisable = ( value & 0x80 ) != 0;
   mMapCtl.vectorSpaceDisable = ( value & 0x08 ) != 0;
   mMapCtl.kernelDisable = ( value & 0x04 ) != 0;
@@ -668,12 +747,49 @@ void Core::writeMAPCTL( uint8_t value )
   mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
 }
 
-uint8_t Core::sampleRam( uint16_t addr ) const
-{
-  return mRAM[addr];
-}
-
 uint64_t Core::tick() const
 {
   return mCurrentTick;
+}
+
+uint8_t Core::debugReadRAM( uint16_t address ) const
+{
+  return mRAM[address];
+}
+
+void Core::debugWriteRAM( uint16_t address, uint8_t value )
+{
+  mRAM[address] = value;
+}
+
+uint8_t Core::debugReadMikey( uint16_t address ) const
+{
+  mMikey->requestAccess( mCurrentTick, address );
+  return mMikey->read( address );
+}
+
+void Core::debugWriteMikey( uint16_t address, uint8_t value )
+{
+  mMikey->requestAccess( mCurrentTick, address );
+  if ( auto mikeyAction = mMikey->write( address, value ) )
+  {
+    mActionQueue.push( mikeyAction );
+  }
+}
+
+uint8_t Core::debugReadSuzy( uint16_t address ) const
+{
+  mSuzy->requestRead( mCurrentTick, address );
+  return mSuzy->read( address );
+}
+
+void Core::debugWriteSuzy( uint16_t address, uint8_t value )
+{
+  mSuzy->requestWrite( mCurrentTick, address );
+  mSuzy->write( address, value );
+}
+
+CPUState& Core::debugState()
+{
+  return mCpu->state();
 }

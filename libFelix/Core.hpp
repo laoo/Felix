@@ -17,11 +17,13 @@ class ImageBIOS;
 class IEscape;
 class ComLynxWire;
 class TraceHelper;
+class ScriptDebugger;
+struct CPUState;
 
 class Core
 {
 public:
-  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel );
+  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebugger> scriptDebugger );
   ~Core();
 
 
@@ -36,9 +38,16 @@ public:
   int64_t globalSamplesEmittedPerFrame() const;
   ImageCart::Rotation rotation() const;
 
-  //Not thread safe. Used only for monitoring
-  uint8_t sampleRam( uint16_t addr ) const;
   uint64_t tick() const;
+
+  //Not thread safe. Used only for script escapes
+  uint8_t debugReadRAM( uint16_t address ) const;
+  void debugWriteRAM( uint16_t address, uint8_t value );
+  uint8_t debugReadMikey( uint16_t address ) const;
+  void debugWriteMikey( uint16_t address, uint8_t value );
+  uint8_t debugReadSuzy( uint16_t address ) const;
+  void debugWriteSuzy( uint16_t address, uint8_t value );
+  CPUState& debugState();
 
 
 private:
@@ -69,8 +78,17 @@ private:
   void executeCPUAction();
   void handlePatch( uint16_t address );
 
-  uint8_t readKernel( uint16_t address );
-  void writeKernel( uint16_t address, uint8_t value );
+  uint8_t fetchRAM( uint16_t address );
+  uint8_t readRAM( uint16_t address );
+  void writeRAM( uint16_t address, uint8_t value );
+  uint8_t readMikey( uint16_t address );
+  void writeMikey( uint16_t address, uint8_t value );
+  uint8_t readSuzy( uint16_t address );
+  void writeSuzy( uint16_t address, uint8_t value );
+  uint8_t readROM( uint16_t address, bool isFetch );
+  uint8_t readROM( uint16_t address );
+  uint8_t fetchROM( uint16_t address );
+  void writeROM( uint16_t address, uint8_t value );
 
   void pulseReset( std::optional<uint16_t> resetAddress = std::nullopt );
   void writeMAPCTL( uint8_t value );
@@ -95,6 +113,7 @@ private:
   std::array<uint8_t, 512> mROM;
   std::array<PageType, 256> mPageTypes;
   std::array<std::shared_ptr<IEscape>, 16> mEscapes;
+  std::shared_ptr<ScriptDebugger> mScriptDebugger;
   uint64_t mCurrentTick;
   int mSamplesRemainder;
   int mSPS;

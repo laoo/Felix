@@ -16,6 +16,7 @@
 #include "ConfigProvider.hpp"
 #include "WinConfig.hpp"
 #include "SysConfig.hpp"
+#include "ScriptDebugger.hpp"
 #include <imfilebrowser.h>
 
 namespace
@@ -39,7 +40,7 @@ std::optional<InputFile> getOptionalKernel()
 }
 
 Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{}, mJoinThreads{}, mPaused{},
-  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }
+  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }, mScriptDebugger{ std::make_shared<ScriptDebugger>() }
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -543,7 +544,7 @@ void Manager::reset()
 
   if ( auto input = computeInputFile() )
   {
-    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, *input, getOptionalKernel() );
+    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, *input, getOptionalKernel(), mScriptDebugger );
 
     mRenderer->setRotation( mInstance->rotation() );
 

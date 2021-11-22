@@ -12,6 +12,7 @@ class SymbolSource;
 class InputFile;
 class IEncoder;
 class WinImgui;
+class ScriptDebugger;
 struct ImGuiIO;
 
 namespace ImGui
@@ -81,6 +82,7 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   std::unique_ptr<SymbolSource> mSymbols;
   std::shared_ptr<Core> mInstance;
+  std::shared_ptr<ScriptDebugger> mScriptDebugger;
   std::wstring mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;

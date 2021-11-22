@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClCompile Include="ActionQueue.cpp" />
     <ClCompile Include="EEPROM.cpp" />
+    <ClCompile Include="ScriptDebugger.cpp" />
     <ClCompile Include="TraceHelper.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="CartBank.cpp" />
@@ -54,6 +55,8 @@
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="EEPROM.hpp" />
+    <ClInclude Include="ScriptDebugger.hpp" />
+    <ClInclude Include="IMemoryAccessTrap.hpp" />
     <ClInclude Include="TraceHelper.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="CartBank.hpp" />
