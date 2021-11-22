@@ -14,10 +14,22 @@ public:
 
 public:
 
-  SuzyProcess( Suzy & suzy );
+  SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mProcessCoroutine{ process() }, request{}, response{}
+  {
+  }
+
   ~SuzyProcess() override = default;
-  Request const* advance() override;
-  void respond( uint32_t value ) override;
+
+  Request const* advance() override
+  {
+    mProcessCoroutine.resume();
+    return &request;
+  }
+
+  void respond( uint32_t value ) override
+  {
+    response.value = value;
+  }
 
 private:
 
@@ -166,6 +178,4 @@ private:
 
   Request request;
   Response response;
-
-  bool mEveron;
 };

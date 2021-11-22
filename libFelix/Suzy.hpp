@@ -331,14 +331,12 @@ private:
   bool mReusePalette;
   bool mSkipSprite;
   bool mEveron;
-  bool mDisableCollisions;
   Quadrant mStartingQuadrant;
   BPP mBpp;
   Sprite mSpriteType;
   Reload mReload;
   uint8_t mSprColl;
   uint8_t mSprInit; //should be 0xf3
-  std::optional<uint8_t> mFred;
 
   static constexpr std::array<std::array<Quadrant, 4>,4> mQuadrantOrder ={
     std::array<Quadrant, 4>{ Quadrant::DOWN_RIGHT, Quadrant::UP_RIGHT, Quadrant::UP_LEFT, Quadrant::DOWN_LEFT },

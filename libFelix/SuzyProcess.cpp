@@ -5,11 +5,6 @@
 #include "Log.hpp"
 #include "SpriteLineParser.hpp"
 
-SuzyProcess::SuzyProcess( Suzy & suzy ) : mSuzy{ suzy }, mProcessCoroutine{ process() }, request{}, response{}, mEveron{}
-{
-}
-
-
 SuzyProcess::ProcessCoroutine SuzyProcess::process()
 {
   auto & suzy = mSuzy;
@@ -96,19 +91,17 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
       }
     }
 
-    suzy.mDisableCollisions = suzy.mNoCollide ||
+    bool disableCollisions = suzy.mNoCollide ||
       ( ( suzy.mSprColl & Suzy::SPRCOLL::NO_COLLIDE ) == 1 ) ||
       ( suzy.mSpriteType == Suzy::Sprite::BACKNONCOLL ) ||
       ( suzy.mSpriteType == Suzy::Sprite::NONCOLL );
-
-    suzy.mFred = std::nullopt;
+    bool everon = false;
+    std::optional<uint8_t> fred = std::nullopt;
 
     {
 
       VidOperator vidOp{ suzy.mSpriteType };
       ColOperator colOp{ suzy.mSpriteType, (uint8_t)(suzy.mSprColl & Suzy::SPRCOLL::NUMBER_MASK) };
-
-      mEveron = false;
 
       auto const& quadCycle = suzy.mQuadrantOrder[(size_t)suzy.mStartingQuadrant];
 
@@ -180,7 +173,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
                   {
                     const uint8_t penNumber = suzy.mPalette[*penIndex];
 
-                    if ( !suzy.mDisableCollisions )
+                    if ( !disableCollisions )
                     {
                       if ( auto memOp = colOp.process( sprhpos, penNumber ) )
                       {
@@ -204,7 +197,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
                       break;
                     }
 
-                    mEveron = true;
+                    everon = true;
                   }
                   sprhpos += dx;
                 }
@@ -219,7 +212,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
                 co_await suzyVidRMW( memOp.addr, memOp.value, memOp.mask() );
                 break;
               }
-              if ( !suzy.mDisableCollisions )
+              if ( !disableCollisions )
               {
                 if ( auto memOp = colOp.flush() )
                 {
@@ -240,21 +233,24 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
         if ( scb.sprdoff == 0 )
           break;
       }
-      auto fred = colOp.hiColl();
-      if ( !suzy.mDisableCollisions && fred )
+
+      if ( !disableCollisions )
       {
-        suzy.mFred = *fred & 0x0f;
+        if ( auto fred = colOp.hiColl() )
+        {
+          fred = *fred & 0x0f;
+        }
       }
     }
 
-    if ( suzy.mEveron && mEveron )
+    if ( suzy.mEveron && everon )
     {
-      suzy.mFred = suzy.mFred.value_or( 0 ) | 0x80;
+      fred = fred.value_or( 0 ) | 0x80;
     }
 
-    if ( suzy.mFred )
+    if ( fred )
     {
-      co_await suzyWriteFred( (uint16_t)( scb.scbadr + scb.colloff ), *suzy.mFred );
+      co_await suzyWriteFred( (uint16_t)( scb.scbadr + scb.colloff ), *fred );
     }
 
     if ( suzy.mSpriteStop )
