@@ -1,7 +1,5 @@
 #pragma once
 
-struct MemU;
-
 class ImageBS93
 {
 public:
@@ -18,7 +16,7 @@ public:
 public:
   ImageBS93( std::vector<uint8_t> data );
 
-  std::optional<uint16_t> load( std::span<MemU> memory ) const;
+  std::optional<uint16_t> load( std::span<uint8_t> memory ) const;
 
 private:
   uint16_t getLoadAddress() const;

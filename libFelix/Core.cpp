@@ -14,6 +14,9 @@
 #include "DefaultROM.hpp"
 #include "KernelEscape.hpp"
 #include "TraceHelper.hpp"
+#include "DebugRAM.hpp"
+
+uint8_t* gDebugRAM;
 
 static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 
@@ -23,6 +26,7 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
   mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
 {
+  gDebugRAM = &mRAM[0];
   std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
 
   mEscapes[0xf] = std::make_shared<KernelEscape>( mTraceHelper );
@@ -117,6 +121,7 @@ void Core::pulseReset( std::optional<uint16_t> resetAddress )
 
 Core::~Core()
 {
+  gDebugRAM = nullptr;
 }
 
 void Core::requestDisplayDMA( uint64_t tick, uint16_t address )
@@ -440,10 +445,10 @@ void Core::handlePatch( uint16_t address )
     {
       struct Accessor : public IEscape::IAccessor
       {
-        Accessor( std::array<MemU, 65536> & ram, Mikey & mikey, Suzy & suzy, CPUState & state, ActionQueue & actionQueue, uint64_t currentTick ) : currentTick{ currentTick }, ram{ ram }, mikey{ mikey }, suzy{ suzy }, s{ state }, actionQueue{ actionQueue }{}
+        Accessor( std::array<uint8_t, 65536> & ram, Mikey & mikey, Suzy & suzy, CPUState & state, ActionQueue & actionQueue, uint64_t currentTick ) : currentTick{ currentTick }, ram{ ram }, mikey{ mikey }, suzy{ suzy }, s{ state }, actionQueue{ actionQueue }{}
 
         uint64_t currentTick;
-        std::array<MemU, 65536> & ram;
+        std::array<uint8_t, 65536> & ram;
         Mikey & mikey;
         Suzy & suzy;
         CPUState & s;
@@ -610,12 +615,12 @@ uint8_t Core::readKernel( uint16_t address )
 {
   if ( address >= 0x1fa )
   {
-    MemU * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
+    uint8_t * ptr = mMapCtl.vectorSpaceDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
     return ptr[address];
   }
   else if ( address < 0x1f8 )
   {
-    MemU * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
+    uint8_t * ptr = mMapCtl.kernelDisable ? ( mRAM.data() + 0xfe00 ) : ( mROM.data() );
     return ptr[address];
   }
   else if ( address == 0x1f9 )

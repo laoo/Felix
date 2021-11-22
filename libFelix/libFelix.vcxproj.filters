@@ -72,7 +72,7 @@
     <ClInclude Include="Utility.hpp" />
     <ClInclude Include="VidOperator.hpp" />
     <ClInclude Include="IInputSource.hpp" />
-    <ClInclude Include="MemoryUnit.hpp" />
+    <ClInclude Include="DebugRAM.hpp" />
     <ClInclude Include="Monitor.hpp" />
     <ClInclude Include="GameDrive.hpp" />
     <ClInclude Include="SymbolSource.hpp" />

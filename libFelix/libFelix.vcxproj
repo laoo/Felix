@@ -80,7 +80,7 @@
     <ClInclude Include="IVideoSink.hpp" />
     <ClInclude Include="KernelEscape.hpp" />
     <ClInclude Include="Log.hpp" />
-    <ClInclude Include="MemoryUnit.hpp" />
+    <ClInclude Include="DebugRAM.hpp" />
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Monitor.hpp" />
     <ClInclude Include="Opcodes.hpp" />

@@ -1,12 +1,11 @@
 #include "pch.hpp"
 #include "ImageBS93.hpp"
-#include "MemoryUnit.hpp"
 
 ImageBS93::ImageBS93( std::vector<uint8_t> data ) : mData{ std::move( data ) }
 {
 }
 
-std::optional<uint16_t> ImageBS93::load( std::span<MemU> memory ) const
+std::optional<uint16_t> ImageBS93::load( std::span<uint8_t> memory ) const
 {
   uint16_t loadAddress = getLoadAddress();
   uint16_t size = getSize();
