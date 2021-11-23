@@ -47,49 +47,49 @@ public:
     switch ( type )
     {
     case Type::RAM_READ:
-      helper( mRamReadTraps[address], std::move( trap ) );
+      helper( { mRamReadTraps.data(), mRamReadTraps.size() }, mRamReadMask[address], address, std::move( trap ) );
       break;
     case Type::RAM_WRITE:
-      helper( mRamWriteTraps[address], std::move( trap ) );
+      helper( { mRamWriteTraps.data(), mRamWriteTraps.size() }, mRamWriteMask[address], address, std::move( trap ) );
       break;
     case Type::RAM_EXECUTE:
-      helper( mRamExecuteTraps[address], std::move( trap ) );
+      helper( { mRamExecuteTraps.data(), mRamExecuteTraps.size() }, mRamExecuteMask[address], address, std::move( trap ) );
       break;
     case Type::ROM_READ:
-      helper( mRomReadTraps[address & 0x1ff], std::move( trap ) );
+      helper( { mRomReadTraps.data(), mRomReadTraps.size() }, mRomReadMask[address & 0x1ff], address & 0x1ff, std::move( trap ) );
       break;
     case Type::ROM_WRITE:
-      helper( mRomWriteTraps[address & 0x1ff], std::move( trap ) );
+      helper( { mRomWriteTraps.data(), mRomWriteTraps.size() }, mRomWriteMask[address & 0x1ff], address & 0x1ff, std::move( trap ) );
       break;
     case Type::ROM_EXECUTE:
-      helper( mRomExecuteTraps[address & 0x1ff], std::move( trap ) );
+      helper( { mRomExecuteTraps.data(), mRomExecuteTraps.size() }, mRomExecuteMask[address & 0x1ff], address & 0x1ff, std::move( trap ) );
       break;
     case Type::MIKEY_READ:
-      helper( mMikeyReadTraps[address & 0xff], std::move( trap ) );
+      helper( { mMikeyReadTraps.data(), mMikeyReadTraps.size() }, mMikeyReadMask[address & 0xff], address & 0xff, std::move( trap ) );
       break;
     case Type::MIKEY_WRITE:
-      helper( mMikeyWriteTraps[address & 0xff], std::move( trap ) );
+      helper( { mMikeyWriteTraps.data(), mMikeyWriteTraps.size() }, mMikeyWriteMask[address & 0xff], address & 0xff, std::move( trap ) );
       break;
     case Type::SUZY_READ:
-      helper( mSuzyReadTraps[address & 0xff], std::move( trap ) );
+      helper( { mSuzyReadTraps.data(), mSuzyReadTraps.size() }, mSuzyReadMask[address & 0xff], address & 0xff, std::move( trap ) );
       break;
     case Type::SUZY_WRITE:
-      helper( mSuzyWriteTraps[address & 0xff], std::move( trap ) );
+      helper( { mSuzyWriteTraps.data(), mSuzyWriteTraps.size() }, mSuzyWriteMask[address & 0xff], address & 0xff, std::move( trap ) );
       break;
     case Type::MAPCTL_READ:
-      helper( mMapCtlReadTrap, std::move( trap ) );
+      helper( { &mMapCtlReadTrap, 1 }, 0, std::move( trap ) );
       break;
     case Type::MAPCTL_WRITE:
-      helper( mMapCtlWriteTrap, std::move( trap ) );
+      helper( { &mMapCtlWriteTrap, 1 }, 0, std::move( trap ) );
       break;
     }
   }
 
   uint8_t readRAM( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mRamReadTraps[address].get() )
+    if ( mRamReadMask( address ) )
     {
-      return trap->trap( core, address, orgValue );
+      return mRamReadTraps[address]->trap( core, address, orgValue );
     }
     else
     {
@@ -99,9 +99,9 @@ public:
 
   uint8_t writeRAM( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mRamWriteTraps[address].get() )
+    if ( mRamWriteMask( address ) )
     {
-      return trap->trap( core, address, orgValue );
+      return mRamWriteTraps[address]->trap( core, address, orgValue );
     }
     else
     {
@@ -111,9 +111,9 @@ public:
 
   uint8_t executeRAM( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mRamExecuteTraps[address].get() )
+    if ( mRamExecuteMask( address ) )
     {
-      return trap->trap( core, address, orgValue );
+      return mRamExecuteTraps[address]->trap( core, address, orgValue );
     }
     else
     {
@@ -123,9 +123,9 @@ public:
 
   uint8_t readROM( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mRomReadTraps[address].get() )
+    if ( mRomReadMask( address ) )
     {
-      return trap->trap( core, address + 0xfe00, orgValue );
+      return mRomReadTraps[address]->trap( core, address + 0xfe00, orgValue );
     }
     else
     {
@@ -135,9 +135,9 @@ public:
 
   uint8_t writeROM( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mRomWriteTraps[address].get() )
+    if ( mRomWriteMask( address ) )
     {
-      return trap->trap( core, address + 0xfe00, orgValue );
+      return mRomWriteTraps[address]->trap( core, address + 0xfe00, orgValue );
     }
     else
     {
@@ -147,9 +147,9 @@ public:
 
   uint8_t executeROM( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mRomExecuteTraps[address].get() )
+    if ( mRomExecuteMask(address) )
     {
-      return trap->trap( core, address + 0xfe00, orgValue );
+      return mRomExecuteTraps[address]->trap( core, address + 0xfe00, orgValue );
     }
     else
     {
@@ -159,9 +159,9 @@ public:
 
   uint8_t readMikey( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mMikeyReadTraps[address & 0xff].get() )
+    if ( mMikeyReadMask( address & 0xff ) )
     {
-      return trap->trap( core, address, orgValue );
+      return mMikeyReadTraps[address & 0xff]->trap( core, address, orgValue );
     }
     else
     {
@@ -171,9 +171,9 @@ public:
 
   uint8_t writeMikey( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mMikeyWriteTraps[address & 0xff].get() )
+    if ( mMikeyWriteMask( address & 0xff ) )
     {
-      return trap->trap( core, address, orgValue );
+      return mMikeyWriteTraps[address & 0xff]->trap( core, address, orgValue );
     }
     else
     {
@@ -183,9 +183,9 @@ public:
 
   uint8_t readSuzy( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mSuzyReadTraps[address & 0xff].get() )
+    if ( mSuzyReadMask( address & 0xff ) )
     {
-      return trap->trap( core, address, orgValue );
+      return mSuzyReadTraps[address & 0xff]->trap( core, address, orgValue );
     }
     else
     {
@@ -195,9 +195,9 @@ public:
 
   uint8_t writeSuzy( Core& core, uint16_t address, uint8_t orgValue )
   {
-    if ( auto trap = mSuzyWriteTraps[address & 0xff].get() )
+    if ( mSuzyWriteMask( address & 0xff ) )
     {
-      return trap->trap( core, address, orgValue );
+      return mSuzyWriteTraps[address & 0xff]->trap( core, address, orgValue );
     }
     else
     {
@@ -230,33 +230,96 @@ public:
   }
 
 private:
-  void helper( std::shared_ptr<IMemoryAccessTrap>& dest, std::shared_ptr<IMemoryAccessTrap> src )
+
+  struct Proxy
   {
-    if ( dest )
+    uint8_t& byte;
+    uint8_t mask;
+
+    void operator=( bool bit )
     {
-      auto tmp = std::move( dest );
-      dest = std::make_shared<CompositeTrap>( std::move( tmp ), std::move( src ) );
+      if ( bit )
+      {
+        byte |= mask;
+      }
+      else
+      {
+        byte &= ~mask;
+      }
+    }
+
+    explicit operator bool() const
+    {
+      return ( byte & mask ) != 0;
+    }
+  };
+
+  template<size_t SIZE>
+  struct BitArray : public std::array<uint8_t, SIZE / 8>
+  {
+
+    constexpr bool operator()( size_t pos ) const
+    {
+      return ( std::array<uint8_t, SIZE / 8>::operator[]( pos >> 3 ) & ( 1 << ( pos & 7 ) ) ) != 0;
+    }
+
+    constexpr Proxy operator[]( size_t pos )
+    {
+      return Proxy{ std::array<uint8_t, SIZE / 8>::operator[]( pos >> 3 ), (uint8_t)( 1 << ( pos & 7 ) ) };
+    }
+  };
+
+  void helper( std::span<std::shared_ptr<IMemoryAccessTrap>> dest, uint16_t address, std::shared_ptr<IMemoryAccessTrap> src )
+  {
+    if ( dest[address] )
+    {
+      auto tmp = std::move( dest[address] );
+      dest[address] = std::make_shared<CompositeTrap>( std::move( tmp ), std::move( src ) );
     }
     else
     {
-      dest = std::move( src );
+      dest[address] = std::move( src );
     }
   }
 
+  void helper( std::span<std::shared_ptr<IMemoryAccessTrap>> dest, Proxy proxy, uint16_t address, std::shared_ptr<IMemoryAccessTrap> src )
+  {
+    if ( proxy )
+    {
+      auto tmp = std::move( dest[address] );
+      dest[address] = std::make_shared<CompositeTrap>( std::move( tmp ), std::move( src ) );
+    }
+    else
+    {
+      dest[address] = std::move( src );
+      proxy = true;
+    }
+  }
+
+
 private:
-  //TODO: compare performance with unordered map
+  BitArray<65536> mRamReadMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 65536> mRamReadTraps;
+  BitArray<65536> mRamWriteMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 65536> mRamWriteTraps;
+  BitArray<65536> mRamExecuteMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 65536> mRamExecuteTraps;
 
+  BitArray<512> mRomReadMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 512> mRomReadTraps;
+  BitArray<512> mRomWriteMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 512> mRomWriteTraps;
+  BitArray<512> mRomExecuteMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 512> mRomExecuteTraps;
 
+  BitArray<256> mMikeyReadMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 256> mMikeyReadTraps;
+  BitArray<256> mMikeyWriteMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 256> mMikeyWriteTraps;
 
+  BitArray<256> mSuzyReadMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 256> mSuzyReadTraps;
+  BitArray<256> mSuzyWriteMask;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 256> mSuzyWriteTraps;
 
   std::shared_ptr<IMemoryAccessTrap> mMapCtlReadTrap;
