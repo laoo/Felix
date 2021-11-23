@@ -9,27 +9,24 @@
 #include "ImageBS93.hpp"
 #include "ImageBIOS.hpp"
 #include "ImageCart.hpp"
-#include "IEscape.hpp"
 #include "Log.hpp"
-#include "DefaultROM.hpp"
-#include "KernelEscape.hpp"
+#include "KernelTraps.hpp"
 #include "TraceHelper.hpp"
 #include "DebugRAM.hpp"
-#include "ScriptDebugger.hpp"
+#include "ScriptDebuggerEscapes.hpp"
 uint8_t* gDebugRAM;
 
+static constexpr uint64_t RESET_DURATION = 5 * 10;  //asserting RESET for 10 cycles to make sure none will miss it
 static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 
-Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebugger> scriptDebugger ) :
-  mRAM{}, mROM{}, mPageTypes{}, mEscapes{}, mScriptDebugger{ std::move( scriptDebugger ) }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
+
+Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes ) :
+  mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
   mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
   mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
 {
   gDebugRAM = &mRAM[0];
-  std::copy( gDefaultROM.cbegin(), gDefaultROM.cend(), mROM.begin() );
-
-  mEscapes[0xf] = std::make_shared<KernelEscape>( mTraceHelper );
 
   for ( size_t i = 0; i < mPageTypes.size(); ++i )
   {
@@ -51,48 +48,60 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
     }
   }
 
-  injectFile( inputFile );
-  if ( kernel )
-    injectFile( *kernel );
-}
-
-void Core::injectFile( InputFile const & file )
-{
-  switch ( file.getType() )
+  switch ( inputFile.getType() )
   {
   case InputFile::FileType::BS93:
-    if ( auto runAddress = file.getBS93()->load( { mRAM.data(), mRAM.size() } ) )
+    if ( auto runAddress = inputFile.getBS93()->load( { mRAM.data(), mRAM.size() } ) )
     {
       pulseReset( runAddress );
     }
     break;
-  case InputFile::FileType::BIOS:
-    file.getBIOS()->load( { mROM.data(), mROM.size() } );
-    pulseReset();
-    break;
   case InputFile::FileType::CART:
-    mCartridge = std::make_shared<Cartridge>( file.getCart(), mTraceHelper );
+    mCartridge = std::make_shared<Cartridge>( inputFile.getCart(), mTraceHelper );
     pulseReset();
     break;
   default:
     break;
   }
+
+  if ( kernel )
+  {
+    kernel->getBIOS()->load( { mROM.data(), mROM.size() } );
+    pulseReset();
+  }
+  else
+  {
+    setDefaultROM();
+  }
+
+  scriptDebuggerEscapes->populateScriptDebugger( *mScriptDebugger );
+}
+
+void Core::setDefaultROM()
+{
+  std::fill( mROM.begin(), mROM.end(), 0xff );
+
+  auto setVec = [mem = mROM.data() - 0xfe00]( uint16_t src, uint16_t dst )
+  {
+    mem[src + 0] = dst & 0xff;
+    mem[src + 1] = dst >> 8;
+  };
+
+  //reset vector points to reset handler
+  setVec( CPU::RESET_VECTOR, KERNEL_RESET_HANDLER_ADDRESS );
+  //reset handler jumps to clear handler
+  setVec( KERNEL_RESET_HANDLER_ADDRESS + 1, KERNEL_CLEAR_HANDLER_ADDRESS );
+  //clear handler jumps to shift handler
+  setVec( KERNEL_CLEAR_HANDLER_ADDRESS + 1, KERNEL_SHIFT_HANDLER_ADDRESS );
+  //decrypt handler jumps to beginning of decrypted rom
+  setVec( KERNEL_DECRYPT_HANDLER_ADDRESS + 1, DECRYPTED_ROM_START_ADDRESS );
+
+  setKernelTraps( mTraceHelper, *mScriptDebugger );
 }
 
 void Core::setLog( std::filesystem::path const & path, uint64_t startCycle )
 {
   mCpu->setLog( path, startCycle, mTraceHelper );
-}
-
-void Core::setEscape( size_t idx, std::shared_ptr<IEscape> esc )
-{
-  if ( idx >= 0x10 )
-  {
-    L_ERROR << "Bad escape index " << idx;
-    return;
-  }
-
-  mEscapes[idx] = std::move( esc );
 }
 
 void Core::pulseReset( std::optional<uint16_t> resetAddress )
@@ -115,7 +124,7 @@ void Core::pulseReset( std::optional<uint16_t> resetAddress )
   else
   {
     assertInterrupt( CPUState::I_RESET, mCurrentTick );
-    desertInterrupt( CPUState::I_RESET, mCurrentTick + 5 * 10 );  //asserting RESET for 10 cycles to make sure none will miss it
+    desertInterrupt( CPUState::I_RESET, mCurrentTick + RESET_DURATION );
   }
 }
 
@@ -323,22 +332,18 @@ void Core::executeCPUAction()
     FETCH_OPERAND_RAM,
     READ_RAM,
     WRITE_RAM,
-    DISCARD_READ_RAM,
     FETCH_OPCODE_SUZY,
     FETCH_OPERAND_SUZY,
     READ_SUZY,
     WRITE_SUZY,
-    DISCARD_READ_SUZY,
     FETCH_OPCODE_MIKEY,
     FETCH_OPERAND_MIKEY,
     READ_MIKEY,
     WRITE_MIKEY,
-    DISCARD_READ_MIKEY,
     FETCH_OPCODE_KENREL,
     FETCH_OPERAND_KENREL,
     READ_KENREL,
-    WRITE_KENREL,
-    DISCARD_READ_KERNEL
+    WRITE_KENREL
   };
 
   CPUAction action = (CPUAction)( (int)req.type + (int)pageType );
@@ -347,11 +352,11 @@ void Core::executeCPUAction()
   {
   case CPUAction::FETCH_OPCODE_RAM:
     mCpu->respond( mCurrentTick, fetchRAM( req.address ) );
-    mCurrentTick += fetchTiming( req.address );
+    mCurrentTick += fetchRAMTiming( req.address );
     break;
   case CPUAction::FETCH_OPERAND_RAM:
     mCpu->respond( readRAM( req.address ) );
-    mCurrentTick += fetchTiming( req.address );
+    mCurrentTick += fetchRAMTiming( req.address );
     break;
   case CPUAction::READ_RAM:
     mCpu->respond( readRAM( req.address ) );
@@ -363,11 +368,11 @@ void Core::executeCPUAction()
     break;
   case CPUAction::FETCH_OPCODE_KENREL:
     mCpu->respond( mCurrentTick, readROM( req.address & 0x1ff, true ) );
-    mCurrentTick += fetchTiming( req.address );
+    mCurrentTick += fetchROMTiming( req.address );
     break;
   case CPUAction::FETCH_OPERAND_KENREL:
     mCpu->respond( readROM( req.address & 0x1ff, false ) );
-    mCurrentTick += fetchTiming( req.address );
+    mCurrentTick += fetchROMTiming( req.address );
     break;
   case CPUAction::READ_KENREL:
     mCpu->respond( readROM( req.address & 0x1ff, false ) );
@@ -411,93 +416,8 @@ void Core::executeCPUAction()
     writeMikey( req.address, req.value );
     mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
-  case CPUAction::DISCARD_READ_RAM:
-    [[fallthrough]];
-  case CPUAction::DISCARD_READ_KERNEL:
-    mCurrentTick += readTiming( req.address );
-    handlePatch( req.address );
-    break;
-  case CPUAction::DISCARD_READ_SUZY:
-    mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
-    handlePatch( req.address );
-    mLastAccessPage = BAD_LAST_ACCESS_PAGE;
-    break;
-  case CPUAction::DISCARD_READ_MIKEY:
-    mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
-    handlePatch( req.address );
-    mLastAccessPage = BAD_LAST_ACCESS_PAGE;
-    break;
   }
 }
-
-void Core::handlePatch( uint16_t address )
-{
-  mPatchMagickCodeAccumulator <<= 16;
-  mPatchMagickCodeAccumulator |= address;
-
-  if ( mPatchMagickCodeAccumulator >> 12 == 0xc0ffeaa2ab1ca )
-  {
-    int selector = ( address >> 8 ) & 0xf;
-    if ( mEscapes[selector] )
-    {
-      struct Accessor : public IEscape::IAccessor
-      {
-        Accessor( std::array<uint8_t, 65536> & ram, Mikey & mikey, Suzy & suzy, CPUState & state, ActionQueue & actionQueue, uint64_t currentTick ) : currentTick{ currentTick }, ram{ ram }, mikey{ mikey }, suzy{ suzy }, s{ state }, actionQueue{ actionQueue }{}
-
-        uint64_t currentTick;
-        std::array<uint8_t, 65536> & ram;
-        Mikey & mikey;
-        Suzy & suzy;
-        CPUState & s;
-        ActionQueue & actionQueue;
-        uint8_t readRAM( uint16_t address ) const override
-        {
-          return ram[address];
-        }
-        void writeRAM( uint16_t address, uint8_t value ) override
-        {
-          ram[address] = value;
-        }
-
-        uint8_t readMikey( uint16_t address ) const override
-        {
-          mikey.requestAccess( currentTick, address );
-          return mikey.read( address );
-        }
-        void writeMikey( uint16_t address, uint8_t value ) override
-        {
-          mikey.requestAccess( currentTick, address );
-          if ( auto mikeyAction = mikey.write( address, value ) )
-          {
-            actionQueue.push( mikeyAction );
-          }
-        }
-        uint8_t readSuzy( uint16_t address ) const override
-        {
-          suzy.requestRead( currentTick, address );
-          return suzy.read( address );
-        }
-        void writeSuzy( uint16_t address, uint8_t value ) override
-        {
-          suzy.requestWrite( currentTick, address );
-          suzy.write( address, value );
-        }
-
-        CPUState & state() override
-        {
-          return s;
-        }
-      } acc{ mRAM, *mMikey, *mSuzy, mCpu->state(), mActionQueue, mCurrentTick };
-
-      mEscapes[selector]->call( address & 0xff, acc );
-    }
-    else
-    {
-      L_WARNING << "Called empty patch " << selector << " with argument " << ( address & 0xff );
-    }
-  }
-}
-
 
 void Core::setAudioOut( int sps, std::span<AudioSample> outputBuffer )
 {
@@ -582,7 +502,7 @@ std::shared_ptr<TraceHelper> Core::getTraceHelper() const
   return mTraceHelper;
 }
 
-uint64_t Core::fetchTiming( uint16_t address )
+uint64_t Core::fetchRAMTiming( uint16_t address )
 {
   uint32_t page = ( address >> 8 );
   if ( page == mLastAccessPage )
@@ -594,6 +514,12 @@ uint64_t Core::fetchTiming( uint16_t address )
     mLastAccessPage = page;
     return 5;
   }
+}
+
+uint64_t Core::fetchROMTiming( uint16_t address )
+{
+  //Reset handler must burd at least as many cycles as needed to dessert RESET
+  return address == 0xff80 ? RESET_DURATION : 5;
 }
 
 uint64_t Core::readTiming( uint16_t address )

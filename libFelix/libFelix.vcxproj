@@ -17,7 +17,7 @@
   <ItemGroup>
     <ClCompile Include="ActionQueue.cpp" />
     <ClCompile Include="EEPROM.cpp" />
-    <ClCompile Include="ScriptDebugger.cpp" />
+    <ClCompile Include="Encryption.cpp" />
     <ClCompile Include="TraceHelper.cpp" />
     <ClCompile Include="AudioChannel.cpp" />
     <ClCompile Include="CartBank.cpp" />
@@ -27,7 +27,6 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
-    <ClCompile Include="Encryption.cpp" />
     <ClCompile Include="GameDrive.cpp" />
     <ClCompile Include="ImageBIOS.cpp" />
     <ClCompile Include="ImageBS93.cpp" />
@@ -35,7 +34,7 @@
     <ClCompile Include="ImageLnx.cpp" />
     <ClCompile Include="ImageLyx.cpp" />
     <ClCompile Include="InputFile.cpp" />
-    <ClCompile Include="KernelEscape.cpp" />
+    <ClCompile Include="KernelTraps.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="Monitor.cpp" />
@@ -55,8 +54,10 @@
   <ItemGroup>
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="EEPROM.hpp" />
+    <ClInclude Include="Encryption.hpp" />
     <ClInclude Include="ScriptDebugger.hpp" />
     <ClInclude Include="IMemoryAccessTrap.hpp" />
+    <ClInclude Include="ScriptDebuggerEscapes.hpp" />
     <ClInclude Include="TraceHelper.hpp" />
     <ClInclude Include="AudioChannel.hpp" />
     <ClInclude Include="CartBank.hpp" />
@@ -67,12 +68,9 @@
     <ClInclude Include="Core.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUState.hpp" />
-    <ClInclude Include="DefaultROM.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
-    <ClInclude Include="Encryption.hpp" />
     <ClInclude Include="GameDrive.hpp" />
     <ClInclude Include="generator.hpp" />
-    <ClInclude Include="IEscape.hpp" />
     <ClInclude Include="IInputSource.hpp" />
     <ClInclude Include="ImageBIOS.hpp" />
     <ClInclude Include="ImageBS93.hpp" />
@@ -81,7 +79,7 @@
     <ClInclude Include="ImageLyx.hpp" />
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="IVideoSink.hpp" />
-    <ClInclude Include="KernelEscape.hpp" />
+    <ClInclude Include="KernelTraps.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="DebugRAM.hpp" />
     <ClInclude Include="Mikey.hpp" />

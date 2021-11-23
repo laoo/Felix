@@ -1720,8 +1720,8 @@ CPU::Execute CPU::execute()
         state.sl--;
         co_await read( state.s );
         state.sl--;
-        state.eal = co_await read( 0xfffc );
-        state.eah = co_await read( 0xfffd );
+        state.eal = co_await read( RESET_VECTOR );
+        state.eah = co_await read( RESET_VECTOR + 1 );
       }
       else
       {
@@ -1736,13 +1736,13 @@ CPU::Execute CPU::execute()
         state.sl--;
         if ( state.interrupt & CPUState::I_NMI )
         {
-          state.eal = co_await read( 0xfffa );
-          state.eah = co_await read( 0xfffb );
+          state.eal = co_await read( NMI_VECTOR );
+          state.eah = co_await read( NMI_VECTOR + 1 );
         }
         else
         {
-          state.eal = co_await read( 0xfffe );
-          state.eah = co_await read( 0xffff );
+          state.eal = co_await read( IRQ_VECTOR );
+          state.eah = co_await read( IRQ_VECTOR + 1 );
         }
         set<bitI>();
       }
@@ -1817,7 +1817,7 @@ CPU::Execute CPU::execute()
       break;
     case Opcode::UND_3_44:
       ++state.pc;
-      co_await discardRead( state.ea );
+      co_await read( state.ea );
       break;
     case Opcode::UND_4_54:
     case Opcode::UND_4_d4:
@@ -1825,13 +1825,13 @@ CPU::Execute CPU::execute()
       ++state.pc;
       co_await read( state.pc );
       state.tl = state.eal + state.x;
-      co_await discardRead( state.ea );
+      co_await read( state.ea );
       break;
     case Opcode::UND_4_dc:
     case Opcode::UND_4_fc:
       ++state.pc;
       state.eah = co_await read( state.pc++ );
-      co_await discardRead( state.ea );
+      co_await read( state.ea );
       break;
     case Opcode::UND_8_5c:
       //https://laughtonelectronics.com/Arcana/KimKlone/Kimklone_opcode_mapping.html
@@ -1840,11 +1840,11 @@ CPU::Execute CPU::execute()
       ++state.pc;
       co_await read( state.pc++ );
       state.eah = 0xff;
-      co_await discardRead( state.ea );
-      co_await discardRead( 0xffff );
-      co_await discardRead( 0xffff );
-      co_await discardRead( 0xffff );
-      co_await discardRead( 0xffff );
+      co_await read( state.ea );
+      co_await read( 0xffff );
+      co_await read( 0xffff );
+      co_await read( 0xffff );
+      co_await read( 0xffff );
       break;
     default:  //for UND_1_xx
       break;

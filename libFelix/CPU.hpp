@@ -12,6 +12,11 @@ class CPU
 {
 public:
 
+  static constexpr uint16_t NMI_VECTOR = 0xfffa;
+  static constexpr uint16_t RESET_VECTOR = 0xfffc;
+  static constexpr uint16_t IRQ_VECTOR = 0xfffe;
+
+
   struct Request : private NonCopyable
   {
     enum class Type : uint8_t
@@ -19,8 +24,7 @@ public:
       FETCH_OPCODE,
       FETCH_OPERAND,
       READ,
-      WRITE,
-      DISCARD_READ
+      WRITE
     };
 
     uint16_t address;
@@ -247,21 +251,6 @@ private:
     mReq.address = address;
     mReq.value = value;
     return static_cast<CPUWriteAwaiter &>( mRes );
-  }
-
-  auto & discardRead( uint16_t address )
-  {
-    struct CPUDiscardReadAwaiter : public Response
-    {
-      uint8_t await_resume()
-      {
-        return 0;
-      }
-    };
-
-    mReq.type = Request::Type::DISCARD_READ;
-    mReq.address = address;
-    return static_cast<CPUDiscardReadAwaiter &>( mRes );
   }
 
   void trace1();

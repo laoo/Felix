@@ -17,22 +17,21 @@ class ImageBIOS;
 class IEscape;
 class ComLynxWire;
 class TraceHelper;
+class ScriptDebuggerEscapes;
 class ScriptDebugger;
 struct CPUState;
 
 class Core
 {
 public:
-  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebugger> scriptDebugger );
+  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes );
   ~Core();
 
 
   void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
   int advanceAudio();
 
-  void injectFile( InputFile const& file );
   void setLog( std::filesystem::path const & path, uint64_t startCycle );
-  void setEscape( size_t idx, std::shared_ptr<IEscape> esc );
 
   void enterMonitor();
   int64_t globalSamplesEmittedPerFrame() const;
@@ -54,10 +53,10 @@ private:
 
   enum class PageType
   {
-    RAM = 0 * 5,
-    SUZY = 1 * 5,
-    MIKEY = 2 * 5,
-    KERNEL = 3 * 5
+    RAM = 0 * 4,
+    SUZY = 1 * 4,
+    MIKEY = 2 * 4,
+    KERNEL = 3 * 4
   };
 
   struct MAPCTL
@@ -76,7 +75,7 @@ private:
   } executeSequencedAction( SequencedAction );
   bool executeSuzyAction();
   void executeCPUAction();
-  void handlePatch( uint16_t address );
+  void setDefaultROM();
 
   uint8_t fetchRAM( uint16_t address );
   uint8_t readRAM( uint16_t address );
@@ -100,7 +99,8 @@ private:
   Cartridge & getCartridge();
   void newLine( int rowNr );
   std::shared_ptr<TraceHelper> getTraceHelper() const;
-  uint64_t fetchTiming( uint16_t address );
+  uint64_t fetchRAMTiming( uint16_t address );
+  uint64_t fetchROMTiming( uint16_t address );
   uint64_t readTiming( uint16_t address );
   uint64_t writeTiming( uint16_t address );
 
@@ -112,7 +112,6 @@ private:
   std::array<uint8_t, 65536> mRAM;
   std::array<uint8_t, 512> mROM;
   std::array<PageType, 256> mPageTypes;
-  std::array<std::shared_ptr<IEscape>, 16> mEscapes;
   std::shared_ptr<ScriptDebugger> mScriptDebugger;
   uint64_t mCurrentTick;
   int mSamplesRemainder;

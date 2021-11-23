@@ -2,12 +2,88 @@
 
 #include "IMemoryAccessTrap.hpp"
 class Core;
+class ScriptDebuggerEscapes;
 
 class ScriptDebugger
 {
+  class CompositeTrap : public IMemoryAccessTrap
+  {
+    std::shared_ptr<IMemoryAccessTrap> mT1;
+    std::shared_ptr<IMemoryAccessTrap> mT2;
+  public:
+    CompositeTrap( std::shared_ptr<IMemoryAccessTrap> t1, std::shared_ptr<IMemoryAccessTrap> t2 ) : mT1{ std::move( t1 ) }, mT2{ std::move( t2 ) } {}
+    ~CompositeTrap() override = default;
+
+    uint8_t trap( Core& core, uint16_t address, uint8_t orgValue ) override
+    {
+      auto temp = mT1->trap( core, address, orgValue );
+      return mT2->trap( core, address, temp );
+    }
+  };
+
 public:
-  ScriptDebugger();
-  ~ScriptDebugger();
+
+  enum class Type : uint16_t
+  {
+    RAM_READ,
+    RAM_WRITE,
+    RAM_EXECUTE,
+    ROM_READ,
+    ROM_WRITE,
+    ROM_EXECUTE,
+    MIKEY_READ,
+    MIKEY_WRITE,
+    SUZY_READ,
+    SUZY_WRITE,
+    MAPCTL_READ,
+    MAPCTL_WRITE
+  };
+
+  ScriptDebugger() = default;
+  ~ScriptDebugger() = default;
+
+  void addTrap( Type type, uint16_t address, std::shared_ptr<IMemoryAccessTrap> trap )
+  {
+    switch ( type )
+    {
+    case Type::RAM_READ:
+      helper( mRamReadTraps[address], std::move( trap ) );
+      break;
+    case Type::RAM_WRITE:
+      helper( mRamWriteTraps[address], std::move( trap ) );
+      break;
+    case Type::RAM_EXECUTE:
+      helper( mRamExecuteTraps[address], std::move( trap ) );
+      break;
+    case Type::ROM_READ:
+      helper( mRomReadTraps[address & 0x1ff], std::move( trap ) );
+      break;
+    case Type::ROM_WRITE:
+      helper( mRomWriteTraps[address & 0x1ff], std::move( trap ) );
+      break;
+    case Type::ROM_EXECUTE:
+      helper( mRomExecuteTraps[address & 0x1ff], std::move( trap ) );
+      break;
+    case Type::MIKEY_READ:
+      helper( mMikeyReadTraps[address & 0xff], std::move( trap ) );
+      break;
+    case Type::MIKEY_WRITE:
+      helper( mMikeyWriteTraps[address & 0xff], std::move( trap ) );
+      break;
+    case Type::SUZY_READ:
+      helper( mSuzyReadTraps[address & 0xff], std::move( trap ) );
+      break;
+    case Type::SUZY_WRITE:
+      helper( mSuzyWriteTraps[address & 0xff], std::move( trap ) );
+      break;
+    case Type::MAPCTL_READ:
+      helper( mMapCtlReadTrap, std::move( trap ) );
+      break;
+    case Type::MAPCTL_WRITE:
+      helper( mMapCtlWriteTrap, std::move( trap ) );
+      break;
+    }
+  }
 
   uint8_t readRAM( Core& core, uint16_t address, uint8_t orgValue )
   {
@@ -81,7 +157,6 @@ public:
     }
   }
 
-
   uint8_t readMikey( Core& core, uint16_t address, uint8_t orgValue )
   {
     if ( auto trap = mMikeyReadTraps[address & 0xff].get() )
@@ -105,7 +180,6 @@ public:
       return orgValue;
     }
   }
-
 
   uint8_t readSuzy( Core& core, uint16_t address, uint8_t orgValue )
   {
@@ -156,6 +230,21 @@ public:
   }
 
 private:
+  void helper( std::shared_ptr<IMemoryAccessTrap>& dest, std::shared_ptr<IMemoryAccessTrap> src )
+  {
+    if ( dest )
+    {
+      auto tmp = std::move( dest );
+      dest = std::make_shared<CompositeTrap>( std::move( tmp ), std::move( src ) );
+    }
+    else
+    {
+      dest = std::move( src );
+    }
+  }
+
+private:
+  //TODO: compare performance with unordered map
   std::array<std::shared_ptr<IMemoryAccessTrap>, 65536> mRamReadTraps;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 65536> mRamWriteTraps;
   std::array<std::shared_ptr<IMemoryAccessTrap>, 65536> mRamExecuteTraps;

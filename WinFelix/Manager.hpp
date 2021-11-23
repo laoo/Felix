@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IInputSource.hpp"
-#include "IEscape.hpp"
 
 class WinRenderer;
 class WinAudioOut;
@@ -12,7 +11,7 @@ class SymbolSource;
 class InputFile;
 class IEncoder;
 class WinImgui;
-class ScriptDebugger;
+class ScriptDebuggerEscapes;
 struct ImGuiIO;
 
 namespace ImGui
@@ -56,14 +55,6 @@ private:
     KeyInput getInput() const override;
   };
 
-  struct Escape : IEscape
-  {
-    Manager & manager;
-    Escape( Manager & manager ) : manager{ manager } {}
-    ~Escape() override = default;
-    void call( uint8_t data, IAccessor & accessor ) override;
-  };
-
   bool mEmulationRunning;
 
   bool mDoUpdate;
@@ -82,12 +73,11 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   std::unique_ptr<SymbolSource> mSymbols;
   std::shared_ptr<Core> mInstance;
-  std::shared_ptr<ScriptDebugger> mScriptDebugger;
+  std::shared_ptr<ScriptDebuggerEscapes> mScriptDebuggerEscapes;
   std::wstring mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;
   sol::state mLua;
-  std::vector<sol::function> mEscapes;
   sol::function mMonit;
   std::mutex mMutex;
   int64_t mRenderingTime;

@@ -17,6 +17,7 @@
 #include "WinConfig.hpp"
 #include "SysConfig.hpp"
 #include "ScriptDebugger.hpp"
+#include "ScriptDebuggerEscapes.hpp"
 #include <imfilebrowser.h>
 
 namespace
@@ -40,7 +41,7 @@ std::optional<InputFile> getOptionalKernel()
 }
 
 Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{}, mJoinThreads{}, mPaused{},
-  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }, mScriptDebugger{ std::make_shared<ScriptDebugger>() }
+  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }, mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -321,17 +322,6 @@ void Manager::processKeys()
 
 }
 
-
-void Manager::Escape::call( uint8_t data, IAccessor & accessor )
-{
-  if ( data < manager.mEscapes.size() && manager.mEscapes[data].valid() )
-  {
-    std::scoped_lock<std::mutex> l{ manager.mMutex };
-    manager.mEscapes[data].call( &accessor );
-  }
-}
-
-
 std::optional<InputFile> Manager::processLua( std::filesystem::path const& path )
 {
   std::optional<InputFile> result;
@@ -444,16 +434,6 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
     }
   };
 
-  mLua["tick"] = [this]( IEscape::IAccessor * acc ) { return acc->state().tick; };
-  mLua["getA"] = [this]( IEscape::IAccessor * acc ) { return std::string( (char*)&acc->state().a, 1 ); };
-  mLua["getX"] = [this]( IEscape::IAccessor * acc ) { return acc->state().x; };
-  mLua["getY"] = [this]( IEscape::IAccessor * acc ) { return acc->state().y; };
-  mLua["setA"] = [this]( IEscape::IAccessor * acc, int a ) { acc->state().a = (uint8_t)a; };
-  mLua["setX"] = [this]( IEscape::IAccessor * acc, int x ) { acc->state().x = (uint8_t)x; };
-  mLua["setY"] = [this]( IEscape::IAccessor * acc, int y ) { acc->state().y = (uint8_t)y; };
-  mLua["peek"] = [this]( IEscape::IAccessor * acc, uint16_t addr ) { return acc->readRAM( addr ); };
-  mLua["poke"] = [this]( IEscape::IAccessor * acc, uint16_t addr, uint8_t value ) { return acc->writeRAM( addr, value ); };
-
   mLua.script_file( path.string() );
 
   if ( sol::optional<std::string> opt = mLua["image"] )
@@ -487,24 +467,24 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
     mMonitor.reset();
   }
 
-  if ( auto esc = mLua["escapes"]; esc.valid() && esc.get_type() == sol::type::table )
-  {
-    auto escTab = mLua.get<sol::table>( "escapes" );
-    for ( auto kv : escTab )
-    {
-      sol::object const& value = kv.second;
-      sol::type t = value.get_type();
+  //if ( auto esc = mLua["escapes"]; esc.valid() && esc.get_type() == sol::type::table )
+  //{
+  //  auto escTab = mLua.get<sol::table>( "escapes" );
+  //  for ( auto kv : escTab )
+  //  {
+  //    sol::object const& value = kv.second;
+  //    sol::type t = value.get_type();
 
-      if ( t == sol::type::function )
-      {
-        size_t id = kv.first.as<size_t>();
-        while ( mEscapes.size() <= id )
-          mEscapes.push_back( sol::nil );
+  //    if ( t == sol::type::function )
+  //    {
+  //      size_t id = kv.first.as<size_t>();
+  //      while ( mEscapes.size() <= id )
+  //        mEscapes.push_back( sol::nil );
 
-        mEscapes[id] = (sol::function)value;
-      }
-    }
-  }
+  //      mEscapes[id] = (sol::function)value;
+  //    }
+  //  }
+  //}
 
   if ( auto esc = mLua["monit"]; esc.valid() && esc.get_type() == sol::type::function )
   {
@@ -544,14 +524,12 @@ void Manager::reset()
 
   if ( auto input = computeInputFile() )
   {
-    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, *input, getOptionalKernel(), mScriptDebugger );
+    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, *input, getOptionalKernel(), mScriptDebuggerEscapes );
 
     mRenderer->setRotation( mInstance->rotation() );
 
     if ( !mLogPath.empty() )
       mInstance->setLog( mLogPath, mLogStartCycle );
-
-    mInstance->setEscape( 0, std::make_shared<Escape>( *this ) );
   }
 
   mProcessThreads.store( true );

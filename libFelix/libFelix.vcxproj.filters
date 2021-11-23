@@ -12,14 +12,13 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="DisplayGenerator.cpp" />
-    <ClCompile Include="Encryption.cpp" />
     <ClCompile Include="ImageBIOS.cpp" />
     <ClCompile Include="ImageBS93.cpp" />
     <ClCompile Include="ImageCart.cpp" />
     <ClCompile Include="ImageLnx.cpp" />
     <ClCompile Include="ImageLyx.cpp" />
     <ClCompile Include="InputFile.cpp" />
-    <ClCompile Include="KernelEscape.cpp" />
+    <ClCompile Include="KernelTraps.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Mikey.cpp" />
     <ClCompile Include="ParallelPort.cpp" />
@@ -32,7 +31,7 @@
     <ClCompile Include="GameDrive.cpp" />
     <ClCompile Include="SymbolSource.cpp" />
     <ClCompile Include="EEPROM.cpp" />
-    <ClCompile Include="ScriptDebugger.cpp" />
+    <ClCompile Include="Encryption.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp" />
@@ -47,10 +46,7 @@
     <ClInclude Include="Core.hpp" />
     <ClInclude Include="CPU.hpp" />
     <ClInclude Include="CPUState.hpp" />
-    <ClInclude Include="DefaultROM.hpp" />
     <ClInclude Include="DisplayGenerator.hpp" />
-    <ClInclude Include="Encryption.hpp" />
-    <ClInclude Include="IEscape.hpp" />
     <ClInclude Include="ImageBIOS.hpp" />
     <ClInclude Include="ImageBS93.hpp" />
     <ClInclude Include="ImageCart.hpp" />
@@ -58,7 +54,7 @@
     <ClInclude Include="ImageLyx.hpp" />
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="IVideoSink.hpp" />
-    <ClInclude Include="KernelEscape.hpp" />
+    <ClInclude Include="KernelTraps.hpp" />
     <ClInclude Include="Log.hpp" />
     <ClInclude Include="Mikey.hpp" />
     <ClInclude Include="Opcodes.hpp" />
@@ -81,5 +77,7 @@
     <ClInclude Include="EEPROM.hpp" />
     <ClInclude Include="ScriptDebugger.hpp" />
     <ClInclude Include="IMemoryAccessTrap.hpp" />
+    <ClInclude Include="ScriptDebuggerEscapes.hpp" />
+    <ClInclude Include="Encryption.hpp" />
   </ItemGroup>
 </Project>
