@@ -19,6 +19,7 @@ uint8_t* gDebugRAM;
 static constexpr uint64_t RESET_DURATION = 5 * 10;  //asserting RESET for 10 cycles to make sure none will miss it
 static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 
+static constexpr bool ENABLE_TRAPS = true;
 
 Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes ) :
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
@@ -537,65 +538,131 @@ uint64_t Core::writeTiming( uint16_t address )
 uint8_t Core::fetchRAM( uint16_t address )
 {
   uint8_t sourceByte = mRAM[address];
-  uint8_t filteredByte = mScriptDebugger->executeRAM( *this, address, sourceByte );
-  return filteredByte;
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->executeRAM( *this, address, sourceByte );
+    return filteredByte;
+  }
+  else
+  {
+    return sourceByte;
+  }
 }
 
 uint8_t Core::fetchROM( uint16_t address )
 {
   uint8_t sourceByte = mROM[address];
-  uint8_t filteredByte = mScriptDebugger->executeROM( *this, address, sourceByte );
-  return filteredByte;
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->executeROM( *this, address, sourceByte );
+    return filteredByte;
+  }
+  else
+  {
+    return sourceByte;
+  }
 }
 
 uint8_t Core::readRAM( uint16_t address )
 {
   uint8_t sourceByte = mRAM[address];
-  uint8_t filteredByte = mScriptDebugger->readRAM( *this, address, sourceByte );
-  return filteredByte;
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->readRAM( *this, address, sourceByte );
+    return filteredByte;
+  }
+  else
+  {
+    return sourceByte;
+  }
 }
 
 uint8_t Core::readROM( uint16_t address )
 {
   uint8_t sourceByte = mROM[address];
-  uint8_t filteredByte = mScriptDebugger->readROM( *this, address, sourceByte );
-  return filteredByte;
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->readROM( *this, address, sourceByte );
+    return filteredByte;
+  }
+  else
+  {
+    return sourceByte;
+  }
 }
 
 void Core::writeRAM( uint16_t address, uint8_t value )
 {
-  uint8_t filteredByte = mScriptDebugger->writeRAM( *this, address, value );
-  mRAM[address] = filteredByte;
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->writeRAM( *this, address, value );
+    mRAM[address] = filteredByte;
+  }
+  else
+  {
+    mRAM[address] = value;
+  }
 }
 
 uint8_t Core::readMikey( uint16_t address )
 {
   mCurrentTick = mMikey->requestAccess( mCurrentTick, address );
   uint8_t sourceByte = mMikey->read( address );
-  uint8_t filteredByte = mScriptDebugger->readMikey( *this, address, sourceByte );
-  return filteredByte;
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->readMikey( *this, address, sourceByte );
+    return filteredByte;
+  }
+  else
+  {
+    return sourceByte;
+  }
 }
 
 void Core::writeMikey( uint16_t address, uint8_t value )
 {
-  uint8_t filteredByte = mScriptDebugger->writeMikey( *this, address, value );
-  if ( auto mikeyAction = mMikey->write( address, filteredByte ) )
+  if constexpr ( ENABLE_TRAPS )
   {
-    mActionQueue.push( mikeyAction );
+    uint8_t filteredByte = mScriptDebugger->writeMikey( *this, address, value );
+    if ( auto mikeyAction = mMikey->write( address, filteredByte ) )
+    {
+      mActionQueue.push( mikeyAction );
+    }
+  }
+  else
+  {
+    if ( auto mikeyAction = mMikey->write( address, value ) )
+    {
+      mActionQueue.push( mikeyAction );
+    }
   }
 }
 
 uint8_t Core::readSuzy( uint16_t address )
 {
   uint8_t sourceByte = mSuzy->read( address );
-  uint8_t filteredByte = mScriptDebugger->readSuzy( *this, address, sourceByte );
-  return filteredByte;
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->readSuzy( *this, address, sourceByte );
+    return filteredByte;
+  }
+  else
+  {
+    return sourceByte;
+  }
 }
 
 void Core::writeSuzy( uint16_t address, uint8_t value )
 {
-  uint8_t filteredByte = mScriptDebugger->writeSuzy( *this, address, value );
-  mSuzy->write( address, filteredByte );
+  if constexpr ( ENABLE_TRAPS )
+  {
+    uint8_t filteredByte = mScriptDebugger->writeSuzy( *this, address, value );
+    mSuzy->write( address, filteredByte );
+  }
+  else
+  {
+    mSuzy->write( address, value );
+  }
 }
 
 uint8_t Core::readROM( uint16_t address, bool isFetch )
