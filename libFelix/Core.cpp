@@ -56,24 +56,24 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
     {
       pulseReset( runAddress );
     }
+    setDefaultROM();
     break;
   case InputFile::FileType::CART:
     mCartridge = std::make_shared<Cartridge>( inputFile.getCart(), mTraceHelper );
+    if ( kernel )
+    {
+      kernel->getBIOS()->load( { mROM.data(), mROM.size() } );
+    }
+    else
+    {
+      setDefaultROM();
+    }
     pulseReset();
     break;
   default:
     break;
   }
 
-  if ( kernel )
-  {
-    kernel->getBIOS()->load( { mROM.data(), mROM.size() } );
-    pulseReset();
-  }
-  else
-  {
-    setDefaultROM();
-  }
 
   scriptDebuggerEscapes->populateScriptDebugger( *mScriptDebugger );
 }
@@ -748,6 +748,11 @@ uint64_t Core::tick() const
 uint8_t Core::debugReadRAM( uint16_t address ) const
 {
   return mRAM[address];
+}
+
+uint8_t Core::debugReadROM( uint16_t address ) const
+{
+  return mROM[address & 0x1ff];
 }
 
 void Core::debugWriteRAM( uint16_t address, uint8_t value )

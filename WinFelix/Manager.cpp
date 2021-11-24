@@ -16,7 +16,6 @@
 #include "ConfigProvider.hpp"
 #include "WinConfig.hpp"
 #include "SysConfig.hpp"
-#include "ScriptDebugger.hpp"
 #include "ScriptDebuggerEscapes.hpp"
 #include <imfilebrowser.h>
 
@@ -40,8 +39,8 @@ std::optional<InputFile> getOptionalKernel()
 
 }
 
-Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{}, mJoinThreads{}, mPaused{},
-  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mLua{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }, mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }
+Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{}, mJoinThreads{}, mPaused{},
+  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }, mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -68,25 +67,40 @@ Manager::Manager() : mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSourc
 
   mAudioThread = std::thread{ [this]
   {
-    while ( !mJoinThreads.load() )
+    try
     {
-      if ( mProcessThreads.load() )
+      while ( !mJoinThreads.load() )
       {
-        if ( !mPaused.load() )
+        if ( mProcessThreads.load() )
         {
-          int64_t renderingTime;
+          if ( !mPaused.load() )
           {
-            std::scoped_lock<std::mutex> l{ mMutex };
-            renderingTime = mRenderingTime;
+            int64_t renderingTime;
+            {
+              std::scoped_lock<std::mutex> l{ mMutex };
+              renderingTime = mRenderingTime;
+            }
+            mAudioOut->fillBuffer( mInstance, renderingTime );
           }
-          mAudioOut->fillBuffer( mInstance, renderingTime );
+        }
+        else
+        {
+          std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
         }
       }
-      else
-      {
-        std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-      }
     }
+  catch ( sol::error const& err )
+  {
+    L_ERROR << err.what();
+    MessageBoxA( nullptr, err.what(), "Error", 0 );
+    std::terminate();
+  }
+  catch ( std::exception const& ex )
+  {
+    L_ERROR << ex.what();
+    MessageBoxA( nullptr, ex.what(), "Error", 0 );
+    std::terminate();
+  }
   } };
 }
 
@@ -326,6 +340,17 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
 {
   std::optional<InputFile> result;
 
+  mLua.new_usertype<TrapProxy>( "TRAP", sol::meta_function::new_index, &TrapProxy::set );
+  mLua.new_usertype<RamProxy>( "RAM", sol::meta_function::index, &RamProxy::get, sol::meta_function::new_index, &RamProxy::set );
+  mLua.new_usertype<RomProxy>( "ROM", sol::meta_function::index, &RomProxy::get, sol::meta_function::new_index, &RomProxy::set );
+  mLua.new_usertype<MikeyProxy>( "MIKEY", sol::meta_function::index, &MikeyProxy::get, sol::meta_function::new_index, &MikeyProxy::set );
+  mLua.new_usertype<SuzyProxy>( "SUZY", sol::meta_function::index, &SuzyProxy::get, sol::meta_function::new_index, &SuzyProxy::set );
+
+  mLua["ram"] = std::make_unique<RamProxy>( *this );
+  mLua["rom"] = std::make_unique<RomProxy>( *this );
+  mLua["mikey"] = std::make_unique<MikeyProxy>( *this );
+  mLua["suzy"] = std::make_unique<SuzyProxy>( *this );
+
   auto decHex = [this]( sol::table const& tab, bool hex )
   {
     Monitor::Entry e{ hex };
@@ -526,6 +551,7 @@ void Manager::reset()
   {
     mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, *input, getOptionalKernel(), mScriptDebuggerEscapes );
 
+
     mRenderer->setRotation( mInstance->rotation() );
 
     if ( !mLogPath.empty() )
@@ -593,4 +619,172 @@ Manager::InputSource::InputSource() : KeyInput{}
 KeyInput Manager::InputSource::getInput() const
 {
   return *this;
+}
+
+void Manager::TrapProxy::set( TrapProxy& proxy, int idx, sol::function fun )
+{
+  struct LuaTrap : public IMemoryAccessTrap
+  {
+    sol::function fun;
+
+    LuaTrap( sol::function fun ) : fun{ fun } {}
+    ~LuaTrap() override = default;
+
+    virtual uint8_t trap( Core& core, uint16_t address, uint8_t orgValue ) override
+    {
+      return fun( orgValue, address );
+    }
+  };
+
+  if ( idx >= 0 && idx < 65536 )
+  {
+    proxy.scriptDebuggerEscapes->addTrap( proxy.type, (uint16_t)idx, std::make_shared<LuaTrap>( fun ) );
+  }
+}
+
+
+
+sol::object Manager::RamProxy::get( sol::stack_object key, sol::this_state L )
+{
+  if ( auto optIdx = key.as<sol::optional<int>>() )
+  {
+    int idx = *optIdx;
+    if ( idx >= 0 && idx < 65536 && manager.mInstance )
+    {
+      auto result = manager.mInstance->debugReadRAM( (uint16_t)idx );
+      return sol::object( L, sol::in_place, result );
+    }
+  }
+  else if ( auto optSt = key.as<sol::optional<std::string>>() )
+  {
+    const std::string& k = *optSt;
+
+    if ( k == "r" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::RAM_READ } );
+    }
+    else if ( k == "w" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::RAM_WRITE } );
+    }
+    else if ( k == "x" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::RAM_EXECUTE } );
+    }
+  }
+
+  return sol::object( L, sol::in_place, sol::lua_nil );
+}
+
+void Manager::RamProxy::set( sol::stack_object key, sol::stack_object value, sol::this_state )
+{
+  if ( auto optIdx = key.as<sol::optional<int>>() )
+  {
+    int idx = *optIdx;
+    if ( idx >= 0 && idx < 65536 )
+    {
+      manager.mInstance->debugWriteRAM( (uint16_t)idx, value.as<uint8_t>() );
+    }
+  }
+}
+
+sol::object Manager::MikeyProxy::get( sol::stack_object key, sol::this_state L )
+{
+  if ( auto optIdx = key.as<sol::optional<int>>() )
+  {
+    uint16_t idx = (uint16_t)( *optIdx & 0xff );
+    auto result = manager.mInstance->debugReadMikey( idx );
+    return sol::object( L, sol::in_place, result );
+  }
+  else if ( auto optSt = key.as<sol::optional<std::string>>() )
+  {
+    const std::string& k = *optSt;
+
+    if ( k == "r" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::MIKEY_READ } );
+    }
+    else if ( k == "w" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::MIKEY_WRITE } );
+    }
+  }
+
+  return sol::object( L, sol::in_place, sol::lua_nil );
+}
+
+void Manager::MikeyProxy::set( sol::stack_object key, sol::stack_object value, sol::this_state )
+{
+  if ( auto optIdx = key.as<sol::optional<int>>() )
+  {
+    uint16_t idx = (uint16_t)( *optIdx & 0xff );
+    manager.mInstance->debugWriteMikey( idx, value.as<uint8_t>() );
+  }
+}
+
+sol::object Manager::SuzyProxy::get( sol::stack_object key, sol::this_state L )
+{
+  if ( auto optIdx = key.as<sol::optional<int>>() )
+  {
+    uint16_t idx = (uint16_t)( *optIdx & 0xff );
+    auto result = manager.mInstance->debugReadSuzy( idx );
+    return sol::object( L, sol::in_place, result );
+  }
+  else if ( auto optSt = key.as<sol::optional<std::string>>() )
+  {
+    const std::string& k = *optSt;
+
+    if ( k == "r" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::SUZY_READ } );
+    }
+    else if ( k == "w" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::SUZY_WRITE } );
+    }
+  }
+
+  return sol::object( L, sol::in_place, sol::lua_nil );
+}
+
+void Manager::SuzyProxy::set( sol::stack_object key, sol::stack_object value, sol::this_state )
+{
+  if ( auto optIdx = key.as<sol::optional<int>>() )
+  {
+    uint16_t idx = (uint16_t)( *optIdx & 0xff );
+    manager.mInstance->debugWriteSuzy( idx, value.as<uint8_t>() );
+  }
+}
+
+sol::object Manager::RomProxy::get( sol::stack_object key, sol::this_state L )
+{
+  if ( auto optIdx = key.as<sol::optional<int>>() )
+  {
+    uint16_t idx = (uint16_t)( *optIdx & 0x1ff );
+    auto result = manager.mInstance->debugReadROM( idx );
+  }
+  else if ( auto optSt = key.as<sol::optional<std::string>>() )
+  {
+    const std::string& k = *optSt;
+
+    if ( k == "r" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::ROM_READ } );
+    }
+    else if ( k == "w" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::ROM_WRITE } );
+    }
+    else if ( k == "x" )
+    {
+      return sol::object( L, sol::in_place, TrapProxy{ manager.mScriptDebuggerEscapes, ScriptDebugger::Type::ROM_EXECUTE } );
+    }
+  }
+
+  return sol::object( L, sol::in_place, sol::lua_nil );
+}
+
+void Manager::RomProxy::set( sol::stack_object key, sol::stack_object value, sol::this_state )
+{
+  //ignore
 }

@@ -40,6 +40,7 @@ public:
   uint64_t tick() const;
 
   //Not thread safe. Used only for script escapes
+  uint8_t debugReadROM( uint16_t address ) const;
   uint8_t debugReadRAM( uint16_t address ) const;
   void debugWriteRAM( uint16_t address, uint8_t value );
   uint8_t debugReadMikey( uint16_t address ) const;

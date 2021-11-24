@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IInputSource.hpp"
+#include "ScriptDebugger.hpp"
 
 class WinRenderer;
 class WinAudioOut;
@@ -55,10 +56,51 @@ private:
     KeyInput getInput() const override;
   };
 
+  struct TrapProxy
+  {
+    std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes;
+    ScriptDebugger::Type type;
+
+    static void set( TrapProxy & proxy, int idx, sol::function fun );
+  };
+
+  struct RamProxy
+  {
+    Manager& manager;
+
+    sol::object get( sol::stack_object key, sol::this_state L );
+    void set( sol::stack_object key, sol::stack_object value, sol::this_state );
+  };
+
+  struct RomProxy
+  {
+    Manager& manager;
+
+    sol::object get( sol::stack_object key, sol::this_state L );
+    void set( sol::stack_object key, sol::stack_object value, sol::this_state );
+  };
+
+  struct MikeyProxy
+  {
+    Manager& manager;
+
+    sol::object get( sol::stack_object key, sol::this_state L );
+    void set( sol::stack_object key, sol::stack_object value, sol::this_state );
+  };
+
+  struct SuzyProxy
+  {
+    Manager& manager;
+
+    sol::object get( sol::stack_object key, sol::this_state L );
+    void set( sol::stack_object key, sol::stack_object value, sol::this_state );
+  };
+
   bool mEmulationRunning;
 
   bool mDoUpdate;
 
+  sol::state mLua;
   std::shared_ptr<InputSource> mIntputSource;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
@@ -77,7 +119,6 @@ private:
   std::wstring mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;
-  sol::state mLua;
   sol::function mMonit;
   std::mutex mMutex;
   int64_t mRenderingTime;
