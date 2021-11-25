@@ -6,7 +6,6 @@
 #include "WinAudioOut.hpp"
 #include "ComLynxWire.hpp"
 #include "Core.hpp"
-#include "Monitor.hpp"
 #include "SymbolSource.hpp"
 #include "imgui.h"
 #include "Log.hpp"
@@ -280,26 +279,6 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   {
     mOpenMenu = mainMenu( io );
   }
-
-  if ( mMonitor && mInstance )
-  {
-    if ( ImGui::Begin( "Monitor" ) )
-    {
-      ImGui::Text( "Tick: %u", mInstance->tick() );
-      for ( auto sv : mMonitor->sample( *mInstance ) )
-        ImGui::Text( sv.data() );
-      if ( mMonit )
-      {
-        std::scoped_lock<std::mutex> l{ mMutex };
-        mMonit.call( []( std::string const& txt )
-        {
-          ImGui::Text( txt.c_str() );
-        } );
-      }
-    }
-    ImGui::End();
-  }
-
 }
 
 bool Manager::doRun() const
@@ -350,49 +329,6 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
   mLua["rom"] = std::make_unique<RomProxy>( *this );
   mLua["mikey"] = std::make_unique<MikeyProxy>( *this );
   mLua["suzy"] = std::make_unique<SuzyProxy>( *this );
-
-  auto decHex = [this]( sol::table const& tab, bool hex )
-  {
-    Monitor::Entry e{ hex };
-
-    if ( sol::optional<std::string> opt = tab["label"] )
-      e.name = *opt;
-    else throw Ex{} << "Monitor entry required label";
-
-    if ( sol::optional<int> opt = tab["size"] )
-      e.size = *opt;
-
-    return e;
-  };
-
-  mLua["Dec"] = [&]( sol::table const& tab ) { return decHex( tab, false ); };
-  mLua["Hex"] = [&]( sol::table const& tab ) { return decHex( tab, true ); };
-
-  mLua["Monitor"] = [this]( sol::table const& tab )
-  {
-    std::vector<Monitor::Entry> entries;
-
-    for ( auto kv : tab )
-    {
-      sol::object const& value = kv.second;
-      sol::type t = value.get_type();
-
-      switch ( t )
-      {
-      case sol::type::userdata:
-        if ( value.is<Monitor::Entry>() )
-        {
-          entries.push_back( value.as<Monitor::Entry>() );
-        }
-        else throw Ex{} << "Unknown type in Monitor";
-        break;
-      default:
-        throw Ex{} << "Unsupported argument to Monitor";
-      }
-    }
-
-    mMonitor = std::make_unique<Monitor>( std::move( entries ) );
-  };
 
   mLua["Encoder"] = [this]( sol::table const& tab )
   {
@@ -480,40 +416,6 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
   if ( sol::optional<std::string> opt = mLua["lab"] )
   {
     mSymbols = std::make_unique<SymbolSource>( *opt );
-  }
-
-  if ( mSymbols )
-  {
-    if ( mMonitor )
-      mMonitor->populateSymbols( *mSymbols );
-  }
-  else
-  {
-    mMonitor.reset();
-  }
-
-  //if ( auto esc = mLua["escapes"]; esc.valid() && esc.get_type() == sol::type::table )
-  //{
-  //  auto escTab = mLua.get<sol::table>( "escapes" );
-  //  for ( auto kv : escTab )
-  //  {
-  //    sol::object const& value = kv.second;
-  //    sol::type t = value.get_type();
-
-  //    if ( t == sol::type::function )
-  //    {
-  //      size_t id = kv.first.as<size_t>();
-  //      while ( mEscapes.size() <= id )
-  //        mEscapes.push_back( sol::nil );
-
-  //      mEscapes[id] = (sol::function)value;
-  //    }
-  //  }
-  //}
-
-  if ( auto esc = mLua["monit"]; esc.valid() && esc.get_type() == sol::type::function )
-  {
-    mMonit = mLua.get<sol::function>( "monit" );
   }
 
   return result;

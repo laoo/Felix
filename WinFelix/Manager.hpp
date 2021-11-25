@@ -7,7 +7,6 @@ class WinRenderer;
 class WinAudioOut;
 class ComLynxWire;
 class Core;
-class Monitor;
 class SymbolSource;
 class InputFile;
 class IEncoder;
@@ -111,7 +110,6 @@ private:
   std::shared_ptr<WinRenderer> mRenderer;
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
-  std::unique_ptr<Monitor> mMonitor;
   std::shared_ptr<IEncoder> mEncoder;
   std::unique_ptr<SymbolSource> mSymbols;
   std::shared_ptr<Core> mInstance;
@@ -119,7 +117,6 @@ private:
   std::wstring mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;
-  sol::function mMonit;
   std::mutex mMutex;
   int64_t mRenderingTime;
   bool mOpenMenu;
