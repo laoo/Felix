@@ -204,6 +204,9 @@ int WinImgui::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
     if ( wParam < 256 )
       io.KeysDown[wParam] = 0;
     return 0;
+  case WM_KILLFOCUS:
+    memset( io.KeysDown, 0, sizeof( io.KeysDown ) );
+    return 0;
   case WM_CHAR:
     // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
     io.AddInputCharacter( (unsigned int)wParam );
