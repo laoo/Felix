@@ -52,7 +52,7 @@ private:
     InputSource();
     ~InputSource() override = default;
 
-    KeyInput getInput() const override;
+    KeyInput getInput( bool leftHand ) const override;
   };
 
   struct TrapProxy

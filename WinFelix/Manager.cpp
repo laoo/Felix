@@ -292,15 +292,15 @@ void Manager::processKeys()
   if ( !GetKeyboardState( keys.data() ) )
     return;
 
-  mIntputSource->left = keys[VK_LEFT] & 0x80;
-  mIntputSource->up = keys[VK_UP] & 0x80;
-  mIntputSource->right = keys[VK_RIGHT] & 0x80;
-  mIntputSource->down = keys[VK_DOWN] & 0x80;
-  mIntputSource->opt1 = keys['1'] & 0x80;
-  mIntputSource->pause = keys['2'] & 0x80;
-  mIntputSource->opt2 = keys['3'] & 0x80;
-  mIntputSource->a = keys['Z'] & 0x80;
-  mIntputSource->b = keys['X'] & 0x80;
+  mIntputSource->set( KeyInput::LEFT, keys[VK_LEFT] & 0x80 );
+  mIntputSource->set( KeyInput::UP, keys[VK_UP] & 0x80 );
+  mIntputSource->set( KeyInput::RIGHT, keys[VK_RIGHT] & 0x80 );
+  mIntputSource->set( KeyInput::DOWN, keys[VK_DOWN] & 0x80 );
+  mIntputSource->set( KeyInput::OPTION1, keys['1'] & 0x80 );
+  mIntputSource->set( KeyInput::PAUSE, keys['2'] & 0x80 );
+  mIntputSource->set( KeyInput::OPTION2, keys['3'] & 0x80 );
+  mIntputSource->set( KeyInput::OUTER, keys['Z'] & 0x80 );
+  mIntputSource->set( KeyInput::INNER, keys['X'] & 0x80 );
 
   if ( keys[VK_F9] & 0x80 )
   {
@@ -518,7 +518,7 @@ Manager::InputSource::InputSource() : KeyInput{}
 {
 }
 
-KeyInput Manager::InputSource::getInput() const
+KeyInput Manager::InputSource::getInput( bool leftHand ) const
 {
   return *this;
 }

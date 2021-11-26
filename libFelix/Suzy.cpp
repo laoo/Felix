@@ -177,35 +177,35 @@ uint8_t Suzy::read( uint16_t address )
     break;
   case JOYSTICK:
   {
-    auto input = mInputSource->getInput();
+    auto input = mInputSource->getInput( mLeftHand != 0 );
     uint8_t joystick =
-      ( input.opt1 ? JOYSTICK::OPTION1 : 0 ) |
-      ( input.opt2 ? JOYSTICK::OPTION2 : 0 ) |
-      ( input.b ? JOYSTICK::A : 0 ) |
-      ( input.a ? JOYSTICK::B : 0 );
+      ( input.get( KeyInput::OPTION1 ) ? JOYSTICK::OPTION1 : 0 ) |
+      ( input.get( KeyInput::OPTION2 ) ? JOYSTICK::OPTION2 : 0 ) |
+      ( input.get( KeyInput::OUTER ) ? JOYSTICK::A : 0 ) |
+      ( input.get( KeyInput::INNER ) ? JOYSTICK::B : 0 );
 
     if ( !mLeftHand )
     {
       joystick |=
-        ( input.down ? JOYSTICK::UP : 0 ) |
-        ( input.up ? JOYSTICK::DOWN : 0 ) |
-        ( input.right ? JOYSTICK::LEFT : 0 ) |
-        ( input.left ? JOYSTICK::RIGHT : 0 );
+        ( input.get( KeyInput::DOWN ) ? JOYSTICK::UP : 0 ) |
+        ( input.get( KeyInput::UP ) ? JOYSTICK::DOWN : 0 ) |
+        ( input.get( KeyInput::RIGHT ) ? JOYSTICK::LEFT : 0 ) |
+        ( input.get( KeyInput::LEFT ) ? JOYSTICK::RIGHT : 0 );
     }
     else
     {
       joystick |=
-        ( input.down ? JOYSTICK::DOWN : 0 ) |
-        ( input.up ? JOYSTICK::UP : 0 ) |
-        ( input.right ? JOYSTICK::RIGHT : 0 ) |
-        ( input.left ? JOYSTICK::LEFT : 0 );
+        ( input.get( KeyInput::DOWN ) ? JOYSTICK::DOWN : 0 ) |
+        ( input.get( KeyInput::UP ) ? JOYSTICK::UP : 0 ) |
+        ( input.get( KeyInput::RIGHT ) ? JOYSTICK::RIGHT : 0 ) |
+        ( input.get( KeyInput::LEFT ) ? JOYSTICK::LEFT : 0 );
     }
     return joystick;
   }
   case SWITCHES:
   {
-    auto input = mInputSource->getInput();
-    return input.pause ? SWITCHES::PAUSE_SWITCH : 0;
+    auto input = mInputSource->getInput( mLeftHand != 0 );
+    return input.get( KeyInput::PAUSE ) ? SWITCHES::PAUSE_SWITCH : 0;
   }
   case RCART0:
     return mCore.getCartridge().peekRCART0( mAccessTick );
