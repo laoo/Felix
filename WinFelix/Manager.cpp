@@ -16,6 +16,7 @@
 #include "WinConfig.hpp"
 #include "SysConfig.hpp"
 #include "ScriptDebuggerEscapes.hpp"
+#include "UserInput.hpp"
 #include <imfilebrowser.h>
 
 namespace
@@ -38,12 +39,14 @@ std::optional<InputFile> getOptionalKernel()
 
 }
 
-Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mIntputSource{ std::make_shared<InputSource>() }, mProcessThreads{}, mJoinThreads{}, mPaused{},
-  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }, mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }
+Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads{}, mPaused{},
+  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
+  mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
   mComLynxWire = std::make_shared<ComLynxWire>();
+  mIntputSource = std::make_shared<UserInput>( *gConfigProvider.sysConfig() );
 
   mLua.open_libraries( sol::lib::base, sol::lib::io );
 
@@ -105,8 +108,6 @@ Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mInt
 
 void Manager::update()
 {
-  processKeys();
-
   if ( mDoUpdate )
     reset();
   mDoUpdate = false;
@@ -156,6 +157,23 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
       return true;
     }
     break;
+  case WM_KEYDOWN:
+  case WM_SYSKEYDOWN:
+    if ( wParam < 256 )
+    {
+      mIntputSource->keyDown( (int)wParam );
+    }
+    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  case WM_KEYUP:
+  case WM_SYSKEYUP:
+    if ( wParam < 256 )
+    {
+      mIntputSource->keyUp( (int)wParam );
+    }
+    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  case WM_KILLFOCUS:
+    mIntputSource->lostFocus();
+    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
   default:
     assert( mRenderer );
     return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
@@ -284,35 +302,6 @@ void Manager::drawGui( int left, int top, int right, int bottom )
 bool Manager::doRun() const
 {
   return mEmulationRunning;
-}
-
-void Manager::processKeys()
-{
-  std::array<uint8_t, 256> keys;
-  if ( !GetKeyboardState( keys.data() ) )
-    return;
-
-  mIntputSource->set( KeyInput::LEFT, keys[VK_LEFT] & 0x80 );
-  mIntputSource->set( KeyInput::UP, keys[VK_UP] & 0x80 );
-  mIntputSource->set( KeyInput::RIGHT, keys[VK_RIGHT] & 0x80 );
-  mIntputSource->set( KeyInput::DOWN, keys[VK_DOWN] & 0x80 );
-  mIntputSource->set( KeyInput::OPTION1, keys['1'] & 0x80 );
-  mIntputSource->set( KeyInput::PAUSE, keys['2'] & 0x80 );
-  mIntputSource->set( KeyInput::OPTION2, keys['3'] & 0x80 );
-  mIntputSource->set( KeyInput::OUTER, keys['Z'] & 0x80 );
-  mIntputSource->set( KeyInput::INNER, keys['X'] & 0x80 );
-
-  if ( keys[VK_F9] & 0x80 )
-  {
-    mPaused = false;
-    L_INFO << "UnPause";
-  }
-  if ( keys[VK_F10] & 0x80 )
-  {
-    mPaused = true;
-    L_INFO << "Pause";
-  }
-
 }
 
 std::optional<InputFile> Manager::processLua( std::filesystem::path const& path )
@@ -512,15 +501,6 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
   }
 
   return false;
-}
-
-Manager::InputSource::InputSource() : KeyInput{}
-{
-}
-
-KeyInput Manager::InputSource::getInput( bool leftHand ) const
-{
-  return *this;
 }
 
 void Manager::TrapProxy::set( TrapProxy& proxy, int idx, sol::function fun )

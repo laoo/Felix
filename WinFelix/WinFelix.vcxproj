@@ -155,6 +155,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="SysConfig.cpp" />
+    <ClCompile Include="UserInput.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinConfig.cpp" />
     <ClCompile Include="WinImgui.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="pixel.hxx" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="SysConfig.hpp" />
+    <ClInclude Include="UserInput.hpp" />
     <ClInclude Include="version.hpp" />
     <ClInclude Include="vertex.hxx" />
     <ClInclude Include="WinAudioOut.hpp" />

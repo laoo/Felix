@@ -12,6 +12,7 @@
     <ClCompile Include="WinImgui9.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
     <ClCompile Include="SysConfig.cpp" />
+    <ClCompile Include="UserInput.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -29,6 +30,7 @@
     <ClInclude Include="WinImgui9.hpp" />
     <ClInclude Include="ConfigProvider.hpp" />
     <ClInclude Include="SysConfig.hpp" />
+    <ClInclude Include="UserInput.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />

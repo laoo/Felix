@@ -1,30 +1,46 @@
 #pragma once
 
-struct KeyInput
+class KeyInput
 {
-  uint32_t bitmask;
+  uint32_t data;
+public:
 
   enum Key : uint32_t
   {
-    PAUSE   = 0b100000000,
-    DOWN    = 0b010000000,
-    UP      = 0b001000000,
-    RIGHT   = 0b000100000,
-    LEFT    = 0b000010000,
-    OPTION1 = 0b000001000,
-    OPTION2 = 0b000000100,
-    INNER   = 0b000000010,
-    OUTER   = 0b000000001
+    OUTER   = 0,
+    INNER   = 1,
+    OPTION2 = 2,
+    OPTION1 = 3,
+    RIGHT   = 4,
+    LEFT    = 5,
+    DOWN    = 6,
+    UP      = 7,
+    PAUSE   = 8
   };
+
+  constexpr uint32_t bitmask( Key k ) const
+  {
+    return 1 << (uint32_t)k;
+  }
 
   bool get( Key k ) const
   {
-    return ( bitmask & (uint32_t)k ) != 0;
+    return ( data & bitmask( k ) ) != 0;
   }
 
   void set( Key k, bool value )
   {
-    bitmask |= ( bitmask & (uint32_t)k ) | ( value ? (uint32_t)k : 0 );
+    data |= ( data & ~bitmask( k ) ) | ( value ? bitmask( k ) : 0 );
+  }
+
+  uint8_t joystick() const
+  {
+    return data & 0xff;
+  }
+
+  uint8_t switches() const
+  {
+    return ( data >> 8 ) & 0xff;
   }
 };
 

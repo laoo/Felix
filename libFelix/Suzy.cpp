@@ -3,6 +3,7 @@
 #include "Core.hpp"
 #include "SuzyProcess.hpp"
 #include "Cartridge.hpp"
+#include "Log.hpp"
 
 Suzy::Suzy( Core & core, std::shared_ptr<IInputSource> inputSource ) : mCore{ core }, mSCB{}, mMath{ mCore.getTraceHelper() }, mInputSource{ inputSource }, mAccessTick{},
   mPalette{}, mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{}, mUnsafeAccess{}, mSpriteStop{},
@@ -177,35 +178,13 @@ uint8_t Suzy::read( uint16_t address )
     break;
   case JOYSTICK:
   {
-    auto input = mInputSource->getInput( mLeftHand != 0 );
-    uint8_t joystick =
-      ( input.get( KeyInput::OPTION1 ) ? JOYSTICK::OPTION1 : 0 ) |
-      ( input.get( KeyInput::OPTION2 ) ? JOYSTICK::OPTION2 : 0 ) |
-      ( input.get( KeyInput::OUTER ) ? JOYSTICK::A : 0 ) |
-      ( input.get( KeyInput::INNER ) ? JOYSTICK::B : 0 );
-
-    if ( !mLeftHand )
-    {
-      joystick |=
-        ( input.get( KeyInput::DOWN ) ? JOYSTICK::UP : 0 ) |
-        ( input.get( KeyInput::UP ) ? JOYSTICK::DOWN : 0 ) |
-        ( input.get( KeyInput::RIGHT ) ? JOYSTICK::LEFT : 0 ) |
-        ( input.get( KeyInput::LEFT ) ? JOYSTICK::RIGHT : 0 );
-    }
-    else
-    {
-      joystick |=
-        ( input.get( KeyInput::DOWN ) ? JOYSTICK::DOWN : 0 ) |
-        ( input.get( KeyInput::UP ) ? JOYSTICK::UP : 0 ) |
-        ( input.get( KeyInput::RIGHT ) ? JOYSTICK::RIGHT : 0 ) |
-        ( input.get( KeyInput::LEFT ) ? JOYSTICK::LEFT : 0 );
-    }
+    uint8_t joystick = mInputSource->getInput( mLeftHand != 0 ).joystick();
     return joystick;
   }
   case SWITCHES:
   {
-    auto input = mInputSource->getInput( mLeftHand != 0 );
-    return input.get( KeyInput::PAUSE ) ? SWITCHES::PAUSE_SWITCH : 0;
+    uint8_t switches = mInputSource->getInput( mLeftHand != 0 ).switches();
+    return switches;
   }
   case RCART0:
     return mCore.getCartridge().peekRCART0( mAccessTick );

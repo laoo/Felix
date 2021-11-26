@@ -187,10 +187,10 @@ public:
 
   struct JOYSTICK
   {
-    static constexpr uint8_t DOWN              = 0b10000000;
-    static constexpr uint8_t UP                = 0b01000000;
-    static constexpr uint8_t RIGHT             = 0b00100000;
-    static constexpr uint8_t LEFT              = 0b00010000;
+    static constexpr uint8_t UP                = 0b10000000;
+    static constexpr uint8_t DOWN              = 0b01000000;
+    static constexpr uint8_t LEFT              = 0b00100000;
+    static constexpr uint8_t RIGHT             = 0b00010000;
     static constexpr uint8_t OPTION1           = 0b00001000;
     static constexpr uint8_t OPTION2           = 0b00000100;
     static constexpr uint8_t INNER             = 0b00000010;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "IInputSource.hpp"
 #include "ScriptDebugger.hpp"
 
 class WinRenderer;
@@ -12,6 +11,7 @@ class InputFile;
 class IEncoder;
 class WinImgui;
 class ScriptDebuggerEscapes;
+class UserInput;
 struct ImGuiIO;
 
 namespace ImGui
@@ -44,16 +44,7 @@ private:
   void stopThreads();
   void handleFileDrop( HDROP hDrop );
   bool handleCopyData( COPYDATASTRUCT const* copy );
-  void processKeys();
 private:
-
-  struct InputSource : public IInputSource, public KeyInput
-  {
-    InputSource();
-    ~InputSource() override = default;
-
-    KeyInput getInput( bool leftHand ) const override;
-  };
 
   struct TrapProxy
   {
@@ -100,7 +91,6 @@ private:
   bool mDoUpdate;
 
   sol::state mLua;
-  std::shared_ptr<InputSource> mIntputSource;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
   std::atomic_bool mPaused;
@@ -114,6 +104,7 @@ private:
   std::unique_ptr<SymbolSource> mSymbols;
   std::shared_ptr<Core> mInstance;
   std::shared_ptr<ScriptDebuggerEscapes> mScriptDebuggerEscapes;
+  std::shared_ptr<UserInput> mIntputSource;
   std::wstring mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;
