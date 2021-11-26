@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Rotation.hpp"
 #include "CartBank.hpp"
 
 class ImageCart
@@ -13,13 +14,6 @@ public:
     bool sd() const;
     int type() const;
     bool is16Bit() const;
-  };
-
-  enum class Rotation
-  {
-    NORMAL = 0,
-    LEFT = 1,
-    RIGHT = 2
   };
 
   ImageCart( std::vector<uint8_t> data = {}, std::filesystem::path path = {} );

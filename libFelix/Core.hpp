@@ -35,7 +35,7 @@ public:
 
   void enterMonitor();
   int64_t globalSamplesEmittedPerFrame() const;
-  ImageCart::Rotation rotation() const;
+  Rotation rotation() const;
 
   uint64_t tick() const;
 

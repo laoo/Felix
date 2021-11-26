@@ -77,5 +77,6 @@
     <ClInclude Include="IMemoryAccessTrap.hpp" />
     <ClInclude Include="ScriptDebuggerEscapes.hpp" />
     <ClInclude Include="Encryption.hpp" />
+    <ClInclude Include="Rotation.hpp" />
   </ItemGroup>
 </Project>

@@ -26,7 +26,7 @@ ImageCart::EEPROM ImageCart::eeprom() const
   return mEEPROM;
 }
 
-ImageCart::Rotation ImageCart::rotation() const
+Rotation ImageCart::rotation() const
 {
   return mRotation;
 }

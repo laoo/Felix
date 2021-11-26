@@ -54,6 +54,7 @@
     <ClInclude Include="ActionQueue.hpp" />
     <ClInclude Include="EEPROM.hpp" />
     <ClInclude Include="Encryption.hpp" />
+    <ClInclude Include="Rotation.hpp" />
     <ClInclude Include="ScriptDebugger.hpp" />
     <ClInclude Include="IMemoryAccessTrap.hpp" />
     <ClInclude Include="ScriptDebuggerEscapes.hpp" />

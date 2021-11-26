@@ -477,9 +477,9 @@ int64_t Core::globalSamplesEmittedPerFrame() const
   return mGlobalSamplesEmittedPerFrame;
 }
 
-ImageCart::Rotation Core::rotation() const
+Rotation Core::rotation() const
 {
-  return mCartridge ? mCartridge->rotation() : ImageCart::Rotation{};
+  return mCartridge ? mCartridge->rotation() : Rotation{};
 }
 
 Cartridge & Core::getCartridge()
