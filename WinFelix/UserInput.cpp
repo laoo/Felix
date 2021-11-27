@@ -140,12 +140,6 @@ int UserInput::firstKeyPressed() const
   return 0;
 }
 
-int UserInput::translateLR( int code )
-{
-
-  return code;
-}
-
 bool UserInput::pressed( int code ) const
 {
   return std::find( mPressedCodes.cbegin(), mPressedCodes.cend(), code ) != mPressedCodes.cend();
