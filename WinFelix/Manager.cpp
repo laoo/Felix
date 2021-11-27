@@ -17,6 +17,7 @@
 #include "SysConfig.hpp"
 #include "ScriptDebuggerEscapes.hpp"
 #include "UserInput.hpp"
+#include "KeyNames.hpp"
 #include <imfilebrowser.h>
 
 namespace
@@ -41,7 +42,7 @@ std::optional<InputFile> getOptionalKernel()
 
 Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads{}, mPaused{},
   mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
-  mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}
+  mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() }
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -201,6 +202,7 @@ bool Manager::mainMenu( ImGuiIO& io )
   };
 
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
+  static bool keys = false;
 
   auto sysConfig = gConfigProvider.sysConfig();
 
@@ -228,6 +230,10 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
+      if ( ImGui::MenuItem( "Keys" ) )
+      {
+        keys = true;
+      }
       if ( ImGui::BeginMenu( "Kernel" ) )
       {
         bool externalSelectEnabled = !sysConfig->kernel.path.empty();
@@ -282,6 +288,28 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
     mFileBrowser->ClearSelected();
     fileBrowserAction = NONE;
+  }
+
+  if ( keys )
+  {
+    ImGui::OpenPopup( "Keys" );
+    ImGui::SetNextWindowSize( ImVec2{ 200, 200 } );
+    if ( ImGui::BeginPopupModal( "Keys", NULL, ImGuiWindowFlags_NoResize ) )
+    {      
+      if ( ImGui::Button( "OK", ImVec2( 120, 0 ) ) )
+      {
+        ImGui::CloseCurrentPopup();
+        keys = false;
+      }
+
+      if ( auto key = mIntputSource->firstKeyPressed() )
+      {
+        ImGui::SetCursorPos( ImVec2{ 30, 100 } );
+        ImGui::Text( mKeyNames->name( key ) );
+      }
+
+      ImGui::EndPopup();
+    }
   }
 
   return openMenu;

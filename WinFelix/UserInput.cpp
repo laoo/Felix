@@ -23,6 +23,30 @@ void UserInput::keyDown( int code )
 {
   std::unique_lock<std::mutex> l{ mMutex };
 
+  switch ( code )
+  {
+  case VK_SHIFT:
+    if ( ( GetAsyncKeyState( VK_LSHIFT ) & 0x8000 ) != 0 )
+      code = VK_LSHIFT;
+    if ( ( GetAsyncKeyState( VK_RSHIFT ) & 0x8000 ) != 0 )
+      code = VK_RSHIFT;
+    break;
+  case VK_CONTROL:
+    if ( ( GetAsyncKeyState( VK_LCONTROL ) & 0x8000 ) != 0 )
+      code = VK_LCONTROL;
+    if ( ( GetAsyncKeyState( VK_RCONTROL ) & 0x8000 ) != 0 )
+      code = VK_RCONTROL;
+    break;
+  case VK_MENU:
+    if ( ( GetAsyncKeyState( VK_LMENU ) & 0x8000 ) != 0 )
+      code = VK_LMENU;
+    if ( ( GetAsyncKeyState( VK_RMENU ) & 0x8000 ) != 0 )
+      code = VK_RMENU;
+    break;
+  default:
+    break;
+  }
+
   if ( !pressed( code ) )
     mPressedCodes.push_back( code );
 }
@@ -31,7 +55,30 @@ void UserInput::keyUp( int code )
 {
   std::unique_lock<std::mutex> l{ mMutex };
 
-  mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), code ), mPressedCodes.end() );
+  switch ( code )
+  {
+  case VK_SHIFT:
+    mPressedCodes.erase( std::remove_if( mPressedCodes.begin(), mPressedCodes.end(), []( int c )
+    {
+      return c == VK_LSHIFT || c == VK_RSHIFT;
+    } ), mPressedCodes.end() );
+    return;
+  case VK_CONTROL:
+    mPressedCodes.erase( std::remove_if( mPressedCodes.begin(), mPressedCodes.end(), []( int c )
+    {
+      return c == VK_LCONTROL || c == VK_RCONTROL;
+    } ), mPressedCodes.end() );
+    return;
+  case VK_MENU:
+    mPressedCodes.erase( std::remove_if( mPressedCodes.begin(), mPressedCodes.end(), []( int c )
+    {
+      return c == VK_LMENU || c == VK_RMENU;
+    } ), mPressedCodes.end() );
+    return;
+  default:
+    mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), code ), mPressedCodes.end() );
+    return;
+  }
 }
 
 void UserInput::lostFocus()
@@ -80,6 +127,23 @@ KeyInput UserInput::getInput( bool leftHand ) const
   }
 
   return result;
+}
+
+int UserInput::firstKeyPressed() const
+{
+  std::unique_lock<std::mutex> l{ mMutex };
+
+  if ( mPressedCodes.empty() )
+    return 0;
+  else
+    return mPressedCodes[0];
+  return 0;
+}
+
+int UserInput::translateLR( int code )
+{
+
+  return code;
 }
 
 bool UserInput::pressed( int code ) const

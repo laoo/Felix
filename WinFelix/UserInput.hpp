@@ -17,6 +17,8 @@ public:
 
   KeyInput getInput( bool leftHand ) const override;
 
+  int firstKeyPressed() const;
+
 private:
 
   bool pressed( int code ) const;

@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ConfigProvider.cpp" />
+    <ClCompile Include="KeyNames.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -167,6 +168,7 @@
   <ItemGroup>
     <ClInclude Include="ConfigProvider.hpp" />
     <ClInclude Include="Ex.hpp" />
+    <ClInclude Include="KeyNames.hpp" />
     <ClInclude Include="Manager.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="pixel.hxx" />
