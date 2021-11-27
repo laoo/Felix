@@ -58,23 +58,35 @@ void UserInput::keyUp( int code )
   switch ( code )
   {
   case VK_SHIFT:
-    mPressedCodes.erase( std::remove_if( mPressedCodes.begin(), mPressedCodes.end(), []( int c )
+    if ( ( GetAsyncKeyState( VK_LSHIFT ) & 0x8000 ) == 0 )
     {
-      return c == VK_LSHIFT || c == VK_RSHIFT;
-    } ), mPressedCodes.end() );
-    return;
+      mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), VK_LSHIFT ), mPressedCodes.end() );
+    }
+    if ( ( GetAsyncKeyState( VK_RSHIFT ) & 0x8000 ) == 0 )
+    {
+      mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), VK_RSHIFT ), mPressedCodes.end() );
+    }
+    break;
   case VK_CONTROL:
-    mPressedCodes.erase( std::remove_if( mPressedCodes.begin(), mPressedCodes.end(), []( int c )
+    if ( ( GetAsyncKeyState( VK_LCONTROL ) & 0x8000 ) == 0 )
     {
-      return c == VK_LCONTROL || c == VK_RCONTROL;
-    } ), mPressedCodes.end() );
-    return;
+      mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), VK_LCONTROL ), mPressedCodes.end() );
+    }
+    if ( ( GetAsyncKeyState( VK_RCONTROL ) & 0x8000 ) == 0 )
+    {
+      mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), VK_RCONTROL ), mPressedCodes.end() );
+    }
+    break;
   case VK_MENU:
-    mPressedCodes.erase( std::remove_if( mPressedCodes.begin(), mPressedCodes.end(), []( int c )
+    if ( ( GetAsyncKeyState( VK_LMENU ) & 0x8000 ) == 0 )
     {
-      return c == VK_LMENU || c == VK_RMENU;
-    } ), mPressedCodes.end() );
-    return;
+      mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), VK_LMENU ), mPressedCodes.end() );
+    }
+    if ( ( GetAsyncKeyState( VK_RMENU ) & 0x8000 ) == 0 )
+    {
+      mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), VK_RMENU ), mPressedCodes.end() );
+    }
+    break;
   default:
     mPressedCodes.erase( std::remove( mPressedCodes.begin(), mPressedCodes.end(), code ), mPressedCodes.end() );
     return;
