@@ -19,6 +19,9 @@ public:
 
   int firstKeyPressed() const;
 
+  void updateGamepad();
+  void recheckGamepad();
+
 private:
 
   bool pressed( int code ) const;
@@ -28,9 +31,19 @@ private:
 private:
 
 private:
+  typedef DWORD( WINAPI* PFN_XInputGetCapabilities )( DWORD, DWORD, XINPUT_CAPABILITIES* );
+  typedef DWORD( WINAPI* PFN_XInputGetState )( DWORD, XINPUT_STATE* );
+
+  HMODULE                     mXInputDLL;
+  PFN_XInputGetCapabilities   mXInputGetCapabilities;
+  PFN_XInputGetState          mXInputGetState;
+
   mutable std::mutex mMutex;
   Rotation mRotation;
   std::array<int, 9> mMapping;
   std::vector<int> mPressedCodes;
+  XINPUT_GAMEPAD mLastState;
+  uint32_t mGamepadPacket;
+  bool mHasGamepad;
 
 };

@@ -109,6 +109,8 @@ Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mPro
 
 void Manager::update()
 {
+  mIntputSource->updateGamepad();
+
   if ( mDoUpdate )
     reset();
   mDoUpdate = false;
@@ -175,6 +177,10 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
   case WM_KILLFOCUS:
     mIntputSource->lostFocus();
     return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  case WM_DEVICECHANGE:
+    if ( (UINT)wParam == DBT_DEVNODES_CHANGED )
+      mIntputSource->recheckGamepad();
+    return 0;
   default:
     assert( mRenderer );
     return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
@@ -202,7 +208,6 @@ bool Manager::mainMenu( ImGuiIO& io )
   };
 
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
-  static bool keys = false;
 
   auto sysConfig = gConfigProvider.sysConfig();
 
@@ -230,10 +235,6 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
-      if ( ImGui::MenuItem( "Keys" ) )
-      {
-        keys = true;
-      }
       if ( ImGui::BeginMenu( "Kernel" ) )
       {
         bool externalSelectEnabled = !sysConfig->kernel.path.empty();
@@ -288,28 +289,6 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
     mFileBrowser->ClearSelected();
     fileBrowserAction = NONE;
-  }
-
-  if ( keys )
-  {
-    ImGui::OpenPopup( "Keys" );
-    ImGui::SetNextWindowSize( ImVec2{ 200, 200 } );
-    if ( ImGui::BeginPopupModal( "Keys", NULL, ImGuiWindowFlags_NoResize ) )
-    {      
-      if ( ImGui::Button( "OK", ImVec2( 120, 0 ) ) )
-      {
-        ImGui::CloseCurrentPopup();
-        keys = false;
-      }
-
-      if ( auto key = mIntputSource->firstKeyPressed() )
-      {
-        ImGui::SetCursorPos( ImVec2{ 30, 100 } );
-        ImGui::Text( mKeyNames->name( key ) );
-      }
-
-      ImGui::EndPopup();
-    }
   }
 
   return openMenu;

@@ -28,6 +28,8 @@
 #include <atlbase.h>
 #include <AudioClient.h>
 #include <MMDeviceAPI.h>
+#include <xinput.h>
+#include <Dbt.h>
 #pragma warning(push)
 #pragma warning( disable: 4005 )
 #ifndef NDEBUG
