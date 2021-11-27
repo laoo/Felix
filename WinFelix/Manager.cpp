@@ -142,6 +142,7 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     winConfig->mainWindow.y = r.top;
     winConfig->mainWindow.width = r.right - r.left;
     winConfig->mainWindow.height = r.bottom - r.top;
+    mIntputSource->serialize( *gConfigProvider.sysConfig() );
     gConfigProvider.serialize();
     DestroyWindow( hWnd );
   }
@@ -208,6 +209,18 @@ bool Manager::mainMenu( ImGuiIO& io )
   };
 
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
+  static std::optional<KeyInput::Key> keyToConfigure;
+
+  auto configureKeyItem = [&]( char const* name, KeyInput::Key k )
+  {
+    ImGui::Text( name );
+    ImGui::SameLine( 90 );
+
+    if ( ImGui::Button( mKeyNames->name( mIntputSource->getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
+    {
+      keyToConfigure = k;
+    }
+  };
 
   auto sysConfig = gConfigProvider.sysConfig();
 
@@ -235,6 +248,21 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
+      if ( ImGui::BeginMenu( "Input Configuration" ) )
+      {
+        configureKeyItem( "Left", KeyInput::LEFT );
+        configureKeyItem( "Right", KeyInput::RIGHT );
+        configureKeyItem( "Up", KeyInput::UP );
+        configureKeyItem( "Down", KeyInput::DOWN );
+        configureKeyItem( "A", KeyInput::OUTER );
+        configureKeyItem( "B", KeyInput::INNER );
+        configureKeyItem( "Opt1", KeyInput::OPTION1 );
+        configureKeyItem( "Pause", KeyInput::PAUSE );
+        configureKeyItem( "Opt2", KeyInput::OPTION2 );
+
+        ImGui::EndMenu();
+      }
+
       if ( ImGui::BeginMenu( "Kernel" ) )
       {
         bool externalSelectEnabled = !sysConfig->kernel.path.empty();
@@ -289,6 +317,47 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
     mFileBrowser->ClearSelected();
     fileBrowserAction = NONE;
+  }
+
+  if ( keyToConfigure )
+  {
+    ImGui::OpenPopup( "Configure Key" );
+    if ( ImGui::BeginPopupModal( "Configure Key", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
+    {
+      if ( ImGui::BeginTable( "table", 3 ) )
+      {
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::Text( "Press key" );
+        ImGui::TableNextRow( ImGuiTableRowFlags_None, 30.0f );
+        ImGui::TableNextColumn();
+        ImGui::TableNextColumn();
+        static int code = mIntputSource->getVirtualCode( *keyToConfigure );
+        if ( auto c = mIntputSource->firstKeyPressed() )
+        {
+          code = c;
+        }
+        ImGui::Text( mKeyNames->name( code ) );
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
+        {
+          ImGui::CloseCurrentPopup();
+          mIntputSource->updateMapping( *keyToConfigure, code );
+          keyToConfigure = std::nullopt;
+        }
+        ImGui::TableNextColumn();
+        ImGui::TableNextColumn();
+        ImGui::SetItemDefaultFocus();
+        if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
+        {
+          ImGui::CloseCurrentPopup();
+          keyToConfigure = std::nullopt;
+        }
+        ImGui::EndTable();
+      }
+      ImGui::EndPopup();
+    }
   }
 
   return openMenu;

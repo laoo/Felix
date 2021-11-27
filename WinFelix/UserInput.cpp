@@ -43,6 +43,19 @@ UserInput::~UserInput()
     ::FreeLibrary( mXInputDLL );
 }
 
+void UserInput::serialize( SysConfig& cfg )
+{
+  cfg.keyMapping.outer = mMapping[KeyInput::OUTER];
+  cfg.keyMapping.inner = mMapping[KeyInput::INNER];
+  cfg.keyMapping.option2 = mMapping[KeyInput::OPTION2];
+  cfg.keyMapping.option1 = mMapping[KeyInput::OPTION1];
+  cfg.keyMapping.right = mMapping[KeyInput::RIGHT];
+  cfg.keyMapping.left = mMapping[KeyInput::LEFT];
+  cfg.keyMapping.down = mMapping[KeyInput::DOWN];
+  cfg.keyMapping.up = mMapping[KeyInput::UP];
+  cfg.keyMapping.pause = mMapping[KeyInput::PAUSE];
+}
+
 void UserInput::keyDown( int code )
 {
   std::unique_lock<std::mutex> l{ mMutex };
@@ -217,6 +230,16 @@ KeyInput UserInput::getInput( bool leftHand ) const
   result.set( KeyInput::DOWN, down );
 
   return result;
+}
+
+int UserInput::getVirtualCode( KeyInput::Key k )
+{
+  return mMapping[k];
+}
+
+void UserInput::updateMapping( KeyInput::Key k, int code )
+{
+  mMapping[k] = code;
 }
 
 int UserInput::firstKeyPressed() const

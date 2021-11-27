@@ -10,12 +10,18 @@ public:
   UserInput( SysConfig const& cfg );
   ~UserInput() override;
 
+  void serialize( SysConfig& cfg );
+
   void keyDown( int code );
   void keyUp( int code );
   void lostFocus();
   void setRotation( Rotation rotation );
 
   KeyInput getInput( bool leftHand ) const override;
+
+  int getVirtualCode( KeyInput::Key k );
+  void updateMapping( KeyInput::Key k, int code );
+
 
   int firstKeyPressed() const;
 
