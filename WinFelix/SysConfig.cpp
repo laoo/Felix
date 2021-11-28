@@ -29,9 +29,9 @@ void SysConfig::serialize( std::filesystem::path path )
   std::ofstream fout{ path };
 
   fout << "singleInstance = " << ( singleInstance ? "true;\n" : "false;\n" );
-  fout << "kernel = {\n";
-  fout << "\tuseExternal = " << ( kernel.useExternal ? "true;\n" : "false;\n" );
-  fout << "\tpath = " << kernel.path << ";\n";
+  fout << "bootROM = {\n";
+  fout << "\tuseExternal = " << ( bootROM.useExternal ? "true;\n" : "false;\n" );
+  fout << "\tpath = " << bootROM.path << ";\n";
   fout << "};\n";
   fout << "keyMapping = {\n";
   fout << "\tpause   = " << keyMapping.pause << ";\n";
@@ -50,10 +50,10 @@ void SysConfig::load( sol::state const& lua )
 {
   if ( sol::optional<bool> opt = lua["singleInstance"] )
     singleInstance = *opt;
-  if ( sol::optional<bool> opt = lua["kernel"]["useExternal"] )
-    kernel.useExternal = *opt;
-  if ( sol::optional<std::string> opt = lua["kernel"]["path"] )
-    kernel.path = *opt;
+  if ( sol::optional<bool> opt = lua["bootROM"]["useExternal"] )
+    bootROM.useExternal = *opt;
+  if ( sol::optional<std::string> opt = lua["bootROM"]["path"] )
+    bootROM.path = *opt;
   if ( sol::optional<int> opt = lua["keyMapping"]["pause"] )
     keyMapping.pause = *opt;
   if ( sol::optional<int> opt = lua["keyMapping"]["down"] )

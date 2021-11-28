@@ -3,11 +3,11 @@
 struct SysConfig
 {
   bool singleInstance = false;
-  struct Kernel
+  struct BootROM
   {
     bool useExternal = false;
     std::filesystem::path path{};
-  } kernel;
+  } bootROM;
   struct KeyMapping
   {
     int pause = '2';

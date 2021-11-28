@@ -17,7 +17,7 @@
 #include "SysConfig.hpp"
 #include "ScriptDebuggerEscapes.hpp"
 #include "UserInput.hpp"
-#include "ImageBIOS.hpp"
+#include "ImageROM.hpp"
 #include "KeyNames.hpp"
 #include "ImageProperties.hpp"
 #include <imfilebrowser.h>
@@ -25,12 +25,12 @@
 namespace
 {
 
-std::shared_ptr<ImageBIOS const> getOptionalKernel()
+std::shared_ptr<ImageROM const> getOptionalBootROM()
 {
   auto sysConfig = gConfigProvider.sysConfig();
-  if ( sysConfig->kernel.useExternal && !sysConfig->kernel.path.empty() )
+  if ( sysConfig->bootROM.useExternal && !sysConfig->bootROM.path.empty() )
   {
-    return ImageBIOS::create( sysConfig->kernel.path );
+    return ImageROM::create( sysConfig->bootROM.path );
   }
 
   return {};
@@ -199,7 +199,7 @@ bool Manager::mainMenu( ImGuiIO& io )
   {
     NONE,
     OPEN_CARTRIDGE,
-    OPEN_KERNEL
+    OPEN_BOOTROM
   };
 
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
@@ -257,21 +257,21 @@ bool Manager::mainMenu( ImGuiIO& io )
         ImGui::EndMenu();
       }
 
-      if ( ImGui::BeginMenu( "Kernel" ) )
+      if ( ImGui::BeginMenu( "Boot ROM" ) )
       {
-        bool externalSelectEnabled = !sysConfig->kernel.path.empty();
-        if ( ImGui::BeginMenu( "Use external kernel", externalSelectEnabled ) )
+        bool externalSelectEnabled = !sysConfig->bootROM.path.empty();
+        if ( ImGui::BeginMenu( "Use external ROM", externalSelectEnabled ) )
         {
-          if ( ImGui::Checkbox( "Enabled", &sysConfig->kernel.useExternal ) )
+          if ( ImGui::Checkbox( "Enabled", &sysConfig->bootROM.useExternal ) )
           {
             mDoUpdate = true;
           }
-          if ( ImGui::MenuItem( "Clear kernel path" ) )
+          if ( ImGui::MenuItem( "Clear boot ROM path" ) )
           {
-            sysConfig->kernel.path.clear();
-            if ( sysConfig->kernel.useExternal )
+            sysConfig->bootROM.path.clear();
+            if ( sysConfig->bootROM.useExternal )
             {
-              sysConfig->kernel.useExternal = false;
+              sysConfig->bootROM.useExternal = false;
               mDoUpdate = true;
             }
           }
@@ -279,10 +279,10 @@ bool Manager::mainMenu( ImGuiIO& io )
         }
         if ( ImGui::MenuItem( "Select image" ) )
         {
-          mFileBrowser->SetTitle( "Open Kernel image file" );
+          mFileBrowser->SetTitle( "Open boot ROM image file" );
           mFileBrowser->SetTypeFilters( { ".img", ".*" } );
           mFileBrowser->Open();
-          fileBrowserAction = FileBrowserAction::OPEN_KERNEL;
+          fileBrowserAction = FileBrowserAction::OPEN_BOOTROM;
         }
         ImGui::EndMenu();
       }
@@ -305,8 +305,8 @@ bool Manager::mainMenu( ImGuiIO& io )
       mArg = mFileBrowser->GetSelected().wstring();
       mDoUpdate = true;
       break;
-    case OPEN_KERNEL:
-      sysConfig->kernel.path = mFileBrowser->GetSelected();
+    case OPEN_BOOTROM:
+      sysConfig->bootROM.path = mFileBrowser->GetSelected();
       break;
     }
     mFileBrowser->ClearSelected();
@@ -514,7 +514,7 @@ void Manager::reset()
   if ( auto input = computeInputFile() )
   {
     mInstance = std::make_shared<Core>( *mImageProperties, mComLynxWire, mRenderer->getVideoSink(), mIntputSource,
-      *input, getOptionalKernel(), mScriptDebuggerEscapes );
+      *input, getOptionalBootROM(), mScriptDebuggerEscapes );
 
     mIntputSource->setRotation( mImageProperties->getRotation() );
     mRenderer->setRotation( mImageProperties->getRotation() );

@@ -7,10 +7,10 @@
 #include "Mikey.hpp"
 #include "InputFile.hpp"
 #include "ImageBS93.hpp"
-#include "ImageBIOS.hpp"
+#include "ImageROM.hpp"
 #include "ImageCart.hpp"
 #include "Log.hpp"
-#include "KernelTraps.hpp"
+#include "BootROMTraps.hpp"
 #include "TraceHelper.hpp"
 #include "DebugRAM.hpp"
 #include "ScriptDebuggerEscapes.hpp"
@@ -22,7 +22,7 @@ static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 static constexpr bool ENABLE_TRAPS = true;
 
 Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink,
-  std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::shared_ptr<ImageBIOS const> bios,
+  std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::shared_ptr<ImageROM const> bootROM,
   std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes ) :
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
   mCartridge{ std::make_shared<Cartridge>( imageProperties, std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
@@ -37,7 +37,7 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
     {
       case 0xff:
       case 0xfe:
-        mPageTypes[i] = PageType::KERNEL;
+        mPageTypes[i] = PageType::ROM;
         break;
       case 0xfd:
         mPageTypes[i] = PageType::MIKEY;
@@ -62,9 +62,9 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
     break;
   case InputFile::FileType::CART:
     mCartridge = std::make_shared<Cartridge>( imageProperties, inputFile.getCart(), mTraceHelper );
-    if ( bios )
+    if ( bootROM )
     {
-      bios->load( { mROM.data(), mROM.size() } );
+      bootROM->load( { mROM.data(), mROM.size() } );
     }
     else
     {
@@ -90,15 +90,15 @@ void Core::setDefaultROM()
   };
 
   //reset vector points to reset handler
-  setVec( CPU::RESET_VECTOR, KERNEL_RESET_HANDLER_ADDRESS );
+  setVec( CPU::RESET_VECTOR, BOOTROM_RESET_HANDLER_ADDRESS );
   //reset handler jumps to clear handler
-  setVec( KERNEL_RESET_HANDLER_ADDRESS + 1, KERNEL_CLEAR_HANDLER_ADDRESS );
+  setVec( BOOTROM_RESET_HANDLER_ADDRESS + 1, BOOTROM_CLEAR_HANDLER_ADDRESS );
   //clear handler jumps to shift handler
-  setVec( KERNEL_CLEAR_HANDLER_ADDRESS + 1, KERNEL_SHIFT_HANDLER_ADDRESS );
+  setVec( BOOTROM_CLEAR_HANDLER_ADDRESS + 1, BOOTROM_SHIFT_HANDLER_ADDRESS );
   //decrypt handler jumps to beginning of decrypted rom
-  setVec( KERNEL_DECRYPT_HANDLER_ADDRESS + 1, DECRYPTED_ROM_START_ADDRESS );
+  setVec( BOOTROM_DECRYPT_HANDLER_ADDRESS + 1, DECRYPTED_ROM_START_ADDRESS );
 
-  setKernelTraps( mTraceHelper, *mScriptDebugger );
+  setBootROMTraps( mTraceHelper, *mScriptDebugger );
 }
 
 void Core::setLog( std::filesystem::path const & path, uint64_t startCycle )
@@ -676,7 +676,7 @@ uint8_t Core::readROM( uint16_t address, bool isFetch )
   }
   else if ( address < 0x1f8 )
   {
-    if ( mMapCtl.kernelDisable )
+    if ( mMapCtl.romDisable )
     {
       return isFetch ? fetchRAM( address + 0xfe00 ) : readRAM( address + 0xfe00 );
     }
@@ -689,7 +689,7 @@ uint8_t Core::readROM( uint16_t address, bool isFetch )
   {
     uint8_t result = 0xf0 | //high nibble of MAPCTL is set
       ( mMapCtl.vectorSpaceDisable ? 0x08 : 0x00 ) |
-      ( mMapCtl.kernelDisable ? 0x04 : 0x00 ) |
+      ( mMapCtl.romDisable ? 0x04 : 0x00 ) |
       ( mMapCtl.mikeyDisable ? 0x02 : 0x00 ) |
       ( mMapCtl.suzyDisable ? 0x01 : 0x00 );
 
@@ -704,7 +704,7 @@ uint8_t Core::readROM( uint16_t address, bool isFetch )
 
 void Core::writeROM( uint16_t address, uint8_t value )
 {
-  if ( address >= 0x1fa && mMapCtl.vectorSpaceDisable || address < 0x1f8 && mMapCtl.kernelDisable || address == 0x1f8 )
+  if ( address >= 0x1fa && mMapCtl.vectorSpaceDisable || address < 0x1f8 && mMapCtl.romDisable || address == 0x1f8 )
   {
     writeRAM( 0xfe00 + address, value );
   }
@@ -726,12 +726,12 @@ void Core::writeMAPCTL( uint8_t value )
 
   mMapCtl.sequentialDisable = ( value & 0x80 ) != 0;
   mMapCtl.vectorSpaceDisable = ( value & 0x08 ) != 0;
-  mMapCtl.kernelDisable = ( value & 0x04 ) != 0;
+  mMapCtl.romDisable = ( value & 0x04 ) != 0;
   mMapCtl.mikeyDisable = ( value & 0x02 ) != 0;
   mMapCtl.suzyDisable = ( value & 0x01 ) != 0;
 
   mFastCycleTick = mMapCtl.sequentialDisable ? 5 : 4;
-  mPageTypes[0xfe] = mMapCtl.kernelDisable ? PageType::RAM : PageType::KERNEL;
+  mPageTypes[0xfe] = mMapCtl.romDisable ? PageType::RAM : PageType::ROM;
   mPageTypes[0xfd] = mMapCtl.mikeyDisable ? PageType::RAM : PageType::MIKEY;
   mPageTypes[0xfc] = mMapCtl.suzyDisable ? PageType::RAM : PageType::SUZY;
 }

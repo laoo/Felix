@@ -13,7 +13,7 @@ class CPU;
 class Cartridge;
 class InputFile;
 class ImageBS93;
-class ImageBIOS;
+class ImageROM;
 class ImageProperties;
 class IEscape;
 class ComLynxWire;
@@ -26,7 +26,7 @@ class Core
 {
 public:
   Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink,
-    std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::shared_ptr<ImageBIOS const> bios,
+    std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::shared_ptr<ImageROM const> bios,
     std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes );
   ~Core();
 
@@ -58,14 +58,14 @@ private:
     RAM = 0 * 4,
     SUZY = 1 * 4,
     MIKEY = 2 * 4,
-    KERNEL = 3 * 4
+    ROM = 3 * 4
   };
 
   struct MAPCTL
   {
     bool sequentialDisable;
     bool vectorSpaceDisable;
-    bool kernelDisable;
+    bool romDisable;
     bool mikeyDisable;
     bool suzyDisable;
   };

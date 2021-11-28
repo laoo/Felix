@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "InputFile.hpp"
 #include "ImageBS93.hpp"
-#include "ImageBIOS.hpp"
 #include "ImageLyx.hpp"
 #include "ImageLnx.hpp"
 #include "Utility.hpp"
