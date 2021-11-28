@@ -11,7 +11,7 @@ InputFile::InputFile( std::filesystem::path const & path, ImageProperties & imag
 {
   auto data = readFile( path );
 
-  if ( auto pLnx = ImageLnx::create( path, data ) )
+  if ( auto pLnx = ImageLnx::create( data ) )
   {
     pLnx->populate( imageProperties );
     mType = FileType::CART;

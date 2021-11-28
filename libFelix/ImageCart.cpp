@@ -21,12 +21,7 @@ CartBank ImageCart::getBank1A() const
   return mBank1A;
 }
 
-std::filesystem::path ImageCart::path() const
-{
-  return mImagePath;
-}
-
-ImageCart::ImageCart( std::vector<uint8_t> data, std::filesystem::path path ) : mImagePath{ std::move( path ) }, mData { std::move( data ) },
+ImageCart::ImageCart( std::vector<uint8_t> data ) : mData{ std::move( data ) },
   mBank0{}, mBank0A{}, mBank1{}, mBank1A{}
 {
 }

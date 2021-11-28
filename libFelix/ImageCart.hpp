@@ -7,18 +7,15 @@ class ImageCart
 public:
 
 
-  ImageCart( std::vector<uint8_t> data = {}, std::filesystem::path path = {} );
+  ImageCart( std::vector<uint8_t> data = {} );
 
   CartBank getBank0() const;
   CartBank getBank0A() const;
   CartBank getBank1() const;
   CartBank getBank1A() const;
 
-  std::filesystem::path path() const;
-
 protected:
 
-  std::filesystem::path mImagePath;
   std::vector<uint8_t> const mData;
   CartBank mBank0;
   CartBank mBank0A;

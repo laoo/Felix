@@ -2,13 +2,13 @@
 #include "ImageLnx.hpp"
 #include "ImageProperties.hpp"
 
-std::shared_ptr<ImageLnx const> ImageLnx::create( std::filesystem::path const& path, std::vector<uint8_t> & data )
+std::shared_ptr<ImageLnx const> ImageLnx::create( std::vector<uint8_t> & data )
 {
   auto const* pHeader = (ImageLnx::Header const*)data.data();
 
   if ( pHeader->magic[0] == 'L' && pHeader->magic[1] == 'Y' && pHeader->magic[2] == 'N' && pHeader->magic[3] == 'X' && pHeader->version == 1 )
   {
-    return std::make_shared<ImageLnx const>( path, std::move( data ) );
+    return std::make_shared<ImageLnx const>( std::move( data ) );
   }
   else
   {
@@ -16,7 +16,7 @@ std::shared_ptr<ImageLnx const> ImageLnx::create( std::filesystem::path const& p
   }
 }
 
-ImageLnx::ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data ) : ImageCart{ std::move( data ), path }, mHeader{ ( Header const* )mData.data() }
+ImageLnx::ImageLnx( std::vector<uint8_t> data ) : ImageCart{ std::move( data ) }, mHeader{ ( Header const* )mData.data() }
 {
   auto const* pImageData = mData.data() + sizeof( Header );
   size_t imageDataSize = mData.size() - sizeof( Header );
