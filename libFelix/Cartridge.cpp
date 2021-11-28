@@ -129,9 +129,9 @@ void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
   }
 }
 
-Rotation Cartridge::rotation() const
+ImageProperties::Rotation Cartridge::rotation() const
 {
-  return mCart ? mCart->rotation() : Rotation{};
+  return mCart ? mCart->rotation() : ImageProperties::Rotation{};
 }
 
 uint8_t Cartridge::peek( CartBank const & bank )

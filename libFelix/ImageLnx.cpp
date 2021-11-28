@@ -40,5 +40,5 @@ ImageLnx::ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data
     mBank1A ={ std::span<uint8_t const>{ pImageData + bank1AOffset, bank1ASize }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
 
   mEEPROM = ImageCart::EEPROM{ mHeader->eepromBits };
-  mRotation = Rotation{ mHeader->rotation };
+  mRotation = ImageProperties::Rotation{ mHeader->rotation };
 }

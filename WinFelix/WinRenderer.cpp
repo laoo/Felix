@@ -128,7 +128,7 @@ int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARA
   return 0;
 }
 
-void WinRenderer::setRotation( Rotation rotation )
+void WinRenderer::setRotation( ImageProperties::Rotation rotation )
 {
   assert( mRenderer );
   mRenderer->setRotation( rotation );
@@ -139,13 +139,13 @@ WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }
 {
 }
 
-WinRenderer::SizeManager::SizeManager( int windowWidth, int windowHeight, Rotation rotation ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }, mRotation{ rotation }
+WinRenderer::SizeManager::SizeManager( int windowWidth, int windowHeight, ImageProperties::Rotation rotation ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }, mRotation{ rotation }
 {
   int sx, sy;
   switch ( mRotation )
   {
-  case Rotation::LEFT:
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::LEFT:
+  case ImageProperties::Rotation::RIGHT:
     sx = (std::max)( 1, mWinWidth / 102 );
     sy = (std::max)( 1, mWinHeight / 160 );
     break;
@@ -170,12 +170,12 @@ int WinRenderer::SizeManager::windowHeight() const
 
 int WinRenderer::SizeManager::minWindowWidth() const
 {
-  return mRotation == Rotation::NORMAL ? 160 : 102;
+  return mRotation == ImageProperties::Rotation::NORMAL ? 160 : 102;
 }
 
 int WinRenderer::SizeManager::minWindowHeight() const
 {
-  return mRotation == Rotation::NORMAL ? 102 : 160;
+  return mRotation == ImageProperties::Rotation::NORMAL ? 102 : 160;
 }
 
 int WinRenderer::SizeManager::width() const
@@ -192,9 +192,9 @@ int WinRenderer::SizeManager::xOff() const
 {
   switch ( mRotation )
   {
-  case Rotation::LEFT:
+  case ImageProperties::Rotation::LEFT:
     return ( mWinWidth + 102 * mScale ) / 2;
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::RIGHT:
     return ( mWinWidth - 102 * mScale ) / 2;
   default:
     return ( mWinWidth - 160 * mScale ) / 2;
@@ -205,9 +205,9 @@ int WinRenderer::SizeManager::yOff() const
 {
   switch ( mRotation )
   {
-  case Rotation::LEFT:
+  case ImageProperties::Rotation::LEFT:
     return ( mWinHeight - 160 * mScale ) / 2;
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::RIGHT:
     return ( mWinHeight + 160 * mScale ) / 2;
   default:
     return ( mWinHeight - 102 * mScale ) / 2;
@@ -223,9 +223,9 @@ int WinRenderer::SizeManager::rotx1() const
 {
   switch ( mRotation )
   {
-  case Rotation::LEFT:
+  case ImageProperties::Rotation::LEFT:
     return 0;  //mScale * cos( 90 )
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::RIGHT:
     return 0;  //mScale * cos( -90 )
   default:
     return mScale;  //mScale * cos( 0 )
@@ -236,9 +236,9 @@ int WinRenderer::SizeManager::rotx2() const
 {
   switch ( mRotation )
   {
-  case Rotation::LEFT:
+  case ImageProperties::Rotation::LEFT:
     return -mScale;  //mScale * -sin( 90 )
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::RIGHT:
     return mScale;  //mScale * -sin( -90 )
   default:
     return 0;  //mScale * -sin( 0 )
@@ -249,9 +249,9 @@ int WinRenderer::SizeManager::roty1() const
 {
   switch ( mRotation )
   {
-  case Rotation::LEFT:
+  case ImageProperties::Rotation::LEFT:
     return mScale;  //mScale * sin( 90 )
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::RIGHT:
     return -mScale;  //mScale * sin( -90 )
   default:
     return 0;  //mScale * sin( 0 )
@@ -262,16 +262,16 @@ int WinRenderer::SizeManager::roty2() const
 {
   switch ( mRotation )
   {
-  case Rotation::LEFT:
+  case ImageProperties::Rotation::LEFT:
     return 0;  //mScale * cos( 90 )
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::RIGHT:
     return 0;  //mScale * cos( -90 )
   default:
     return mScale;  //mScale * cos( 0 )
   }
 }
 
-Rotation WinRenderer::SizeManager::rotation() const
+ImageProperties::Rotation WinRenderer::SizeManager::rotation() const
 {
   return mRotation;
 }
@@ -426,7 +426,7 @@ int WinRenderer::BaseRenderer::sizing( RECT& rect )
   return 1;
 }
 
-void WinRenderer::BaseRenderer::setRotation( Rotation rotation )
+void WinRenderer::BaseRenderer::setRotation( ImageProperties::Rotation rotation )
 {
   mRotation = rotation;
 }

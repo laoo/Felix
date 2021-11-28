@@ -1,6 +1,6 @@
 #pragma once
 #include "IInputSource.hpp"
-#include "Rotation.hpp"
+#include "ImageProperties.hpp"
 
 struct SysConfig;
 
@@ -15,7 +15,7 @@ public:
   void keyDown( int code );
   void keyUp( int code );
   void lostFocus();
-  void setRotation( Rotation rotation );
+  void setRotation( ImageProperties::Rotation rotation );
 
   KeyInput getInput( bool leftHand ) const override;
 
@@ -45,7 +45,7 @@ private:
   PFN_XInputGetState          mXInputGetState;
 
   mutable std::mutex mMutex;
-  Rotation mRotation;
+  ImageProperties::Rotation mRotation;
   std::array<int, 9> mMapping;
   std::vector<int> mPressedCodes;
   XINPUT_GAMEPAD mLastState;

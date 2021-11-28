@@ -2,7 +2,7 @@
 #include "UserInput.hpp"
 #include "SysConfig.hpp"
 
-UserInput::UserInput( SysConfig const& cfg ) : mXInputDLL{}, mXInputGetCapabilities{}, mXInputGetState{}, mRotation{ Rotation::NORMAL }, mMapping{}, mPressedCodes{}, mLastState{}, mGamepadPacket{}, mHasGamepad{}
+UserInput::UserInput( SysConfig const& cfg ) : mXInputDLL{}, mXInputGetCapabilities{}, mXInputGetState{}, mRotation{ ImageProperties::Rotation::NORMAL }, mMapping{}, mPressedCodes{}, mLastState{}, mGamepadPacket{}, mHasGamepad{}
 {
   const char* xinput_dll_names[] =
   {
@@ -137,7 +137,7 @@ void UserInput::lostFocus()
   mPressedCodes.clear();
 }
 
-void UserInput::setRotation( Rotation rotation )
+void UserInput::setRotation( ImageProperties::Rotation rotation )
 {
   mRotation = rotation;
 }
@@ -184,13 +184,13 @@ KeyInput UserInput::getInput( bool leftHand ) const
 
   switch ( mRotation )
   {
-  case Rotation::LEFT:
+  case ImageProperties::Rotation::LEFT:
     left = pressed( leftHand ? KeyInput::UP : KeyInput::DOWN );
     right = pressed( leftHand ? KeyInput::DOWN : KeyInput::UP );
     up = pressed( leftHand ? KeyInput::RIGHT : KeyInput::LEFT );
     down = pressed( leftHand ? KeyInput::LEFT : KeyInput::RIGHT );
     break;
-  case Rotation::RIGHT:
+  case ImageProperties::Rotation::RIGHT:
     left = pressed( leftHand ? KeyInput::DOWN : KeyInput::UP );
     right = pressed( leftHand ? KeyInput::UP : KeyInput::DOWN );
     up = pressed( leftHand ? KeyInput::LEFT : KeyInput::RIGHT );

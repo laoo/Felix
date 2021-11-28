@@ -20,7 +20,7 @@ public:
   void setEncoder( std::shared_ptr<IEncoder> encoder );
   void initialize( HWND hWnd, std::filesystem::path const& iniPath );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-  void setRotation( Rotation rotation );
+  void setRotation( ImageProperties::Rotation rotation );
 
   std::shared_ptr<IVideoSink> getVideoSink() const;
 
@@ -46,7 +46,7 @@ private:
   {
   public:
     SizeManager();
-    SizeManager( int windowWidth, int windowHeight, Rotation rotation );
+    SizeManager( int windowWidth, int windowHeight, ImageProperties::Rotation rotation );
 
     int windowWidth() const;
     int windowHeight() const;
@@ -61,14 +61,14 @@ private:
     int rotx2() const;
     int roty1() const;
     int roty2() const;
-    Rotation rotation() const;
+    ImageProperties::Rotation rotation() const;
     explicit operator bool() const;
 
   private:
     int mWinWidth;
     int mWinHeight;
     int mScale;
-    Rotation mRotation;
+    ImageProperties::Rotation mRotation;
   };
 
   struct Instance : public IVideoSink
@@ -103,13 +103,13 @@ private:
 
     std::shared_ptr<IVideoSink> getVideoSink() const;
     int sizing( RECT& rect );
-    void setRotation( Rotation rotation );
+    void setRotation( ImageProperties::Rotation rotation );
 
   protected:
     HWND mHWnd;
     std::shared_ptr<Instance> mInstance;
     SizeManager mSizeManager;
-    Rotation mRotation;
+    ImageProperties::Rotation mRotation;
   };
 
 
