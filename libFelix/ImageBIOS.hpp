@@ -1,11 +1,11 @@
-#pragma once
+  #pragma once
 
 class ImageBIOS
 {
 public:
 
 public:
-  static std::shared_ptr<ImageBIOS const> create( std::vector<uint8_t> & data );
+  static std::shared_ptr<ImageBIOS const> create( std::filesystem::path const& path );
 
   ImageBIOS( std::vector<uint8_t> data );
 

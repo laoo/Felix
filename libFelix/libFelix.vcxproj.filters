@@ -31,6 +31,7 @@
     <ClCompile Include="SymbolSource.cpp" />
     <ClCompile Include="EEPROM.cpp" />
     <ClCompile Include="Encryption.cpp" />
+    <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp" />

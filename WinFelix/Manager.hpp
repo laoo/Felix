@@ -31,7 +31,6 @@ public:
   void doArg( std::wstring arg );
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-  void setWinImgui( std::shared_ptr<WinImgui> winImgui );
 
   bool mainMenu( ImGuiIO& io );
 

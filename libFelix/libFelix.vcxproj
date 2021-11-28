@@ -48,6 +48,7 @@
     <ClCompile Include="SuzyProcess.cpp" />
     <ClCompile Include="SymbolSource.cpp" />
     <ClCompile Include="TimerCore.cpp" />
+    <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VidOperator.cpp" />
   </ItemGroup>
   <ItemGroup>

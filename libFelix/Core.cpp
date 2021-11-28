@@ -21,7 +21,7 @@ static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 
 static constexpr bool ENABLE_TRAPS = true;
 
-Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::optional<InputFile> kernel, std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes ) :
+Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource ) :
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
   mCartridge{ std::make_shared<Cartridge>( std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
@@ -48,7 +48,10 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
         break;
     }
   }
+}
 
+void Core::setImages( InputFile inputFile, std::shared_ptr<ImageBIOS const> bios, std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes )
+{
   switch ( inputFile.getType() )
   {
   case InputFile::FileType::BS93:
@@ -60,9 +63,9 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
     break;
   case InputFile::FileType::CART:
     mCartridge = std::make_shared<Cartridge>( inputFile.getCart(), mTraceHelper );
-    if ( kernel )
+    if ( bios )
     {
-      kernel->getBIOS()->load( { mROM.data(), mROM.size() } );
+      bios->load( { mROM.data(), mROM.size() } );
     }
     else
     {
@@ -73,7 +76,6 @@ Core::Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink
   default:
     break;
   }
-
 
   scriptDebuggerEscapes->populateScriptDebugger( *mScriptDebugger );
 }

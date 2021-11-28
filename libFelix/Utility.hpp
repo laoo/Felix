@@ -17,6 +17,7 @@ struct AudioSample
   int16_t right;
 };
 
+std::vector<uint8_t> readFile( std::filesystem::path const& path );
 
 #ifdef __cpp_lib_bitops
 
@@ -26,7 +27,7 @@ struct AudioSample
 
 #else
 
-uint32_t popcnt( uint32_t x )
+inline uint32_t popcnt( uint32_t x )
 {
   int v = 0;
   while ( x != 0 )
@@ -37,7 +38,7 @@ uint32_t popcnt( uint32_t x )
   return v;
 }
 
-int countl_zero( uint16_t value )
+inline int countl_zero( uint16_t value )
 {
   int significantZeros = 16;
   while ( value > 0 )

@@ -4,23 +4,12 @@
 #include "ImageBIOS.hpp"
 #include "ImageLyx.hpp"
 #include "ImageLnx.hpp"
+#include "Utility.hpp"
 #include "Log.hpp"
 
-InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
+InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}, mCart{}
 {
-  if ( !std::filesystem::exists( path ) )
-    return;
-
-  size_t size = ( size_t )std::filesystem::file_size( path );
-  if ( size == 0 )
-    return;
-
-  std::vector<uint8_t> data( size, 0 );
-
-  {
-    std::ifstream fin{ path, std::ios::binary };
-    fin.read( ( char* )data.data(), size );
-  }
+  auto data = readFile( path );
 
   if ( auto pLnx = ImageLnx::create( path, data ) )
   {
@@ -40,12 +29,6 @@ InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}
     mCart = std::move( pLyx );
     return;
   }
-  else if ( auto pBIOS = ImageBIOS::create( data ) )
-  {
-    mType = FileType::BIOS;
-    mBIOS = std::move( pBIOS );
-    return;
-  }
 }
 
 bool InputFile::valid() const
@@ -61,11 +44,6 @@ InputFile::FileType InputFile::getType() const
 std::shared_ptr<ImageBS93 const> InputFile::getBS93() const
 {
   return mBS93;
-}
-
-std::shared_ptr<ImageBIOS const> InputFile::getBIOS() const
-{
-  return mBIOS;
 }
 
 std::shared_ptr<ImageCart const> InputFile::getCart() const

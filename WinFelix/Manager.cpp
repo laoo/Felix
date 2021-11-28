@@ -17,22 +17,19 @@
 #include "SysConfig.hpp"
 #include "ScriptDebuggerEscapes.hpp"
 #include "UserInput.hpp"
+#include "ImageBIOS.hpp"
 #include "KeyNames.hpp"
 #include <imfilebrowser.h>
 
 namespace
 {
 
-std::optional<InputFile> getOptionalKernel()
+std::shared_ptr<ImageBIOS const> getOptionalKernel()
 {
   auto sysConfig = gConfigProvider.sysConfig();
   if ( sysConfig->kernel.useExternal && !sysConfig->kernel.path.empty() )
   {
-    InputFile kernelFile{ sysConfig->kernel.path };
-    if ( kernelFile.valid() )
-    {
-      return kernelFile;
-    }
+    return ImageBIOS::create( sysConfig->kernel.path );
   }
 
   return {};
@@ -126,7 +123,6 @@ void Manager::initialize( HWND hWnd )
 {
   assert( mRenderer );
   mRenderer->initialize( hWnd, gConfigProvider.appDataFolder() );
-
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -188,10 +184,6 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
   }
 
   return 0;
-}
-
-void Manager::setWinImgui( std::shared_ptr<WinImgui> winImgui )
-{
 }
 
 Manager::~Manager()
@@ -516,8 +508,8 @@ void Manager::reset()
 
   if ( auto input = computeInputFile() )
   {
-    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource, *input, getOptionalKernel(), mScriptDebuggerEscapes );
-
+    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource );
+    mInstance->setImages( *input, getOptionalKernel(), mScriptDebuggerEscapes );
 
     mRenderer->setRotation( mInstance->rotation() );
 

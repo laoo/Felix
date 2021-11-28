@@ -10,7 +10,6 @@ public:
   enum class FileType
   {
     UNKNOWN,
-    BIOS,
     BS93,
     CART,
   };
@@ -21,12 +20,10 @@ public:
   FileType getType() const;
 
   std::shared_ptr<ImageBS93 const> getBS93() const;
-  std::shared_ptr<ImageBIOS const> getBIOS() const;
   std::shared_ptr<ImageCart const> getCart() const;
 
 private:
   FileType mType;
   std::shared_ptr<ImageBS93 const> mBS93;
-  std::shared_ptr<ImageBIOS const> mBIOS;
   std::shared_ptr<ImageCart const> mCart;
 };

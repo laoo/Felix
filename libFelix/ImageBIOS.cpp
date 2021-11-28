@@ -1,8 +1,11 @@
 #include "pch.hpp"
 #include "ImageBIOS.hpp"
+#include "Utility.hpp"
 
-std::shared_ptr<ImageBIOS const> ImageBIOS::create( std::vector<uint8_t> & data )
+std::shared_ptr<ImageBIOS const> ImageBIOS::create( std::filesystem::path const& path )
 {
+  auto data = readFile( path );
+
   if ( data.size() != 512 )
     return {};
 
@@ -13,7 +16,6 @@ std::shared_ptr<ImageBIOS const> ImageBIOS::create( std::vector<uint8_t> & data 
 
   return std::make_shared<ImageBIOS const>( std::move( data ) );
 }
-
 
 ImageBIOS::ImageBIOS( std::vector<uint8_t> data ) : mData{ std::move( data ) }
 {
