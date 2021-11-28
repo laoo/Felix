@@ -14,9 +14,10 @@ public:
   };
 
 public:
-  ImageBS93( std::vector<uint8_t> data );
 
+  static std::shared_ptr<ImageBS93 const> create( std::vector<uint8_t> & data );
   std::optional<uint16_t> load( std::span<uint8_t> memory ) const;
+  ImageBS93( std::vector<uint8_t> data );
 
 private:
   uint16_t getLoadAddress() const;

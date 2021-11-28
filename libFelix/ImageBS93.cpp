@@ -1,6 +1,21 @@
 #include "pch.hpp"
 #include "ImageBS93.hpp"
 
+std::shared_ptr<ImageBS93 const> ImageBS93::create( std::vector<uint8_t> & data )
+{
+  auto const* pHeader = (ImageBS93::Header const*)data.data();
+
+  if ( pHeader->magic[0] == 'B' && pHeader->magic[1] == 'S' && pHeader->magic[2] == '9' && pHeader->magic[3] == '3' )
+  {
+    return std::make_shared<ImageBS93 const>( std::move( data ) );
+  }
+  else
+  {
+    return {};
+  }
+}
+
+
 ImageBS93::ImageBS93( std::vector<uint8_t> data ) : mData{ std::move( data ) }
 {
 }

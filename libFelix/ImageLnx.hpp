@@ -20,6 +20,8 @@ public:
     std::array<uint8_t, 3>   spare;
   } header{};
 
+  static std::shared_ptr<ImageCart const> create( std::filesystem::path const& path, std::vector<uint8_t> & data );
+  
   ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data );
 
 private:

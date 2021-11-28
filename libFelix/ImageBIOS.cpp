@@ -1,6 +1,20 @@
 #include "pch.hpp"
 #include "ImageBIOS.hpp"
 
+std::shared_ptr<ImageBIOS const> ImageBIOS::create( std::vector<uint8_t> & data )
+{
+  if ( data.size() != 512 )
+    return {};
+
+  uint16_t resetVector = *(uint16_t*)( data.data() + 0x1fc );
+
+  if ( resetVector < 0xfe00 )
+    return {};
+
+  return std::make_shared<ImageBIOS const>( std::move( data ) );
+}
+
+
 ImageBIOS::ImageBIOS( std::vector<uint8_t> data ) : mData{ std::move( data ) }
 {
 }
