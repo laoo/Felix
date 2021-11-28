@@ -1,8 +1,8 @@
 #include "pch.hpp"
 #include "ImageLnx.hpp"
+#include "ImageProperties.hpp"
 
-
-std::shared_ptr<ImageCart const> ImageLnx::create( std::filesystem::path const& path, std::vector<uint8_t> & data )
+std::shared_ptr<ImageLnx const> ImageLnx::create( std::filesystem::path const& path, std::vector<uint8_t> & data )
 {
   auto const* pHeader = (ImageLnx::Header const*)data.data();
 
@@ -40,5 +40,10 @@ ImageLnx::ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data
     mBank1A ={ std::span<uint8_t const>{ pImageData + bank1AOffset, bank1ASize }, ( uint32_t )mHeader->pageSizeBank1 * 256 };
 
   mEEPROM = ImageCart::EEPROM{ mHeader->eepromBits };
-  mRotation = ImageProperties::Rotation{ mHeader->rotation };
 }
+
+void ImageLnx::populate( ImageProperties & imageProperties ) const
+{
+  imageProperties.setRotation( mHeader->rotation );
+}
+  

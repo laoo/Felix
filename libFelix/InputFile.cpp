@@ -7,12 +7,13 @@
 #include "Utility.hpp"
 #include "Log.hpp"
 
-InputFile::InputFile( std::filesystem::path const & path ) : mType{}, mBS93{}, mCart{}
+InputFile::InputFile( std::filesystem::path const & path, ImageProperties & imageProperties ) : mType{}, mBS93{}, mCart{}
 {
   auto data = readFile( path );
 
   if ( auto pLnx = ImageLnx::create( path, data ) )
   {
+    pLnx->populate( imageProperties );
     mType = FileType::CART;
     mCart = std::move( pLnx );
     return;

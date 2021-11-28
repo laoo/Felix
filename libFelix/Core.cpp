@@ -479,11 +479,6 @@ int64_t Core::globalSamplesEmittedPerFrame() const
   return mGlobalSamplesEmittedPerFrame;
 }
 
-ImageProperties::Rotation Core::rotation() const
-{
-  return mCartridge ? mCartridge->rotation() : ImageProperties::Rotation{};
-}
-
 Cartridge & Core::getCartridge()
 {
   assert( mCartridge );

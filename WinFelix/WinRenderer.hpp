@@ -3,6 +3,7 @@
 #include "IVideoSink.hpp"
 #include "DisplayGenerator.hpp"
 #include "ImageCart.hpp"
+#include "ImageProperties.hpp"
 
 struct RenderFrame;
 class WinImgui11;

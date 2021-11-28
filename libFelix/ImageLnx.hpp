@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ImageCart.hpp"
+class ImageProperties;
 
 class ImageLnx : public ImageCart
 {
@@ -20,9 +21,11 @@ public:
     std::array<uint8_t, 3>   spare;
   } header{};
 
-  static std::shared_ptr<ImageCart const> create( std::filesystem::path const& path, std::vector<uint8_t> & data );
+  static std::shared_ptr<ImageLnx const> create( std::filesystem::path const& path, std::vector<uint8_t> & data );
   
   ImageLnx( std::filesystem::path const& path, std::vector<uint8_t> data );
+
+  void populate( ImageProperties & imageProperties ) const;
 
 private:
   Header const*const mHeader;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ImageProperties.hpp"
 #include "CartBank.hpp"
 
 class ImageCart
@@ -24,7 +23,6 @@ public:
   CartBank getBank1A() const;
 
   EEPROM eeprom() const;
-  ImageProperties::Rotation rotation() const;
   std::filesystem::path path() const;
 
 protected:
@@ -36,5 +34,4 @@ protected:
   CartBank mBank1;
   CartBank mBank1A;
   EEPROM mEEPROM;
-  ImageProperties::Rotation mRotation;
 };

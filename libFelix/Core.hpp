@@ -37,7 +37,6 @@ public:
 
   void enterMonitor();
   int64_t globalSamplesEmittedPerFrame() const;
-  ImageProperties::Rotation rotation() const;
 
   uint64_t tick() const;
 

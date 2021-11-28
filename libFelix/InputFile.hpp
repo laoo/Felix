@@ -1,8 +1,8 @@
 #pragma once
 
 class ImageBS93;
-class ImageBIOS;
 class ImageCart;
+class ImageProperties;
 
 class InputFile
 {
@@ -14,7 +14,7 @@ public:
     CART,
   };
 
-  InputFile( std::filesystem::path const& path );
+  InputFile( std::filesystem::path const& path, ImageProperties & imageProperties );
 
   bool valid() const;
   FileType getType() const;

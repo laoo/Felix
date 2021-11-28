@@ -13,6 +13,7 @@ class WinImgui;
 class ScriptDebuggerEscapes;
 class UserInput;
 class KeyNames;
+class ImageProperties;
 struct ImGuiIO;
 
 namespace ImGui
@@ -106,6 +107,7 @@ private:
   std::shared_ptr<ScriptDebuggerEscapes> mScriptDebuggerEscapes;
   std::shared_ptr<UserInput> mIntputSource;
   std::shared_ptr<KeyNames> mKeyNames;
+  std::shared_ptr<ImageProperties> mImageProperties;
   std::wstring mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;

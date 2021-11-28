@@ -19,6 +19,7 @@
 #include "UserInput.hpp"
 #include "ImageBIOS.hpp"
 #include "KeyNames.hpp"
+#include "ImageProperties.hpp"
 #include <imfilebrowser.h>
 
 namespace
@@ -39,7 +40,8 @@ std::shared_ptr<ImageBIOS const> getOptionalKernel()
 
 Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads{}, mPaused{},
   mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
-  mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() }
+  mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
+  mImageProperties{}
 {
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -456,7 +458,8 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
 
   if ( sol::optional<std::string> opt = mLua["image"] )
   {
-    InputFile file{ *opt };
+    assert( mImageProperties );
+    InputFile file{ *opt, *mImageProperties };
     if ( file.valid() )
     {
       result = std::move( file );
@@ -490,7 +493,8 @@ std::optional<InputFile> Manager::computeInputFile()
   }
   else
   {
-    InputFile file{ path };
+    assert( mImageProperties );
+    InputFile file{ path, *mImageProperties };
     if ( file.valid() )
     {
       return file;
@@ -505,13 +509,15 @@ void Manager::reset()
 {
   mProcessThreads.store( false );
   mInstance.reset();
+  mImageProperties = std::make_shared<ImageProperties>();
 
   if ( auto input = computeInputFile() )
   {
     mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource );
     mInstance->setImages( *input, getOptionalKernel(), mScriptDebuggerEscapes );
 
-    mRenderer->setRotation( mInstance->rotation() );
+    mIntputSource->setRotation( mImageProperties->getRotation() );
+    mRenderer->setRotation( mImageProperties->getRotation() );
 
     if ( !mLogPath.empty() )
       mInstance->setLog( mLogPath, mLogStartCycle );

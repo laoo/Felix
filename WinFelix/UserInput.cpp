@@ -171,38 +171,15 @@ KeyInput UserInput::getInput( bool leftHand ) const
 {
   std::unique_lock<std::mutex> l{ mMutex };
 
-
   bool outer = pressed( KeyInput::OUTER );
   bool inner = pressed( KeyInput::INNER );
   bool opt1 = pressed( KeyInput::OPTION1 );
   bool opt2 = pressed( KeyInput::OPTION2 );
   bool pause = pressed( KeyInput::PAUSE );
-  bool left = false;
-  bool right = false;
-  bool up = false;
-  bool down = false;
-
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-    left = pressed( leftHand ? KeyInput::UP : KeyInput::DOWN );
-    right = pressed( leftHand ? KeyInput::DOWN : KeyInput::UP );
-    up = pressed( leftHand ? KeyInput::RIGHT : KeyInput::LEFT );
-    down = pressed( leftHand ? KeyInput::LEFT : KeyInput::RIGHT );
-    break;
-  case ImageProperties::Rotation::RIGHT:
-    left = pressed( leftHand ? KeyInput::DOWN : KeyInput::UP );
-    right = pressed( leftHand ? KeyInput::UP : KeyInput::DOWN );
-    up = pressed( leftHand ? KeyInput::LEFT : KeyInput::RIGHT );
-    down = pressed( leftHand ? KeyInput::RIGHT : KeyInput::LEFT );
-    break;
-  default:
-    left = pressed( leftHand ? KeyInput::RIGHT : KeyInput::LEFT );
-    right = pressed( leftHand ? KeyInput::LEFT : KeyInput::RIGHT );
-    up = pressed( leftHand ? KeyInput::DOWN : KeyInput::UP );
-    down = pressed( leftHand ? KeyInput::UP : KeyInput::DOWN );
-    break;
-  }
+  bool left = pressed( leftHand ? KeyInput::RIGHT : KeyInput::LEFT );
+  bool right = pressed( leftHand ? KeyInput::LEFT : KeyInput::RIGHT );
+  bool up = pressed( leftHand ? KeyInput::DOWN : KeyInput::UP );
+  bool down = pressed( leftHand ? KeyInput::UP : KeyInput::DOWN );
 
   if ( mHasGamepad )
   {
@@ -224,10 +201,28 @@ KeyInput UserInput::getInput( bool leftHand ) const
   result.set( KeyInput::OPTION1, opt1 );
   result.set( KeyInput::OPTION2, opt2 );
   result.set( KeyInput::PAUSE, pause );
-  result.set( KeyInput::LEFT, left );
-  result.set( KeyInput::RIGHT, right );
-  result.set( KeyInput::UP, up );
-  result.set( KeyInput::DOWN, down );
+
+  switch ( mRotation )
+  {
+  case ImageProperties::Rotation::RIGHT:
+    result.set( KeyInput::LEFT, down );
+    result.set( KeyInput::RIGHT, up );
+    result.set( KeyInput::UP, left );
+    result.set( KeyInput::DOWN, right );
+    break;
+  case ImageProperties::Rotation::LEFT:
+    result.set( KeyInput::LEFT, up );
+    result.set( KeyInput::RIGHT, down );
+    result.set( KeyInput::UP, right );
+    result.set( KeyInput::DOWN, left );
+    break;
+  default:
+    result.set( KeyInput::LEFT, left );
+    result.set( KeyInput::RIGHT, right );
+    result.set( KeyInput::UP, up );
+    result.set( KeyInput::DOWN, down );
+    break;
+  }
 
   return result;
 }
