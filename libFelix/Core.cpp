@@ -25,7 +25,7 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
   std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::shared_ptr<ImageROM const> bootROM,
   std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes ) :
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mCpu{ std::make_shared<CPU>() }, mTraceHelper{ std::make_shared<TraceHelper>() },
-  mCartridge{ std::make_shared<Cartridge>( imageProperties, std::make_shared<ImageCart>(), mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
+  mCartridge{ std::make_shared<Cartridge>( imageProperties, std::shared_ptr<ImageCart>{}, mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
   mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
 {

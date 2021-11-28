@@ -7,8 +7,13 @@
 Cartridge::Cartridge( ImageProperties const& imageProperties, std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) :
   mTraceHelper{ std::move( traceHelper ) }, mCart{ std::move( cart ) }, mGameDrive{ GameDrive::create( imageProperties ) },
   mEEPROM{ EEPROM::create( imageProperties, mTraceHelper ) }, mShiftRegister{}, mCounter{}, mAudIn{}, mCurrentStrobe{}, mAddressData{},
-  mBank0{ mCart->getBank0() }, mBank1{ mCart->getBank1() }
+  mBank0{}, mBank1{}
 {
+  if ( mCart )
+  {
+    mBank0 = mCart->getBank0();
+    mBank1 = mCart->getBank1();
+  }
 }
 
 Cartridge::~Cartridge()
@@ -40,6 +45,9 @@ void Cartridge::setAudIn( bool value )
     return;
 
   mAudIn = value;
+
+  if ( !mCart )
+    return;
 
   if ( mAudIn )
   {

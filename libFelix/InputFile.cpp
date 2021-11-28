@@ -1,8 +1,7 @@
 #include "pch.hpp"
 #include "InputFile.hpp"
 #include "ImageBS93.hpp"
-#include "ImageLyx.hpp"
-#include "ImageLnx.hpp"
+#include "ImageCart.hpp"
 #include "Utility.hpp"
 #include "Log.hpp"
 
@@ -10,23 +9,20 @@ InputFile::InputFile( std::filesystem::path const & path, ImageProperties & imag
 {
   auto data = readFile( path );
 
-  if ( auto pLnx = ImageLnx::create( data ) )
+  if ( data.empty() )
+    return;
+
+  if ( auto pCart = ImageCart::create( data ) )
   {
-    pLnx->populate( imageProperties );
+    pCart->populate( imageProperties );
     mType = FileType::CART;
-    mCart = std::move( pLnx );
+    mCart = std::move( pCart );
     return;
   }
   else if ( auto pBS93 = ImageBS93::create( data ) )
   {
     mType = FileType::BS93;
     mBS93 = std::move( pBS93 );
-    return;
-  }
-  else if ( auto pLyx = ImageLyx::create( data ) )
-  {
-    mType = FileType::CART;
-    mCart = std::move( pLyx );
     return;
   }
 }

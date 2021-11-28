@@ -15,8 +15,6 @@
     <ClCompile Include="ImageROM.cpp" />
     <ClCompile Include="ImageBS93.cpp" />
     <ClCompile Include="ImageCart.cpp" />
-    <ClCompile Include="ImageLnx.cpp" />
-    <ClCompile Include="ImageLyx.cpp" />
     <ClCompile Include="InputFile.cpp" />
     <ClCompile Include="BootROMTraps.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -51,8 +49,6 @@
     <ClInclude Include="ImageROM.hpp" />
     <ClInclude Include="ImageBS93.hpp" />
     <ClInclude Include="ImageCart.hpp" />
-    <ClInclude Include="ImageLnx.hpp" />
-    <ClInclude Include="ImageLyx.hpp" />
     <ClInclude Include="InputFile.hpp" />
     <ClInclude Include="IVideoSink.hpp" />
     <ClInclude Include="BootROMTraps.hpp" />
