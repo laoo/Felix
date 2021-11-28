@@ -114,7 +114,7 @@ void ComLynx::Transmitter::process()
   {
   case 1:
     pull( 1 );
-    mParity = popcnt( mShifter ) & 1;
+    mParity = std::popcount( mShifter ) & 1;
     mWire->setCoarse( mShifter, mParEn ? mParity : mParBit );
     mCounter = 0;
     L_DEBUG << "Tx" << mId << ": Stop";

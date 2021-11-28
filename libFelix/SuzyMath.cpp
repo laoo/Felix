@@ -125,7 +125,7 @@ void SuzyMath::mul( uint64_t tick )
 void SuzyMath::div( uint64_t tick )
 {
   // "Divides take 176 + 14*N ticks where N is the number of most significant zeros in the divisor."
-  uint64_t n = countl_zero( np() );
+  uint64_t n = std::countl_zero( np() );
   mFinishTick = tick + 176 + 14 * n;
 
   mMathWarning = false;

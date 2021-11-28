@@ -103,7 +103,7 @@ uint8_t AudioChannel::getOther( uint64_t tick )
 void AudioChannel::trigger()
 {
   uint32_t xorGate = mTapSelector & mShiftRegister;
-  uint32_t parity = popcnt( xorGate ) & 1;
+  uint32_t parity = std::popcount( xorGate ) & 1;
   uint32_t newShift = ( mShiftRegister << 1 ) | ( parity ^ 1 );
   mShiftRegister = newShift;
   
