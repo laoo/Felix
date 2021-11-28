@@ -6,14 +6,6 @@ class ImageCart
 {
 public:
 
-  struct EEPROM
-  {
-    uint8_t bits;
-
-    bool sd() const;
-    int type() const;
-    bool is16Bit() const;
-  };
 
   ImageCart( std::vector<uint8_t> data = {}, std::filesystem::path path = {} );
 
@@ -22,7 +14,6 @@ public:
   CartBank getBank1() const;
   CartBank getBank1A() const;
 
-  EEPROM eeprom() const;
   std::filesystem::path path() const;
 
 protected:
@@ -33,5 +24,4 @@ protected:
   CartBank mBank0A;
   CartBank mBank1;
   CartBank mBank1A;
-  EEPROM mEEPROM;
 };

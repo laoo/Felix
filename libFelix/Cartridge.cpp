@@ -4,8 +4,9 @@
 #include "EEPROM.hpp"
 #include "TraceHelper.hpp"
 
-Cartridge::Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) : mTraceHelper{ std::move( traceHelper ) }, mCart{ std::move( cart ) }, mGameDrive{ GameDrive::create( *mCart ) }, mEEPROM{ EEPROM::create( *mCart, mTraceHelper ) },
-  mShiftRegister{}, mCounter{}, mAudIn{}, mCurrentStrobe{}, mAddressData{},
+Cartridge::Cartridge( ImageProperties const& imageProperties, std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) :
+  mTraceHelper{ std::move( traceHelper ) }, mCart{ std::move( cart ) }, mGameDrive{ GameDrive::create( imageProperties ) },
+  mEEPROM{ EEPROM::create( imageProperties, mTraceHelper ) }, mShiftRegister{}, mCounter{}, mAudIn{}, mCurrentStrobe{}, mAddressData{},
   mBank0{ mCart->getBank0() }, mBank1{ mCart->getBank1() }
 {
 }

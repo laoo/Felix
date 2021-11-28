@@ -5,11 +5,12 @@
 class GameDrive;
 class EEPROM;
 class TraceHelper;
+class ImageProperties;
 
 class Cartridge
 {
 public:
-  Cartridge( std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper );
+  Cartridge( ImageProperties const& imageProperties, std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper );
   ~Cartridge();
 
   bool getAudIn( uint64_t tick ) const;

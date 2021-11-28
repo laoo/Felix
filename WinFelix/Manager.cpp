@@ -509,12 +509,12 @@ void Manager::reset()
 {
   mProcessThreads.store( false );
   mInstance.reset();
-  mImageProperties = std::make_shared<ImageProperties>();
+  mImageProperties = std::make_shared<ImageProperties>( std::filesystem::path{ mArg } );
 
   if ( auto input = computeInputFile() )
   {
-    mInstance = std::make_shared<Core>( mComLynxWire, mRenderer->getVideoSink(), mIntputSource );
-    mInstance->setImages( *input, getOptionalKernel(), mScriptDebuggerEscapes );
+    mInstance = std::make_shared<Core>( *mImageProperties, mComLynxWire, mRenderer->getVideoSink(), mIntputSource,
+      *input, getOptionalKernel(), mScriptDebuggerEscapes );
 
     mIntputSource->setRotation( mImageProperties->getRotation() );
     mRenderer->setRotation( mImageProperties->getRotation() );

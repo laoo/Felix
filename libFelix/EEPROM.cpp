@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "EEPROM.hpp"
-#include "ImageCart.hpp"
+#include "ImageProperties.hpp"
 #include "TraceHelper.hpp"
 
 EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper ) : mEECoroutine{}, mImagePath{ std::move( imagePath ) },
@@ -72,13 +72,13 @@ EEPROM::~EEPROM()
   }
 }
 
-std::unique_ptr<EEPROM> EEPROM::create( ImageCart const& cart, std::shared_ptr<TraceHelper> traceHelper )
+std::unique_ptr<EEPROM> EEPROM::create( ImageProperties const& imageProperties, std::shared_ptr<TraceHelper> traceHelper )
 {
-  auto ee = cart.eeprom();
+  auto ee = imageProperties.getEEPROM();
 
   if ( ee.type() > 0 && ee.type() < 6 )
   {
-    auto path = cart.path();
+    auto path = imageProperties.getPath();
     path.replace_extension( path.extension().string() + ".e2p" );
 
     return std::make_unique<EEPROM>( std::move( path ), ee.type(), ee.is16Bit(), std::move( traceHelper ) );

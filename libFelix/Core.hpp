@@ -14,6 +14,7 @@ class Cartridge;
 class InputFile;
 class ImageBS93;
 class ImageBIOS;
+class ImageProperties;
 class IEscape;
 class ComLynxWire;
 class TraceHelper;
@@ -24,11 +25,10 @@ struct CPUState;
 class Core
 {
 public:
-  Core( std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink, std::shared_ptr<IInputSource> inputSource );
+  Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire> comLynxWire, std::shared_ptr<IVideoSink> videoSink,
+    std::shared_ptr<IInputSource> inputSource, InputFile inputFile, std::shared_ptr<ImageBIOS const> bios,
+    std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes );
   ~Core();
-
-  void setImages( InputFile inputFile, std::shared_ptr<ImageBIOS const> bios, std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes );
-
 
   void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
   int advanceAudio();

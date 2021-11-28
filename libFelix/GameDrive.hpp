@@ -2,7 +2,7 @@
 #include "Utility.hpp"
 
 class CartBank;
-class ImageCart;
+class ImageProperties;
 
 class GameDrive
 {
@@ -44,7 +44,7 @@ public:
   GameDrive( std::filesystem::path const& imagePath );
   ~GameDrive();
 
-  static std::unique_ptr<GameDrive> create( ImageCart const& cart );
+  static std::unique_ptr<GameDrive> create( ImageProperties const& imageProperties );
 
 private:
   std::array<uint8_t, 2048 * 256> mMemoryBank;

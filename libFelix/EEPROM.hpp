@@ -3,6 +3,7 @@
 
 class ImageCart;
 class TraceHelper;
+class ImageProperties;
 
 class EEPROM
 {
@@ -11,7 +12,7 @@ public:
   EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::shared_ptr<TraceHelper> traceHelper );
   ~EEPROM();
 
-  static std::unique_ptr<EEPROM> create( ImageCart const& cart, std::shared_ptr<TraceHelper> traceHelper );
+  static std::unique_ptr<EEPROM> create( ImageProperties const& imageProperties, std::shared_ptr<TraceHelper> traceHelper );
 
   void tick( uint64_t tick, bool cs, bool audin );
   std::optional<bool> output( uint64_t tick ) const;
