@@ -41,7 +41,7 @@ public:
   void drawGui( int left, int top, int right, int bottom );
 
 private:
-  std::optional<InputFile> processLua( std::filesystem::path const& path );
+  void processLua( std::filesystem::path const& path );
   std::optional<InputFile> computeInputFile();
   void stopThreads();
   void handleFileDrop( HDROP hDrop );

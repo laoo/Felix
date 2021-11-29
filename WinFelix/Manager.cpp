@@ -26,16 +26,6 @@
 namespace
 {
 
-std::shared_ptr<ImageROM const> getOptionalBootROM()
-{
-  auto sysConfig = gConfigProvider.sysConfig();
-  if ( sysConfig->bootROM.useExternal && !sysConfig->bootROM.path.empty() )
-  {
-    return ImageROM::create( sysConfig->bootROM.path );
-  }
-
-  return {};
-}
 
 }
 
@@ -48,8 +38,6 @@ Manager::Manager() : mLua{}, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads
   mAudioOut = std::make_shared<WinAudioOut>();
   mComLynxWire = std::make_shared<ComLynxWire>();
   mIntputSource = std::make_shared<UserInput>( *gConfigProvider.sysConfig() );
-
-  mLua.open_libraries( sol::lib::base, sol::lib::io );
 
   mRenderThread = std::thread{ [this]
   {
@@ -387,9 +375,28 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   }
 }
 
-std::optional<InputFile> Manager::processLua( std::filesystem::path const& path )
+void Manager::processLua( std::filesystem::path const& path )
 {
-  std::optional<InputFile> result;
+  auto luaPath = path;
+  auto cfgPath = path;
+
+  luaPath.replace_extension( path.extension().string() + ".lua" );
+  cfgPath.replace_extension( path.extension().string() + ".cfg" );
+
+  if ( !std::filesystem::exists( luaPath ) && !std::filesystem::exists( cfgPath ) )
+    return;
+
+  mLua = sol::state{};
+  mLua.open_libraries( sol::lib::base, sol::lib::io );
+
+  if ( std::filesystem::exists( cfgPath ) )
+  {
+    mLua.safe_script_file( cfgPath.string(), sol::script_pass_on_error );
+    //ignoring errors
+  }
+
+  if ( !std::filesystem::exists( luaPath ) )
+    return;
 
   mLua.new_usertype<TrapProxy>( "TRAP", sol::meta_function::new_index, &TrapProxy::set );
   mLua.new_usertype<RamProxy>( "RAM", sol::meta_function::index, &RamProxy::get, sol::meta_function::new_index, &RamProxy::set );
@@ -467,21 +474,7 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
     }
   };
 
-  mLua.script_file( path.string() );
-
-  if ( sol::optional<std::string> opt = mLua["image"] )
-  {
-    assert( mImageProperties );
-    InputFile file{ *opt, *mImageProperties };
-    if ( file.valid() )
-    {
-      result = std::move( file );
-    }
-  }
-  else
-  {
-    throw Ex{} << "Set cartridge file using 'image = path'";
-  }
+  mLua.script_file( luaPath.string() );
 
   if ( sol::optional<std::string> opt = mLua["log"] )
   {
@@ -491,27 +484,30 @@ std::optional<InputFile> Manager::processLua( std::filesystem::path const& path 
     mSymbols = std::make_unique<SymbolSource>( *opt );
   }
 
-  return result;
 }
 
 std::optional<InputFile> Manager::computeInputFile()
 {
   std::optional<InputFile> input;
 
-  std::filesystem::path path{ mArg };
-  path = std::filesystem::absolute( path );
-  if ( path.has_extension() && path.extension() == ".lua" )
+  std::filesystem::path path = std::filesystem::absolute( mArg );
+
+  assert( mImageProperties );
+  InputFile file{ path, *mImageProperties };
+  if ( !file.valid() )
+    return {};
+
+  processLua( path );
+
+  return file;
+}
+
+std::shared_ptr<ImageROM const> Manager::getOptionalBootROM()
+{
+  auto sysConfig = gConfigProvider.sysConfig();
+  if ( sysConfig->bootROM.useExternal && !sysConfig->bootROM.path.empty() )
   {
-    return processLua( path );
-  }
-  else
-  {
-    assert( mImageProperties );
-    InputFile file{ path, *mImageProperties };
-    if ( file.valid() )
-    {
-      return file;
-    }
+    return ImageROM::create( sysConfig->bootROM.path );
   }
 
   return {};
