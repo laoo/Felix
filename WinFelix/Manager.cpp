@@ -118,7 +118,7 @@ void Manager::update()
 
 void Manager::doArg( std::wstring arg )
 {
-  mArg = std::move( arg );
+  mArg = std::filesystem::path{ std::move( arg ) };
   reset();
 }
 
@@ -309,7 +309,7 @@ bool Manager::mainMenu( ImGuiIO& io )
     switch ( fileBrowserAction )
     {
     case OPEN_CARTRIDGE:
-      mArg = mFileBrowser->GetSelected().wstring();
+      mArg = mFileBrowser->GetSelected();
       mDoUpdate = true;
       break;
     case OPEN_BOOTROM:
@@ -516,7 +516,6 @@ std::optional<InputFile> Manager::computeInputFile()
   return {};
 }
 
-
 void Manager::reset()
 {
   mProcessThreads.store( false );
@@ -564,8 +563,9 @@ void Manager::handleFileDrop( HDROP hDrop )
   if ( cnt > 0 )
   {
     uint32_t size = DragQueryFile( hDrop, 0, nullptr, 0 );
-    mArg.resize( size + 1 );
-    DragQueryFile( hDrop, 0, mArg.data(), size + 1 );
+    std::wstring arg( size + 1, L'\0' );
+    DragQueryFile( hDrop, 0, arg.data(), size + 1 );
+    mArg = arg;
   }
 
   DragFinish( hDrop );

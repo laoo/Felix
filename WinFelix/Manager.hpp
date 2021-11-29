@@ -74,7 +74,7 @@ private:
   std::shared_ptr<UserInput> mIntputSource;
   std::shared_ptr<KeyNames> mKeyNames;
   std::shared_ptr<ImageProperties> mImageProperties;
-  std::wstring mArg;
+  std::filesystem::path mArg;
   std::filesystem::path mLogPath;
   uint64_t mLogStartCycle;
   std::mutex mMutex;
