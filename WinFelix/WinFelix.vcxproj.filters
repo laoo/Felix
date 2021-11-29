@@ -14,6 +14,7 @@
     <ClCompile Include="SysConfig.cpp" />
     <ClCompile Include="UserInput.cpp" />
     <ClCompile Include="KeyNames.cpp" />
+    <ClCompile Include="LuaProxies.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -33,6 +34,7 @@
     <ClInclude Include="SysConfig.hpp" />
     <ClInclude Include="UserInput.hpp" />
     <ClInclude Include="KeyNames.hpp" />
+    <ClInclude Include="LuaProxies.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />
