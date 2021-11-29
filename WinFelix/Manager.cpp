@@ -208,7 +208,7 @@ bool Manager::mainMenu( ImGuiIO& io )
   auto configureKeyItem = [&]( char const* name, KeyInput::Key k )
   {
     ImGui::Text( name );
-    ImGui::SameLine( 90 );
+    ImGui::SameLine( 60 );
 
     if ( ImGui::Button( mKeyNames->name( mIntputSource->getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
     {
@@ -320,13 +320,21 @@ bool Manager::mainMenu( ImGuiIO& io )
     {
       if ( ImGui::BeginTable( "table", 3 ) )
       {
+        ImGui::TableSetupColumn( "1", ImGuiTableColumnFlags_WidthFixed );
+        ImGui::TableSetupColumn( "2", ImGuiTableColumnFlags_WidthFixed, 100.0f );
+        ImGui::TableSetupColumn( "3", ImGuiTableColumnFlags_WidthFixed );
+
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::Text( "Press key" );
         ImGui::TableNextRow( ImGuiTableRowFlags_None, 30.0f );
         ImGui::TableNextColumn();
         ImGui::TableNextColumn();
-        static int code = mIntputSource->getVirtualCode( *keyToConfigure );
+        static int code = 0;
+        if ( code == 0 )
+        {
+          code = mIntputSource->getVirtualCode( *keyToConfigure );
+        }
         if ( auto c = mIntputSource->firstKeyPressed() )
         {
           code = c;
@@ -339,6 +347,7 @@ bool Manager::mainMenu( ImGuiIO& io )
           ImGui::CloseCurrentPopup();
           mIntputSource->updateMapping( *keyToConfigure, code );
           keyToConfigure = std::nullopt;
+          code = 0;
         }
         ImGui::TableNextColumn();
         ImGui::TableNextColumn();
@@ -347,6 +356,7 @@ bool Manager::mainMenu( ImGuiIO& io )
         {
           ImGui::CloseCurrentPopup();
           keyToConfigure = std::nullopt;
+          code = 0;
         }
         ImGui::EndTable();
       }
