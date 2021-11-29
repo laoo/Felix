@@ -38,7 +38,7 @@ std::shared_ptr<ImageROM const> getOptionalBootROM()
 
 }
 
-Manager::Manager() : mLua{}, mEmulationRunning{ true }, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads{}, mPaused{},
+Manager::Manager() : mLua{}, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads{}, mPaused{},
   mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
   mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
   mImageProperties{}
@@ -123,6 +123,7 @@ void Manager::doArg( std::wstring arg )
 
 void Manager::initialize( HWND hWnd )
 {
+  mhWnd = hWnd;
   assert( mRenderer );
   mRenderer->initialize( hWnd, gConfigProvider.appDataFolder() );
 }
@@ -133,17 +134,15 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
   switch ( msg )
   {
   case WM_CLOSE:
+    if ( GetWindowRect( hWnd, &r ) )
     {
-    auto winConfig = gConfigProvider.winConfig();
-    GetWindowRect( hWnd, &r );
-    winConfig->mainWindow.x = r.left;
-    winConfig->mainWindow.y = r.top;
-    winConfig->mainWindow.width = r.right - r.left;
-    winConfig->mainWindow.height = r.bottom - r.top;
-    mIntputSource->serialize( *gConfigProvider.sysConfig() );
-    gConfigProvider.serialize();
+      auto winConfig = gConfigProvider.winConfig();
+      winConfig->mainWindow.x = r.left;
+      winConfig->mainWindow.y = r.top;
+      winConfig->mainWindow.width = r.right - r.left;
+      winConfig->mainWindow.height = r.bottom - r.top;
+    }
     DestroyWindow( hWnd );
-  }
     break;
   case WM_DESTROY:
     PostQuitMessage( 0 );
@@ -190,7 +189,14 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 
 Manager::~Manager()
 {
+  mIntputSource->serialize( *gConfigProvider.sysConfig() );
+  gConfigProvider.serialize();
   stopThreads();
+}
+
+void Manager::quit()
+{
+  PostMessage( mhWnd, WM_CLOSE, 0, 0 );
 }
 
 bool Manager::mainMenu( ImGuiIO& io )
@@ -235,7 +241,7 @@ bool Manager::mainMenu( ImGuiIO& io )
       }
       if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
       {
-        mEmulationRunning = false;
+        quit();
       }
       ImGui::EndMenu();
     }
@@ -377,11 +383,6 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   {
     mOpenMenu = mainMenu( io );
   }
-}
-
-bool Manager::doRun() const
-{
-  return mEmulationRunning;
 }
 
 std::optional<InputFile> Manager::processLua( std::filesystem::path const& path )

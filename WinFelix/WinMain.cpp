@@ -51,7 +51,7 @@ int loop( Manager & manager )
 {
   MSG msg{};
 
-  while ( manager.doRun() )
+  for ( ;; )
   {
     while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
     {

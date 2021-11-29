@@ -33,11 +33,11 @@ public:
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
+  void quit();
+
   bool mainMenu( ImGuiIO& io );
 
   void drawGui( int left, int top, int right, int bottom );
-
-  bool doRun() const;
 
 private:
   std::optional<InputFile> processLua( std::filesystem::path const& path );
@@ -87,8 +87,6 @@ private:
     void set( sol::stack_object key, sol::stack_object value, sol::this_state );
   };
 
-  bool mEmulationRunning;
-
   bool mDoUpdate;
 
   sol::state mLua;
@@ -115,4 +113,5 @@ private:
   int64_t mRenderingTime;
   bool mOpenMenu;
   std::unique_ptr<ImGui::FileBrowser> mFileBrowser;
+  HWND mhWnd;
 };

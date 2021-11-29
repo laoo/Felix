@@ -119,8 +119,6 @@ int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARA
   {
   case WM_SIZING:
     return mRenderer->sizing( *(RECT*)lParam );
-  case WM_SIZE:
-    break;
   default:
     return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
   }
