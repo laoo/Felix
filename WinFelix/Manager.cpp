@@ -150,6 +150,7 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     break;
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
+    SetForegroundWindow( hWnd );
     reset();
     break;
   case WM_COPYDATA:
