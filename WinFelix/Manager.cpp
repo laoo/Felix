@@ -209,6 +209,7 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::Button( mKeyNames->name( mIntputSource->getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
     {
       keyToConfigure = k;
+      ImGui::OpenPopup( "Configure Key" );
     }
   };
 
@@ -249,6 +250,53 @@ bool Manager::mainMenu( ImGuiIO& io )
         configureKeyItem( "Opt1", KeyInput::OPTION1 );
         configureKeyItem( "Pause", KeyInput::PAUSE );
         configureKeyItem( "Opt2", KeyInput::OPTION2 );
+
+        if ( ImGui::BeginPopupModal( "Configure Key", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
+        {
+          if ( ImGui::BeginTable( "table", 3 ) )
+          {
+            ImGui::TableSetupColumn( "1", ImGuiTableColumnFlags_WidthFixed );
+            ImGui::TableSetupColumn( "2", ImGuiTableColumnFlags_WidthFixed, 100.0f );
+            ImGui::TableSetupColumn( "3", ImGuiTableColumnFlags_WidthFixed );
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text( "Press key" );
+            ImGui::TableNextRow( ImGuiTableRowFlags_None, 30.0f );
+            ImGui::TableNextColumn();
+            ImGui::TableNextColumn();
+            static int code = 0;
+            if ( code == 0 )
+            {
+              code = mIntputSource->getVirtualCode( *keyToConfigure );
+            }
+            if ( auto c = mIntputSource->firstKeyPressed() )
+            {
+              code = c;
+            }
+            ImGui::Text( mKeyNames->name( code ) );
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
+            {
+              ImGui::CloseCurrentPopup();
+              mIntputSource->updateMapping( *keyToConfigure, code );
+              keyToConfigure = std::nullopt;
+              code = 0;
+            }
+            ImGui::TableNextColumn();
+            ImGui::TableNextColumn();
+            ImGui::SetItemDefaultFocus();
+            if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
+            {
+              ImGui::CloseCurrentPopup();
+              keyToConfigure = std::nullopt;
+              code = 0;
+            }
+            ImGui::EndTable();
+          }
+          ImGui::EndPopup();
+        }
 
         ImGui::EndMenu();
       }
@@ -307,57 +355,6 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
     mFileBrowser->ClearSelected();
     fileBrowserAction = NONE;
-  }
-
-  if ( keyToConfigure )
-  {
-    ImGui::OpenPopup( "Configure Key" );
-    if ( ImGui::BeginPopupModal( "Configure Key", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
-    {
-      if ( ImGui::BeginTable( "table", 3 ) )
-      {
-        ImGui::TableSetupColumn( "1", ImGuiTableColumnFlags_WidthFixed );
-        ImGui::TableSetupColumn( "2", ImGuiTableColumnFlags_WidthFixed, 100.0f );
-        ImGui::TableSetupColumn( "3", ImGuiTableColumnFlags_WidthFixed );
-
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::Text( "Press key" );
-        ImGui::TableNextRow( ImGuiTableRowFlags_None, 30.0f );
-        ImGui::TableNextColumn();
-        ImGui::TableNextColumn();
-        static int code = 0;
-        if ( code == 0 )
-        {
-          code = mIntputSource->getVirtualCode( *keyToConfigure );
-        }
-        if ( auto c = mIntputSource->firstKeyPressed() )
-        {
-          code = c;
-        }
-        ImGui::Text( mKeyNames->name( code ) );
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
-        {
-          ImGui::CloseCurrentPopup();
-          mIntputSource->updateMapping( *keyToConfigure, code );
-          keyToConfigure = std::nullopt;
-          code = 0;
-        }
-        ImGui::TableNextColumn();
-        ImGui::TableNextColumn();
-        ImGui::SetItemDefaultFocus();
-        if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
-        {
-          ImGui::CloseCurrentPopup();
-          keyToConfigure = std::nullopt;
-          code = 0;
-        }
-        ImGui::EndTable();
-      }
-      ImGui::EndPopup();
-    }
   }
 
   return openMenu;
