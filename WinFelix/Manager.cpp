@@ -513,6 +513,7 @@ std::shared_ptr<ImageROM const> Manager::getOptionalBootROM()
 void Manager::reset()
 {
   mProcessThreads.store( false );
+  //TODO wait for threads to stop.
   mInstance.reset();
   mImageProperties = std::make_shared<ImageProperties>( std::filesystem::path{ mArg } );
 
