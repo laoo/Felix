@@ -15,6 +15,11 @@ void ImageProperties::setEEPROM( uint8_t eepromBits )
   mEEPROM = EEPROM{ eepromBits };
 }
 
+void ImageProperties::setCartridgeName( std::string_view name )
+{
+  mCartridgeName = name;
+}
+
 ImageProperties::Rotation ImageProperties::getRotation() const
 {
   return mRotation;
@@ -28,6 +33,11 @@ ImageProperties::EEPROM ImageProperties::getEEPROM() const
 std::filesystem::path ImageProperties::getPath() const
 {
   return mPath;
+}
+
+std::string_view ImageProperties::getCartridgeName() const
+{
+  return mCartridgeName;
 }
 
 bool ImageProperties::EEPROM::sd() const

@@ -117,5 +117,7 @@ void ImageCart::populate( ImageProperties & imageProperties ) const
   {
     imageProperties.setRotation( mHeader->rotation );
     imageProperties.setEEPROM( mHeader->eepromBits );
+    imageProperties.setCartridgeName( std::string_view{ mHeader->cartname.data(), std::min( mHeader->cartname.size(), std::strlen( (char const*)mHeader->cartname.data() ) ) } );
+
   }
 }

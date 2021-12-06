@@ -198,6 +198,13 @@ bool Manager::mainMenu( ImGuiIO& io )
     OPEN_BOOTROM
   };
 
+  enum class ModalWindow
+  {
+    NONE,
+    PROPERTIES
+  };
+
+  static ModalWindow modalWindow = ModalWindow::NONE;
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
   static std::optional<KeyInput::Key> keyToConfigure;
 
@@ -230,6 +237,10 @@ bool Manager::mainMenu( ImGuiIO& io )
         mFileBrowser->Open();
         fileBrowserAction = FileBrowserAction::OPEN_CARTRIDGE;
       }
+      if ( ImGui::MenuItem( "Properties", "Ctrl+P", nullptr, (bool)mImageProperties ) )
+      {
+        modalWindow = ModalWindow::PROPERTIES;
+      }
       if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
       {
         quit();
@@ -251,52 +262,7 @@ bool Manager::mainMenu( ImGuiIO& io )
         configureKeyItem( "Pause", KeyInput::PAUSE );
         configureKeyItem( "Opt2", KeyInput::OPTION2 );
 
-        if ( ImGui::BeginPopupModal( "Configure Key", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
-        {
-          if ( ImGui::BeginTable( "table", 3 ) )
-          {
-            ImGui::TableSetupColumn( "1", ImGuiTableColumnFlags_WidthFixed );
-            ImGui::TableSetupColumn( "2", ImGuiTableColumnFlags_WidthFixed, 100.0f );
-            ImGui::TableSetupColumn( "3", ImGuiTableColumnFlags_WidthFixed );
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text( "Press key" );
-            ImGui::TableNextRow( ImGuiTableRowFlags_None, 30.0f );
-            ImGui::TableNextColumn();
-            ImGui::TableNextColumn();
-            static int code = 0;
-            if ( code == 0 )
-            {
-              code = mIntputSource->getVirtualCode( *keyToConfigure );
-            }
-            if ( auto c = mIntputSource->firstKeyPressed() )
-            {
-              code = c;
-            }
-            ImGui::Text( mKeyNames->name( code ) );
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
-            {
-              ImGui::CloseCurrentPopup();
-              mIntputSource->updateMapping( *keyToConfigure, code );
-              keyToConfigure = std::nullopt;
-              code = 0;
-            }
-            ImGui::TableNextColumn();
-            ImGui::TableNextColumn();
-            ImGui::SetItemDefaultFocus();
-            if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
-            {
-              ImGui::CloseCurrentPopup();
-              keyToConfigure = std::nullopt;
-              code = 0;
-            }
-            ImGui::EndTable();
-          }
-          ImGui::EndPopup();
-        }
+        configureKeyWindow( keyToConfigure );
 
         ImGui::EndMenu();
       }
@@ -334,10 +300,34 @@ bool Manager::mainMenu( ImGuiIO& io )
       ImGui::Checkbox( "Single emulator instance", &sysConfig->singleInstance );
       ImGui::EndMenu();
     }
+
     ImGui::EndMainMenuBar();
     ImGui::PopStyleVar();
   }
   ImGui::PopStyleVar();
+
+  if ( io.KeyCtrl )
+  {
+    if ( ImGui::IsKeyDown( 'P' ) )
+    {
+      modalWindow = ModalWindow::PROPERTIES;
+    }
+  }
+
+  switch ( modalWindow )
+  {
+  case ModalWindow::PROPERTIES:
+    ImGui::OpenPopup( "Image properties" );
+    modalWindow = ModalWindow::NONE;
+    break;
+  default:
+    break;
+  }
+
+  imagePropertiesWindow( modalWindow != ModalWindow::NONE );
+
+  modalWindow = ModalWindow::NONE;
+
 
   mFileBrowser->Display();
   if ( mFileBrowser->HasSelected() )
@@ -358,6 +348,85 @@ bool Manager::mainMenu( ImGuiIO& io )
   }
 
   return openMenu;
+}
+
+void Manager::configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure )
+{
+  if ( ImGui::BeginPopupModal( "Configure Key", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
+  {
+    if ( ImGui::BeginTable( "table", 3 ) )
+    {
+      ImGui::TableSetupColumn( "1", ImGuiTableColumnFlags_WidthFixed );
+      ImGui::TableSetupColumn( "2", ImGuiTableColumnFlags_WidthFixed, 100.0f );
+      ImGui::TableSetupColumn( "3", ImGuiTableColumnFlags_WidthFixed );
+
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      ImGui::Text( "Press key" );
+      ImGui::TableNextRow( ImGuiTableRowFlags_None, 30.0f );
+      ImGui::TableNextColumn();
+      ImGui::TableNextColumn();
+      static int code = 0;
+      if ( code == 0 )
+      {
+        code = mIntputSource->getVirtualCode( *keyToConfigure );
+      }
+      if ( auto c = mIntputSource->firstKeyPressed() )
+      {
+        code = c;
+      }
+      ImGui::Text( mKeyNames->name( code ) );
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
+      {
+        mIntputSource->updateMapping( *keyToConfigure, code );
+        keyToConfigure = std::nullopt;
+        code = 0;
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::TableNextColumn();
+      ImGui::TableNextColumn();
+      ImGui::SetItemDefaultFocus();
+      if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
+      {
+        keyToConfigure = std::nullopt;
+        code = 0;
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndTable();
+    }
+    ImGui::EndPopup();
+  }
+}
+
+void Manager::imagePropertiesWindow( bool init )
+{
+  static bool changed;
+  if ( init )
+  {
+    changed = false;
+  }
+  if ( ImGui::BeginPopupModal( "Image properties", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
+  {
+    auto cartName = mImageProperties->getCartridgeName();
+    ImGui::TextUnformatted( "Cart Name:" );
+    ImGui::SameLine();
+    ImGui::TextUnformatted( cartName.data(), cartName.data() + cartName.size() );
+    ImGui::BeginDisabled( !changed );
+    if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
+    {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::SetItemDefaultFocus();
+    if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
+    {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
 }
 
 void Manager::drawGui( int left, int top, int right, int bottom )
@@ -522,14 +591,23 @@ void Manager::reset()
     mInstance = std::make_shared<Core>( *mImageProperties, mComLynxWire, mRenderer->getVideoSink(), mIntputSource,
       *input, getOptionalBootROM(), mScriptDebuggerEscapes );
 
-    mIntputSource->setRotation( mImageProperties->getRotation() );
-    mRenderer->setRotation( mImageProperties->getRotation() );
+    updateRotation();
 
     if ( !mLogPath.empty() )
       mInstance->setLog( mLogPath, mLogStartCycle );
   }
+  else
+  {
+    mImageProperties.reset();
+  }
 
   mProcessThreads.store( true );
+}
+
+void Manager::updateRotation()
+{
+  mIntputSource->setRotation( mImageProperties->getRotation() );
+  mRenderer->setRotation( mImageProperties->getRotation() );
 }
 
 void Manager::stopThreads()

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ScriptDebugger.hpp"
+#include "IInputSource.hpp"
 
 class WinRenderer;
 class WinAudioOut;
@@ -30,6 +31,7 @@ public:
 
   void update();
   void reset();
+  void updateRotation();
   void doArg( std::wstring arg );
   void initialize( HWND hWnd );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
@@ -37,6 +39,10 @@ public:
   void quit();
 
   bool mainMenu( ImGuiIO& io );
+
+  void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
+
+  void imagePropertiesWindow( bool init );
 
   void drawGui( int left, int top, int right, int bottom );
 
