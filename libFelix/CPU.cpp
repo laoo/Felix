@@ -931,330 +931,356 @@ CPU::Execute CPU::execute()
     case Opcode::RAX_AND:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a &= state.m1 );
       break;
     case Opcode::RAX_BIT:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       bit( state.m1 );
       break;
     case Opcode::RAX_CMP:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       cmp( state.m1 );
       break;
     case Opcode::RAX_EOR:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a ^= state.m1 );
       break;
     case Opcode::RAX_LDA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a = state.m1 );
       break;
     case Opcode::RAX_LDY:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.y = state.m1 );
       break;
     case Opcode::RAX_ORA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a |= state.m1 );
       break;
     case Opcode::RAX_ADC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       adc( state.m1 );
       if ( get<bitD>() )
       {
-        co_await read( state.t );
+        co_await read( state.ea );
       }
       break;
     case Opcode::RAX_SBC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.x;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.x;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       sbc( state.m1 );
       if ( get<bitD>() )
       {
-        co_await read( state.t );
+        co_await read( state.ea );
       }
       break;
     case Opcode::RAY_AND:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a &= state.m1 );
       break;
     case Opcode::RAY_CMP:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       cmp( state.m1 );
       break;
     case Opcode::RAY_EOR:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a ^= state.m1 );
       break;
     case Opcode::RAY_LDA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a = state.m1 );
       break;
     case Opcode::RAY_LDX:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.x = state.m1 );
       break;
     case Opcode::RAY_ORA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       setnz( state.a |= state.m1 );
       break;
     case Opcode::RAY_ADC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       adc( state.m1 );
       if ( get<bitD>() )
       {
-        co_await read( state.t );
+        co_await read( state.ea );
       }
       break;
     case Opcode::RAY_SBC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.t += state.y;
-      if ( state.th != state.eah )
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      if ( state.eah != state.th )
       {
-        state.eal += state.x;
-        co_await read( state.ea );
+        state.tl += state.y;
+        co_await read( state.t );
       }
-      state.m1 = co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       sbc( state.m1 );
       if ( get<bitD>() )
       {
-        co_await read( state.t );
+        co_await read( state.ea );
       }
       break;
     case Opcode::WAX_STA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      co_await write( state.t, state.a );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      co_await write( state.ea, state.a );
       break;
     case Opcode::WAX_STZ:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      co_await write( state.t, 0x00 );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      co_await write( state.ea, 0x00 );
       break;
     case Opcode::WAY_STA:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.y;
-      state.t += state.y;
-      co_await read( state.ea );
-      co_await write( state.t, state.a );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.y;
+      state.tl += state.y;
+      co_await read( state.t );
+      co_await write( state.ea, state.a );
       break;
     case Opcode::MAX_ASL:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      state.m1 = co_await read( state.t );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       state.m2 = asl( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAX_DEC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      state.m1 = co_await read( state.t );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       state.m2 = dec( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAX_INC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      state.m1 = co_await read( state.t );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       state.m2 = inc( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAX_LSR:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      state.m1 = co_await read( state.t );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       state.m2 = lsr( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAX_ROL:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      state.m1 = co_await read( state.t );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       state.m2 = rol( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MAX_ROR:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.fa = state.t = state.ea;
-      state.eal += state.x;
-      state.t += state.x;
-      co_await read( state.ea );
-      state.m1 = co_await read( state.t );
+      state.fa = state.ea;
+      state.t = state.ea;
+      state.ea += state.x;
+      state.tl += state.x;
+      co_await read( state.t );
+      state.m1 = co_await read( state.ea );
       state.m2 = ror( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -2799,11 +2825,11 @@ void CPU::trace2()
   case Opcode::RAX_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]=${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]=${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1 );
+      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1 );
     }
     break;
   case Opcode::MAX_ASL:
@@ -2814,22 +2840,22 @@ void CPU::trace2()
   case Opcode::MAX_ROR:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]=${:02x}->${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, mState.m2, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]=${:02x}->${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x->$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, mState.m2 );
+      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x->$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2 );
     }
     break;
   case Opcode::WAX_STA:
   case Opcode::WAX_STZ:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.t ) );
+      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.ea ) );
     }
     break;
   case Opcode::RAY_AND:
@@ -2842,21 +2868,21 @@ void CPU::trace2()
   case Opcode::RAY_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},y\t;[{}]=${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "${:04x},y\t;[{}]=${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]=$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1 );
+      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]=$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1 );
     }
     break;
   case Opcode::WAY_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},y\t;[{}]\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "${:04x},y\t;[{}]\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.t ) );
+      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.ea ) );
     }
     break;
   case Opcode::JMX_JMP:
