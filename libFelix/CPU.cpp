@@ -1193,8 +1193,13 @@ CPU::Execute CPU::execute()
     case Opcode::MAX_ASL:
       state.eah = co_await fetchOperand( state.pc + 1 );
       state.fa = state.ea + state.x;
-      co_await read( state.pc + 1 );
+      if ( state.eah != state.fah )
+      {
+        co_await read( state.pc + 1 );
+      }
       state.m1 = co_await read( state.fa );
+      state.fal += 1;
+      co_await read( state.fa );
       state.m2 = asl( state.m1 );
       co_await write( state.fa, state.m2 );
       state.pc += 2;
@@ -1202,8 +1207,13 @@ CPU::Execute CPU::execute()
     case Opcode::MAX_DEC:
       state.eah = co_await fetchOperand( state.pc + 1 );
       state.fa = state.ea + state.x;
-      co_await read( state.pc + 1 );
+      if ( state.eah != state.fah )
+      {
+        co_await read( state.pc + 1 );
+      }
       state.m1 = co_await read( state.fa );
+      state.fal += 1;
+      co_await read( state.fa );
       state.m2 = dec( state.m1 );
       co_await write( state.fa, state.m2 );
       state.pc += 2;
@@ -1211,8 +1221,13 @@ CPU::Execute CPU::execute()
     case Opcode::MAX_INC:
       state.eah = co_await fetchOperand( state.pc + 1 );
       state.fa = state.ea + state.x;
-      co_await read( state.pc + 1 );
+      if ( state.eah != state.fah )
+      {
+        co_await read( state.pc + 1 );
+      }
       state.m1 = co_await read( state.fa );
+      state.fal += 1;
+      co_await read( state.fa );
       state.m2 = inc( state.m1 );
       co_await write( state.fa, state.m2 );
       state.pc += 2;
@@ -1220,8 +1235,13 @@ CPU::Execute CPU::execute()
     case Opcode::MAX_LSR:
       state.eah = co_await fetchOperand( state.pc + 1 );
       state.fa = state.ea + state.x;
-      co_await read( state.pc + 1 );
+      if ( state.eah != state.fah )
+      {
+        co_await read( state.pc + 1 );
+      }
       state.m1 = co_await read( state.fa );
+      state.fal += 1;
+      co_await read( state.fa );
       state.m2 = lsr( state.m1 );
       co_await write( state.fa, state.m2 );
       state.pc += 2;
@@ -1229,8 +1249,13 @@ CPU::Execute CPU::execute()
     case Opcode::MAX_ROL:
       state.eah = co_await fetchOperand( state.pc + 1 );
       state.fa = state.ea + state.x;
-      co_await read( state.pc + 1 );
+      if ( state.eah != state.fah )
+      {
+        co_await read( state.pc + 1 );
+      }
       state.m1 = co_await read( state.fa );
+      state.fal += 1;
+      co_await read( state.fa );
       state.m2 = rol( state.m1 );
       co_await write( state.fa, state.m2 );
       state.pc += 2;
@@ -1238,8 +1263,13 @@ CPU::Execute CPU::execute()
     case Opcode::MAX_ROR:
       state.eah = co_await fetchOperand( state.pc + 1 );
       state.fa = state.ea + state.x;
-      co_await read( state.pc + 1 );
+      if ( state.eah != state.fah )
+      {
+        co_await read( state.pc + 1 );
+      }
       state.m1 = co_await read( state.fa );
+      state.fal += 1;
+      co_await read( state.fa );
       state.m2 = ror( state.m1 );
       co_await write( state.fa, state.m2 );
       state.pc += 2;
