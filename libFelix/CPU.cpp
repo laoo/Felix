@@ -479,7 +479,7 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.x );
       break;
     case Opcode::MZX_ASL:
-      co_await read( ++state.pc );
+      co_await read( state.pc++ );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
       co_await read( state.t );
@@ -487,7 +487,7 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.m2 );
       break;
     case Opcode::MZX_DEC:
-      co_await read( ++state.pc );
+      co_await read( state.pc++ );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
       co_await read( state.t );
@@ -495,7 +495,7 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.m2 );
       break;
     case Opcode::MZX_INC:
-      co_await read( ++state.pc );
+      co_await read( state.pc++ );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
       co_await read( state.t );
@@ -503,7 +503,7 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.m2 );
       break;
     case Opcode::MZX_LSR:
-      co_await read( ++state.pc );
+      co_await read( state.pc++ );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
       co_await read( state.t );
@@ -511,7 +511,7 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.m2 );
       break;
     case Opcode::MZX_ROL:
-      co_await read( ++state.pc );
+      co_await read( state.pc++ );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
       co_await read( state.t );
@@ -519,7 +519,7 @@ CPU::Execute CPU::execute()
       co_await write( state.t, state.m2 );
       break;
     case Opcode::MZX_ROR:
-      co_await read( ++state.pc );
+      co_await read( state.pc++ );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
       co_await read( state.t );
