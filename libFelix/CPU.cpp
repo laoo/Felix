@@ -223,42 +223,49 @@ CPU::Execute CPU::execute()
     case Opcode::MZP_ASL:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = asl( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_DEC:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = dec( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_INC:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = inc( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_LSR:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = lsr( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_ROL:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = rol( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_ROR:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = ror( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_TRB:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       setz( state.m1 & state.a );
       state.m2 = state.m1 & ~state.a;
       co_await write( state.ea, state.m2 );
@@ -266,6 +273,7 @@ CPU::Execute CPU::execute()
     case Opcode::MZP_TSB:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       setz( state.m1 & state.a );
       state.m2 = state.m1 | state.a;
       co_await write( state.ea, state.m2 );
@@ -273,96 +281,112 @@ CPU::Execute CPU::execute()
     case Opcode::MZP_RMB0:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x01;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB1:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x02;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB2:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x04;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB3:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x08;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB4:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x10;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB5:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x20;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB6:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x40;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_RMB7:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 & ~0x80;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB0:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x01;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB1:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x02;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB2:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x04;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB3:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x08;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB4:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x10;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB5:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x20;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB6:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x40;
       co_await write( state.ea, state.m2 );
       break;
     case Opcode::MZP_SMB7:
       ++state.pc;
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = state.m1 | 0x80;
       co_await write( state.ea, state.m2 );
       break;
@@ -458,6 +482,7 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
+      co_await read( state.t );
       state.m2 = asl( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -465,6 +490,7 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
+      co_await read( state.t );
       state.m2 = dec( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -472,6 +498,7 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
+      co_await read( state.t );
       state.m2 = inc( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -479,6 +506,7 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
+      co_await read( state.t );
       state.m2 = lsr( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -486,6 +514,7 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
+      co_await read( state.t );
       state.m2 = rol( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -493,6 +522,7 @@ CPU::Execute CPU::execute()
       co_await read( ++state.pc );
       state.tl = state.eal + state.x;
       state.m1 = co_await read( state.t );
+      co_await read( state.t );
       state.m2 = ror( state.m1 );
       co_await write( state.t, state.m2 );
       break;
@@ -874,6 +904,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = asl( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -881,6 +912,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = dec( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -888,6 +920,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = inc( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -895,6 +928,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = lsr( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -902,6 +936,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = rol( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -909,6 +944,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       state.m2 = ror( state.m1 );
       co_await write( state.ea, state.m2 );
       break;
@@ -916,6 +952,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       setz( state.m1 & state.a );
       state.m2 = state.m1 & ~state.a;
       co_await write( state.ea, state.m2 );
@@ -924,6 +961,7 @@ CPU::Execute CPU::execute()
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
       state.m1 = co_await read( state.ea );
+      co_await read( state.ea );
       setz( state.m1 & state.a );
       state.m2 = state.m1 | state.a;
       co_await write( state.ea, state.m2 );
