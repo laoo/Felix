@@ -1198,7 +1198,6 @@ CPU::Execute CPU::execute()
         co_await read( state.pc + 1 );
       }
       state.m1 = co_await read( state.fa );
-      state.fal += 1;
       co_await read( state.fa );
       state.m2 = asl( state.m1 );
       co_await write( state.fa, state.m2 );
@@ -1212,7 +1211,6 @@ CPU::Execute CPU::execute()
         co_await read( state.pc + 1 );
       }
       state.m1 = co_await read( state.fa );
-      state.fal += 1;
       co_await read( state.fa );
       state.m2 = dec( state.m1 );
       co_await write( state.fa, state.m2 );
@@ -1226,7 +1224,6 @@ CPU::Execute CPU::execute()
         co_await read( state.pc + 1 );
       }
       state.m1 = co_await read( state.fa );
-      state.fal += 1;
       co_await read( state.fa );
       state.m2 = inc( state.m1 );
       co_await write( state.fa, state.m2 );
@@ -1240,7 +1237,6 @@ CPU::Execute CPU::execute()
         co_await read( state.pc + 1 );
       }
       state.m1 = co_await read( state.fa );
-      state.fal += 1;
       co_await read( state.fa );
       state.m2 = lsr( state.m1 );
       co_await write( state.fa, state.m2 );
@@ -1254,7 +1250,6 @@ CPU::Execute CPU::execute()
         co_await read( state.pc + 1 );
       }
       state.m1 = co_await read( state.fa );
-      state.fal += 1;
       co_await read( state.fa );
       state.m2 = rol( state.m1 );
       co_await write( state.fa, state.m2 );
@@ -1268,7 +1263,6 @@ CPU::Execute CPU::execute()
         co_await read( state.pc + 1 );
       }
       state.m1 = co_await read( state.fa );
-      state.fal += 1;
       co_await read( state.fa );
       state.m2 = ror( state.m1 );
       co_await write( state.fa, state.m2 );
