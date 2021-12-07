@@ -237,16 +237,23 @@ bool Manager::mainMenu( ImGuiIO& io )
         mFileBrowser->Open();
         fileBrowserAction = FileBrowserAction::OPEN_CARTRIDGE;
       }
-      if ( ImGui::MenuItem( "Properties", "Ctrl+P", nullptr, (bool)mImageProperties ) )
-      {
-        modalWindow = ModalWindow::PROPERTIES;
-      }
       if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
       {
         quit();
       }
       ImGui::EndMenu();
     }
+    ImGui::BeginDisabled( !(bool)mImageProperties );
+    if ( ImGui::BeginMenu( "Cartridge" ) )
+    {
+      openMenu = true;
+      if ( ImGui::MenuItem( "Properties", "Ctrl+P", nullptr ) )
+      {
+        modalWindow = ModalWindow::PROPERTIES;
+      }
+      ImGui::EndMenu();
+    }
+    ImGui::EndDisabled();
     if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
@@ -410,9 +417,67 @@ void Manager::imagePropertiesWindow( bool init )
   if ( ImGui::BeginPopupModal( "Image properties", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
   {
     auto cartName = mImageProperties->getCartridgeName();
+    auto manufName = mImageProperties->getMamufacturerName();
+    auto eeprom = mImageProperties->getEEPROM();
+    auto const& bankProps = mImageProperties->getBankProps();
     ImGui::TextUnformatted( "Cart Name:" );
     ImGui::SameLine();
     ImGui::TextUnformatted( cartName.data(), cartName.data() + cartName.size() );
+    ImGui::TextUnformatted( "Manufacturer:" );
+    ImGui::SameLine();
+    ImGui::TextUnformatted( manufName.data(), manufName.data() + manufName.size() );
+    ImGui::TextUnformatted( "Size:" );
+    ImGui::SameLine();
+    if ( bankProps[2].numberOfPages > 0 )
+    {
+      ImGui::Text( "( %d + %d ) * %d B = %d B", bankProps[0].numberOfPages, bankProps[2].numberOfPages, bankProps[0].pageSize, ( bankProps[0].numberOfPages + bankProps[2].numberOfPages ) * bankProps[0].pageSize );
+    }
+    else
+    {
+      ImGui::Text( "%d * %d B = %d B", bankProps[0].numberOfPages, bankProps[0].pageSize, bankProps[0].numberOfPages * bankProps[0].pageSize );
+    }
+    if ( bankProps[1].pageSize * bankProps[1].numberOfPages > 0 )
+    {
+      ImGui::TextUnformatted( "Aux Size:" );
+      ImGui::SameLine();
+      if ( bankProps[3].numberOfPages > 0 )
+      {
+        ImGui::Text( "( %d + %d ) * %d B = %d B", bankProps[1].numberOfPages, bankProps[3].numberOfPages, bankProps[1].pageSize, ( bankProps[1].numberOfPages + bankProps[3].numberOfPages ) * bankProps[1].pageSize );
+      }
+      else
+      {
+        ImGui::Text( "%d * %d B = %d B", bankProps[1].numberOfPages, bankProps[1].pageSize, bankProps[1].numberOfPages * bankProps[1].pageSize );
+      }
+    }
+    ImGui::TextUnformatted( "AUDIn Used?:" );
+    ImGui::SameLine();
+    ImGui::TextUnformatted( mImageProperties->getAUDInUsed() ? "Yes" : "No" );
+    ImGui::TextUnformatted( "Rotation:" );
+    ImGui::SameLine();
+    switch ( mImageProperties->getRotation() )
+    {
+    case ImageProperties::Rotation::LEFT:
+      ImGui::TextUnformatted( "Left" );
+      break;
+    case ImageProperties::Rotation::RIGHT:
+      ImGui::TextUnformatted( "Right" );
+      break;
+    default:
+      ImGui::TextUnformatted( "Normal" );
+      break;
+    }
+    ImGui::TextUnformatted( "EEPROM:" );
+    ImGui::SameLine();
+    ImGui::TextUnformatted( eeprom.name().data(), eeprom.name().data() + eeprom.name().size() );
+    if ( eeprom.type() != 0 )
+    {
+      ImGui::TextUnformatted( "EEPROM bitness:" );
+      ImGui::SameLine();
+      ImGui::TextUnformatted( eeprom.is16Bit() ? "16-bit" : "8-bit" );
+    }
+    ImGui::TextUnformatted( "SD Card support:" );
+    ImGui::SameLine();
+    ImGui::TextUnformatted( eeprom.sd() ? "Yes" : "No" );
     ImGui::BeginDisabled( !changed );
     if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
     {

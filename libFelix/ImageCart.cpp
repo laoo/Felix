@@ -118,6 +118,14 @@ void ImageCart::populate( ImageProperties & imageProperties ) const
     imageProperties.setRotation( mHeader->rotation );
     imageProperties.setEEPROM( mHeader->eepromBits );
     imageProperties.setCartridgeName( std::string_view{ mHeader->cartname.data(), std::min( mHeader->cartname.size(), std::strlen( (char const*)mHeader->cartname.data() ) ) } );
-
+    imageProperties.setMamufacturerName( std::string_view{ mHeader->manufname.data(), std::min( mHeader->manufname.size(), std::strlen( (char const*)mHeader->manufname.data() ) ) } );
+    imageProperties.setAUDInUsed( mHeader->audBits != 0 );
   }
+
+  imageProperties.setBankProps( std::array<ImageProperties::BankProps, 4>{
+      ImageProperties::BankProps{ mBank0.pageSize(), mBank0.numberOfPages() },
+      ImageProperties::BankProps{ mBank0A.pageSize(), mBank0A.numberOfPages() },
+      ImageProperties::BankProps{ mBank1.pageSize(), mBank1.numberOfPages() },
+      ImageProperties::BankProps{ mBank1A.pageSize(), mBank1A.numberOfPages() }
+    } );
 }
