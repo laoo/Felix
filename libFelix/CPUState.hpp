@@ -47,7 +47,15 @@ struct CPUState
     };
   };
 
-  uint16_t fa{};
+  union
+  {
+    uint16_t fa{};
+    struct
+    {
+      uint8_t fal;
+      uint8_t fah;
+    };
+  };
 
   union
   {
