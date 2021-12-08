@@ -13,6 +13,8 @@ InputFile::InputFile( std::filesystem::path const & path, std::shared_ptr<ImageP
   if ( data.empty() )
     return;
 
+  bool propsReset = false;
+
   if ( imageProperties && imageProperties->getPath() != path )
   {
     imageProperties.reset();
@@ -21,11 +23,15 @@ InputFile::InputFile( std::filesystem::path const & path, std::shared_ptr<ImageP
   if ( !imageProperties )
   {
     imageProperties = std::make_shared<ImageProperties>( path );
+    propsReset = true;
   }
 
   if ( auto pCart = ImageCart::create( data ) )
   {
-    pCart->populate( *imageProperties );
+    if ( propsReset )
+    {
+      pCart->populate( *imageProperties );
+    }
 
     mType = FileType::CART;
     mCart = std::move( pCart );
