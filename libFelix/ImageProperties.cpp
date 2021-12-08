@@ -90,29 +90,6 @@ bool ImageProperties::EEPROM::is16Bit() const
   return ( bits & 0x80 ) == 0;
 }
 
-std::string_view ImageProperties::EEPROM::name() const
-{
-  using namespace std::string_view_literals;
-
-  switch ( type() )
-  {
-  case 0: //93C46
-    return "NONE"sv;
-  case 1: //93C46
-    return "93C46"sv;
-  case 2: //93C56
-    return "93C56"sv;
-  case 3: // 93C66
-    return "93C66"sv;
-  case 4: // 93C76
-    return "93C76"sv;
-  case 5: // 93C86
-    return "93C86"sv;
-  default:
-    return "??"sv;
-  }
-}
-
 void ImageProperties::EEPROM::setType( int type )
 {
   bits &= ~7;
@@ -130,3 +107,4 @@ void ImageProperties::EEPROM::set16bit( bool is16bit )
   bits &= ~0x80;
   bits |= is16bit ? 0 : 0x80;
 }
+

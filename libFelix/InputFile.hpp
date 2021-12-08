@@ -14,7 +14,7 @@ public:
     CART,
   };
 
-  InputFile( std::filesystem::path const& path, ImageProperties & imageProperties );
+  InputFile( std::filesystem::path const& path, std::shared_ptr<ImageProperties> & imageProperties );
 
   bool valid() const;
   FileType getType() const;

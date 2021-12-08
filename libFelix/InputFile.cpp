@@ -3,18 +3,30 @@
 #include "ImageBS93.hpp"
 #include "ImageCart.hpp"
 #include "Utility.hpp"
+#include "ImageProperties.hpp"
 #include "Log.hpp"
 
-InputFile::InputFile( std::filesystem::path const & path, ImageProperties & imageProperties ) : mType{}, mBS93{}, mCart{}
+InputFile::InputFile( std::filesystem::path const & path, std::shared_ptr<ImageProperties> & imageProperties ) : mType{}, mBS93{}, mCart{}
 {
   auto data = readFile( path );
 
   if ( data.empty() )
     return;
 
+  if ( imageProperties && imageProperties->getPath() != path )
+  {
+    imageProperties.reset();
+  }
+
+  if ( !imageProperties )
+  {
+    imageProperties = std::make_shared<ImageProperties>( path );
+  }
+
   if ( auto pCart = ImageCart::create( data ) )
   {
-    pCart->populate( imageProperties );
+    pCart->populate( *imageProperties );
+
     mType = FileType::CART;
     mCart = std::move( pCart );
     return;

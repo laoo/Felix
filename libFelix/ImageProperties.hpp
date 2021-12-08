@@ -17,11 +17,13 @@ public:
     bool sd() const;
     int type() const;
     bool is16Bit() const;
-    std::string_view name() const;
 
     void setType( int type );
     void setSD( bool sd );
     void set16bit( bool is16bit );
+
+    static constexpr int TYPE_COUNT = 6;
+    static constexpr std::array<char const*, TYPE_COUNT> NAMES = { "NONE", "93C46", "93C56", "93C66", "93C76", "93C86" };
   };
 
   struct BankProps

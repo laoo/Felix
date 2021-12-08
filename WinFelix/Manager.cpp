@@ -410,19 +410,26 @@ void Manager::imagePropertiesWindow( bool init )
 {
   if ( ImGui::BeginPopupModal( "Image properties", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
   {
-    static bool changed;
     static int rotation;
+    static ImageProperties::EEPROM eeprom;
     if ( init )
     {
-      changed = false;
       rotation = (int)mImageProperties->getRotation();
-      if ( rotation < 0 || rotation > 2 )
-        rotation = 0;
+      eeprom = mImageProperties->getEEPROM();
     }
+
+    auto isChanged = [&]
+    {
+      if ( rotation != (int)mImageProperties->getRotation() )
+        return true;
+      if ( eeprom.bits != mImageProperties->getEEPROM().bits )
+        return true;
+
+      return false;
+    };
 
     auto cartName = mImageProperties->getCartridgeName();
     auto manufName = mImageProperties->getMamufacturerName();
-    auto eeprom = mImageProperties->getEEPROM();
     auto const& bankProps = mImageProperties->getBankProps();
     ImGui::TextUnformatted( "Cart Name:" );
     ImGui::SameLine();
@@ -458,27 +465,53 @@ void Manager::imagePropertiesWindow( bool init )
     ImGui::TextUnformatted( mImageProperties->getAUDInUsed() ? "Yes" : "No" );
     ImGui::TextUnformatted( "Rotation:" );
     ImGui::SameLine();
-    if ( ImGui::Combo( "", &rotation, "Normal\0Left\0Right\0\0" ) )
-    {
-      changed = rotation != (int)mImageProperties->getRotation();
-    }
+    ImGui::RadioButton( "Normal", &rotation, 0 ); ImGui::SameLine();
+    ImGui::RadioButton( "Left", &rotation, 1 ); ImGui::SameLine();
+    ImGui::RadioButton( "Right", &rotation, 2 );
     ImGui::TextUnformatted( "EEPROM:" );
     ImGui::SameLine();
-    ImGui::TextUnformatted( eeprom.name().data(), eeprom.name().data() + eeprom.name().size() );
+    int eepromType = eeprom.type();
+    if ( ImGui::Combo( "", &eepromType, ImageProperties::EEPROM::NAMES.data(), ImageProperties::EEPROM::TYPE_COUNT ) )
+    {
+      eeprom.setType( eepromType );
+    }
     if ( eeprom.type() != 0 )
     {
       ImGui::TextUnformatted( "EEPROM bitness:" );
       ImGui::SameLine();
-      ImGui::TextUnformatted( eeprom.is16Bit() ? "16-bit" : "8-bit" );
+      int bitness = eeprom.is16Bit() ? 1 : 0;
+      if ( ImGui::RadioButton( "8-bit", &bitness, 0 ) )
+      {
+        eeprom.set16bit( false );
+      }
+      ImGui::SameLine();
+      if ( ImGui::RadioButton( "16-bit", &bitness, 1 ) )
+      {
+        eeprom.set16bit( true );
+      }
     }
     ImGui::TextUnformatted( "SD Card support:" );
     ImGui::SameLine();
-    ImGui::TextUnformatted( eeprom.sd() ? "Yes" : "No" );
-    ImGui::BeginDisabled( !changed );
-    if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
+    int sd = eeprom.sd() ? 1 : 0;
+    if ( ImGui::RadioButton( "No", &sd, 0 ) )
+    {
+      eeprom.setSD( false );
+    }
+    ImGui::SameLine();
+    if ( ImGui::RadioButton( "Yes", &sd, 1 ) )
+    {
+      eeprom.setSD( true );
+    }
+    ImGui::BeginDisabled( !isChanged() );
+    if ( ImGui::Button( "Apply", ImVec2( 60, 0 ) ) )
     {
       mImageProperties->setRotation( rotation );
       updateRotation();
+      if ( eeprom.bits != mImageProperties->getEEPROM().bits )
+      {
+        mImageProperties->setEEPROM( eeprom.bits );
+        mDoUpdate = true;
+      }
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndDisabled();
@@ -621,8 +654,7 @@ std::optional<InputFile> Manager::computeInputFile()
 
   std::filesystem::path path = std::filesystem::absolute( mArg );
 
-  assert( mImageProperties );
-  InputFile file{ path, *mImageProperties };
+  InputFile file{ path, mImageProperties };
   if ( !file.valid() )
     return {};
 
@@ -647,7 +679,6 @@ void Manager::reset()
   mProcessThreads.store( false );
   //TODO wait for threads to stop.
   mInstance.reset();
-  mImageProperties = std::make_shared<ImageProperties>( std::filesystem::path{ mArg } );
 
   if ( auto input = computeInputFile() )
   {
