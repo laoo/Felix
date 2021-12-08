@@ -35,6 +35,11 @@ void ImageProperties::setBankProps( std::array<BankProps, 4> const& props )
   mBankProps = props;
 }
 
+ImageProperties::EEPROM& ImageProperties::eeprom()
+{
+  return mEEPROM;
+}
+
 ImageProperties::Rotation ImageProperties::getRotation() const
 {
   return mRotation;
@@ -106,4 +111,22 @@ std::string_view ImageProperties::EEPROM::name() const
   default:
     return "??"sv;
   }
+}
+
+void ImageProperties::EEPROM::setType( int type )
+{
+  bits &= ~7;
+  bits |= type & 7;
+}
+
+void ImageProperties::EEPROM::setSD( bool sd )
+{
+  bits &= ~0x40;
+  bits |= sd ? 0x40 : 0;
+}
+
+void ImageProperties::EEPROM::set16bit( bool is16bit )
+{
+  bits &= ~0x80;
+  bits |= is16bit ? 0 : 0x80;
 }

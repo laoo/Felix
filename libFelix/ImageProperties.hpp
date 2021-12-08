@@ -18,6 +18,10 @@ public:
     int type() const;
     bool is16Bit() const;
     std::string_view name() const;
+
+    void setType( int type );
+    void setSD( bool sd );
+    void set16bit( bool is16bit );
   };
 
   struct BankProps
@@ -34,6 +38,8 @@ public:
   void setMamufacturerName( std::string_view name );
   void setAUDInUsed( bool used );
   void setBankProps( std::array<BankProps, 4> const& props );
+
+  EEPROM& eeprom();
 
   Rotation getRotation() const;
   EEPROM getEEPROM() const;
