@@ -1,3 +1,15 @@
+## 0.5.0
+
+- Introducing simple GUI
+- Fixed XOR sprites drawing
+- Redefinable key mapping
+- Simple gamepad support
+- Automatic key remapping depending on rotation
+- Giving Felix the focus for keyboard after a drag&drop
+- Cpu corrections (fixes Dracula)
+- Ability to change rotation and eeprom properies (can't be saved yet)
+- Extended lua debugging facilities
+
 ## 0.4.8
 
 - DX9 Renderer
