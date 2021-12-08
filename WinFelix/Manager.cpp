@@ -325,7 +325,6 @@ bool Manager::mainMenu( ImGuiIO& io )
   {
   case ModalWindow::PROPERTIES:
     ImGui::OpenPopup( "Image properties" );
-    modalWindow = ModalWindow::NONE;
     break;
   default:
     break;
@@ -409,13 +408,18 @@ void Manager::configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure )
 
 void Manager::imagePropertiesWindow( bool init )
 {
-  static bool changed;
-  if ( init )
-  {
-    changed = false;
-  }
   if ( ImGui::BeginPopupModal( "Image properties", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
   {
+    static bool changed;
+    static int rotation;
+    if ( init )
+    {
+      changed = false;
+      rotation = (int)mImageProperties->getRotation();
+      if ( rotation < 0 || rotation > 2 )
+        rotation = 0;
+    }
+
     auto cartName = mImageProperties->getCartridgeName();
     auto manufName = mImageProperties->getMamufacturerName();
     auto eeprom = mImageProperties->getEEPROM();
@@ -454,17 +458,9 @@ void Manager::imagePropertiesWindow( bool init )
     ImGui::TextUnformatted( mImageProperties->getAUDInUsed() ? "Yes" : "No" );
     ImGui::TextUnformatted( "Rotation:" );
     ImGui::SameLine();
-    switch ( mImageProperties->getRotation() )
+    if ( ImGui::Combo( "", &rotation, "Normal\0Left\0Right\0\0" ) )
     {
-    case ImageProperties::Rotation::LEFT:
-      ImGui::TextUnformatted( "Left" );
-      break;
-    case ImageProperties::Rotation::RIGHT:
-      ImGui::TextUnformatted( "Right" );
-      break;
-    default:
-      ImGui::TextUnformatted( "Normal" );
-      break;
+      changed = rotation != (int)mImageProperties->getRotation();
     }
     ImGui::TextUnformatted( "EEPROM:" );
     ImGui::SameLine();
@@ -481,6 +477,8 @@ void Manager::imagePropertiesWindow( bool init )
     ImGui::BeginDisabled( !changed );
     if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
     {
+      mImageProperties->setRotation( rotation );
+      updateRotation();
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndDisabled();
