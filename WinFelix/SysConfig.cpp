@@ -44,6 +44,7 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "\tinner   = " << keyMapping.inner << ";\n";
   fout << "\touter   = " << keyMapping.outer << ";\n";
   fout << "};\n";
+  fout << "lastOpenDirectory = " << lastOpenDirectory << ";\n";
 }
 
 void SysConfig::load( sol::state const& lua )
@@ -72,4 +73,6 @@ void SysConfig::load( sol::state const& lua )
     keyMapping.inner = *opt;
   if ( sol::optional<int> opt = lua["keyMapping"]["outer"] )
     keyMapping.outer = *opt;
+  if ( sol::optional<std::string> opt = lua["lastOpenDirectory"] )
+    lastOpenDirectory = *opt;
 }

@@ -335,6 +335,10 @@ bool Manager::mainMenu( ImGuiIO& io )
   modalWindow = ModalWindow::NONE;
 
 
+  if ( auto openPath = gConfigProvider.sysConfig()->lastOpenDirectory; !openPath.empty() )
+  {
+    mFileBrowser->SetPwd( gConfigProvider.sysConfig()->lastOpenDirectory );
+  }
   mFileBrowser->Display();
   if ( mFileBrowser->HasSelected() )
   {
@@ -343,6 +347,10 @@ bool Manager::mainMenu( ImGuiIO& io )
     {
     case OPEN_CARTRIDGE:
       mArg = mFileBrowser->GetSelected();
+      if ( auto parent = mArg.parent_path(); !parent.empty() )
+      {
+        gConfigProvider.sysConfig()->lastOpenDirectory = mArg.parent_path();
+      }
       mDoUpdate = true;
       break;
     case OPEN_BOOTROM:

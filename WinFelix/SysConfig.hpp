@@ -20,6 +20,7 @@ struct SysConfig
     int inner = 'Z';
     int outer = 'X';
   } keyMapping;
+  std::filesystem::path lastOpenDirectory{};
 
   static std::shared_ptr<SysConfig> load( std::filesystem::path path );
   void serialize( std::filesystem::path path );
