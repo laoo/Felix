@@ -236,9 +236,9 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
 
       if ( !disableCollisions )
       {
-        if ( fred = colOp.hiColl() )
+        if ( auto newFred = colOp.hiColl() )
         {
-          fred = *fred & 0x0f;
+          fred = *newFred & 0x0f;
         }
       }
     }
