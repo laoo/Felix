@@ -76,13 +76,7 @@ public:
       state.debugWriteRAM( (uint16_t)i, 0 );
     }
 
-    state.debugWriteMikey( 0x00, 0x9e ); //TIM0BCKUP
-    state.debugWriteMikey( 0x01, 0x18 ); //TIM0CTLA
-    state.debugWriteMikey( 0x08, 0x68 ); //TIM2BCKUP
-    state.debugWriteMikey( 0x09, 0x1f ); //TIM2CTLA
-    state.debugWriteMikey( 0x93, 0x29 ); //PBCKUP
-    state.debugWriteMikey( 0x92, 0x0d ); //DISPCTL
-    state.debugWriteMikey( 0x90, 0x00 ); //SDONEACK
+    initMikeyRegisters( state );
 
     //sets address to decrypt to
     state.debugWriteRAM( 5, DECRYPTED_ROM_START_ADDRESS & 0xff );
@@ -129,4 +123,21 @@ void setBootROMTraps( std::shared_ptr<TraceHelper> traceHelper, ScriptDebugger& 
   scriptDebugger.addTrap( ScriptDebugger::Type::ROM_EXECUTE, 0xfe19, std::make_shared<ClearTrap>() );
   scriptDebugger.addTrap( ScriptDebugger::Type::ROM_EXECUTE, 0xfe4a, std::make_shared<DecryptTrap>() );
   scriptDebugger.addTrap( ScriptDebugger::Type::ROM_EXECUTE, 0xff80, std::make_shared<ResetTrap>() );
+}
+
+void initMikeyRegisters( Core& state )
+{
+  state.debugWriteMikey( 0x00, 0x9e ); //TIM0BCKUP
+  state.debugWriteMikey( 0x01, 0x18 ); //TIM0CTLA
+  state.debugWriteMikey( 0xa0, 0x00 ); //GREEN0
+  state.debugWriteMikey( 0xb0, 0x00 ); //BLUERED0
+  state.debugWriteMikey( 0xaf, 0x0e ); //GREENF
+  state.debugWriteMikey( 0xbf, 0x3e ); //BLUEREDF
+  state.debugWriteMikey( 0x08, 0x68 ); //TIM2BCKUP
+  state.debugWriteMikey( 0x09, 0x1f ); //TIM2CTLA
+  state.debugWriteMikey( 0x93, 0x29 ); //PBCKUP
+  state.debugWriteMikey( 0x94, 0x00 ); //DISPADRL
+  state.debugWriteMikey( 0x95, 0x20 ); //DISPADRH
+  state.debugWriteMikey( 0x92, 0x0d ); //DISPCTL
+  state.debugWriteMikey( 0x90, 0x00 ); //SDONEACK
 }

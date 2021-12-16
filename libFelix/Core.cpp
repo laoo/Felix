@@ -57,6 +57,7 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
     if ( auto runAddress = inputFile.getBS93()->load( { mRAM.data(), mRAM.size() } ) )
     {
       pulseReset( runAddress );
+      initMikeyRegisters( *this );
     }
     setDefaultROM();
     break;
