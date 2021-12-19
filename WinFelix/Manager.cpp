@@ -21,6 +21,7 @@
 #include "KeyNames.hpp"
 #include "ImageProperties.hpp"
 #include "LuaProxies.hpp"
+#include "CPU.hpp"
 #include <imfilebrowser.h>
 
 namespace
@@ -573,11 +574,13 @@ void Manager::processLua( std::filesystem::path const& path )
   mLua.new_usertype<RomProxy>( "ROM", sol::meta_function::index, &RomProxy::get, sol::meta_function::new_index, &RomProxy::set );
   mLua.new_usertype<MikeyProxy>( "MIKEY", sol::meta_function::index, &MikeyProxy::get, sol::meta_function::new_index, &MikeyProxy::set );
   mLua.new_usertype<SuzyProxy>( "SUZY", sol::meta_function::index, &SuzyProxy::get, sol::meta_function::new_index, &SuzyProxy::set );
+  mLua.new_usertype<CPUProxy>( "CPU", sol::meta_function::index, &CPUProxy::get, sol::meta_function::new_index, &CPUProxy::set );
 
   mLua["ram"] = std::make_unique<RamProxy>( *this );
   mLua["rom"] = std::make_unique<RomProxy>( *this );
   mLua["mikey"] = std::make_unique<MikeyProxy>( *this );
   mLua["suzy"] = std::make_unique<SuzyProxy>( *this );
+  mLua["cpu"] = std::make_unique<CPUProxy>( *this );
 
   mLua["Encoder"] = [this]( sol::table const& tab )
   {

@@ -44,3 +44,11 @@ struct SuzyProxy
   void set( sol::stack_object key, sol::stack_object value, sol::this_state );
 };
 
+struct CPUProxy
+{
+  Manager& manager;
+
+  sol::object get( sol::stack_object key, sol::this_state L );
+  void set( sol::stack_object key, sol::stack_object value, sol::this_state );
+};
+

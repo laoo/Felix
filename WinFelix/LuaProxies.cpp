@@ -3,6 +3,7 @@
 #include "ScriptDebuggerEscapes.hpp"
 #include "Manager.hpp"
 #include "Core.hpp"
+#include "CPUState.hpp"
 
 void TrapProxy::set( TrapProxy& proxy, int idx, sol::function fun )
 {
@@ -170,4 +171,48 @@ sol::object RomProxy::get( sol::stack_object key, sol::this_state L )
 void RomProxy::set( sol::stack_object key, sol::stack_object value, sol::this_state )
 {
   //ignore
+}
+
+sol::object CPUProxy::get( sol::stack_object key, sol::this_state L )
+{
+  if ( auto optSt = key.as<sol::optional<std::string>>() )
+  {
+    const std::string& k = *optSt;
+
+    if ( k == "a" )
+    {
+      return sol::object( L, sol::in_place, manager.mInstance->debugState().a );
+    }
+    if ( k == "x" )
+    {
+      return sol::object( L, sol::in_place, manager.mInstance->debugState().x );
+    }
+    if ( k == "y" )
+    {
+      return sol::object( L, sol::in_place, manager.mInstance->debugState().y );
+    }
+  }
+
+  return sol::object( L, sol::in_place, sol::lua_nil );
+}
+
+void CPUProxy::set( sol::stack_object key, sol::stack_object value, sol::this_state )
+{
+  if ( auto optSt = key.as<sol::optional<std::string>>() )
+  {
+    const std::string& k = *optSt;
+
+    if ( k == "a" )
+    {
+      manager.mInstance->debugState().a = value.as<uint8_t>();
+    }
+    if ( k == "x" )
+    {
+      manager.mInstance->debugState().x = value.as<uint8_t>();
+    }
+    if ( k == "y" )
+    {
+      manager.mInstance->debugState().y = value.as<uint8_t>();
+    }
+  }
 }

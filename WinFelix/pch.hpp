@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <cassert>
+#include <coroutine>
 #include <cstdint>
 #include <cwchar>
 #include <filesystem>

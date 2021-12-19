@@ -60,6 +60,7 @@ private:
   friend struct RomProxy;
   friend struct MikeyProxy;
   friend struct SuzyProxy;
+  friend struct CPUProxy;
 
   bool mDoUpdate;
 

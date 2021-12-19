@@ -49,6 +49,7 @@ public:
   uint8_t debugReadSuzy( uint16_t address ) const;
   void debugWriteSuzy( uint16_t address, uint8_t value );
   CPUState& debugState();
+  CPU& debugCPU();
 
 
 private:

@@ -788,3 +788,8 @@ CPUState& Core::debugState()
 {
   return mCpu->state();
 }
+
+CPU& Core::debugCPU()
+{
+  return *mCpu;
+}
