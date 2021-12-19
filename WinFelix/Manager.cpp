@@ -630,12 +630,11 @@ void Manager::processLua( std::filesystem::path const& path )
     mAudioOut->setWavOut( std::move( path ) );
   };
 
-  mLua["traceToggle"] = [this]()
+  mLua["traceCurrent"] = [this]()
   {
     if ( mInstance )
     {
       mInstance->debugCPU().toggleTrace( true );
-
     }
   };
 
