@@ -31,7 +31,7 @@ namespace
 }
 
 Manager::Manager() : mLua{}, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads{}, mPaused{},
-  mRenderThread{}, mAudioThread{}, mLogStartCycle{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
+  mRenderThread{}, mAudioThread{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
   mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
   mImageProperties{}
 {
@@ -630,27 +630,29 @@ void Manager::processLua( std::filesystem::path const& path )
     mAudioOut->setWavOut( std::move( path ) );
   };
 
-  mLua["Log"] = [this]( sol::table const& tab )
+  mLua["traceToggle"] = [this]()
   {
-    if ( sol::optional<std::string> opt = tab["path"] )
+    if ( mInstance )
     {
-      mLogPath = *opt;
-    }
-    else
-    {
-      throw Ex{} << "path = \"path/to/log\" required";
-    }
+      mInstance->debugCPU().toggleTrace( true );
 
-    if ( sol::optional<uint64_t> opt = tab["start_tick"] )
-    {
-      mLogStartCycle = *opt;
     }
+  };
+
+  mLua["traceOn"] = [this]()
+  {
+    mInstance->debugCPU().enableTrace();
+  };
+  mLua["traceOf"] = [this]()
+  {
+    mInstance->debugCPU().disableTrace();
   };
 
   mLua.script_file( luaPath.string() );
 
   if ( sol::optional<std::string> opt = mLua["log"] )
   {
+    mLogPath = *opt;
   }
   if ( sol::optional<std::string> opt = mLua["lab"] )
   {
@@ -699,7 +701,7 @@ void Manager::reset()
     updateRotation();
 
     if ( !mLogPath.empty() )
-      mInstance->setLog( mLogPath, mLogStartCycle );
+      mInstance->setLog( mLogPath );
   }
   else
   {

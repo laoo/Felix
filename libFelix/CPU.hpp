@@ -56,9 +56,13 @@ public:
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
   int interruptedMask() const;
-  void setLog( std::filesystem::path const & path, uint64_t startCycle, std::shared_ptr<TraceHelper> traceHelper );
+  void setLog( std::filesystem::path const & path, std::shared_ptr<TraceHelper> traceHelper );
 
   CPUState & state();
+
+  void enableTrace();
+  void disableTrace();
+  void toggleTrace( bool on );
 
 private:
 
@@ -182,8 +186,8 @@ private:
   Request mReq;
   Response mRes;
   bool mTrace;
+  bool mTraceToggle;
   std::ofstream mFtrace;
-  uint64_t mStartCycle;
   std::shared_ptr<TraceHelper> mTraceHelper;
 
   Execute execute();

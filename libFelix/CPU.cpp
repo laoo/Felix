@@ -46,12 +46,10 @@ bool CPU::isHiccup()
   }
 }
 
-void CPU::setLog( std::filesystem::path const & path, uint64_t startCycle, std::shared_ptr<TraceHelper> traceHelper )
+void CPU::setLog( std::filesystem::path const & path, std::shared_ptr<TraceHelper> traceHelper )
 {
   mFtrace = std::ofstream{ path };
-  mStartCycle = startCycle;
   mTraceHelper = std::move( traceHelper );
-  mTraceHelper->enable();
 }
 
 CPUState & CPU::state()
@@ -59,7 +57,7 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU() : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mStartCycle{ ~0ull }, mTrace{}
+CPU::CPU() : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mFtrace{}, mTraceHelper{}
 {
 }
 
@@ -2047,17 +2045,13 @@ void CPU::trace1()
 {
   if ( mTraceHelper )
   {
-    if ( mState.tick < mStartCycle )
-      return;
-
-    mTrace = true;
     off = sprintf( buf.data(), "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%02x P:%c%c1%c%c%c%c%c ", mState.tick, mState.pc, mState.a, mState.x, mState.y, mState.sl, ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' ) );
   }
 }
 
 void CPU::trace2()
 {
-  if ( !mTrace )
+  if ( !mTrace && !mTraceToggle )
     return;
 
   switch ( mState.op )
@@ -2964,4 +2958,39 @@ void CPU::trace2()
   }
 
   mFtrace.write( buf.data(), off );
+
+  toggleTrace( false );
 }
+
+void CPU::enableTrace()
+{
+  if ( mTraceHelper )
+  {
+    mTraceHelper->enable();
+    mTrace = true;
+  }
+}
+
+void CPU::disableTrace()
+{
+  mTraceHelper->disable();
+  mTrace = false;
+}
+
+void CPU::toggleTrace( bool on )
+{
+  if ( mTraceHelper )
+  {
+    if ( on )
+    {
+      mTraceHelper->enable();
+      mTraceToggle = true;
+    }
+    else if ( mTraceToggle )
+    {
+      mTraceHelper->disable();
+      mTraceToggle = false;
+    }
+  }
+}
+

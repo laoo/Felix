@@ -102,9 +102,9 @@ void Core::setDefaultROM()
   setBootROMTraps( mTraceHelper, *mScriptDebugger );
 }
 
-void Core::setLog( std::filesystem::path const & path, uint64_t startCycle )
+void Core::setLog( std::filesystem::path const & path )
 {
-  mCpu->setLog( path, startCycle, mTraceHelper );
+  mCpu->setLog( path, mTraceHelper );
 }
 
 void Core::pulseReset( std::optional<uint16_t> resetAddress )

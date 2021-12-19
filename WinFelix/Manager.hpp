@@ -83,7 +83,6 @@ private:
   std::shared_ptr<ImageProperties> mImageProperties;
   std::filesystem::path mArg;
   std::filesystem::path mLogPath;
-  uint64_t mLogStartCycle;
   std::mutex mMutex;
   int64_t mRenderingTime;
   bool mOpenMenu;

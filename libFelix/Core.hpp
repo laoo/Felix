@@ -33,7 +33,7 @@ public:
   void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
   int advanceAudio();
 
-  void setLog( std::filesystem::path const & path, uint64_t startCycle );
+  void setLog( std::filesystem::path const & path );
 
   void enterMonitor();
   int64_t globalSamplesEmittedPerFrame() const;
