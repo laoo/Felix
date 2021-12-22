@@ -474,13 +474,13 @@ void Manager::imagePropertiesWindow( bool init )
     ImGui::TextUnformatted( mImageProperties->getAUDInUsed() ? "Yes" : "No" );
     ImGui::TextUnformatted( "Rotation:" );
     ImGui::SameLine();
-    ImGui::RadioButton( "Normal", &rotation, 0 ); ImGui::SameLine();
-    ImGui::RadioButton( "Left", &rotation, 1 ); ImGui::SameLine();
-    ImGui::RadioButton( "Right", &rotation, 2 );
+    ImGui::SetNextItemWidth( 80 );
+    ImGui::Combo( "##r", &rotation, "Normal\0Left\0Right\0" );
     ImGui::TextUnformatted( "EEPROM:" );
     ImGui::SameLine();
     int eepromType = eeprom.type();
-    if ( ImGui::Combo( "", &eepromType, ImageProperties::EEPROM::NAMES.data(), ImageProperties::EEPROM::TYPE_COUNT ) )
+    ImGui::SetNextItemWidth( 80 );
+    if ( ImGui::Combo( "##", &eepromType, ImageProperties::EEPROM::NAMES.data(), ImageProperties::EEPROM::TYPE_COUNT ) )
     {
       eeprom.setType( eepromType );
     }
