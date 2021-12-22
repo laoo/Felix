@@ -167,8 +167,10 @@
     <ClCompile Include="WinRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="board.hxx" />
     <ClInclude Include="ConfigProvider.hpp" />
     <ClInclude Include="Ex.hpp" />
+    <ClInclude Include="fonts.hpp" />
     <ClInclude Include="KeyNames.hpp" />
     <ClInclude Include="LuaProxies.hpp" />
     <ClInclude Include="Manager.hpp" />
@@ -187,6 +189,14 @@
     <ClInclude Include="WinRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="board.csh">
+      <ShaderModel>5.0</ShaderModel>
+      <ShaderType>Compute</ShaderType>
+      <VariableName>g_Board</VariableName>
+      <HeaderFileOutput>board.hxx</HeaderFileOutput>
+      <DisableOptimizations>false</DisableOptimizations>
+      <EnableDebuggingInformation>false</EnableDebuggingInformation>
+    </FxCompile>
     <FxCompile Include="imgui.psh">
       <ShaderModel>4.0</ShaderModel>
       <ShaderType>Pixel</ShaderType>

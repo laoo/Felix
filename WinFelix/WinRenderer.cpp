@@ -5,6 +5,8 @@
 #include "WinImgui11.hpp"
 #include "WinImgui9.hpp"
 #include "renderer.hxx"
+#include "board.hxx"
+#include "fonts.hpp"
 #include "Log.hpp"
 #include "IEncoder.hpp"
 
@@ -111,6 +113,11 @@ int64_t WinRenderer::render( Manager& config )
   auto result = l.QuadPart - mLastRenderTimePoint;
   mLastRenderTimePoint = l.QuadPart;
   return result;
+}
+
+void* WinRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
+{
+  return mRenderer->renderBoard( id, width, height, data );
 }
 
 int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -389,6 +396,11 @@ WinRenderer::BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{
 {
 }
 
+ImTextureID WinRenderer::BaseRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
+{
+  return ImTextureID{};
+}
+
 std::shared_ptr<IVideoSink> WinRenderer::BaseRenderer::getVideoSink() const
 {
   return mInstance;
@@ -430,7 +442,7 @@ void WinRenderer::BaseRenderer::setRotation( ImageProperties::Rotation rotation 
 }
 
 
-WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mRefreshRate {}, mEncoder{}, mVScale{ ~0u }
+WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mRefreshRate{}, mEncoder{}, mVScale{ ~0u }
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
@@ -490,6 +502,7 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   L_INFO << "Refresh Rate: " << mRefreshRate << " = " << ( (double)mRefreshRate.numerator() / (double)mRefreshRate.denominator() );
 
   V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, mRendererCS.ReleaseAndGetAddressOf() ) );
+  V_THROW( mD3DDevice->CreateComputeShader( g_Board, sizeof g_Board, nullptr, mBoardCS.ReleaseAndGetAddressOf() ) );
 
   D3D11_BUFFER_DESC bd = {};
   bd.ByteWidth = sizeof( CBPosSize );
@@ -517,6 +530,7 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
   updateVscale( 0 );
+  mBoardFont.initialize( mD3DDevice.Get(), mImmediateContext.Get() );
 
   mImgui = std::make_shared<WinImgui11>( mHWnd, mD3DDevice, mImmediateContext, iniPath );
 }
@@ -681,6 +695,32 @@ int WinRenderer::DX11Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM
     return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
   
   return 0;
+}
+
+ImTextureID WinRenderer::DX11Renderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
+{
+  auto it = mBoards.find( id );
+  if ( it != mBoards.end() )
+  {
+    it->second.update( *this, width, height );
+  }
+  else
+  {
+    bool success;
+    std::tie( it, success ) = mBoards.insert( { id, createBoard( width, height ) } );
+  }
+
+  it->second.render( *this, data );
+  return it->second.srv.Get();
+}
+
+WinRenderer::DX11Renderer::Board WinRenderer::DX11Renderer::createBoard( int width, int height )
+{
+  Board result{};
+
+  result.update( *this, width, height );
+
+  return result;
 }
 
 void WinRenderer::DX11Renderer::updateVscale( uint32_t vScale )
@@ -884,4 +924,89 @@ int WinRenderer::DX9Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM 
     return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
 
   return 0;
+}
+
+void WinRenderer::DX11Renderer::Board::update( WinRenderer::DX11Renderer & r, int w, int h )
+{
+  if ( w == width && h == height )
+    return;
+
+  width = w;
+  height = h;
+
+  D3D11_TEXTURE2D_DESC desc{
+    (uint32_t)( w * r.mBoardFont.width ),
+    (uint32_t)( h * r.mBoardFont.height ),
+    1,
+    1,
+    DXGI_FORMAT_R8G8B8A8_UNORM,
+    { 1, 0 },
+    D3D11_USAGE_DEFAULT,
+    D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+    0,
+    0
+  };
+
+  std::vector<uint32_t> buf;
+  buf.resize( w * r.mBoardFont.width * h * r.mBoardFont.height, ~0 );
+
+  uint32_t seed = 3459173429;
+  for ( size_t i = 0; i < buf.size(); ++i )
+  {
+    buf[i] = seed;
+    seed += 910230123;
+  }
+
+  D3D11_SUBRESOURCE_DATA data{ buf.data(), w * r.mBoardFont.width * sizeof( uint32_t ), 0 };
+  ComPtr<ID3D11Texture2D> tex;
+  V_THROW( r.mD3DDevice->CreateTexture2D( &desc, &data, tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( r.mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
+  V_THROW( r.mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
+
+  D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)w, (uint32_t)h, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  V_THROW( r.mD3DDevice->CreateTexture2D( &descsrc, nullptr, src.ReleaseAndGetAddressOf() ) );
+  V_THROW( r.mD3DDevice->CreateShaderResourceView( src.Get(), NULL, srcSRV.ReleaseAndGetAddressOf() ) );
+}
+
+void WinRenderer::DX11Renderer::Board::render( WinRenderer::DX11Renderer& r, std::span<uint8_t const> data )
+{
+  r.mImmediateContext->UpdateSubresource( src.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
+  std::array<ID3D11ShaderResourceView* const, 2> srv{ r.mBoardFont.srv.Get(), srcSRV.Get() };
+  r.mImmediateContext->CSSetShaderResources( 0, 2, srv.data() );
+  r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.GetAddressOf(), nullptr );
+  r.mImmediateContext->CSSetShader( r.mBoardCS.Get(), nullptr, 0 );
+
+  r.mImmediateContext->Dispatch( width, height, 1 );
+
+  std::array<ID3D11UnorderedAccessView* const, 1> uav{};
+  r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.data(), nullptr );
+
+  std::array<ID3D11ShaderResourceView* const, 2> srvc{};
+  r.mImmediateContext->CSSetShaderResources( 0, 2, srvc.data() );
+}
+
+WinRenderer::DX11Renderer::BoardFont::BoardFont() : width{}, height{}, srv{}
+{
+}
+
+void WinRenderer::DX11Renderer::BoardFont::initialize( ID3D11Device* pDevice, ID3D11DeviceContext* pContext )
+{
+  width = 8;
+  height = 16;
+
+  std::array<D3D11_SUBRESOURCE_DATA, 256> initData;
+  std::vector<uint8_t> buf;
+
+  for ( size_t i = 0; i < initData.size(); ++i )
+  {
+    auto& ini = initData[i];
+    ini.pSysMem = font_fixedsys + i * height * width;
+    ini.SysMemPitch = width;
+    ini.SysMemSlicePitch = 0;
+  }
+
+  ComPtr<ID3D11Texture2D> tex;
+  D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  V_THROW( pDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( pDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
 }

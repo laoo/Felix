@@ -26,6 +26,7 @@ public:
   std::shared_ptr<IVideoSink> getVideoSink() const;
 
   int64_t render( Manager & config );
+  void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
 
 private:
 
@@ -101,6 +102,7 @@ private:
     virtual void render( Manager& config ) = 0;
     virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
     virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
+    virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
 
     std::shared_ptr<IVideoSink> getVideoSink() const;
     int sizing( RECT& rect );
@@ -150,8 +152,31 @@ private:
     void render( Manager& config ) override;
     void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
     int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
+    void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
 
   private:
+
+    void prepareFont();
+
+    struct BoardFont;
+
+    struct Board
+    {
+      int width;
+      int height;
+      ComPtr<ID3D11Texture2D> src;
+      ComPtr<ID3D11ShaderResourceView> srcSRV;
+      ComPtr<ID3D11UnorderedAccessView> uav;
+      ComPtr<ID3D11ShaderResourceView> srv;
+
+
+      void update( WinRenderer::DX11Renderer& r, int width, int height );
+      void render( WinRenderer::DX11Renderer& r, std::span<uint8_t const> data );
+
+    };
+
+    Board createBoard( int width, int height );
+
     struct CBPosSize
     {
       int32_t posx;
@@ -164,11 +189,22 @@ private:
       uint32_t vscale;
     };
 
+    struct BoardFont
+    {
+      BoardFont();
+      void initialize( ID3D11Device* pDevice, ID3D11DeviceContext* pContext );
+
+      int width;
+      int height;
+      ComPtr<ID3D11ShaderResourceView> srv;
+    } mBoardFont;
+
     std::shared_ptr<WinImgui11>       mImgui;
     ComPtr<ID3D11Device>              mD3DDevice;
     ComPtr<ID3D11DeviceContext>       mImmediateContext;
     ComPtr<IDXGISwapChain>            mSwapChain;
     ComPtr<ID3D11ComputeShader>       mRendererCS;
+    ComPtr<ID3D11ComputeShader>       mBoardCS;
     ComPtr<ID3D11Buffer>              mPosSizeCB;
     ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
     ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
@@ -186,6 +222,7 @@ private:
     ComPtr<ID3D11UnorderedAccessView> mPreStagingVUAV;
     boost::rational<int32_t>          mRefreshRate;
     std::shared_ptr<IEncoder>         mEncoder;
+    std::unordered_map<int, Board>    mBoards;
     uint32_t mVScale;
   };
 

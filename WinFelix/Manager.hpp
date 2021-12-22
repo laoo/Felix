@@ -38,12 +38,6 @@ public:
 
   void quit();
 
-  bool mainMenu( ImGuiIO& io );
-
-  void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
-
-  void imagePropertiesWindow( bool init );
-
   void drawGui( int left, int top, int right, int bottom );
 
 private:
@@ -52,6 +46,11 @@ private:
   void stopThreads();
   void handleFileDrop( HDROP hDrop );
   bool handleCopyData( COPYDATASTRUCT const* copy );
+
+  bool mainMenu( ImGuiIO& io );
+  void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
+  void imagePropertiesWindow( bool init );
+  void debugWindows( ImGuiIO& io );
 
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
 private:

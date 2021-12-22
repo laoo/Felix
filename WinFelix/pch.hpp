@@ -18,6 +18,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 #include <boost/rational.hpp>
 #include <boost/scope_exit.hpp>

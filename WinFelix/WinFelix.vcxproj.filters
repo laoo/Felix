@@ -35,10 +35,13 @@
     <ClInclude Include="UserInput.hpp" />
     <ClInclude Include="KeyNames.hpp" />
     <ClInclude Include="LuaProxies.hpp" />
+    <ClInclude Include="fonts.hpp" />
+    <ClInclude Include="board.hxx" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />
     <FxCompile Include="imgui.vsh" />
     <FxCompile Include="imgui.psh" />
+    <FxCompile Include="board.csh" />
   </ItemGroup>
 </Project>

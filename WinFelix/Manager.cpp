@@ -22,6 +22,7 @@
 #include "ImageProperties.hpp"
 #include "LuaProxies.hpp"
 #include "CPU.hpp"
+#include "DebugRAM.hpp"
 #include <imfilebrowser.h>
 
 namespace
@@ -534,6 +535,14 @@ void Manager::imagePropertiesWindow( bool init )
   }
 }
 
+void Manager::debugWindows( ImGuiIO& io )
+{
+  ImGui::Begin( "DebugBoard", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+
+  ImGui::Image( mRenderer->renderBoard( 0, 16, 16, std::span<uint8_t const>{ (uint8_t const*)gDebugRAM, 16 * 16 }), ImVec2{16 * 8, 16 * 16});
+  ImGui::End();
+}
+
 void Manager::drawGui( int left, int top, int right, int bottom )
 {
   ImGuiIO & io = ImGui::GetIO();
@@ -544,6 +553,8 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   {
     mOpenMenu = mainMenu( io );
   }
+
+  debugWindows( io );
 }
 
 void Manager::processLua( std::filesystem::path const& path )
