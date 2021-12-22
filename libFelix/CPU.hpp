@@ -63,6 +63,7 @@ public:
   void enableTrace();
   void disableTrace();
   void toggleTrace( bool on );
+  void printStatus( std::span<uint8_t, 4 * 18> text );
 
 private:
 

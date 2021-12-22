@@ -31,7 +31,7 @@ namespace
 
 }
 
-Manager::Manager() : mLua{}, mDoUpdate{ false }, mProcessThreads{}, mJoinThreads{}, mPaused{},
+Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{}, mPaused{},
   mRenderThread{}, mAudioThread{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
   mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
   mImageProperties{}
@@ -256,6 +256,16 @@ bool Manager::mainMenu( ImGuiIO& io )
       ImGui::EndMenu();
     }
     ImGui::EndDisabled();
+    if ( mRenderer->canRenderBoards() )
+    {
+      if ( ImGui::BeginMenu( "Debug" ) )
+      {
+        openMenu = true;
+        ImGui::MenuItem( "CPU", "Ctrl+C", &mDebugWindows.cpu );
+        ImGui::EndMenu();
+      }
+
+    }
     if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
@@ -317,9 +327,13 @@ bool Manager::mainMenu( ImGuiIO& io )
 
   if ( io.KeyCtrl )
   {
-    if ( ImGui::IsKeyDown( 'P' ) )
+    if ( ImGui::IsKeyPressed( 'P' ) )
     {
       modalWindow = ModalWindow::PROPERTIES;
+    }
+    if ( ImGui::IsKeyPressed( 'C' ) )
+    {
+      mDebugWindows.cpu = 1 - mDebugWindows.cpu;
     }
   }
 
@@ -537,10 +551,14 @@ void Manager::imagePropertiesWindow( bool init )
 
 void Manager::debugWindows( ImGuiIO& io )
 {
-  ImGui::Begin( "DebugBoard", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
-
-  ImGui::Image( mRenderer->renderBoard( 0, 16, 16, std::span<uint8_t const>{ (uint8_t const*)gDebugRAM, 16 * 16 }), ImVec2{16 * 8, 16 * 16});
-  ImGui::End();
+  if ( mDebugWindows.cpu )
+  {
+    ImGui::Begin( "CPU", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    std::array< uint8_t, 4 * 18> data;
+    mInstance->debugCPU().printStatus( std::span<uint8_t, 4 * 18>( data.data(), data.size() ) );
+    ImGui::Image( mRenderer->renderBoard( 0, 18, 4, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 18 * 8, 4 * 16 } );
+    ImGui::End();
+  }
 }
 
 void Manager::drawGui( int left, int top, int right, int bottom )

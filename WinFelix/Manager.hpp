@@ -63,6 +63,11 @@ private:
 
   bool mDoUpdate;
 
+  struct DebugWindows
+  {
+    bool cpu;
+  } mDebugWindows;
+
   sol::state mLua;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;

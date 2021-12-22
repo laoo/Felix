@@ -115,6 +115,11 @@ int64_t WinRenderer::render( Manager& config )
   return result;
 }
 
+bool WinRenderer::canRenderBoards() const
+{
+  return mRenderer->canRenderBoards();
+}
+
 void* WinRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
 {
   return mRenderer->renderBoard( id, width, height, data );
@@ -399,6 +404,11 @@ WinRenderer::BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{
 ImTextureID WinRenderer::BaseRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
 {
   return ImTextureID{};
+}
+
+bool WinRenderer::BaseRenderer::canRenderBoards() const
+{
+  return false;
 }
 
 std::shared_ptr<IVideoSink> WinRenderer::BaseRenderer::getVideoSink() const
@@ -695,6 +705,11 @@ int WinRenderer::DX11Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM
     return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
   
   return 0;
+}
+
+bool WinRenderer::DX11Renderer::canRenderBoards() const
+{
+  return true;
 }
 
 ImTextureID WinRenderer::DX11Renderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
