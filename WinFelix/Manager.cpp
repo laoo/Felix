@@ -75,6 +75,10 @@ Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThread
             }
             mAudioOut->fillBuffer( mInstance, renderingTime );
           }
+          else
+          {
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+          }
         }
         else
         {
