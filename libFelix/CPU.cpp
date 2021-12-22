@@ -2052,51 +2052,45 @@ void CPU::trace1()
 
 void CPU::printStatus( std::span<uint8_t,4*18> text )
 {
-  /*
-  * A=ff X=ff Y=ff
-  * PC=ffff S=01ff 
-  * P=NV1BDIZC
-  * t=0000000000000000
-  */
+  static constexpr char prototype[4*18+1] =
+    "A=ff X=ff Y=ff    "
+    "PC=ffff S=01ff    "
+    "P=NV1BDIZC        "
+    "t=0               ";
 
   static constexpr uint8_t tab[16] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
 
-  memset( text.data(), ' ', text.size() );
+  memcpy( text.data(), prototype, sizeof prototype );
 
-  *(uint16_t*)&text[0]= '=A';
   text[2] = tab[mState.a >> 4];
   text[3] = tab[mState.a & 0x0f];
-  *(uint16_t*)&text[5] = '=X';
   text[7] = tab[mState.x >> 4];
   text[8] = tab[mState.x & 0x0f];
-  *(uint16_t*)&text[10] = '=Y';
   text[12] = tab[mState.y >> 4];
   text[13] = tab[mState.y & 0x0f];
 
-  *(uint32_t*)&text[18 + 0] = ' =CP';
   text[18 + 3] = tab[mState.pch >> 4];
   text[18 + 4] = tab[mState.pch & 0x0f];
   text[18 + 5] = tab[mState.pcl >> 4];
   text[18 + 6] = tab[mState.pcl & 0x0f];
-  *(uint32_t*)&text[18 + 8] = '10=S';
   text[18 + 12] = tab[mState.sl >> 4];
   text[18 + 13] = tab[mState.sl & 0x0f];
 
-  *(uint16_t*)&text[36 + 0] = '=P';
   text[36 + 2] = ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' );
-  *(uint16_t*)&text[36 + 3] = ( CPU::get<CPU::bitV>( mState.p ) ? '1V' : '1-' );
+  text[36 + 3] = ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' );
   text[36 + 5] = ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' );
   text[36 + 6] = ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' );
   text[36 + 7] = ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' );
   text[36 + 8] = ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' );
   text[36 + 9] = ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' );
 
-  *(uint16_t*)&text[54 + 0] = '=t';
   size_t j = 2;
   int offs = 0;
+  auto temp = mState.tick;
   for ( size_t i = 0; i < 16; ++i )
   {
-    int off = ( mState.tick >> ( 64 - 4 - i * 4 ) ) & 0x0f;
+    temp = std::rotl( temp, 4 );
+    int off = temp & 0x0f;
     offs |= off;
     char c = tab[off];
     text[54 + j] = c;
