@@ -1000,7 +1000,7 @@ void WinRenderer::DX11Renderer::BoardFont::initialize( ID3D11Device* pDevice, ID
   for ( size_t i = 0; i < initData.size(); ++i )
   {
     auto& ini = initData[i];
-    ini.pSysMem = font_fixedsys + i * height * width;
+    ini.pSysMem = font_SWISSBX2 + i * height * width;
     ini.SysMemPitch = width;
     ini.SysMemSlicePitch = 0;
   }

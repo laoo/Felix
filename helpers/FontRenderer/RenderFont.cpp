@@ -50,18 +50,38 @@ std::vector<uint8_t> renderFont( std::filesystem::path fontPath, int boxWidth, i
   return result;
 }
 
+std::vector<uint8_t> renderFont( std::vector<uint8_t> bitmap, int boxHeight )
+{
+  static constexpr int imageWidth = 8;
+  int imageHeight = 256 * boxHeight;
+
+  std::vector<uint8_t> result;
+  result.reserve( imageWidth * imageHeight );
+
+  for ( int i = 0; i < imageHeight; ++i )
+  {
+    for ( int k = 0; k < imageWidth; ++k )
+    {
+      result.push_back( bitmap[i] & ( 1 << ( 7 - k ) ) ? 0xff : 00 );
+    }
+  }
+
+  return result;
+}
+
 
 int main( int argc, char** argv )
 {
   auto data = readFont( "..\\..\\libextern\\vga-text-mode-fonts\\FONTS\\BIGPILE\\SWISSBX2.F16" );
+  data = renderFont( std::move( data ), 16 );
 
   std::ofstream fout{ "..\\..\\WinFelix\\fonts.hpp" };
 
   fout << "//Automatically generated from \"..\\libextern\\vga-text-mode-fonts\\FONTS\\BIGPILE\\SWISSBX2.F16\"\n\n";
   fout << "uint8_t font_SWISSBX2[] = {\n";
-  for ( size_t i = 0; i < data.size(); i += 16 )
+  for ( size_t i = 0; i < data.size(); i += 8 )
   {
-    auto limit = std::min( i + 16, data.size() );
+    auto limit = std::min( i + 8, data.size() );
     fout << "\t";
     for ( size_t j = i; j < limit; ++j )
     {
