@@ -2,6 +2,47 @@
 #include "CPU.hpp"
 #include "Opcodes.hpp"
 #include "TraceHelper.hpp"
+#include "DebugRAM.hpp"
+#include <Windows.h>
+#include "Log.hpp"
+
+namespace
+{
+static constexpr uint8_t hexTab[16] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+
+template<size_t N>
+consteval uint16_t l2( char const ( &t )[N] )
+{
+  int result;
+  if constexpr ( N > 0 )
+    result = (int)t[0];
+  if constexpr ( N > 1 )
+    result |= (int)t[1] << 8;
+  if constexpr ( N > 2 )
+    result |= (int)t[2] << 16;
+  if constexpr ( N > 3 )
+    result |= (int)t[3] << 24;
+
+  return result;
+}
+
+template<size_t N>
+consteval uint32_t l4( char const ( &t )[N] )
+{
+  int result;
+  if constexpr ( N > 0 )
+    result = (int)t[0];
+  if constexpr ( N > 1 )
+    result |= (int)t[1] << 8;
+  if constexpr ( N > 2 )
+    result |= (int)t[2] << 16;
+  if constexpr ( N > 3 )
+    result |= (int)t[3] << 24;
+
+  return result;
+}
+
+}
 
 bool CPU::isHiccup()
 {
@@ -46,10 +87,9 @@ bool CPU::isHiccup()
   }
 }
 
-void CPU::setLog( std::filesystem::path const & path, std::shared_ptr<TraceHelper> traceHelper )
+void CPU::setLog( std::filesystem::path const & path )
 {
   mFtrace = std::ofstream{ path };
-  mTraceHelper = std::move( traceHelper );
 }
 
 CPUState & CPU::state()
@@ -57,7 +97,7 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU() : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mFtrace{}, mTraceHelper{}
+CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }
 {
 }
 
@@ -2043,67 +2083,105 @@ void CPU::cpy( uint8_t value )
 
 void CPU::trace1()
 {
-  if ( mTraceHelper )
+  off = 0;
+  
+  if ( mTrace || mTraceToggle )
   {
-    off = sprintf( buf.data(), "%llu: PC:%04x A:%02x X:%02x Y:%02x S:%02x P:%c%c1%c%c%c%c%c ", mState.tick, mState.pc, mState.a, mState.x, mState.y, mState.sl, ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' ), ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' ), ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' ), ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' ), ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' ), ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' ), ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' ) );
+    int shift = ( std::countl_zero( mState.tick ) / 4 ) * 4 + 4;
+    auto tickTemp = std::rotl( mState.tick, shift );
+    do
+    {
+      buf[off++] = hexTab[tickTemp & 0xf];
+      tickTemp = std::rotl( tickTemp, 4 );
+      shift += 4;
+    } while ( shift < 68 );
 
+    static constexpr char prototype[4 * 18 + 1] = ": PC:ffff A:ff X:ff Y:ff S:1ff P=NV1BDIZC ";
+
+    auto base = &buf[off];
+
+    memcpy( &buf[off], prototype, sizeof prototype );
+
+    base[5] = hexTab[mState.pch >> 4];
+    base[6] = hexTab[mState.pch & 0x0f];
+    base[7] = hexTab[mState.pcl >> 4];
+    base[8] = hexTab[mState.pcl & 0x0f];
+
+    base[12] = hexTab[mState.a >> 4];
+    base[13] = hexTab[mState.a & 0x0f];
+    base[17] = hexTab[mState.x >> 4];
+    base[18] = hexTab[mState.x & 0x0f];
+    base[22] = hexTab[mState.y >> 4];
+    base[23] = hexTab[mState.y & 0x0f];
+
+    base[28] = hexTab[mState.sl >> 4];
+    base[29] = hexTab[mState.sl & 0x0f];
+
+    base[33] = ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' );
+    base[34] = ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' );
+    base[36] = ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' );
+    base[37] = ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' );
+    base[38] = ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' );
+    base[39] = ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' );
+    base[40] = ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' );
   }
 }
 
-void CPU::printStatus( std::span<uint8_t,4*18> text )
+void CPU::printStatus( std::span<uint8_t,3*14> text )
 {
-  static constexpr char prototype[4*18+1] =
-    "A=ff X=ff Y=ff    "
-    "PC=ffff S=01ff    "
-    "P=NV1BDIZC        "
-    "t=0               ";
+  static constexpr char prototype[3 * 14 + 1] =
+    "A=ff X=ff Y=ff"
+    "PC=ffff S=01ff"
+    "P=NV1BDIZC    ";
 
-  static constexpr uint8_t tab[16] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+  memcpy( text.data(), prototype, 3 * 14 );
 
-  memcpy( text.data(), prototype, sizeof prototype );
+  text[2] = hexTab[mState.a >> 4];
+  text[3] = hexTab[mState.a & 0x0f];
+  text[7] = hexTab[mState.x >> 4];
+  text[8] = hexTab[mState.x & 0x0f];
+  text[12] = hexTab[mState.y >> 4];
+  text[13] = hexTab[mState.y & 0x0f];
 
-  text[2] = tab[mState.a >> 4];
-  text[3] = tab[mState.a & 0x0f];
-  text[7] = tab[mState.x >> 4];
-  text[8] = tab[mState.x & 0x0f];
-  text[12] = tab[mState.y >> 4];
-  text[13] = tab[mState.y & 0x0f];
+  text[14 + 3] = hexTab[mState.pch >> 4];
+  text[14 + 4] = hexTab[mState.pch & 0x0f];
+  text[14 + 5] = hexTab[mState.pcl >> 4];
+  text[14 + 6] = hexTab[mState.pcl & 0x0f];
+  text[14 + 12] = hexTab[mState.sl >> 4];
+  text[14 + 13] = hexTab[mState.sl & 0x0f];
 
-  text[18 + 3] = tab[mState.pch >> 4];
-  text[18 + 4] = tab[mState.pch & 0x0f];
-  text[18 + 5] = tab[mState.pcl >> 4];
-  text[18 + 6] = tab[mState.pcl & 0x0f];
-  text[18 + 12] = tab[mState.sl >> 4];
-  text[18 + 13] = tab[mState.sl & 0x0f];
+  text[28 + 2] = ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' );
+  text[28 + 3] = ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' );
+  text[28 + 5] = ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' );
+  text[28 + 6] = ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' );
+  text[28 + 7] = ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' );
+  text[28 + 8] = ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' );
+  text[28 + 9] = ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' );
+}
 
-  text[36 + 2] = ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' );
-  text[36 + 3] = ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' );
-  text[36 + 5] = ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' );
-  text[36 + 6] = ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' );
-  text[36 + 7] = ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' );
-  text[36 + 8] = ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' );
-  text[36 + 9] = ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' );
+void CPU::disassemblyFromPC( char* out, int columns, int rows )
+{
+  int pc = mState.pc;
 
-  size_t j = 2;
-  int offs = 0;
-  auto temp = mState.tick;
-  for ( size_t i = 0; i < 16; ++i )
+  memset( out, ' ', rows * columns );
+
+  for ( size_t i = 0; i < rows; ++i )
   {
-    temp = std::rotl( temp, 4 );
-    int off = temp & 0x0f;
-    offs |= off;
-    char c = tab[off];
-    text[54 + j] = c;
-    j += offs ? 1 : 0;
+    auto base = (char*)&out[i * columns];
+    base[0] = hexTab[pc >> 12];
+    base[1] = hexTab[(pc >> 8) & 0xf];
+    base[2] = hexTab[(pc >> 4) & 0xf];
+    base[3] = hexTab[pc & 0xf];
+    base[4] = ' ';
+
+    int off = disasmOp( base + 5, (Opcode)gDebugRAM[pc] );
+    disasmOpr( (char*)base + 5 + off, pc );
   }
 }
 
-void CPU::trace2()
+int CPU::disasmOp( char * out, Opcode op, CPUState* state )
 {
-  if ( !mTrace && !mTraceToggle )
-    return;
-
-  switch ( mState.op )
+  switch ( op )
   {
   case Opcode::RZP_AND:
   case Opcode::RZX_AND:
@@ -2114,15 +2192,15 @@ void CPU::trace2()
   case Opcode::RAX_AND:
   case Opcode::RAY_AND:
   case Opcode::IMM_AND:
-    off += sprintf( buf.data() + off, "and " );
-    break;
+    *(uint32_t*)out = l4( "and " );
+    return 4;
   case Opcode::RZP_BIT:
   case Opcode::RZX_BIT:
   case Opcode::RAB_BIT:
   case Opcode::RAX_BIT:
   case Opcode::IMM_BIT:
-    off += sprintf( buf.data() + off, "bit " );
-    break;
+    *(uint32_t*)out = l4( "bit ");
+    return 4;
   case Opcode::RZP_CMP:
   case Opcode::RZX_CMP:
   case Opcode::RIN_CMP:
@@ -2132,18 +2210,18 @@ void CPU::trace2()
   case Opcode::RAX_CMP:
   case Opcode::RAY_CMP:
   case Opcode::IMM_CMP:
-    off += sprintf( buf.data() + off, "cmp " );
-    break;
+    *(uint32_t*)out = l4( "cmp " );
+    return 4;
   case Opcode::RZP_CPX:
   case Opcode::RAB_CPX:
   case Opcode::IMM_CPX:
-    off += sprintf( buf.data() + off, "cpx " );
-    break;
+    *(uint32_t*)out = l4( "cpx " );
+    return 4;
   case Opcode::RZP_CPY:
   case Opcode::RAB_CPY:
   case Opcode::IMM_CPY:
-    off += sprintf( buf.data() + off, "cpy " );
-    break;
+    *(uint32_t*)out = l4( "cpy " );
+    return 4;
   case Opcode::RZP_EOR:
   case Opcode::RZX_EOR:
   case Opcode::RIN_EOR:
@@ -2153,8 +2231,8 @@ void CPU::trace2()
   case Opcode::RAX_EOR:
   case Opcode::RAY_EOR:
   case Opcode::IMM_EOR:
-    off += sprintf( buf.data() + off, "eor " );
-    break;
+    *(uint32_t*)out = l4( "eor " );
+    return 4;
   case Opcode::RZP_LDA:
   case Opcode::RZX_LDA:
   case Opcode::RIN_LDA:
@@ -2164,22 +2242,22 @@ void CPU::trace2()
   case Opcode::RAX_LDA:
   case Opcode::RAY_LDA:
   case Opcode::IMM_LDA:
-    off += sprintf( buf.data() + off, "lda " );
-    break;
+    *(uint32_t*)out = l4( "lda " );
+    return 4;
   case Opcode::RZP_LDX:
   case Opcode::RZY_LDX:
   case Opcode::RAB_LDX:
   case Opcode::RAY_LDX:
   case Opcode::IMM_LDX:
-    off += sprintf( buf.data() + off, "ldx " );
-    break;
+    *(uint32_t*)out = l4( "ldx " );
+    return 4;
   case Opcode::RZP_LDY:
   case Opcode::RZX_LDY:
   case Opcode::RAB_LDY:
   case Opcode::RAX_LDY:
   case Opcode::IMM_LDY:
-    off += sprintf( buf.data() + off, "ldy " );
-    break;
+    *(uint32_t*)out = l4( "ldy " );
+    return 4;
   case Opcode::RZP_ORA:
   case Opcode::RZX_ORA:
   case Opcode::RIN_ORA:
@@ -2189,8 +2267,8 @@ void CPU::trace2()
   case Opcode::RAX_ORA:
   case Opcode::RAY_ORA:
   case Opcode::IMM_ORA:
-    off += sprintf( buf.data() + off, "ora " );
-    break;
+    *(uint32_t*)out = l4( "ora " );
+    return 4;
   case Opcode::RZP_ADC:
   case Opcode::RZX_ADC:
   case Opcode::RIN_ADC:
@@ -2200,8 +2278,8 @@ void CPU::trace2()
   case Opcode::RAX_ADC:
   case Opcode::RAY_ADC:
   case Opcode::IMM_ADC:
-    off += sprintf( buf.data() + off, "adc " );
-    break;
+    *(uint32_t*)out = l4( "adc " );
+    return 4;
   case Opcode::RZP_SBC:
   case Opcode::RZX_SBC:
   case Opcode::RIN_SBC:
@@ -2211,8 +2289,8 @@ void CPU::trace2()
   case Opcode::RAX_SBC:
   case Opcode::RAY_SBC:
   case Opcode::IMM_SBC:
-    off += sprintf( buf.data() + off, "sbc " );
-    break;
+    *(uint32_t*)out = l4( "sbc " );
+    return 4;
   case Opcode::WZP_STA:
   case Opcode::WZX_STA:
   case Opcode::WIN_STA:
@@ -2221,328 +2299,361 @@ void CPU::trace2()
   case Opcode::WAB_STA:
   case Opcode::WAX_STA:
   case Opcode::WAY_STA:
-    off += sprintf( buf.data() + off, "sta " );
-    break;
+    *(uint32_t*)out = l4( "sta " );
+    return 4;
   case Opcode::WZP_STX:
   case Opcode::WZY_STX:
   case Opcode::WAB_STX:
-    off += sprintf( buf.data() + off, "stx " );
-    break;
+    *(uint32_t*)out = l4( "stx " );
+    return 4;
   case Opcode::WZP_STY:
   case Opcode::WZX_STY:
   case Opcode::WAB_STY:
-    off += sprintf( buf.data() + off, "sty " );
-    break;
+    *(uint32_t*)out = l4( "sty " );
+    return 4;
   case Opcode::WZP_STZ:
   case Opcode::WZX_STZ:
   case Opcode::WAB_STZ:
   case Opcode::WAX_STZ:
-    off += sprintf( buf.data() + off, "stz " );
-    break;
+    *(uint32_t*)out = l4( "stz " );
+    return 4;
   case Opcode::MZP_ASL:
   case Opcode::MZX_ASL:
   case Opcode::MAB_ASL:
   case Opcode::MAX_ASL:
-    off += sprintf( buf.data() + off, "asl " );
-    break;
+    *(uint32_t*)out = l4( "asl " );
+    return 4;
   case Opcode::IMP_ASL:
-    off += sprintf( buf.data() + off, "asl\n" );
-    break;
+    *(uint32_t*)out = l4( "asl" );
+    return 4;
   case Opcode::MZP_DEC:
   case Opcode::MZX_DEC:
   case Opcode::MAB_DEC:
   case Opcode::MAX_DEC:
-    off += sprintf( buf.data() + off, "dec " );
-    break;
+    *(uint32_t*)out = l4( "dec " );
+    return 4;
   case Opcode::IMP_DEC:
-    off += sprintf( buf.data() + off, "dec\n" );
-    break;
+    *(uint32_t*)out = l4( "dec" );
+    return 4;
   case Opcode::MZP_INC:
   case Opcode::MZX_INC:
   case Opcode::MAB_INC:
   case Opcode::MAX_INC:
-    off += sprintf( buf.data() + off, "inc " );
-    break;
+    *(uint32_t*)out = l4( "inc " );
+    return 4;
   case Opcode::IMP_INC:
-    off += sprintf( buf.data() + off, "inc\n" );
-    break;
+    *(uint32_t*)out = l4( "inc" );
+    return 4;
   case Opcode::MZP_LSR:
   case Opcode::MZX_LSR:
   case Opcode::MAB_LSR:
   case Opcode::MAX_LSR:
-    off += sprintf( buf.data() + off, "lsr " );
-    break;
+    *(uint32_t*)out = l4( "lsr " );
+    return 4;
   case Opcode::IMP_LSR:
-    off += sprintf( buf.data() + off, "lsr\n" );
-    break;
+    *(uint32_t*)out = l4( "lsr" );
+    return 4;
   case Opcode::MZP_ROL:
   case Opcode::MZX_ROL:
   case Opcode::MAB_ROL:
   case Opcode::MAX_ROL:
-    off += sprintf( buf.data() + off, "rol " );
-    break;
+    *(uint32_t*)out = l4( "rol " );
+    return 4;
   case Opcode::IMP_ROL:
-    off += sprintf( buf.data() + off, "rol\n" );
-    break;
+    *(uint32_t*)out = l4( "rol" );
+    return 4;
   case Opcode::MZP_ROR:
   case Opcode::MZX_ROR:
   case Opcode::MAB_ROR:
   case Opcode::MAX_ROR:
-    off += sprintf( buf.data() + off, "ror " );
-    break;
+    *(uint32_t*)out = l4( "ror " );
+    return 4;
   case Opcode::IMP_ROR:
-    off += sprintf( buf.data() + off, "ror\n" );
-    break;
+    *(uint32_t*)out = l4( "ror" );
+    return 4;
   case Opcode::MZP_TRB:
   case Opcode::MAB_TRB:
-    off += sprintf( buf.data() + off, "trb " );
-    break;
+    *(uint32_t*)out = l4( "trb " );
+    return 4;
   case Opcode::MZP_TSB:
   case Opcode::MAB_TSB:
-    off += sprintf( buf.data() + off, "tsb " );
-    break;
+    *(uint32_t*)out = l4( "tsb " );
+    return 4;
   case Opcode::MZP_RMB0:
-    off += sprintf( buf.data() + off, "rmb0 " );
-    break;
+    *(uint32_t*)out = l4( "rmb0" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_RMB1:
-    off += sprintf( buf.data() + off, "rmb1 " );
-    break;
+    *(uint32_t*)out = l4( "rmb1" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_RMB2:
-    off += sprintf( buf.data() + off, "rmb2 " );
-    break;
+    *(uint32_t*)out = l4( "rmb2" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_RMB3:
-    off += sprintf( buf.data() + off, "rmb3 " );
-    break;
+    *(uint32_t*)out = l4( "rmb3" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_RMB4:
-    off += sprintf( buf.data() + off, "rmb4 " );
-    break;
+    *(uint32_t*)out = l4( "rmb4" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_RMB5:
-    off += sprintf( buf.data() + off, "rmb5 " );
-    break;
+    *(uint32_t*)out = l4( "rmb5" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_RMB6:
-    off += sprintf( buf.data() + off, "rmb6 " );
-    break;
+    *(uint32_t*)out = l4( "rmb6" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_RMB7:
-    off += sprintf( buf.data() + off, "rmb7 " );
-    break;
+    *(uint32_t*)out = l4( "rmb7" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB0:
-    off += sprintf( buf.data() + off, "smb0 " );
-    break;
+    *(uint32_t*)out = l4( "smb0" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB1:
-    off += sprintf( buf.data() + off, "smb1 " );
-    break;
+    *(uint32_t*)out = l4( "smb1" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB2:
-    off += sprintf( buf.data() + off, "smb2 " );
-    break;
+    *(uint32_t*)out = l4( "smb2" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB3:
-    off += sprintf( buf.data() + off, "smb3 " );
-    break;
+    *(uint32_t*)out = l4( "smb3" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB4:
-    off += sprintf( buf.data() + off, "smb4 " );
-    break;
+    *(uint32_t*)out = l4( "smb4" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB5:
-    off += sprintf( buf.data() + off, "smb5 " );
-    break;
+    *(uint32_t*)out = l4( "smb5" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB6:
-    off += sprintf( buf.data() + off, "smb6 " );
-    break;
+    *(uint32_t*)out = l4( "smb6" );
+    out[4] = ' ';
+    return 5;
   case Opcode::MZP_SMB7:
-    off += sprintf( buf.data() + off, "smb7 " );
-    break;
+    *(uint32_t*)out = l4( "smb7" );
+    out[4] = ' ';
+    return 5;
   case Opcode::JMA_JMP:
   case Opcode::JMX_JMP:
   case Opcode::JMI_JMP:
-    off += sprintf( buf.data() + off, "jmp " );
-    break;
+    *(uint32_t*)out = l4( "jmp " );
+    return 4;
   case Opcode::JSA_JSR:
-    off += sprintf( buf.data() + off, "jsr " );
-    break;
+    *(uint32_t*)out = l4( "jsr " );
+    return 4;
   case Opcode::IMP_CLC:
-    off += sprintf( buf.data() + off, "clc\n" );
-    break;
+    *(uint32_t*)out = l4( "clc" );
+    return 4;
   case Opcode::IMP_CLD:
-    off += sprintf( buf.data() + off, "cld\n" );
-    break;
+    *(uint32_t*)out = l4( "cld" );
+    return 4;
   case Opcode::IMP_CLI:
-    off += sprintf( buf.data() + off, "cli\n" );
-    break;
+    *(uint32_t*)out = l4( "cli" );
+    return 4;
   case Opcode::IMP_CLV:
-    off += sprintf( buf.data() + off, "clv\n" );
-    break;
+    *(uint32_t*)out = l4( "clv" );
+    return 4;
   case Opcode::IMP_DEX:
-    off += sprintf( buf.data() + off, "dex\n" );
-    break;
+    *(uint32_t*)out = l4( "dex" );
+    return 4;
   case Opcode::IMP_DEY:
-    off += sprintf( buf.data() + off, "dey\n" );
-    break;
+    *(uint32_t*)out = l4( "dey" );
+    return 4;
   case Opcode::IMP_INX:
-    off += sprintf( buf.data() + off, "inx\n" );
-    break;
+    *(uint32_t*)out = l4( "inx" );
+    return 4;
   case Opcode::IMP_INY:
-    off += sprintf( buf.data() + off, "iny\n" );
-    break;
-  case Opcode::IMP_NOP:
-    off += sprintf( buf.data() + off, "nop\n" );
-    break;
-  case Opcode::UND_2_02:
-  case Opcode::UND_2_22:
-  case Opcode::UND_2_42:
-  case Opcode::UND_2_62:
-  case Opcode::UND_2_82:
-  case Opcode::UND_2_C2:
-  case Opcode::UND_2_E2:
-    off += sprintf( buf.data() + off, "nop " );
-    break;
+    *(uint32_t*)out = l4( "iny" );
+    return 4;
   case Opcode::IMP_SEC:
-    off += sprintf( buf.data() + off, "sec\n" );
-    break;
+    *(uint32_t*)out = l4( "sec" );
+    return 4;
   case Opcode::IMP_SED:
-    off += sprintf( buf.data() + off, "sed\n" );
-    break;
+    *(uint32_t*)out = l4( "sed" );
+    return 4;
   case Opcode::IMP_SEI:
-    off += sprintf( buf.data() + off, "sei\n" );
-    break;
+    *(uint32_t*)out = l4( "sei" );
+    return 4;
   case Opcode::IMP_TAX:
-    off += sprintf( buf.data() + off, "tax\n" );
-    break;
+    *(uint32_t*)out = l4( "tax" );
+    return 4;
   case Opcode::IMP_TAY:
-    off += sprintf( buf.data() + off, "tay\n" );
-    break;
+    *(uint32_t*)out = l4( "tay" );
+    return 4;
   case Opcode::IMP_TSX:
-    off += sprintf( buf.data() + off, "tsx\n" );
-    break;
+    *(uint32_t*)out = l4( "tsx" );
+    return 4;
   case Opcode::IMP_TXA:
-    off += sprintf( buf.data() + off, "txa\n" );
-    break;
+    *(uint32_t*)out = l4( "txa" );
+    return 4;
   case Opcode::IMP_TXS:
-    off += sprintf( buf.data() + off, "txs\n" );
-    break;
+    *(uint32_t*)out = l4( "txs" );
+    return 4;
   case Opcode::IMP_TYA:
-    off += sprintf( buf.data() + off, "tya\n" );
-    break;
+    *(uint32_t*)out = l4( "tya" );
+    return 4;
   case Opcode::BRL_BCC:
-    off += sprintf( buf.data() + off, "bcc " );
-    break;
+    *(uint32_t*)out = l4( "bcc " );
+    return 4;
   case Opcode::BRL_BCS:
-    off += sprintf( buf.data() + off, "bcs " );
-    break;
+    *(uint32_t*)out = l4( "bcs " );
+    return 4;
   case Opcode::BRL_BEQ:
-    off += sprintf( buf.data() + off, "beq " );
-    break;
+    *(uint32_t*)out = l4( "beq " );
+    return 4;
   case Opcode::BRL_BMI:
-    off += sprintf( buf.data() + off, "bmi " );
-    break;
+    *(uint32_t*)out = l4( "bmi " );
+    return 4;
   case Opcode::BRL_BNE:
-    off += sprintf( buf.data() + off, "bne " );
-    break;
+    *(uint32_t*)out = l4( "bne " );
+    return 4;
   case Opcode::BRL_BPL:
-    off += sprintf( buf.data() + off, "bpl " );
-    break;
+    *(uint32_t*)out = l4( "bpl " );
+    return 4;
   case Opcode::BRL_BRA:
-    off += sprintf( buf.data() + off, "bra " );
-    break;
+    *(uint32_t*)out = l4( "bra " );
+    return 4;
   case Opcode::BRL_BVC:
-    off += sprintf( buf.data() + off, "bvc " );
-    break;
+    *(uint32_t*)out = l4( "bvc " );
+    return 4;
   case Opcode::BRL_BVS:
-    off += sprintf( buf.data() + off, "bvs " );
-    break;
+    *(uint32_t*)out = l4( "bvs " );
+    return 4;
   case Opcode::BZR_BBR0:
-    off += sprintf( buf.data() + off, "bbr0 " );
-    break;
+    *(uint32_t*)out = l4( "bbr0" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBR1:
-    off += sprintf( buf.data() + off, "bbr1 " );
-    break;
+    *(uint32_t*)out = l4( "bbr1" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBR2:
-    off += sprintf( buf.data() + off, "bbr2 " );
-    break;
+    *(uint32_t*)out = l4( "bbr2" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBR3:
-    off += sprintf( buf.data() + off, "bbr3 " );
-    break;
+    *(uint32_t*)out = l4( "bbr3" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBR4:
-    off += sprintf( buf.data() + off, "bbr4 " );
-    break;
+    *(uint32_t*)out = l4( "bbr4" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBR5:
-    off += sprintf( buf.data() + off, "bbr5 " );
-    break;
+    *(uint32_t*)out = l4( "bbr5" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBR6:
-    off += sprintf( buf.data() + off, "bbr6 " );
-    break;
+    *(uint32_t*)out = l4( "bbr6" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBR7:
-    off += sprintf( buf.data() + off, "bbr7 " );
-    break;
+    *(uint32_t*)out = l4( "bbr7" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS0:
-    off += sprintf( buf.data() + off, "bbs0 " );
-    break;
+    *(uint32_t*)out = l4( "bbs0" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS1:
-    off += sprintf( buf.data() + off, "bbs1 " );
-    break;
+    *(uint32_t*)out = l4( "bbs1" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS2:
-    off += sprintf( buf.data() + off, "bbs2 " );
-    break;
+    *(uint32_t*)out = l4( "bbs2" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS3:
-    off += sprintf( buf.data() + off, "bbs3 " );
-    break;
+    *(uint32_t*)out = l4( "bbs3" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS4:
-    off += sprintf( buf.data() + off, "bbs4 " );
-    break;
+    *(uint32_t*)out = l4( "bbs4" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS5:
-    off += sprintf( buf.data() + off, "bbs5 " );
-    break;
+    *(uint32_t*)out = l4( "bbs5" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS6:
-    off += sprintf( buf.data() + off, "bbs6 " );
-    break;
+    *(uint32_t*)out = l4( "bbs6" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BZR_BBS7:
-    off += sprintf( buf.data() + off, "bbs7 " );
-    break;
+    *(uint32_t*)out = l4( "bbs7" );
+    out[4] = ' ';
+    return 5;
   case Opcode::BRK_BRK:
-    if ( ( mState.interrupt & CPUState::I_RESET ) != 0 )
+    if ( state )
     {
-      off += sprintf( buf.data() + off, "RESET\n" );
-    }
-    else if ( ( mState.interrupt & CPUState::I_NMI ) != 0 )
-    {
-      off += sprintf( buf.data() + off, "NMI\n" );
-    }
-    else if ( ( mState.interrupt & CPUState::I_IRQ ) != 0 )
-    {
-      off += sprintf( buf.data() + off, "IRQ\n" );
+      if ( ( state->interrupt & CPUState::I_RESET ) != 0 )
+      {
+        *(uint32_t*)out = l4( "RESE" );
+        *(uint16_t*)&out[4] = l2( "T" );
+        return 6;
+      }
+      else if ( ( state->interrupt & CPUState::I_NMI ) != 0 )
+      {
+        *(uint32_t*)out = l4( "NMI" );
+        return 4;
+      }
+      else if ( ( state->interrupt & CPUState::I_IRQ ) != 0 )
+      {
+        *(uint32_t*)out = l4( "IRQ" );
+        return 4;
+      }
+      else
+      {
+        *(uint32_t*)out = l4( "brk" );
+        return 4;
+      }
     }
     else
     {
-      off += sprintf( buf.data() + off, "brk\n" );
+      *(uint32_t*)out = l4( "brk" );
+      return 4;
     }
-    break;
   case Opcode::RTI_RTI:
-    off += sprintf( buf.data() + off, "rti\n" );
-    break;
+    *(uint32_t*)out = l4( "rti" );
+    return 4;
   case Opcode::RTS_RTS:
-    off += sprintf( buf.data() + off, "rts\n" );
-    break;
+    *(uint32_t*)out = l4( "rts" );
+    return 4;
   case Opcode::PHR_PHA:
-    off += sprintf( buf.data() + off, "pha\n" );
-    break;
+    *(uint32_t*)out = l4( "pha" );
+    return 4;
   case Opcode::PHR_PHP:
-    off += sprintf( buf.data() + off, "php\n" );
-    break;
+    *(uint32_t*)out = l4( "php" );
+    return 4;
   case Opcode::PHR_PHX:
-    off += sprintf( buf.data() + off, "phx\n" );
-    break;
+    *(uint32_t*)out = l4( "phx" );
+    return 4;
   case Opcode::PHR_PHY:
-    off += sprintf( buf.data() + off, "phy\n" );
-    break;
+    *(uint32_t*)out = l4( "phy" );
+    return 4;
   case Opcode::PLR_PLA:
-    off += sprintf( buf.data() + off, "pla\n" );
-    break;
+    *(uint32_t*)out = l4( "pla" );
+    return 4;
   case Opcode::PLR_PLP:
-    off += sprintf( buf.data() + off, "plp\n" );
-    break;
+    *(uint32_t*)out = l4( "plp" );
+    return 4;
   case Opcode::PLR_PLX:
-    off += sprintf( buf.data() + off, "plx\n" );
-    break;
+    *(uint32_t*)out = l4( "plx" );
+    return 4;
   case Opcode::PLR_PLY:
-    off += sprintf( buf.data() + off, "ply\n" );
-    break;
+    *(uint32_t*)out = l4( "ply" );
+    return 4;
+  case Opcode::IMP_NOP:
   case Opcode::UND_1_03:
   case Opcode::UND_1_13:
   case Opcode::UND_1_23:
@@ -2575,8 +2686,15 @@ void CPU::trace2()
   case Opcode::UND_1_db:
   case Opcode::UND_1_eb:
   case Opcode::UND_1_fb:
-    off += sprintf( buf.data() + off, "nop\n" );
-    break;
+    *(uint32_t*)out = l4( "nop" );
+    return 4;
+  case Opcode::UND_2_02:
+  case Opcode::UND_2_22:
+  case Opcode::UND_2_42:
+  case Opcode::UND_2_62:
+  case Opcode::UND_2_82:
+  case Opcode::UND_2_C2:
+  case Opcode::UND_2_E2:
   case Opcode::UND_3_44:
   case Opcode::UND_4_54:
   case Opcode::UND_4_d4:
@@ -2584,10 +2702,446 @@ void CPU::trace2()
   case Opcode::UND_4_dc:
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
-    off += sprintf( buf.data() + off, "nop " );
-    break;
+    *(uint32_t*)out = l4( "nop " );
+    return 4;
+  default:
+    return 0;
   }
-  
+}
+
+int CPU::disasmOpr( char* out, int & pc )
+{
+  Opcode op = (Opcode)gDebugRAM[pc++];
+  switch ( op )
+  {
+  case Opcode::UND_1_03:
+  case Opcode::UND_1_13:
+  case Opcode::UND_1_23:
+  case Opcode::UND_1_33:
+  case Opcode::UND_1_43:
+  case Opcode::UND_1_53:
+  case Opcode::UND_1_63:
+  case Opcode::UND_1_73:
+  case Opcode::UND_1_83:
+  case Opcode::UND_1_93:
+  case Opcode::UND_1_a3:
+  case Opcode::UND_1_b3:
+  case Opcode::UND_1_c3:
+  case Opcode::UND_1_d3:
+  case Opcode::UND_1_e3:
+  case Opcode::UND_1_f3:
+  case Opcode::UND_1_0b:
+  case Opcode::UND_1_1b:
+  case Opcode::UND_1_2b:
+  case Opcode::UND_1_3b:
+  case Opcode::UND_1_4b:
+  case Opcode::UND_1_5b:
+  case Opcode::UND_1_6b:
+  case Opcode::UND_1_7b:
+  case Opcode::UND_1_8b:
+  case Opcode::UND_1_9b:
+  case Opcode::UND_1_ab:
+  case Opcode::UND_1_bb:
+  case Opcode::UND_1_cb:
+  case Opcode::UND_1_db:
+  case Opcode::UND_1_eb:
+  case Opcode::UND_1_fb:
+  case Opcode::IMP_ASL:
+  case Opcode::IMP_CLC:
+  case Opcode::IMP_CLD:
+  case Opcode::IMP_CLI:
+  case Opcode::IMP_CLV:
+  case Opcode::IMP_DEC:
+  case Opcode::IMP_DEX:
+  case Opcode::IMP_DEY:
+  case Opcode::IMP_INC:
+  case Opcode::IMP_INX:
+  case Opcode::IMP_INY:
+  case Opcode::IMP_LSR:
+  case Opcode::IMP_NOP:
+  case Opcode::IMP_ROL:
+  case Opcode::IMP_ROR:
+  case Opcode::IMP_SEC:
+  case Opcode::IMP_SED:
+  case Opcode::IMP_SEI:
+  case Opcode::IMP_TAX:
+  case Opcode::IMP_TAY:
+  case Opcode::IMP_TSX:
+  case Opcode::IMP_TXA:
+  case Opcode::IMP_TXS:
+  case Opcode::IMP_TYA:
+  case Opcode::BRK_BRK:
+  case Opcode::RTI_RTI:
+  case Opcode::RTS_RTS:
+  case Opcode::PHR_PHA:
+  case Opcode::PHR_PHP:
+  case Opcode::PHR_PHX:
+  case Opcode::PHR_PHY:
+  case Opcode::PLR_PLA:
+  case Opcode::PLR_PLP:
+  case Opcode::PLR_PLX:
+  case Opcode::PLR_PLY:
+    return 0;
+  case Opcode::RZP_LDA:
+  case Opcode::RZP_LDX:
+  case Opcode::RZP_LDY:
+  case Opcode::RZP_AND:
+  case Opcode::RZP_BIT:
+  case Opcode::RZP_CMP:
+  case Opcode::RZP_CPX:
+  case Opcode::RZP_CPY:
+  case Opcode::RZP_EOR:
+  case Opcode::RZP_ORA:
+  case Opcode::RZP_ADC:
+  case Opcode::RZP_SBC:
+  case Opcode::MZP_ASL:
+  case Opcode::MZP_DEC:
+  case Opcode::MZP_INC:
+  case Opcode::MZP_LSR:
+  case Opcode::MZP_ROL:
+  case Opcode::MZP_ROR:
+  case Opcode::MZP_TRB:
+  case Opcode::MZP_TSB:
+  case Opcode::MZP_RMB0:
+  case Opcode::MZP_RMB1:
+  case Opcode::MZP_RMB2:
+  case Opcode::MZP_RMB3:
+  case Opcode::MZP_RMB4:
+  case Opcode::MZP_RMB5:
+  case Opcode::MZP_RMB6:
+  case Opcode::MZP_RMB7:
+  case Opcode::MZP_SMB0:
+  case Opcode::MZP_SMB1:
+  case Opcode::MZP_SMB2:
+  case Opcode::MZP_SMB3:
+  case Opcode::MZP_SMB4:
+  case Opcode::MZP_SMB5:
+  case Opcode::MZP_SMB6:
+  case Opcode::MZP_SMB7:
+  case Opcode::WZP_STA:
+  case Opcode::WZP_STX:
+  case Opcode::WZP_STY:
+  case Opcode::WZP_STZ:
+  case Opcode::UND_3_44:
+  {
+    int data = gDebugRAM[pc++];
+    out[0] = '$';
+    out[1] = hexTab[data >> 4];
+    out[2] = hexTab[data & 0x04];
+    out[3] = 0;
+    return 4;
+  }
+  case Opcode::RZX_LDA:
+  case Opcode::RZX_LDY:
+  case Opcode::RZX_AND:
+  case Opcode::RZX_BIT:
+  case Opcode::RZX_CMP:
+  case Opcode::RZX_EOR:
+  case Opcode::RZX_ORA:
+  case Opcode::RZX_ADC:
+  case Opcode::RZX_SBC:
+  case Opcode::MZX_ASL:
+  case Opcode::MZX_DEC:
+  case Opcode::MZX_INC:
+  case Opcode::MZX_LSR:
+  case Opcode::MZX_ROL:
+  case Opcode::MZX_ROR:
+  case Opcode::WZX_STA:
+  case Opcode::WZX_STY:
+  case Opcode::WZX_STZ:
+  case Opcode::UND_4_54:
+  case Opcode::UND_4_d4:
+  case Opcode::UND_4_f4:
+  {
+    int data = gDebugRAM[pc++];
+    out[0] = '$';
+    out[1] = hexTab[data >> 4];
+    out[2] = hexTab[data & 0x04];
+    *(uint32_t*)&out[3] = l4(",x");
+    return 6;
+  }
+  case Opcode::RZY_LDX:
+  case Opcode::WZY_STX:
+  {
+    int data = gDebugRAM[pc++];
+    out[0] = '$';
+    out[1] = hexTab[data >> 4];
+    out[2] = hexTab[data & 0x04];
+    *(uint32_t*)&out[3] = l4( ",y" );
+    return 6;
+  }
+  case Opcode::RIN_LDA:
+  case Opcode::RIN_AND:
+  case Opcode::RIN_CMP:
+  case Opcode::RIN_EOR:
+  case Opcode::RIN_ORA:
+  case Opcode::RIN_ADC:
+  case Opcode::RIN_SBC:
+  case Opcode::WIN_STA:
+  {
+    int data = gDebugRAM[pc++];
+    *(uint16_t*)&out[0] = l2( "($" );
+    out[2] = hexTab[data >> 4];
+    out[3] = hexTab[data & 0x04];
+    *(uint16_t*)&out[4] = l2( ")" );
+    return 6;
+  }
+  case Opcode::RIX_AND:
+  case Opcode::RIX_CMP:
+  case Opcode::RIX_EOR:
+  case Opcode::RIX_LDA:
+  case Opcode::RIX_ORA:
+  case Opcode::RIX_ADC:
+  case Opcode::RIX_SBC:
+  case Opcode::WIX_STA:
+  {
+    int data = gDebugRAM[pc++];
+    *(uint16_t*)&out[0] = l2( "($" );
+    out[3] = hexTab[data >> 4];
+    out[4] = hexTab[data & 0x04];
+    *(uint32_t*)&out[4] = l4( ",x)" );;
+    return 7;
+  }
+  case Opcode::RIY_AND:
+  case Opcode::RIY_CMP:
+  case Opcode::RIY_EOR:
+  case Opcode::RIY_LDA:
+  case Opcode::RIY_ORA:
+  case Opcode::RIY_ADC:
+  case Opcode::RIY_SBC:
+  case Opcode::WIY_STA:
+  {
+    int data = gDebugRAM[pc++];
+    *(uint16_t*)&out[0] = l2( "($" );
+    out[2] = hexTab[data >> 4];
+    out[3] = hexTab[data & 0x04];
+    *(uint32_t*)&out[4] = l4( "),y" );;
+    return 7;
+  }
+  case Opcode::RAB_AND:
+  case Opcode::RAB_BIT:
+  case Opcode::RAB_CMP:
+  case Opcode::RAB_CPX:
+  case Opcode::RAB_CPY:
+  case Opcode::RAB_EOR:
+  case Opcode::RAB_LDA:
+  case Opcode::RAB_LDX:
+  case Opcode::RAB_LDY:
+  case Opcode::RAB_ORA:
+  case Opcode::RAB_ADC:
+  case Opcode::RAB_SBC:
+  case Opcode::MAB_ASL:
+  case Opcode::MAB_DEC:
+  case Opcode::MAB_INC:
+  case Opcode::MAB_LSR:
+  case Opcode::MAB_ROL:
+  case Opcode::MAB_ROR:
+  case Opcode::MAB_TRB:
+  case Opcode::MAB_TSB:
+  case Opcode::WAB_STA:
+  case Opcode::WAB_STX:
+  case Opcode::WAB_STY:
+  case Opcode::WAB_STZ:
+  case Opcode::JMA_JMP:
+  case Opcode::JSA_JSR:
+  case Opcode::UND_4_dc:
+  case Opcode::UND_4_fc:
+  case Opcode::UND_8_5c:
+  {
+    int lo = gDebugRAM[pc];
+    int hi = gDebugRAM[pc + 1];
+    int data = lo + ( hi << 8 );
+    pc += 2;
+    char const* txt = mTraceHelper->addressLabel( data );
+    char* dst = out;
+    while ( *txt )
+    {
+      *dst++ = *txt++;
+    };
+    *dst++ = 0;
+    return (int)( dst - out );
+  }
+  case Opcode::RAX_AND:
+  case Opcode::RAX_BIT:
+  case Opcode::RAX_CMP:
+  case Opcode::RAX_EOR:
+  case Opcode::RAX_LDA:
+  case Opcode::RAX_LDY:
+  case Opcode::RAX_ORA:
+  case Opcode::RAX_ADC:
+  case Opcode::RAX_SBC:
+  case Opcode::MAX_ASL:
+  case Opcode::MAX_DEC:
+  case Opcode::MAX_INC:
+  case Opcode::MAX_LSR:
+  case Opcode::MAX_ROL:
+  case Opcode::MAX_ROR:
+  case Opcode::WAX_STA:
+  case Opcode::WAX_STZ:
+  {
+    int lo = gDebugRAM[pc];
+    int hi = gDebugRAM[pc + 1];
+    int data = lo + ( hi << 8 );
+    pc += 2;
+    char const* txt = mTraceHelper->addressLabel( data );
+    char* dst = out;
+    while ( *txt )
+    {
+      *dst++ = *txt++;
+    };
+    *(uint32_t*)dst = l4( ",x" );;
+    return (int)( dst + 3 - out );
+  }
+  case Opcode::RAY_AND:
+  case Opcode::RAY_CMP:
+  case Opcode::RAY_EOR:
+  case Opcode::RAY_LDA:
+  case Opcode::RAY_LDX:
+  case Opcode::RAY_ORA:
+  case Opcode::RAY_ADC:
+  case Opcode::RAY_SBC:
+  case Opcode::WAY_STA:
+  {
+    int lo = gDebugRAM[pc];
+    int hi = gDebugRAM[pc + 1];
+    int data = lo + ( hi << 8 );
+    pc += 2;
+    char const* txt = mTraceHelper->addressLabel( data );
+    char* dst = out;
+    while ( *txt )
+    {
+      *dst++ = *txt++;
+    };
+    *(uint32_t*)dst = l4( ",y" );;
+    return (int)( dst + 3 - out );
+  }
+  case Opcode::JMX_JMP:
+  {
+    int lo = gDebugRAM[pc];
+    int hi = gDebugRAM[pc + 1];
+    int data = lo + ( hi << 8 );
+    pc += 2;
+    char const* txt = mTraceHelper->addressLabel( data );
+    char* dst = out;
+    *dst++ = '(';
+    while ( *txt )
+    {
+      *dst++ = *txt++;
+    };
+    *(uint32_t*)dst = l4( ",x)" );;
+    return (int)( dst + 4 - out );
+  }
+  case Opcode::JMI_JMP:
+  {
+    int lo = gDebugRAM[pc];
+    int hi = gDebugRAM[pc + 1];
+    int data = lo + ( hi << 8 );
+    pc += 2;
+    char const* txt = mTraceHelper->addressLabel( data );
+    char* dst = out;
+    *dst++ = '(';
+    while ( *txt )
+    {
+      *dst++ = *txt++;
+    };
+    *(uint16_t*)dst = l2( ")" );;
+    return (int)( dst + 2 - out );
+  }
+  case Opcode::IMM_AND:
+  case Opcode::IMM_BIT:
+  case Opcode::IMM_CMP:
+  case Opcode::IMM_CPX:
+  case Opcode::IMM_CPY:
+  case Opcode::IMM_EOR:
+  case Opcode::IMM_LDA:
+  case Opcode::IMM_LDX:
+  case Opcode::IMM_LDY:
+  case Opcode::IMM_ORA:
+  case Opcode::IMM_ADC:
+  case Opcode::IMM_SBC:
+  case Opcode::UND_2_02:
+  case Opcode::UND_2_22:
+  case Opcode::UND_2_42:
+  case Opcode::UND_2_62:
+  case Opcode::UND_2_82:
+  case Opcode::UND_2_C2:
+  case Opcode::UND_2_E2:
+  {
+    int data = gDebugRAM[pc++];
+    *(uint16_t*)&out[0] = l2( "#$" );;
+    out[2] = hexTab[data >> 4];
+    out[3] = hexTab[data & 0x04];
+    out[4] = 0;
+    return 5;
+  }
+  case Opcode::BRL_BCC:
+  case Opcode::BRL_BCS:
+  case Opcode::BRL_BEQ:
+  case Opcode::BRL_BMI:
+  case Opcode::BRL_BNE:
+  case Opcode::BRL_BPL:
+  case Opcode::BRL_BVC:
+  case Opcode::BRL_BVS:
+  case Opcode::BRL_BRA:
+  {
+    int data = gDebugRAM[pc++];
+    int dest = pc + data;
+    char const* txt = mTraceHelper->addressLabel( dest );
+    char* dst = out;
+    while ( *txt )
+    {
+      *dst++ = *txt++;
+    };
+    *dst++ = 0;
+    return (int)( dst - out );
+  }
+  case Opcode::BZR_BBR0:
+  case Opcode::BZR_BBR1:
+  case Opcode::BZR_BBR2:
+  case Opcode::BZR_BBR3:
+  case Opcode::BZR_BBR4:
+  case Opcode::BZR_BBR5:
+  case Opcode::BZR_BBR6:
+  case Opcode::BZR_BBR7:
+  case Opcode::BZR_BBS0:
+  case Opcode::BZR_BBS1:
+  case Opcode::BZR_BBS2:
+  case Opcode::BZR_BBS3:
+  case Opcode::BZR_BBS4:
+  case Opcode::BZR_BBS5:
+  case Opcode::BZR_BBS6:
+  case Opcode::BZR_BBS7:
+  {
+    int zp = gDebugRAM[pc];
+    out[0] = '#';
+    out[1] = hexTab[zp >> 4];
+    out[2] = hexTab[zp & 0x04];
+    out[4] = ',';
+
+    int data = gDebugRAM[pc + 1];
+    pc += 2;
+    int dest = pc + data;
+    char const* txt = mTraceHelper->addressLabel( dest );
+    char* dst = out + 5;
+    while ( *txt )
+    {
+      *dst++ = *txt++;
+    };
+    *dst++ = 0;
+    return (int)( dst - out );
+  }
+  default:
+    return 0;
+  }
+}
+
+void CPU::trace2()
+{
+  if ( !mTrace && !mTraceToggle )
+    return;
+
+  off += disasmOp( buf.data() + off, mState.op, &mState );
+
   auto comment = mTraceHelper->getTraceComment();
 
   switch ( mState.op )
@@ -2637,7 +3191,7 @@ void CPU::trace2()
   case Opcode::RZP_ORA:
   case Opcode::RZP_ADC:
   case Opcode::RZP_SBC:
-    off += sprintf( buf.data() + off, "$%02x\t;$%02x\n", mState.eal, mState.m1 );
+    off += sprintf( buf.data() + off, "$%02x\t;$%02x", mState.eal, mState.m1 );
     break;
   case Opcode::MZP_ASL:
   case Opcode::MZP_DEC:
@@ -2663,14 +3217,14 @@ void CPU::trace2()
   case Opcode::MZP_SMB5:
   case Opcode::MZP_SMB6:
   case Opcode::MZP_SMB7:
-    off += sprintf( buf.data() + off, "$%02x\t;$%02x->$%02x\n", mState.eal, mState.m1, mState.m2 );
+    off += sprintf( buf.data() + off, "$%02x\t;$%02x->$%02x", mState.eal, mState.m1, mState.m2 );
     break;
   case Opcode::WZP_STA:
   case Opcode::WZP_STX:
   case Opcode::WZP_STY:
   case Opcode::WZP_STZ:
   case Opcode::UND_3_44:
-    off += sprintf( buf.data() + off, "$%02x\n", mState.eal );
+    off += sprintf( buf.data() + off, "$%02x", mState.eal );
     break;
   case Opcode::RZX_LDA:
   case Opcode::RZX_LDY:
@@ -2681,7 +3235,7 @@ void CPU::trace2()
   case Opcode::RZX_ORA:
   case Opcode::RZX_ADC:
   case Opcode::RZX_SBC:
-    off += sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x\n", mState.eal, mState.t, mState.m1 );
+    off += sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x", mState.eal, mState.t, mState.m1 );
     break;
   case Opcode::MZX_ASL:
   case Opcode::MZX_DEC:
@@ -2689,7 +3243,7 @@ void CPU::trace2()
   case Opcode::MZX_LSR:
   case Opcode::MZX_ROL:
   case Opcode::MZX_ROR:
-    off += sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x->$%02x\n", mState.eal, mState.t, mState.m1, mState.m2 );
+    off += sprintf( buf.data() + off, "$%02x,x\t;[$%04x]=$%02x->$%02x", mState.eal, mState.t, mState.m1, mState.m2 );
     break;
   case Opcode::WZX_STA:
   case Opcode::WZX_STY:
@@ -2697,13 +3251,13 @@ void CPU::trace2()
   case Opcode::UND_4_54:
   case Opcode::UND_4_d4:
   case Opcode::UND_4_f4:
-    off += sprintf( buf.data() + off, "$%02x,x\t;[$%04x]\n", mState.eal, mState.t );
+    off += sprintf( buf.data() + off, "$%02x,x\t;[$%04x]", mState.eal, mState.t );
     break;
   case Opcode::RZY_LDX:
-    off += sprintf( buf.data() + off, "$%02x,y\t;[$%04x]=$%02x\n", mState.eal, mState.t, mState.m1 );
+    off += sprintf( buf.data() + off, "$%02x,y\t;[$%04x]=$%02x", mState.eal, mState.t, mState.m1 );
     break;
   case Opcode::WZY_STX:
-    off += sprintf( buf.data() + off, "$%02x,y\t;[$%04x]\n", mState.eal, mState.t );
+    off += sprintf( buf.data() + off, "$%02x,y\t;[$%04x]", mState.eal, mState.t );
     break;
   case Opcode::RIN_LDA:
   case Opcode::RIN_AND:
@@ -2714,21 +3268,21 @@ void CPU::trace2()
   case Opcode::RIN_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "(${:02x})\t;[{}]=${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "({:02x})\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "($%02x)\t;[%s]=$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1 );
+      off += sprintf( buf.data() + off, "($%02x)\t;[%s]=$%02x", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1 );
     }
     break;
   case Opcode::WIN_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "(${:02x})\t;[{}]\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "({:02x})\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "($%02x)\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.t ) );
+      off += sprintf( buf.data() + off, "($%02x)\t;[%s]", mState.fa, mTraceHelper->addressLabel( mState.t ) );
     }
     break;
   case Opcode::RIX_AND:
@@ -2740,21 +3294,21 @@ void CPU::trace2()
   case Opcode::RIX_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "(${:02x},x)\t;[{}]=${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "({:02x},x)\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "($%02x,x)\t;[%s]=$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1 );
+      off += sprintf( buf.data() + off, "($%02x,x)\t;[%s]=$%02x", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1 );
     }
     break;
   case Opcode::WIX_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "(${:02x},x)\t;[{}]\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "({:02x},x)\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "($%02x,x)\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.t ) );
+      off += sprintf( buf.data() + off, "($%02x,x)\t;[%s]", mState.fa, mTraceHelper->addressLabel( mState.t ) );
     }
     break;
   case Opcode::RIY_AND:
@@ -2766,21 +3320,21 @@ void CPU::trace2()
   case Opcode::RIY_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "(${:02x}),y\t;[{}]=${:02x}\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "({:02x}),y\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "($%02x),y\t;[%s]=$%02x\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1 );
+      off += sprintf( buf.data() + off, "($%02x),y\t;[%s]=$%02x", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1 );
     }
     break;
   case Opcode::WIY_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "(${:02x}),y\t;[{}]\t{}\n", mState.fa, mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "({:02x}),y\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "($%02x),y\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.ea ) );
+      off += sprintf( buf.data() + off, "($%02x),y\t;[%s]", mState.fa, mTraceHelper->addressLabel( mState.ea ) );
     }
     break;
   case Opcode::RAB_AND:
@@ -2797,11 +3351,11 @@ void CPU::trace2()
   case Opcode::RAB_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{}\t;=${:02x}\t{}\n", mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{}\t;={:02x}\t{}", mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "%s\t;=$%02x\n", mTraceHelper->addressLabel( mState.ea ), mState.m1 );
+      off += sprintf( buf.data() + off, "%s\t;=$%02x", mTraceHelper->addressLabel( mState.ea ), mState.m1 );
     }
     break;
   case Opcode::MAB_ASL:
@@ -2814,11 +3368,11 @@ void CPU::trace2()
   case Opcode::MAB_TSB:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{}\t;=${:02x}->${:02x}\t{}\n", mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{}\t;={:02x}->{:02x}\t{}", mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "%s\t;=$%02x->$%02x\n", mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2 );
+      off += sprintf( buf.data() + off, "%s\t;=$%02x->$%02x", mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2 );
     }
     break;
   case Opcode::WAB_STA:
@@ -2827,11 +3381,11 @@ void CPU::trace2()
   case Opcode::WAB_STZ:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{}\t;{}\n", mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{}\t;{}", mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "%s\n", mTraceHelper->addressLabel( mState.ea ) );
+      off += sprintf( buf.data() + off, "%s", mTraceHelper->addressLabel( mState.ea ) );
     }
     break;
   case Opcode::JMA_JMP:
@@ -2839,7 +3393,7 @@ void CPU::trace2()
   case Opcode::UND_4_dc:
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
-    off += sprintf( buf.data() + off, "%s\n", mTraceHelper->addressLabel( mState.ea ) );
+    off += sprintf( buf.data() + off, "%s", mTraceHelper->addressLabel( mState.ea ) );
     break;
   case Opcode::RAX_AND:
   case Opcode::RAX_BIT:
@@ -2852,11 +3406,11 @@ void CPU::trace2()
   case Opcode::RAX_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]=${:02x}\t{}\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{:04x},x\t;[{}]={:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1 );
+      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1 );
     }
     break;
   case Opcode::MAX_ASL:
@@ -2867,22 +3421,22 @@ void CPU::trace2()
   case Opcode::MAX_ROR:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]=${:02x}->${:02x}\t{}\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, mState.m2, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{:04x},x\t;[{}]={:02x}->{:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, mState.m2, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x->$%02x\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, mState.m2 );
+      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]=$%02x->$%02x", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, mState.m2 );
     }
     break;
   case Opcode::WAX_STA:
   case Opcode::WAX_STZ:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},x\t;[{}]\t{}\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{:04x},x\t;[{}]\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]\n", mState.ea, mTraceHelper->addressLabel( mState.fa ) );
+      off += sprintf( buf.data() + off, "$%04x,x\t;[%s]", mState.ea, mTraceHelper->addressLabel( mState.fa ) );
     }
     break;
   case Opcode::RAY_AND:
@@ -2895,28 +3449,28 @@ void CPU::trace2()
   case Opcode::RAY_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},y\t;[{}]=${:02x}\t{}\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{:04x},y\t;[{}]={:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]=$%02x\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1 );
+      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]=$%02x", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1 );
     }
     break;
   case Opcode::WAY_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "${:04x},y\t;[{}]\t{}\n", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
+      off = std::format_to( buf.data() + off, "{:04x},y\t;[{}]\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
     }
     else
     {
-      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]\n", mState.ea, mTraceHelper->addressLabel( mState.fa ) );
+      off += sprintf( buf.data() + off, "$%04x,y\t;[%s]", mState.ea, mTraceHelper->addressLabel( mState.fa ) );
     }
     break;
   case Opcode::JMX_JMP:
-    off += sprintf( buf.data() + off, "($%04x,x)\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.ea ) );
+    off += sprintf( buf.data() + off, "($%04x,x)\t;[%s]", mState.fa, mTraceHelper->addressLabel( mState.ea ) );
     break;
   case Opcode::JMI_JMP:
-    off += sprintf( buf.data() + off, "($%04x)\t;[%s]\n", mState.fa, mTraceHelper->addressLabel( mState.t ) );
+    off += sprintf( buf.data() + off, "($%04x)\t;[%s]", mState.fa, mTraceHelper->addressLabel( mState.t ) );
     break;
   case Opcode::IMP_ASL:
   case Opcode::IMP_CLC:
@@ -2973,7 +3527,7 @@ void CPU::trace2()
   case Opcode::UND_2_82:
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
-    off += sprintf( buf.data() + off, "#$%02x\n", mState.eal );
+    off += sprintf( buf.data() + off, "#$%02x", mState.eal );
     break;
   case Opcode::BRL_BCC:
   case Opcode::BRL_BCS:
@@ -2984,7 +3538,7 @@ void CPU::trace2()
   case Opcode::BRL_BVC:
   case Opcode::BRL_BVS:
   case Opcode::BRL_BRA:
-    off += sprintf( buf.data() + off, "$%04x\n", mState.t );
+    off += sprintf( buf.data() + off, "$%04x", mState.t );
     break;
   case Opcode::BZR_BBR0:
   case Opcode::BZR_BBR1:
@@ -3002,11 +3556,12 @@ void CPU::trace2()
   case Opcode::BZR_BBS5:
   case Opcode::BZR_BBS6:
   case Opcode::BZR_BBS7:
-    off += sprintf( buf.data() + off, "$%02x,$%04x\t;$%02x\n", mState.eal, mState.t, mState.m1 );
+    off += sprintf( buf.data() + off, "$%02x,$%04x\t;$%02x", mState.eal, mState.t, mState.m1 );
     break;
   }
 
   mFtrace.write( buf.data(), off );
+  mFtrace.put( '\n' );
 
   toggleTrace( false );
 }

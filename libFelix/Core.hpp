@@ -125,8 +125,8 @@ private:
   uint64_t mGlobalSamplesEmittedSnapshot;
   int64_t mGlobalSamplesEmittedPerFrame;
   ActionQueue mActionQueue;
-  std::shared_ptr<CPU> mCpu;
   std::shared_ptr<TraceHelper> mTraceHelper;
+  std::shared_ptr<CPU> mCpu;
   std::shared_ptr<Cartridge> mCartridge;
   std::shared_ptr<ComLynx> mComLynx;
   std::shared_ptr<ComLynxWire> mComLynxWire;

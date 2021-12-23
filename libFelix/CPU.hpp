@@ -46,7 +46,7 @@ public:
   };
 
 
-  CPU();
+  CPU( std::shared_ptr<TraceHelper> traceHelper );
   ~CPU();
 
   Request const& advance();
@@ -56,14 +56,15 @@ public:
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
   int interruptedMask() const;
-  void setLog( std::filesystem::path const & path, std::shared_ptr<TraceHelper> traceHelper );
+  void setLog( std::filesystem::path const & path );
 
   CPUState & state();
 
   void enableTrace();
   void disableTrace();
   void toggleTrace( bool on );
-  void printStatus( std::span<uint8_t, 4 * 18> text );
+  void printStatus( std::span<uint8_t, 3 * 14> text );
+  void disassemblyFromPC( char * out, int columns, int rows );
 
 private:
 
@@ -260,6 +261,8 @@ private:
 
   void trace1();
   void trace2();
+  static int disasmOp( char * out, Opcode op, CPUState* state = nullptr );
+  int disasmOpr( char * out, int & pc );
 
 private:
   std::array<char, 1024> buf;

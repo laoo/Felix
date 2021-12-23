@@ -66,6 +66,7 @@ private:
   struct DebugWindows
   {
     bool cpu;
+    bool disasm;
   } mDebugWindows;
 
   sol::state mLua;

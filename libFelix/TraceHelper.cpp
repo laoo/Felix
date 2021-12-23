@@ -1,8 +1,27 @@
 #include "pch.hpp"
 #include "TraceHelper.hpp"
 
+static constexpr int LABEL_SIZE_LIMIT = 20;
+
 TraceHelper::TraceHelper() : mLabels{}, mTraceComment{}, mData{}, mCommentView{}, mCommentCursor{}, mEnabled{}
 {
+  char buf[256];
+  for ( size_t i = 0; i < 65536; ++i )
+  {
+    mLabels[i] = (uint32_t)mData.size();
+    char const* ptr = map( (uint16_t)i, buf );
+    size_t size = 0;
+    do
+    {
+      mData.push_back( *ptr );
+      size += 1;
+    } while ( *ptr++ );
+    while ( size-- > LABEL_SIZE_LIMIT )
+    {
+      mData.pop_back();
+    }
+    mData.back() = '\0';
+  }
 }
 
 TraceHelper::~TraceHelper()
@@ -17,20 +36,6 @@ char const * TraceHelper::addressLabel( uint16_t address ) const
 void TraceHelper::enable()
 {
   mEnabled = true;
-
-  if ( !mData.empty() )
-    return;
-
-  char buf[256];
-  for ( size_t i = 0; i < 65536; ++i )
-  {
-    mLabels[i] = (uint32_t)mData.size();
-    char const* ptr = map( (uint16_t)i, buf );
-    do
-    {
-      mData.push_back( *ptr );
-    } while ( *ptr++ );
-  }
 }
 
 void TraceHelper::disable()

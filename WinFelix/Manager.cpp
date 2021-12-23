@@ -266,9 +266,9 @@ bool Manager::mainMenu( ImGuiIO& io )
       {
         openMenu = true;
         ImGui::MenuItem( "CPU", "Ctrl+C", &mDebugWindows.cpu );
+        ImGui::MenuItem( "Disassembly", "Ctrl+D", &mDebugWindows.disasm );
         ImGui::EndMenu();
       }
-
     }
     if ( ImGui::BeginMenu( "Options" ) )
     {
@@ -338,6 +338,10 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::IsKeyPressed( 'C' ) )
     {
       mDebugWindows.cpu = 1 - mDebugWindows.cpu;
+    }
+    if ( ImGui::IsKeyPressed( 'D' ) )
+    {
+      mDebugWindows.disasm = 1 - mDebugWindows.disasm;
     }
   }
 
@@ -558,9 +562,18 @@ void Manager::debugWindows( ImGuiIO& io )
   if ( mDebugWindows.cpu )
   {
     ImGui::Begin( "CPU", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
-    std::array< uint8_t, 4 * 18> data;
-    mInstance->debugCPU().printStatus( std::span<uint8_t, 4 * 18>( data.data(), data.size() ) );
-    ImGui::Image( mRenderer->renderBoard( 0, 18, 4, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 18 * 8, 4 * 16 } );
+    std::array< uint8_t, 3 * 14> data;
+    mInstance->debugCPU().printStatus( std::span<uint8_t, 3 * 14>( data.data(), data.size() ) );
+    ImGui::Image( mRenderer->renderBoard( 0, 14, 3, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 14 * 8, 3 * 16 } );
+    ImGui::End();
+  }
+  if ( mDebugWindows.disasm )
+  {
+    ImGui::Begin( "Disassembly", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    std::array< uint8_t, 32 * 16> data;
+    auto& cpu = mInstance->debugCPU();
+    cpu.disassemblyFromPC( (char*)data.data(), 32, 16 );
+    ImGui::Image( mRenderer->renderBoard( 1, 32, 16, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 32 * 8, 16 * 16 } );
     ImGui::End();
   }
 }
