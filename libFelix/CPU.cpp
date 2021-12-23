@@ -97,8 +97,10 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }
+CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, off{}
 {
+  static constexpr char prototype[] = "PC:ffff A:ff X:ff Y:ff S:1ff P=NV1BDIZC ";
+  memcpy( &buf[0], prototype, sizeof prototype );
 }
 
 CPU::~CPU()
@@ -2083,47 +2085,32 @@ void CPU::cpy( uint8_t value )
 
 void CPU::trace1()
 {
-  off = 0;
-  
-  if ( mTrace || mTraceToggle )
+  if ( mGlobalTrace )
   {
-    int shift = ( std::countl_zero( mState.tick ) / 4 ) * 4 + 4;
-    auto tickTemp = std::rotl( mState.tick, shift );
-    do
-    {
-      buf[off++] = hexTab[tickTemp & 0xf];
-      tickTemp = std::rotl( tickTemp, 4 );
-      shift += 4;
-    } while ( shift < 68 );
+    buf[3] = hexTab[mState.pch >> 4];
+    buf[4] = hexTab[mState.pch & 0x0f];
+    buf[5] = hexTab[mState.pcl >> 4];
+    buf[6] = hexTab[mState.pcl & 0x0f];
 
-    static constexpr char prototype[4 * 18 + 1] = ": PC:ffff A:ff X:ff Y:ff S:1ff P=NV1BDIZC ";
+    buf[10] = hexTab[mState.a >> 4];
+    buf[11] = hexTab[mState.a & 0x0f];
+    buf[15] = hexTab[mState.x >> 4];
+    buf[16] = hexTab[mState.x & 0x0f];
+    buf[20] = hexTab[mState.y >> 4];
+    buf[21] = hexTab[mState.y & 0x0f];
 
-    auto base = &buf[off];
+    buf[26] = hexTab[mState.sl >> 4];
+    buf[27] = hexTab[mState.sl & 0x0f];
 
-    memcpy( &buf[off], prototype, sizeof prototype );
+    buf[31] = ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' );
+    buf[32] = ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' );
+    buf[34] = ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' );
+    buf[35] = ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' );
+    buf[36] = ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' );
+    buf[37] = ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' );
+    buf[38] = ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' ); 
 
-    base[5] = hexTab[mState.pch >> 4];
-    base[6] = hexTab[mState.pch & 0x0f];
-    base[7] = hexTab[mState.pcl >> 4];
-    base[8] = hexTab[mState.pcl & 0x0f];
-
-    base[12] = hexTab[mState.a >> 4];
-    base[13] = hexTab[mState.a & 0x0f];
-    base[17] = hexTab[mState.x >> 4];
-    base[18] = hexTab[mState.x & 0x0f];
-    base[22] = hexTab[mState.y >> 4];
-    base[23] = hexTab[mState.y & 0x0f];
-
-    base[28] = hexTab[mState.sl >> 4];
-    base[29] = hexTab[mState.sl & 0x0f];
-
-    base[33] = ( CPU::get<CPU::bitN>( mState.p ) ? 'N' : '-' );
-    base[34] = ( CPU::get<CPU::bitV>( mState.p ) ? 'V' : '-' );
-    base[36] = ( CPU::get<CPU::bitB>( mState.p ) ? 'B' : '-' );
-    base[37] = ( CPU::get<CPU::bitD>( mState.p ) ? 'D' : '-' );
-    base[38] = ( CPU::get<CPU::bitI>( mState.p ) ? 'I' : '-' );
-    base[39] = ( CPU::get<CPU::bitZ>( mState.p ) ? 'Z' : '-' );
-    base[40] = ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' );
+    off = 40;
   }
 }
 
@@ -3137,7 +3124,7 @@ int CPU::disasmOpr( char* out, int & pc )
 
 void CPU::trace2()
 {
-  if ( !mTrace && !mTraceToggle )
+  if ( !mGlobalTrace )
     return;
 
   off += disasmOp( buf.data() + off, mState.op, &mState );
@@ -3560,41 +3547,33 @@ void CPU::trace2()
     break;
   }
 
-  mFtrace.write( buf.data(), off );
-  mFtrace.put( '\n' );
+  if ( mFtrace.good() )
+  {
+    mFtrace.write( buf.data(), off );
+    mFtrace.put( '\n' );
+  }
 
   toggleTrace( false );
 }
 
 void CPU::enableTrace()
 {
-  if ( mTraceHelper )
-  {
-    mTraceHelper->enable();
-    mTrace = true;
-  }
+  mTraceHelper->enable( true );
+  mTrace = true;
+  mGlobalTrace = mTrace || mTraceToggle;
 }
 
 void CPU::disableTrace()
 {
-  mTraceHelper->disable();
+  mTraceHelper->enable( false );
   mTrace = false;
+  mGlobalTrace = mTrace || mTraceToggle;
 }
 
 void CPU::toggleTrace( bool on )
 {
-  if ( mTraceHelper )
-  {
-    if ( on )
-    {
-      mTraceHelper->enable();
-      mTraceToggle = true;
-    }
-    else if ( mTraceToggle )
-    {
-      mTraceHelper->disable();
-      mTraceToggle = false;
-    }
-  }
+  mTraceHelper->enable( on );
+  mTraceToggle = on;
+  mGlobalTrace = mTrace || mTraceToggle;
 }
 

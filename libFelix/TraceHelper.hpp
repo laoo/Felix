@@ -7,8 +7,7 @@ public:
   ~TraceHelper();
   char const * addressLabel( uint16_t address ) const;
 
-  void enable();
-  void disable();
+  void enable( bool cond );
 
   template<typename FMT, typename... Args>
   void comment( FMT const& fmt, Args const&... args )

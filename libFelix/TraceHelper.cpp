@@ -33,14 +33,9 @@ char const * TraceHelper::addressLabel( uint16_t address ) const
   return mData.data() + mLabels[address];
 }
 
-void TraceHelper::enable()
+void TraceHelper::enable( bool cond )
 {
-  mEnabled = true;
-}
-
-void TraceHelper::disable()
-{
-  mEnabled = false;
+  mEnabled = cond;
 }
 
 std::shared_ptr<std::string_view> TraceHelper::getTraceComment()

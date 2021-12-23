@@ -189,6 +189,7 @@ private:
   Response mRes;
   bool mTrace;
   bool mTraceToggle;
+  bool mGlobalTrace;
   std::ofstream mFtrace;
   std::shared_ptr<TraceHelper> mTraceHelper;
 
