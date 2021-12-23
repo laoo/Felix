@@ -793,3 +793,9 @@ CPU& Core::debugCPU()
 {
   return *mCpu;
 }
+
+uint8_t const* Core::debugRAM()
+{
+  return &mRAM[0];
+}
+

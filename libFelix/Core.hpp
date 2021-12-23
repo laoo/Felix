@@ -50,6 +50,7 @@ public:
   void debugWriteSuzy( uint16_t address, uint8_t value );
   CPUState& debugState();
   CPU& debugCPU();
+  uint8_t const* debugRAM();
 
 
 private:

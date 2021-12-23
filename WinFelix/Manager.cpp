@@ -74,6 +74,7 @@ Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThread
               renderingTime = mRenderingTime;
             }
             mAudioOut->fillBuffer( mInstance, renderingTime );
+            updateDebugWindows();
           }
           else
           {
@@ -229,7 +230,9 @@ bool Manager::mainMenu( ImGuiIO& io )
   auto sysConfig = gConfigProvider.sysConfig();
 
   bool openMenu = false;
-  bool oldHistory = mDebugWindows.history;
+  bool debugWindowCpu = (bool)mDebugWindows.cpu;
+  bool debugWindowDisasm = (bool)mDebugWindows.disasm;
+  bool debugWindowHistory = (bool)mDebugWindows.history;
 
   ImGui::PushStyleVar( ImGuiStyleVar_Alpha, mOpenMenu ? 1.0f : std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
   if ( ImGui::BeginMainMenuBar() )
@@ -267,9 +270,9 @@ bool Manager::mainMenu( ImGuiIO& io )
       if ( ImGui::BeginMenu( "Debug" ) )
       {
         openMenu = true;
-        ImGui::MenuItem( "CPU", "Ctrl+C", &mDebugWindows.cpu );
-        ImGui::MenuItem( "Disassembly", "Ctrl+D", &mDebugWindows.disasm );
-        ImGui::MenuItem( "History", "Ctrl+H", &mDebugWindows.history );
+        ImGui::MenuItem( "CPU", "Ctrl+C", &debugWindowCpu );
+        ImGui::MenuItem( "Disassembly", "Ctrl+D", &debugWindowDisasm );
+        ImGui::MenuItem( "History", "Ctrl+H", &debugWindowHistory );
         ImGui::EndMenu();
       }
     }
@@ -340,29 +343,15 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
     if ( ImGui::IsKeyPressed( 'C' ) )
     {
-      mDebugWindows.cpu = 1 - mDebugWindows.cpu;
+      debugWindowCpu = 1 - debugWindowCpu;
     }
     if ( ImGui::IsKeyPressed( 'D' ) )
     {
-      mDebugWindows.disasm = 1 - mDebugWindows.disasm;
+      debugWindowDisasm = 1 - debugWindowDisasm;
     }
     if ( ImGui::IsKeyPressed( 'H' ) )
     {
-      mDebugWindows.history = 1 - mDebugWindows.history;
-    }
-  }
-
-  if ( mDebugWindows.history != oldHistory )
-  {
-    if ( mDebugWindows.history )
-    {
-      mDebugWindows.historyColumns = 64;
-      mDebugWindows.historyRows = 16;
-      mInstance->debugCPU().enableHistory( mDebugWindows.historyColumns, mDebugWindows.historyRows );
-    }
-    else
-    {
-      mInstance->debugCPU().disableHistory();
+      debugWindowHistory = 1 - debugWindowHistory;
     }
   }
 
@@ -404,6 +393,45 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
     mFileBrowser->ClearSelected();
     fileBrowserAction = NONE;
+  }
+
+
+  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
+  if ( debugWindowCpu != (bool)mDebugWindows.cpu )
+  {
+    if ( debugWindowCpu )
+    {
+      mDebugWindows.cpu.reset( new DebugWindow( 0, 14, 3 ) );
+    }
+    else
+    {
+      mDebugWindows.cpu.reset();
+    }
+  }
+
+  if ( debugWindowDisasm != (bool)mDebugWindows.disasm )
+  {
+    if ( debugWindowDisasm )
+    {
+      mDebugWindows.disasm.reset( new DebugWindow( 1, 32, 16 ) );
+    }
+    else
+    {
+      mDebugWindows.disasm.reset();
+    }
+  }
+  if ( debugWindowHistory != (bool)mDebugWindows.history )
+  {
+    if ( debugWindowHistory )
+    {
+      mDebugWindows.history.reset( new DebugWindow( 2, 64, 16 ) );
+      mInstance->debugCPU().enableHistory( 64, 16 );
+    }
+    else
+    {
+      mDebugWindows.history.reset();
+      mInstance->debugCPU().disableHistory();
+    }
   }
 
   return openMenu;
@@ -578,34 +606,55 @@ void Manager::imagePropertiesWindow( bool init )
   }
 }
 
-void Manager::debugWindows( ImGuiIO& io )
+void Manager::renderBoard( DebugWindow& win )
 {
-  auto& cpu = mInstance->debugCPU();
+  auto tex = mRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+  ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
+}
+
+void Manager::drawDebugWindows( ImGuiIO& io )
+{
+  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
 
   if ( mDebugWindows.cpu )
   {
     ImGui::Begin( "CPU", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
-    std::array< uint8_t, 3 * 14> data;
-    cpu.printStatus( std::span<uint8_t, 3 * 14>( data.data(), data.size() ) );
-    ImGui::Image( mRenderer->renderBoard( 0, 14, 3, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 14 * 8, 3 * 16 } );
+    renderBoard( *mDebugWindows.cpu );
     ImGui::End();
   }
   if ( mDebugWindows.disasm )
   {
     ImGui::Begin( "Disassembly", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
-    std::array< uint8_t, 32 * 16> data;
-    cpu.disassemblyFromPC( (char*)data.data(), 32, 16 );
-    ImGui::Image( mRenderer->renderBoard( 1, 32, 16, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 32 * 8, 16 * 16 } );
+    renderBoard( *mDebugWindows.disasm );
     ImGui::End();
   }
   if ( mDebugWindows.history )
   {
     ImGui::Begin( "History", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
-    std::vector< uint8_t> data;
-    data.resize( mDebugWindows.historyColumns * mDebugWindows.historyRows );
-    cpu.copyHistory( std::span<char>( (char*)data.data(), data.size() ) );
-    ImGui::Image( mRenderer->renderBoard( 2, mDebugWindows.historyColumns, mDebugWindows.historyRows, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ (float)mDebugWindows.historyColumns * 8, (float)mDebugWindows.historyRows * 16 } );
+    renderBoard( *mDebugWindows.history );
     ImGui::End();
+  }
+}
+
+void Manager::updateDebugWindows()
+{
+  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
+
+  auto& cpu = mInstance->debugCPU();
+
+  if ( (bool)mDebugWindows.cpu )
+  {
+    cpu.printStatus( std::span<uint8_t, 3 * 14>( mDebugWindows.cpu->data.data(), mDebugWindows.cpu->data.size() ) );
+  }
+
+  if ( (bool)mDebugWindows.disasm )
+  {
+    cpu.disassemblyFromPC( mInstance->debugRAM(), (char*)mDebugWindows.disasm->data.data(), 32, 16 );
+  }
+
+  if ( (bool)mDebugWindows.history )
+  {
+    cpu.copyHistory( std::span<char>( (char*)mDebugWindows.history->data.data(), mDebugWindows.history->data.size() ) );
   }
 }
 
@@ -620,7 +669,7 @@ void Manager::drawGui( int left, int top, int right, int bottom )
     mOpenMenu = mainMenu( io );
   }
 
-  debugWindows( io );
+  drawDebugWindows( io );
 }
 
 void Manager::processLua( std::filesystem::path const& path )
@@ -765,6 +814,7 @@ std::shared_ptr<ImageROM const> Manager::getOptionalBootROM()
 
 void Manager::reset()
 {
+  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
   mProcessThreads.store( false );
   //TODO wait for threads to stop.
   mInstance.reset();

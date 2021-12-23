@@ -50,7 +50,8 @@ private:
   bool mainMenu( ImGuiIO& io );
   void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
   void imagePropertiesWindow( bool init );
-  void debugWindows( ImGuiIO& io );
+  void drawDebugWindows( ImGuiIO& io );
+  void updateDebugWindows();
 
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
 private:
@@ -63,14 +64,28 @@ private:
 
   bool mDoUpdate;
 
+  struct DebugWindow
+  {
+    DebugWindow( int id, int columns, int rows ) : id{ id }, columns{ columns }, rows{ rows }
+    {
+      data.resize( columns* rows );
+    }
+
+    int id;
+    int columns;
+    int rows;
+    std::vector<uint8_t> data;
+  };
+
   struct DebugWindows
   {
-    bool cpu;
-    bool disasm;
-    bool history;
-    int historyColumns;
-    int historyRows;
+    std::mutex mutex;
+    std::unique_ptr<DebugWindow> cpu;
+    std::unique_ptr<DebugWindow> disasm;
+    std::unique_ptr<DebugWindow> history;
   } mDebugWindows;
+
+  void renderBoard( DebugWindow& win );
 
   sol::state mLua;
   std::atomic_bool mProcessThreads;

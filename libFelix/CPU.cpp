@@ -2146,7 +2146,7 @@ void CPU::printStatus( std::span<uint8_t,3*14> text )
   text[28 + 9] = ( CPU::get<CPU::bitC>( mState.p ) ? 'C' : '-' );
 }
 
-void CPU::disassemblyFromPC( char* out, int columns, int rows )
+void CPU::disassemblyFromPC( uint8_t const* ram, char* out, int columns, int rows )
 {
   int pc = mState.pc;
 
@@ -2161,8 +2161,8 @@ void CPU::disassemblyFromPC( char* out, int columns, int rows )
     base[3] = hexTab[pc & 0xf];
     base[4] = ' ';
 
-    int off = disasmOp( base + 5, (Opcode)gDebugRAM[pc] );
-    disasmOpr( (char*)base + 5 + off, pc );
+    int off = disasmOp( base + 5, (Opcode)ram[pc] );
+    disasmOpr( ram, (char*)base + 5 + off, pc );
   }
 }
 
@@ -2719,9 +2719,9 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   }
 }
 
-int CPU::disasmOpr( char* out, int & pc )
+int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
 {
-  Opcode op = (Opcode)gDebugRAM[pc++];
+  Opcode op = (Opcode)ram[pc++];
   switch ( op )
   {
   case Opcode::UND_1_03:
@@ -2834,7 +2834,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::WZP_STZ:
   case Opcode::UND_3_44:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     out[0] = '$';
     out[1] = hexTab[data >> 4];
     out[2] = hexTab[data & 0x04];
@@ -2863,7 +2863,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::UND_4_d4:
   case Opcode::UND_4_f4:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     out[0] = '$';
     out[1] = hexTab[data >> 4];
     out[2] = hexTab[data & 0x04];
@@ -2873,7 +2873,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::RZY_LDX:
   case Opcode::WZY_STX:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     out[0] = '$';
     out[1] = hexTab[data >> 4];
     out[2] = hexTab[data & 0x04];
@@ -2889,7 +2889,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::RIN_SBC:
   case Opcode::WIN_STA:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "($" );
     out[2] = hexTab[data >> 4];
     out[3] = hexTab[data & 0x04];
@@ -2905,7 +2905,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::RIX_SBC:
   case Opcode::WIX_STA:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "($" );
     out[3] = hexTab[data >> 4];
     out[4] = hexTab[data & 0x04];
@@ -2921,7 +2921,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::RIY_SBC:
   case Opcode::WIY_STA:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "($" );
     out[2] = hexTab[data >> 4];
     out[3] = hexTab[data & 0x04];
@@ -2958,8 +2958,8 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
   {
-    int lo = gDebugRAM[pc];
-    int hi = gDebugRAM[pc + 1];
+    int lo = ram[pc];
+    int hi = ram[pc + 1];
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
@@ -2989,8 +2989,8 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::WAX_STA:
   case Opcode::WAX_STZ:
   {
-    int lo = gDebugRAM[pc];
-    int hi = gDebugRAM[pc + 1];
+    int lo = ram[pc];
+    int hi = ram[pc + 1];
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
@@ -3012,8 +3012,8 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::RAY_SBC:
   case Opcode::WAY_STA:
   {
-    int lo = gDebugRAM[pc];
-    int hi = gDebugRAM[pc + 1];
+    int lo = ram[pc];
+    int hi = ram[pc + 1];
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
@@ -3027,8 +3027,8 @@ int CPU::disasmOpr( char* out, int & pc )
   }
   case Opcode::JMX_JMP:
   {
-    int lo = gDebugRAM[pc];
-    int hi = gDebugRAM[pc + 1];
+    int lo = ram[pc];
+    int hi = ram[pc + 1];
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
@@ -3043,8 +3043,8 @@ int CPU::disasmOpr( char* out, int & pc )
   }
   case Opcode::JMI_JMP:
   {
-    int lo = gDebugRAM[pc];
-    int hi = gDebugRAM[pc + 1];
+    int lo = ram[pc];
+    int hi = ram[pc + 1];
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
@@ -3077,7 +3077,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "#$" );;
     out[2] = hexTab[data >> 4];
     out[3] = hexTab[data & 0x04];
@@ -3094,7 +3094,7 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::BRL_BVS:
   case Opcode::BRL_BRA:
   {
-    int data = gDebugRAM[pc++];
+    int data = ram[pc++];
     int dest = pc + data;
     char const* txt = mTraceHelper->addressLabel( dest );
     char* dst = out;
@@ -3122,13 +3122,13 @@ int CPU::disasmOpr( char* out, int & pc )
   case Opcode::BZR_BBS6:
   case Opcode::BZR_BBS7:
   {
-    int zp = gDebugRAM[pc];
+    int zp = ram[pc];
     out[0] = '#';
     out[1] = hexTab[zp >> 4];
     out[2] = hexTab[zp & 0x04];
     out[4] = ',';
 
-    int data = gDebugRAM[pc + 1];
+    int data = ram[pc + 1];
     pc += 2;
     int dest = pc + data;
     char const* txt = mTraceHelper->addressLabel( dest );
@@ -3584,6 +3584,7 @@ void CPU::trace2()
     auto row = mHistory->nextRow();
     auto it = std::copy_n( buf.cbegin(), (std::min)( row.size(), (size_t)off ), row.begin() );
     std::fill( it, row.end(), ' ' );
+    L_DEBUG << std::hex << mState.pc;
   }
 }
 
