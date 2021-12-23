@@ -97,7 +97,7 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, off{}
+CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{}, operand{}, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, mHistory{}, mHistoryPresent{}, off{}
 {
   static constexpr char prototype[] = "PC:ffff A:ff X:ff Y:ff S:1ff P=NV1BDIZC ";
   memcpy( &buf[0], prototype, sizeof prototype );
@@ -2166,6 +2166,29 @@ void CPU::disassemblyFromPC( char* out, int columns, int rows )
   }
 }
 
+void CPU::enableHistory( int columns, int rows )
+{
+  std::scoped_lock<std::mutex> l{ mHistoryMutex };
+  mHistory.reset( new History( columns, rows, 0, std::vector<char>{} ) );
+  mHistory->data.resize( columns * rows );
+  mHistoryPresent.store( true );
+  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
+}
+
+void CPU::disableHistory()
+{
+  mHistoryPresent.store( false );
+  std::scoped_lock<std::mutex> l{ mHistoryMutex };
+  mHistory.reset();
+  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
+}
+
+void CPU::copyHistory( std::span<char> out )
+{
+  if ( mHistoryPresent.load() )
+    mHistory->copy( out );
+}
+
 int CPU::disasmOp( char * out, Opcode op, CPUState* state )
 {
   switch ( op )
@@ -3554,26 +3577,53 @@ void CPU::trace2()
   }
 
   toggleTrace( false );
+
+  if ( mHistoryPresent.load() )
+  {
+    std::scoped_lock<std::mutex> l{ mHistoryMutex };
+    auto row = mHistory->nextRow();
+    auto it = std::copy_n( buf.cbegin(), (std::min)( row.size(), (size_t)off ), row.begin() );
+    std::fill( it, row.end(), ' ' );
+  }
 }
 
 void CPU::enableTrace()
 {
   mTraceHelper->enable( true );
   mTrace = true;
-  mGlobalTrace = mTrace || mTraceToggle;
+  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
 }
 
 void CPU::disableTrace()
 {
   mTraceHelper->enable( false );
   mTrace = false;
-  mGlobalTrace = mTrace || mTraceToggle;
+  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
 }
 
 void CPU::toggleTrace( bool on )
 {
   mTraceHelper->enable( on );
   mTraceToggle = on;
-  mGlobalTrace = mTrace || mTraceToggle;
+  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
 }
 
+std::span<char> CPU::History::nextRow()
+{
+  std::span<char> result = std::span<char>{ data.data() + cursor * columns, (size_t)columns };
+  cursor = ( cursor + 1 ) % rows;
+
+  return result;
+}
+
+void CPU::History::copy( std::span<char> out )
+{
+  int cur = cursor;
+  size_t i = 0;
+
+  do
+  {
+    std::copy_n( data.data() + cur * columns, columns, out.data() + i * columns );
+    cur = ( cur + 1 ) % rows;
+  } while ( ++i < rows );
+}

@@ -65,6 +65,9 @@ public:
   void toggleTrace( bool on );
   void printStatus( std::span<uint8_t, 3 * 14> text );
   void disassemblyFromPC( char * out, int columns, int rows );
+  void enableHistory( int columns, int rows );
+  void disableHistory();
+  void copyHistory( std::span<char> out );
 
 private:
 
@@ -266,7 +269,22 @@ private:
   int disasmOpr( char * out, int & pc );
 
 private:
+
+  struct History
+  {
+    int columns;
+    int rows;
+    int cursor;
+    std::vector<char> data;
+
+    std::span<char> nextRow();
+    void copy( std::span<char> out );
+  };
+
   std::array<char, 1024> buf;
+  std::unique_ptr<History> mHistory;
+  std::mutex mHistoryMutex;
+  std::atomic_bool mHistoryPresent;
   int64_t off;
 };
 

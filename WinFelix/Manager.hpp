@@ -67,6 +67,9 @@ private:
   {
     bool cpu;
     bool disasm;
+    bool history;
+    int historyColumns;
+    int historyRows;
   } mDebugWindows;
 
   sol::state mLua;

@@ -229,6 +229,8 @@ bool Manager::mainMenu( ImGuiIO& io )
   auto sysConfig = gConfigProvider.sysConfig();
 
   bool openMenu = false;
+  bool oldHistory = mDebugWindows.history;
+
   ImGui::PushStyleVar( ImGuiStyleVar_Alpha, mOpenMenu ? 1.0f : std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
   if ( ImGui::BeginMainMenuBar() )
   {
@@ -267,6 +269,7 @@ bool Manager::mainMenu( ImGuiIO& io )
         openMenu = true;
         ImGui::MenuItem( "CPU", "Ctrl+C", &mDebugWindows.cpu );
         ImGui::MenuItem( "Disassembly", "Ctrl+D", &mDebugWindows.disasm );
+        ImGui::MenuItem( "History", "Ctrl+H", &mDebugWindows.history );
         ImGui::EndMenu();
       }
     }
@@ -342,6 +345,24 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::IsKeyPressed( 'D' ) )
     {
       mDebugWindows.disasm = 1 - mDebugWindows.disasm;
+    }
+    if ( ImGui::IsKeyPressed( 'H' ) )
+    {
+      mDebugWindows.history = 1 - mDebugWindows.history;
+    }
+  }
+
+  if ( mDebugWindows.history != oldHistory )
+  {
+    if ( mDebugWindows.history )
+    {
+      mDebugWindows.historyColumns = 64;
+      mDebugWindows.historyRows = 16;
+      mInstance->debugCPU().enableHistory( mDebugWindows.historyColumns, mDebugWindows.historyRows );
+    }
+    else
+    {
+      mInstance->debugCPU().disableHistory();
     }
   }
 
@@ -559,11 +580,13 @@ void Manager::imagePropertiesWindow( bool init )
 
 void Manager::debugWindows( ImGuiIO& io )
 {
+  auto& cpu = mInstance->debugCPU();
+
   if ( mDebugWindows.cpu )
   {
     ImGui::Begin( "CPU", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
     std::array< uint8_t, 3 * 14> data;
-    mInstance->debugCPU().printStatus( std::span<uint8_t, 3 * 14>( data.data(), data.size() ) );
+    cpu.printStatus( std::span<uint8_t, 3 * 14>( data.data(), data.size() ) );
     ImGui::Image( mRenderer->renderBoard( 0, 14, 3, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 14 * 8, 3 * 16 } );
     ImGui::End();
   }
@@ -571,9 +594,17 @@ void Manager::debugWindows( ImGuiIO& io )
   {
     ImGui::Begin( "Disassembly", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
     std::array< uint8_t, 32 * 16> data;
-    auto& cpu = mInstance->debugCPU();
     cpu.disassemblyFromPC( (char*)data.data(), 32, 16 );
     ImGui::Image( mRenderer->renderBoard( 1, 32, 16, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ 32 * 8, 16 * 16 } );
+    ImGui::End();
+  }
+  if ( mDebugWindows.history )
+  {
+    ImGui::Begin( "History", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    std::vector< uint8_t> data;
+    data.resize( mDebugWindows.historyColumns * mDebugWindows.historyRows );
+    cpu.copyHistory( std::span<char>( (char*)data.data(), data.size() ) );
+    ImGui::Image( mRenderer->renderBoard( 2, mDebugWindows.historyColumns, mDebugWindows.historyRows, std::span<uint8_t const>{ data.data(), data.size() } ), ImVec2{ (float)mDebugWindows.historyColumns * 8, (float)mDebugWindows.historyRows * 16 } );
     ImGui::End();
   }
 }
