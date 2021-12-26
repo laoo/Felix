@@ -51,64 +51,44 @@ uint8_t CPUState::ror( uint8_t val )
 
 void CPUState::adc( uint8_t value )
 {
+  int carry = c ? 1 : 0;
   if ( d )
   {
-    int lo = ( a & 0x0f ) + ( value & 0x0f ) + ( c ? 0x01 : 0 );
+    int lo = ( a & 0x0f ) + ( value & 0x0f ) + carry;
     int hi = ( a & 0xf0 ) + ( value & 0xf0 );
-    v.clear();
-    c.clear();
     if ( lo > 0x09 )
     {
       hi += 0x10;
       lo += 0x06;
     }
-    if ( ~( a ^ value ) & ( a ^ hi ) & 0x80 )
-    {
-      v.set();
-    }
+    v.set( ~( a ^ value ) & ( a ^ hi ) & 0x80 );
     if ( hi > 0x90 )
     {
       hi += 0x60;
     }
-    if ( hi & 0xff00 )
-    {
-      c.set();
-    }
+    c.set( hi & 0xff00 );
     a = ( lo & 0x0f ) + ( hi & 0xf0 );
-    setnz( a );
   }
   else
   {
-    int sum = a + value + ( c ? 0x01 : 0 );
-    v.clear();
-    c.clear();
-    if ( ~( a ^ value ) & ( a ^ sum ) & 0x80 )
-    {
-      v.set();
-    }
-    if ( sum & 0xff00 )
-    {
-      c.set();
-    }
+    int sum = a + value + carry;
+    v.set( ~( a ^ value ) & ( a ^ sum ) & 0x80 );
+    c.set( sum & 0xff00 );
     a = (uint8_t)sum;
-    setnz( a );
   }
+  setnz( a );
 }
 
 void CPUState::sbc( uint8_t value )
 {
   int carry = c ? 0 : 1;
+  int sum = a - value - carry;
+  v.set( ( a ^ value ) & ( a ^ sum ) & 0x80 );
+  c.set( ( sum & 0xff00 ) == 0 );
   if ( d )
   {
-    int sum = a - value - carry;
     int lo = ( a & 0x0f ) - ( value & 0x0f ) - carry;
     int hi = ( a & 0xf0 ) - ( value & 0xf0 );
-    v.clear();
-    c.clear();
-    if ( ( a ^ value ) & ( a ^ sum ) & 0x80 )
-    {
-      v.set();
-    }
     if ( lo & 0xf0 )
     {
       lo -= 6;
@@ -121,25 +101,10 @@ void CPUState::sbc( uint8_t value )
     {
       hi -= 0x60;
     }
-    if ( ( sum & 0xff00 ) == 0 )
-    {
-      c.set();
-    }
     a = ( lo & 0x0f ) + ( hi & 0xf0 );
   }
   else
   {
-    int sum = a - value - carry;
-    v.clear();
-    c.clear();
-    if ( ( a ^ value ) & ( a ^ sum ) & 0x80 )
-    {
-      v.set();
-    }
-    if ( ( sum & 0xff00 ) == 0 )
-    {
-      c.set();
-    }
     a = (uint8_t)sum;
   }
   setnz( a );
