@@ -640,6 +640,9 @@ void Manager::updateDebugWindows()
 {
   std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
 
+  if ( !mInstance )
+    return;
+
   auto& cpu = mInstance->debugCPU();
 
   if ( (bool)mDebugWindows.cpu )
