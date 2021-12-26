@@ -34,9 +34,8 @@ public:
 
   struct Response : private NonCopyable
   {
-    Response( CPUState & state ) : state{ state }, tick{}, interrupt{}, value{} {}
+    Response( CPUState & state ) : state{ state }, interrupt{}, value{} {}
     CPUState & state;
-    uint64_t tick;
     int interrupt;
     uint8_t value;
 
@@ -52,7 +51,6 @@ public:
   Request const& advance();
 
   void respond( uint8_t value );
-  void respond( uint64_t tick, uint8_t value );
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
   int interruptedMask() const;
@@ -75,84 +73,6 @@ private:
   uint8_t operand;
 
   static constexpr size_t ss = sizeof( CPUState );
-
-  static constexpr int bitC = 0;
-  static constexpr int bitZ = 1;
-  static constexpr int bitI = 2;
-  static constexpr int bitD = 3;
-  static constexpr int bitB = 4;
-  static constexpr int bit1 = 5;
-  static constexpr int bitV = 6;
-  static constexpr int bitN = 7;
-
-  /*
-    https://github.com/spacerace/6502/blob/master/doc/6502-asm-doc/the%20B%20flag%20and%20BRK%20instruction.txt:
-    No actual "B" flag exists inside the 6502's processor status register. The B
-    flag only exists in the status flag byte pushed to the stack. Naturally,
-    when the flags are restored (via PLP or RTI), the B bit is discarded.
-
-    Depending on the means, the B status flag will be pushed to the stack as
-    either 0 or 1.
-
-    software instructions BRK & PHP will push the B flag as being 1.
-    hardware interrupts IRQ & NMI will push the B flag as being 0.
-  */
-  uint8_t getP() const
-  {
-    return mState.p | ( 1 << bit1 ) | ( mState.interrupt != 0 ? 0 : ( 1 << bitB ) );
-  }
-
-  void setP( uint8_t value )
-  {
-    mState.p = value & ~( 1 << bitB );
-  }
-
-  void setnz( uint8_t v )
-  {
-    set<bitZ>( v == 0 );
-    set<bitN>( v >= 0x80 );
-  }
-
-  void setz( uint8_t v )
-  {
-    set<bitZ>( v == 0 );
-  }
-
-  template<int bit>
-  void set()
-  {
-    mState.p |= 1 << bit;
-  }
-
-  template<int bit>
-  void set( bool value )
-  {
-    value ? set<bit>() : clear<bit>();
-  }
-
-  template<int bit>
-  void clear()
-  {
-    mState.p &= ~( 1 << bit );
-  }
-
-  template<int bit>
-  void clear( bool value )
-  {
-    value ? clear<bit>() : set<bit>();
-  }
-
-  template<int bit>
-  bool get() const
-  {
-    return ( mState.p & ( 1 << bit ) ) != 0;
-  }
-
-  template<int bit>
-  static bool get( uint8_t p)
-  {
-    return ( p & ( 1 << bit ) ) != 0;
-  }
 
   uint8_t inc( uint8_t val );
   uint8_t dec( uint8_t val );
@@ -206,7 +126,6 @@ private:
     {
       void await_resume()
       {
-        state.tick = tick;
         state.interrupt = interrupt;
         state.op = (Opcode)value;
       }
