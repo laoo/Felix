@@ -2104,7 +2104,7 @@ void CPU::printStatus( std::span<uint8_t,3*14> text )
   static constexpr char prototype[3 * 14 + 1] =
     "A=ff X=ff Y=ff"
     "PC=ffff S=01ff"
-    "P=NVDIZC    ";
+    "P=NVDIZC      ";
 
   memcpy( text.data(), prototype, 3 * 14 );
 
