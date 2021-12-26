@@ -155,6 +155,21 @@ struct CPUState
     z.set( v == 0 );
   }
 
+
+  uint8_t inc( uint8_t val );
+  uint8_t dec( uint8_t val );
+  uint8_t asl( uint8_t val );
+  uint8_t lsr( uint8_t val );
+  uint8_t rol( uint8_t val );
+  uint8_t ror( uint8_t val );
+  void adc( uint8_t val );
+  void sbc( uint8_t val );
+  void bit( uint8_t val );
+  void cmp( uint8_t val );
+  void cpx( uint8_t val );
+  void cpy( uint8_t val );
+
+
   union
   {
     uint16_t pc;

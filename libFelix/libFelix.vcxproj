@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ActionQueue.cpp" />
+    <ClCompile Include="CPUState.cpp" />
     <ClCompile Include="EEPROM.cpp" />
     <ClCompile Include="Encryption.cpp" />
     <ClCompile Include="ImageProperties.cpp" />
