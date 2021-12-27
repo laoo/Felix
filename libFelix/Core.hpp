@@ -31,7 +31,7 @@ public:
   ~Core();
 
   void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
-  int advanceAudio();
+  void advanceAudio();
 
   void setLog( std::filesystem::path const & path );
 
@@ -72,13 +72,11 @@ private:
     bool suzyDisable;
   };
 
-  enum class SequencedActionResult
-  {
-    CARRY_ON,
-    BAIL_OUT
-  } executeSequencedAction( SequencedAction );
+  //returns true if cpu emulation batch should exit
+  bool executeSequencedAction( SequencedAction );
   bool executeSuzyAction();
-  void executeCPUAction();
+  //returns true if last cycle fetched opcode
+  bool executeCPUAction();
   void setDefaultROM();
 
   uint8_t fetchRAM( uint16_t address );
