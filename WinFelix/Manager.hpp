@@ -90,7 +90,6 @@ private:
   sol::state mLua;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
-  std::atomic_bool mPaused;
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;

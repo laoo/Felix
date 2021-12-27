@@ -31,7 +31,7 @@ namespace
 
 }
 
-Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{}, mPaused{},
+Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{},
   mRenderThread{}, mAudioThread{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
   mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
   mImageProperties{}
@@ -66,20 +66,13 @@ Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThread
       {
         if ( mProcessThreads.load() )
         {
-          if ( !mPaused.load() )
+          int64_t renderingTime;
           {
-            int64_t renderingTime;
-            {
-              std::scoped_lock<std::mutex> l{ mMutex };
-              renderingTime = mRenderingTime;
-            }
-            mAudioOut->fillBuffer( mInstance, renderingTime );
-            updateDebugWindows();
+            std::scoped_lock<std::mutex> l{ mMutex };
+            renderingTime = mRenderingTime;
           }
-          else
-          {
-            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-          }
+          mAudioOut->fillBuffer( mInstance, renderingTime );
+          updateDebugWindows();
         }
         else
         {
