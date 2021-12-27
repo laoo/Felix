@@ -2903,7 +2903,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::BRL_BRA:
   {
     int data = ram[pc++];
-    int dest = pc + data;
+    int dest = pc + (int8_t)data;
     char const* txt = mTraceHelper->addressLabel( dest );
     char* dst = out;
     while ( *txt )
@@ -2938,7 +2938,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
 
     int data = ram[pc + 1];
     pc += 2;
-    int dest = pc + data;
+    int dest = pc + (int8_t)data;
     char const* txt = mTraceHelper->addressLabel( dest );
     char* dst = out + 5;
     while ( *txt )
