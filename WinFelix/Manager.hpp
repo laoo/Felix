@@ -2,6 +2,7 @@
 
 #include "ScriptDebugger.hpp"
 #include "IInputSource.hpp"
+#include "Utility.hpp"
 
 class WinRenderer;
 class WinAudioOut;
@@ -90,6 +91,7 @@ private:
   sol::state mLua;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
+  std::atomic<RunMode> mRunMode;
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;

@@ -31,7 +31,7 @@ namespace
 
 }
 
-Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{},
+Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{}, mRunMode{ RunMode::RUN },
   mRenderThread{}, mAudioThread{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
   mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
   mImageProperties{}
@@ -71,7 +71,10 @@ Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThread
             std::scoped_lock<std::mutex> l{ mMutex };
             renderingTime = mRenderingTime;
           }
-          mAudioOut->fillBuffer( mInstance, renderingTime );
+          auto runMode = mRunMode.load();
+          if ( runMode == RunMode::STEP )
+            mRunMode.store( RunMode::PAUSE );
+          mAudioOut->fillBuffer( mInstance, renderingTime, runMode );
           updateDebugWindows();
         }
         else
@@ -226,6 +229,17 @@ bool Manager::mainMenu( ImGuiIO& io )
   bool debugWindowCpu = (bool)mDebugWindows.cpu;
   bool debugWindowDisasm = (bool)mDebugWindows.disasm;
   bool debugWindowHistory = (bool)mDebugWindows.history;
+  bool pauseRunIssued = false;
+  bool stepIssued = false;
+
+  if ( ImGui::IsKeyPressed( VK_F6 ) )
+  {
+    stepIssued = true;
+  }
+  else if ( ImGui::IsKeyPressed( VK_F5 ) )
+  {
+    pauseRunIssued = true;
+  }
 
   ImGui::PushStyleVar( ImGuiStyleVar_Alpha, mOpenMenu ? 1.0f : std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
   if ( ImGui::BeginMainMenuBar() )
@@ -263,6 +277,15 @@ bool Manager::mainMenu( ImGuiIO& io )
       if ( ImGui::BeginMenu( "Debug" ) )
       {
         openMenu = true;
+
+        if ( ImGui::MenuItem( mRunMode.load() == RunMode::RUN ? "Pause" : "Run", "F5") )
+        {
+          pauseRunIssued = true;
+        }
+        if ( ImGui::MenuItem( "Step", "F6" ) )
+        {
+          stepIssued = true;
+        }
         ImGui::MenuItem( "CPU", "Ctrl+C", &debugWindowCpu );
         ImGui::MenuItem( "Disassembly", "Ctrl+D", &debugWindowDisasm );
         ImGui::MenuItem( "History", "Ctrl+H", &debugWindowHistory );
@@ -345,6 +368,22 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::IsKeyPressed( 'H' ) )
     {
       debugWindowHistory = 1 - debugWindowHistory;
+    }
+  }
+
+  if ( stepIssued )
+  {
+    mRunMode.store( RunMode::STEP );
+  }
+  else if ( pauseRunIssued )
+  {
+    if ( mRunMode.load() == RunMode::RUN )
+    {
+      mRunMode.store( RunMode::PAUSE );
+    }
+    else if ( mRunMode.load() == RunMode::PAUSE )
+    {
+      mRunMode.store( RunMode::RUN );
     }
   }
 
@@ -831,6 +870,7 @@ void Manager::reset()
   }
 
   mProcessThreads.store( true );
+  mRunMode = RunMode::RUN;
 }
 
 void Manager::updateRotation()

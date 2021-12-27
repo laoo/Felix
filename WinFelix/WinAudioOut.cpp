@@ -155,7 +155,7 @@ int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t rende
   return baseResult;
 }
 
-void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTimeQPC )
+void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTimeQPC, RunMode runMode )
 {
   DWORD retval = WaitForSingleObject( mEvent, 100 );
   if ( retval != WAIT_OBJECT_0 )
@@ -178,9 +178,7 @@ void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingT
 
     auto sps = correctedSPS( instance->globalSamplesEmittedPerFrame(), renderingTimeQPC );
 
-    instance->setAudioOut( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable } );
-
-    instance->advanceAudio();
+    instance->advanceAudio( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, runMode );
 
     BYTE *pData;
     hr = mRenderClient->GetBuffer( framesAvailable, &pData );

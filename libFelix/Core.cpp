@@ -227,10 +227,10 @@ bool Core::executeSequencedAction( SequencedAction seqAction )
     mCpu->desertInterrupt( CPUState::I_RESET );
     break;
   case Action::SAMPLE_AUDIO:
-    mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
-    mGlobalSamplesEmitted += 1;
     if ( mSamplesEmitted >= mOutputSamples.size() )
       return true;
+    mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
+    mGlobalSamplesEmitted += 1;
     enqueueSampling();
     break;
   case Action::BATCH_END:
@@ -424,14 +424,6 @@ bool Core::executeCPUAction()
   return false;
 }
 
-void Core::setAudioOut( int sps, std::span<AudioSample> outputBuffer )
-{
-  mSPS = sps;
-  mOutputSamples = outputBuffer;
-  mSamplesEmitted = 0;
-  enqueueSampling();
-}
-
 void Core::enqueueSampling()
 {
   int ticks = 16000000 / mSPS;
@@ -445,20 +437,39 @@ void Core::enqueueSampling()
   mActionQueue.push( { Action::SAMPLE_AUDIO, mCurrentTick + ticks } );
 }
 
-void Core::advanceAudio()
+void Core::run( bool step )
 {
-  bool bailOut = false;
+  bool emulateToInstructionBoundary = step;
+
   for ( ;; )
   {
     if ( mActionQueue.head().getTick() <= mCurrentTick )
     {
-      bailOut |= executeSequencedAction( mActionQueue.pop() );
+      emulateToInstructionBoundary |= executeSequencedAction( mActionQueue.pop() );
     }
     else if ( !executeSuzyAction() )
     {
-      if ( executeCPUAction() && bailOut )
-        return;
+      if ( executeCPUAction() && emulateToInstructionBoundary )
+        break;
     }
+  }
+}
+
+void Core::advanceAudio( int sps, std::span<AudioSample> outputBuffer, RunMode runMode )
+{
+  mSPS = sps;
+  mOutputSamples = outputBuffer;
+  mSamplesEmitted = 0;
+  enqueueSampling();
+
+  if ( runMode != RunMode::PAUSE )
+  {
+    run( runMode == RunMode::STEP );
+  }
+
+  for ( size_t i = mSamplesEmitted; i < mOutputSamples.size(); ++i )
+  {
+    mOutputSamples[mSamplesEmitted++] = {};
   }
 }
 

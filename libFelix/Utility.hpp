@@ -17,5 +17,12 @@ struct AudioSample
   int16_t right;
 };
 
+enum class RunMode
+{
+  PAUSE,
+  STEP,
+  RUN
+};
+
 std::vector<uint8_t> readFile( std::filesystem::path const& path );
 

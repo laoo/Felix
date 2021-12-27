@@ -30,8 +30,8 @@ public:
     std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes );
   ~Core();
 
-  void setAudioOut( int sps, std::span<AudioSample> outputBuffer );
-  void advanceAudio();
+  void advanceAudio( int sps, std::span<AudioSample> outputBuffer, RunMode runMode );
+  void run( bool step );
 
   void setLog( std::filesystem::path const & path );
 
