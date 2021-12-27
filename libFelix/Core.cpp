@@ -186,7 +186,7 @@ void Core::desertInterrupt( int mask, std::optional<uint64_t> tick )
   }
 }
 
-Core::SequencedActionResult Core::executeSequencedAction( SequencedAction seqAction )
+bool Core::executeSequencedAction( SequencedAction seqAction )
 {
   auto action = seqAction.getAction();
 
@@ -230,27 +230,27 @@ Core::SequencedActionResult Core::executeSequencedAction( SequencedAction seqAct
     mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
     mGlobalSamplesEmitted += 1;
     if ( mSamplesEmitted >= mOutputSamples.size() )
-      return SequencedActionResult::BAIL_OUT;
+      return true;
     enqueueSampling();
     break;
   case Action::BATCH_END:
-    return SequencedActionResult::BAIL_OUT;
+    return true;
   default:
     assert( false );
     break;
   }
-  return SequencedActionResult::CARRY_ON;
+  return false;
 }
 
 bool Core::executeSuzyAction()
 {
   if ( !mSuzyProcess || !mSuzyRunning )
-    return true;
+    return false;
 
   if ( mCpu->interruptedMask() != 0 )
   {
     mSuzyRunning = false;
-    return true;
+    return false;
   }
 
   mSuzyProcessRequest = mSuzyProcess->advance();
@@ -320,10 +320,10 @@ bool Core::executeSuzyAction()
     break;
   }
 
-  return false;
+  return true;
 }
 
-void Core::executeCPUAction()
+bool Core::executeCPUAction()
 {
   auto const& req = mCpu->advance();
 
@@ -356,7 +356,7 @@ void Core::executeCPUAction()
   case CPUAction::FETCH_OPCODE_RAM:
     mCpu->respond( fetchRAM( req.address ) );
     mCurrentTick += fetchRAMTiming( req.address );
-    break;
+    return true;
   case CPUAction::FETCH_OPERAND_RAM:
     mCpu->respond( readRAM( req.address ) );
     mCurrentTick += fetchRAMTiming( req.address );
@@ -372,7 +372,7 @@ void Core::executeCPUAction()
   case CPUAction::FETCH_OPCODE_KENREL:
     mCpu->respond( readROM( req.address & 0x1ff, true ) );
     mCurrentTick += fetchROMTiming( req.address );
-    break;
+    return true;
   case CPUAction::FETCH_OPERAND_KENREL:
     mCpu->respond( readROM( req.address & 0x1ff, false ) );
     mCurrentTick += fetchROMTiming( req.address );
@@ -389,7 +389,7 @@ void Core::executeCPUAction()
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
     mCpu->respond( readSuzy( req.address ) );
-    break;
+    return true;
   case CPUAction::FETCH_OPERAND_SUZY:
     [[fallthrough]];
   case CPUAction::READ_SUZY:
@@ -406,7 +406,7 @@ void Core::executeCPUAction()
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     mCpu->respond( readMikey( req.address ) );
-    break;
+    return true;
   case CPUAction::FETCH_OPERAND_MIKEY:
     [[fallthrough]];
   case CPUAction::READ_MIKEY:
@@ -420,6 +420,8 @@ void Core::executeCPUAction()
     mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   }
+
+  return false;
 }
 
 void Core::setAudioOut( int sps, std::span<AudioSample> outputBuffer )
@@ -443,29 +445,19 @@ void Core::enqueueSampling()
   mActionQueue.push( { Action::SAMPLE_AUDIO, mCurrentTick + ticks } );
 }
 
-int Core::advanceAudio()
+void Core::advanceAudio()
 {
+  bool bailOut = false;
   for ( ;; )
   {
     if ( mActionQueue.head().getTick() <= mCurrentTick )
     {
-      switch ( executeSequencedAction( mActionQueue.pop() ) )
-      {
-      case SequencedActionResult::CARRY_ON:
-        if ( mSamplesEmitted >= mOutputSamples.size() )
-          return 0;
-        else
-          break;
-      case SequencedActionResult::BAIL_OUT:
-        return 1;
-      }
+      bailOut |= executeSequencedAction( mActionQueue.pop() );
     }
-    else
+    else if ( !executeSuzyAction() )
     {
-      if ( executeSuzyAction() )
-      {
-        executeCPUAction();
-      }
+      if ( executeCPUAction() && bailOut )
+        return;
     }
   }
 }
