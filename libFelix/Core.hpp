@@ -30,8 +30,8 @@ public:
     std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes );
   ~Core();
 
-  void advanceAudio( int sps, std::span<AudioSample> outputBuffer, RunMode runMode );
-  void run( bool step );
+  CpuBreakType advanceAudio( int sps, std::span<AudioSample> outputBuffer, RunMode runMode );
+  CpuBreakType run( RunMode runMode );
 
   void setLog( std::filesystem::path const & path );
 
@@ -72,11 +72,9 @@ private:
     bool suzyDisable;
   };
 
-  //returns true if cpu emulation batch should exit
-  bool executeSequencedAction( SequencedAction );
+  void executeSequencedAction( SequencedAction );
   bool executeSuzyAction();
-  //returns true if last cycle fetched opcode
-  bool executeCPUAction();
+  CpuBreakType executeCPUAction();
   void setDefaultROM();
 
   uint8_t fetchRAM( uint16_t address );

@@ -186,7 +186,7 @@ void Core::desertInterrupt( int mask, std::optional<uint64_t> tick )
   }
 }
 
-bool Core::executeSequencedAction( SequencedAction seqAction )
+void Core::executeSequencedAction( SequencedAction seqAction )
 {
   auto action = seqAction.getAction();
 
@@ -228,18 +228,26 @@ bool Core::executeSequencedAction( SequencedAction seqAction )
     break;
   case Action::SAMPLE_AUDIO:
     if ( mSamplesEmitted >= mOutputSamples.size() )
-      return true;
-    mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
-    mGlobalSamplesEmitted += 1;
-    enqueueSampling();
+    {
+      mCpu->breakNext();
+    }
+    else
+    {
+      mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
+      mGlobalSamplesEmitted += 1;
+      enqueueSampling();
+    }
     break;
   case Action::BATCH_END:
-    return true;
+    mCpu->breakNext();
+    break;
+  case Action::NONE:
+    //removed element
+    break;
   default:
     assert( false );
     break;
   }
-  return false;
 }
 
 bool Core::executeSuzyAction()
@@ -323,7 +331,7 @@ bool Core::executeSuzyAction()
   return true;
 }
 
-bool Core::executeCPUAction()
+CpuBreakType Core::executeCPUAction()
 {
   auto const& req = mCpu->advance();
 
@@ -356,7 +364,7 @@ bool Core::executeCPUAction()
   case CPUAction::FETCH_OPCODE_RAM:
     mCpu->respond( fetchRAM( req.address ) );
     mCurrentTick += fetchRAMTiming( req.address );
-    return true;
+    return req.cpuBreakType;
   case CPUAction::FETCH_OPERAND_RAM:
     mCpu->respond( readRAM( req.address ) );
     mCurrentTick += fetchRAMTiming( req.address );
@@ -372,7 +380,7 @@ bool Core::executeCPUAction()
   case CPUAction::FETCH_OPCODE_KENREL:
     mCpu->respond( readROM( req.address & 0x1ff, true ) );
     mCurrentTick += fetchROMTiming( req.address );
-    return true;
+    return req.cpuBreakType;
   case CPUAction::FETCH_OPERAND_KENREL:
     mCpu->respond( readROM( req.address & 0x1ff, false ) );
     mCurrentTick += fetchROMTiming( req.address );
@@ -389,7 +397,7 @@ bool Core::executeCPUAction()
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
     mCpu->respond( readSuzy( req.address ) );
-    return true;
+    return req.cpuBreakType;
   case CPUAction::FETCH_OPERAND_SUZY:
     [[fallthrough]];
   case CPUAction::READ_SUZY:
@@ -406,7 +414,7 @@ bool Core::executeCPUAction()
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     mCpu->respond( readMikey( req.address ) );
-    return true;
+    return req.cpuBreakType;
   case CPUAction::FETCH_OPERAND_MIKEY:
     [[fallthrough]];
   case CPUAction::READ_MIKEY:
@@ -421,7 +429,7 @@ bool Core::executeCPUAction()
     break;
   }
 
-  return false;
+  return CpuBreakType::NONE;
 }
 
 void Core::enqueueSampling()
@@ -437,40 +445,66 @@ void Core::enqueueSampling()
   mActionQueue.push( { Action::SAMPLE_AUDIO, mCurrentTick + ticks } );
 }
 
-void Core::run( bool step )
+CpuBreakType Core::run( RunMode runMode )
 {
-  bool emulateToInstructionBoundary = step;
+  switch ( runMode )
+  {
+  case RunMode::STEP_IN:
+    mCpu->breakOnStepIn();
+    break;
+  case RunMode::STEP_OVER:
+    mCpu->breakOnStepOver();
+    break;
+  case RunMode::STEP_OUT:
+    mCpu->breakOnStepOut();
+    break;
+  default:
+    mCpu->clearBreak();
+    break;
+  }
 
   for ( ;; )
   {
     if ( mActionQueue.head().getTick() <= mCurrentTick )
     {
-      emulateToInstructionBoundary |= executeSequencedAction( mActionQueue.pop() );
+      executeSequencedAction( mActionQueue.pop() );
     }
     else if ( !executeSuzyAction() )
     {
-      if ( executeCPUAction() && emulateToInstructionBoundary )
-        break;
+      auto cpuBreakType = executeCPUAction();
+      if ( cpuBreakType != CpuBreakType::NONE )
+        return cpuBreakType;
     }
   }
 }
 
-void Core::advanceAudio( int sps, std::span<AudioSample> outputBuffer, RunMode runMode )
+CpuBreakType Core::advanceAudio( int sps, std::span<AudioSample> outputBuffer, RunMode runMode )
 {
   mSPS = sps;
   mOutputSamples = outputBuffer;
   mSamplesEmitted = 0;
-  enqueueSampling();
+  CpuBreakType cpuBreakType = CpuBreakType::NONE;
 
   if ( runMode != RunMode::PAUSE )
   {
-    run( runMode == RunMode::STEP );
+    enqueueSampling();
+    cpuBreakType = run( runMode );
+  }
+  else
+  {
+    mCpu->clearBreak();
   }
 
-  for ( size_t i = mSamplesEmitted; i < mOutputSamples.size(); ++i )
+  if ( mSamplesEmitted < mOutputSamples.size() )
   {
-    mOutputSamples[mSamplesEmitted++] = {};
+    mActionQueue.erase( Action::SAMPLE_AUDIO );
+    for ( size_t i = mSamplesEmitted; i < mOutputSamples.size(); ++i )
+    {
+      mOutputSamples[mSamplesEmitted++] = {};
+    }
   }
+
+  return cpuBreakType;
 }
 
 void Core::enterMonitor()

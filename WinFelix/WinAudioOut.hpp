@@ -10,11 +10,11 @@ class WinAudioOut
 {
 public:
 
-  WinAudioOut();
+  WinAudioOut( std::atomic<RunMode> & runMode );
   ~WinAudioOut();
 
   void setEncoder( std::shared_ptr<IEncoder> pEncoder );
-  void fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTime, RunMode runMode );
+  void fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTime );
   void setWavOut( std::filesystem::path path );
 
 private:
@@ -28,6 +28,7 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   WavFile* mWav;
   HANDLE mEvent;
+  std::atomic<RunMode>& mRunMode;
 
   double mTimeToSamples;
 

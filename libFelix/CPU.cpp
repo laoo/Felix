@@ -95,7 +95,8 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{ CPUState::reset() }, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, mHistory{}, mHistoryPresent{}, off{}
+CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{ CPUState::reset() }, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, mHistory{}, mHistoryPresent{}, off{},
+  mPostponedStepOut{}, mStackBreakCondition{ 0xffff }
 {
   static constexpr char prototype[] = "PC:ffff A:ff X:ff Y:ff S:1ff P=NVDIZC ";
   memcpy( &buf[0], prototype, sizeof prototype );
@@ -109,6 +110,35 @@ CPU::Request const& CPU::advance()
 {
   mEx.coro();
   return mReq;
+}
+
+void CPU::breakNext()
+{
+  mReq.cpuBreakType = CpuBreakType::NEXT;
+}
+
+void CPU::breakOnStepIn()
+{
+  mReq.cpuBreakType = CpuBreakType::STEP_IN;
+}
+
+void CPU::breakOnStepOver()
+{
+  mReq.cpuBreakType = CpuBreakType::STEP_OVER;
+}
+
+void CPU::breakOnStepOut()
+{
+  mReq.cpuBreakType = CpuBreakType::NONE;
+  mPostponedStepOut = true;
+  if ( mStackBreakCondition == 0xffff )
+    mStackBreakCondition = mState.s;
+}
+
+void CPU::clearBreak()
+{
+  mReq.cpuBreakType = CpuBreakType::NONE;
+  mStackBreakCondition = 0xffff;
 }
 
 void CPU::respond( uint8_t value )
@@ -1313,6 +1343,11 @@ CPU::Execute CPU::execute()
       state.sl--;
       state.eah = co_await fetchOperand( state.pc++ );
       state.pc = state.ea;
+      if ( mReq.cpuBreakType == CpuBreakType::STEP_OVER )
+      {
+        mReq.cpuBreakType = CpuBreakType::NONE;
+        mStackBreakCondition = state.s;
+      }
       break;
     case Opcode::JMX_JMP:
       ++state.pc;
@@ -1789,6 +1824,11 @@ CPU::Execute CPU::execute()
       }
       state.d.clear();
       state.pc = state.ea;
+      if ( mReq.cpuBreakType == CpuBreakType::STEP_OVER )
+      {
+        mReq.cpuBreakType = CpuBreakType::NONE;
+        mStackBreakCondition = state.s;
+      }
       break;
     case Opcode::RTI_RTI:
       ++state.pc;
@@ -1798,6 +1838,12 @@ CPU::Execute CPU::execute()
       state.eal = co_await read( state.s );
       ++state.sl;
       state.eah = co_await read( state.s );
+      if ( mStackBreakCondition < state.s )
+      {
+        mReq.cpuBreakType = mPostponedStepOut ? CpuBreakType::STEP_OUT : CpuBreakType::STEP_OVER;
+        mPostponedStepOut = false;
+        mStackBreakCondition = 0xffff;
+      }
       co_await read( state.pc );
       state.pc = state.ea;
       break;
@@ -1807,6 +1853,12 @@ CPU::Execute CPU::execute()
       state.eal = co_await read( state.s );
       ++state.sl;
       state.eah = co_await read( state.s );
+      if ( mStackBreakCondition < state.s )
+      {
+        mReq.cpuBreakType = mPostponedStepOut ? CpuBreakType::STEP_OUT : CpuBreakType::STEP_OVER;
+        mPostponedStepOut = false;
+        mStackBreakCondition = 0xffff;
+      }
       co_await read( state.pc );
       ++state.ea;
       state.pc = state.ea;
@@ -3386,9 +3438,9 @@ void CPU::trace2()
 
   toggleTrace( false );
 
+  std::scoped_lock<std::mutex> l{ mHistoryMutex };
   if ( mHistoryPresent.load() )
   {
-    std::scoped_lock<std::mutex> l{ mHistoryMutex };
     auto row = mHistory->nextRow();
     auto it = std::copy_n( buf.cbegin(), (std::min)( row.size(), (size_t)off ), row.begin() );
     std::fill( it, row.end(), ' ' );

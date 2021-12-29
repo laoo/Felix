@@ -17,10 +17,26 @@ struct AudioSample
   int16_t right;
 };
 
+enum class CpuBreakType
+{
+  //No cpu break
+  NONE,
+  //CPU break on next instruction boundary on batch end
+  NEXT,
+  //CPU break on next instruction boundary in a response to RunMode::STEP_IN
+  STEP_IN,
+  //CPU break if CPU did not go into a subroutine in a response to RunMode::STEP_OVER
+  STEP_OVER,
+  //CPU break if CPU goes out from a subroutine in a response to RunMode::STEP_OUT
+  STEP_OUT
+};
+
 enum class RunMode
 {
   PAUSE,
-  STEP,
+  STEP_IN,
+  STEP_OVER,
+  STEP_OUT,
   RUN
 };
 

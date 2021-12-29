@@ -27,6 +27,7 @@ public:
       WRITE
     };
 
+    CpuBreakType cpuBreakType;
     uint16_t address;
     uint8_t value;
     Type type;
@@ -49,6 +50,18 @@ public:
   ~CPU();
 
   Request const& advance();
+
+  //triggers a break on next instruction boundary on batch end
+  void breakNext();
+  //triggers a break on next instruction boundary in a response to RunMode::STEP_IN
+  void breakOnStepIn();
+  //triggers a break if CPU did not go into a subroutine in a response to RunMode::STEP_OVER
+  void breakOnStepOver();
+  //triggers a break if CPU goes out from a subroutine in a response to RunMode::STEP_OUT
+  void breakOnStepOut();
+  //clears any step triggers previously set
+  void clearBreak();
+
 
   void respond( uint8_t value );
   void assertInterrupt( int mask );
@@ -185,9 +198,12 @@ private:
   };
 
   std::array<char, 1024> buf;
+  int64_t off;
   std::unique_ptr<History> mHistory;
   std::mutex mHistoryMutex;
   std::atomic_bool mHistoryPresent;
-  int64_t off;
+  //true if mStackBreakCondition is valid for CpuBreakType::STEP_OUT
+  bool mPostponedStepOut;
+  uint16_t mStackBreakCondition;
 };
 

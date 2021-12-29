@@ -19,6 +19,11 @@ uint64_t SequencedAction::getTick() const
   return mData >> TICK_PERIOD_LOG;
 }
 
+void SequencedAction::clear()
+{
+  mData &= ~( TICK_PERIOD - 1 );
+}
+
 SequencedAction::operator bool() const
 {
   return mData != 0;
@@ -59,5 +64,16 @@ SequencedAction ActionQueue::head() const
   else
   {
     return {};
+  }
+}
+
+void ActionQueue::erase( Action action )
+{
+  for ( auto& e : mHeap )
+  {
+    if ( e.getAction() == action )
+    {
+      e.clear();
+    }
   }
 }

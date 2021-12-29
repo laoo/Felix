@@ -4,7 +4,7 @@
 #include "Log.hpp"
 #include "IEncoder.hpp"
 
-WinAudioOut::WinAudioOut() : mWav{}
+WinAudioOut::WinAudioOut( std::atomic<RunMode>& runMode ) : mRunMode{ runMode }, mWav {}
 {
   CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
@@ -155,7 +155,7 @@ int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t rende
   return baseResult;
 }
 
-void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTimeQPC, RunMode runMode )
+void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTimeQPC )
 {
   DWORD retval = WaitForSingleObject( mEvent, 100 );
   if ( retval != WAIT_OBJECT_0 )
@@ -178,7 +178,20 @@ void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingT
 
     auto sps = correctedSPS( instance->globalSamplesEmittedPerFrame(), renderingTimeQPC );
 
-    instance->advanceAudio( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, runMode );
+    auto cpuBreakType = instance->advanceAudio( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, mRunMode.load() );
+
+    switch ( cpuBreakType )
+    {
+    case CpuBreakType::STEP_IN:
+      [[fallthrough]];
+    case CpuBreakType::STEP_OUT:
+      [[fallthrough]];
+    case CpuBreakType::STEP_OVER:
+      mRunMode.store( RunMode::PAUSE );
+      break;
+    default:
+      break;
+    }
 
     BYTE *pData;
     hr = mRenderClient->GetBuffer( framesAvailable, &pData );

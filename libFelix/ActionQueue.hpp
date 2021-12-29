@@ -40,6 +40,7 @@ public:
 
   Action getAction() const;
   uint64_t getTick() const;
+  void clear();
 
   explicit operator bool() const;
 
@@ -61,6 +62,7 @@ public:
   void push( SequencedAction action );
   SequencedAction pop();
   SequencedAction head() const;
+  void erase( Action action );
 
 private:
 

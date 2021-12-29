@@ -31,13 +31,14 @@ namespace
 
 }
 
-Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{}, mRunMode{ RunMode::RUN },
+Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{}, mRunMode{},
   mRenderThread{}, mAudioThread{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
   mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
   mImageProperties{}
 {
+  mRunMode.store( RunMode::RUN );
   mRenderer = std::make_shared<WinRenderer>();
-  mAudioOut = std::make_shared<WinAudioOut>();
+  mAudioOut = std::make_shared<WinAudioOut>( mRunMode );
   mComLynxWire = std::make_shared<ComLynxWire>();
   mIntputSource = std::make_shared<UserInput>( *gConfigProvider.sysConfig() );
 
@@ -71,10 +72,7 @@ Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThread
             std::scoped_lock<std::mutex> l{ mMutex };
             renderingTime = mRenderingTime;
           }
-          auto runMode = mRunMode.load();
-          if ( runMode == RunMode::STEP )
-            mRunMode.store( RunMode::PAUSE );
-          mAudioOut->fillBuffer( mInstance, renderingTime, runMode );
+          mAudioOut->fillBuffer( mInstance, renderingTime );
           updateDebugWindows();
         }
         else
@@ -230,11 +228,21 @@ bool Manager::mainMenu( ImGuiIO& io )
   bool debugWindowDisasm = (bool)mDebugWindows.disasm;
   bool debugWindowHistory = (bool)mDebugWindows.history;
   bool pauseRunIssued = false;
-  bool stepIssued = false;
+  bool stepInIssued = false;
+  bool stepOverIssued = false;
+  bool stepOutIssued = false;
 
+  if ( ImGui::IsKeyPressed( VK_F8 ) )
+  {
+    stepOutIssued = true;
+  }
+  if ( ImGui::IsKeyPressed( VK_F7 ) )
+  {
+    stepOverIssued = true;
+  }
   if ( ImGui::IsKeyPressed( VK_F6 ) )
   {
-    stepIssued = true;
+    stepInIssued = true;
   }
   else if ( ImGui::IsKeyPressed( VK_F5 ) )
   {
@@ -278,13 +286,21 @@ bool Manager::mainMenu( ImGuiIO& io )
       {
         openMenu = true;
 
-        if ( ImGui::MenuItem( mRunMode.load() == RunMode::RUN ? "Pause" : "Run", "F5") )
+        if ( ImGui::MenuItem( mRunMode.load() != RunMode::PAUSE ? "Break" : "Run", "F5") )
         {
           pauseRunIssued = true;
         }
-        if ( ImGui::MenuItem( "Step", "F6" ) )
+        if ( ImGui::MenuItem( "Step In", "F6" ) )
         {
-          stepIssued = true;
+          stepInIssued = true;
+        }
+        if ( ImGui::MenuItem( "Step Over", "F7" ) )
+        {
+          stepOverIssued = true;
+        }
+        if ( ImGui::MenuItem( "Step Out", "F8" ) )
+        {
+          stepOutIssued = true;
         }
         ImGui::MenuItem( "CPU", "Ctrl+C", &debugWindowCpu );
         ImGui::MenuItem( "Disassembly", "Ctrl+D", &debugWindowDisasm );
@@ -371,19 +387,27 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
   }
 
-  if ( stepIssued )
+  if ( stepOutIssued )
   {
-    mRunMode.store( RunMode::STEP );
+    mRunMode.store( RunMode::STEP_OUT );
+  }
+  if ( stepOverIssued )
+  {
+    mRunMode.store( RunMode::STEP_OVER );
+  }
+  if ( stepInIssued )
+  {
+    mRunMode.store( RunMode::STEP_IN );
   }
   else if ( pauseRunIssued )
   {
-    if ( mRunMode.load() == RunMode::RUN )
-    {
-      mRunMode.store( RunMode::PAUSE );
-    }
-    else if ( mRunMode.load() == RunMode::PAUSE )
+    if ( mRunMode.load() == RunMode::PAUSE )
     {
       mRunMode.store( RunMode::RUN );
+    }
+    else
+    {
+      mRunMode.store( RunMode::PAUSE );
     }
   }
 
