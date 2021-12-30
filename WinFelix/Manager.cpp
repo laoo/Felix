@@ -682,32 +682,43 @@ void Manager::drawDebugWindows( ImGuiIO& io )
 {
   std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
 
-  if ( mDebugWindows.cpu )
+  bool debugWindowCpu = (bool)mDebugWindows.cpu;
+  bool debugWindowDisasm = (bool)mDebugWindows.disasm;
+  bool debugWindowHistory = (bool)mDebugWindows.history;
+
+  if ( debugWindowCpu )
   {
-    ImGui::Begin( "CPU", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    ImGui::Begin( "CPU", &debugWindowCpu, ImGuiWindowFlags_AlwaysAutoResize );
     renderBoard( *mDebugWindows.cpu );
     ImGui::End();
   }
-  if ( mDebugWindows.disasm )
+  if ( debugWindowDisasm )
   {
-    ImGui::Begin( "Disassembly", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    ImGui::Begin( "Disassembly", &debugWindowDisasm, ImGuiWindowFlags_AlwaysAutoResize );
     renderBoard( *mDebugWindows.disasm );
     ImGui::End();
   }
-  if ( mDebugWindows.history )
+  if ( debugWindowHistory )
   {
-    ImGui::Begin( "History", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    ImGui::Begin( "History", &debugWindowHistory, ImGuiWindowFlags_AlwaysAutoResize );
     renderBoard( *mDebugWindows.history );
     ImGui::End();
   }
 
   if ( mDebugWindows.mainRenderingWindow )
   {
-    ImGui::Begin( "Rendering", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    ImGui::Begin( "Rendering", &mDebugWindows.mainRenderingWindow, ImGuiWindowFlags_AlwaysAutoResize );
     auto tex = mRenderer->mainRenderingTexture();
     ImGui::Image( tex, ImVec2{ 160.0f, 102.0f } );
     ImGui::End();
   }
+
+  if ( !debugWindowCpu )
+    mDebugWindows.cpu.reset();
+  if ( !debugWindowDisasm )
+    mDebugWindows.disasm.reset();
+  if ( !debugWindowHistory )
+    mDebugWindows.history.reset();
 }
 
 void Manager::updateDebugWindows()
