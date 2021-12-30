@@ -40,7 +40,6 @@ public:
   void quit();
 
   void drawGui( int left, int top, int right, int bottom );
-  bool renderMainWindow();
 
 private:
   void processLua( std::filesystem::path const& path );

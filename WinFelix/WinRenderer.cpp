@@ -125,9 +125,9 @@ void* WinRenderer::renderBoard( int id, int width, int height, std::span<uint8_t
   return mRenderer->renderBoard( id, width, height, data );
 }
 
-void* WinRenderer::mainRenderingTexture()
+void* WinRenderer::mainRenderingTexture( int width, int height )
 {
-  return mRenderer->mainRenderingTexture();
+  return mRenderer->mainRenderingTexture( width, height );
 }
 
 int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -411,7 +411,7 @@ ImTextureID WinRenderer::BaseRenderer::renderBoard( int id, int width, int heigh
   return ImTextureID{};
 }
 
-void* WinRenderer::BaseRenderer::mainRenderingTexture()
+void* WinRenderer::BaseRenderer::mainRenderingTexture( int width, int height )
 {
   return ImTextureID{};
 }
@@ -462,7 +462,7 @@ void WinRenderer::BaseRenderer::setRotation( ImageProperties::Rotation rotation 
 }
 
 
-WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mRefreshRate{}, mEncoder{}, mVScale{ ~0u }
+WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mRefreshRate{}, mEncoder{}, mRenderingToWindow{}, mVScale{ ~0u }
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
@@ -598,7 +598,13 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
 
   UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
-  std::array<ID3D11UnorderedAccessView*, 4> uavs{ mBackBufferUAV.Get(), mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
+  if ( mRenderingToWindow.enabled() )
+  {
+    mRenderingToWindow.update( *this );
+    mImmediateContext->ClearUnorderedAccessViewUint( mRenderingToWindow.uav.Get(), v );
+  }
+
+  std::array<ID3D11UnorderedAccessView*, 4> uavs{ mRenderingToWindow.enabled() ? mRenderingToWindow.uav.Get() : mBackBufferUAV.Get(), mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
   mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
 
   {
@@ -636,21 +642,32 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
       mImmediateContext->Unmap( mSource.Get(), 0 );
     }
 
-    CBPosSize cbPosSize{
-      mSizeManager.rotx1(), mSizeManager.rotx2(),
-      mSizeManager.roty1(), mSizeManager.roty2(),
-      mSizeManager.xOff(), mSizeManager.yOff(),
-      mSizeManager.scale(),
-      mVScale };
+    CBPosSize cbPosSize;
+    if ( mRenderingToWindow.enabled() )
+    {
+      cbPosSize = CBPosSize{
+        mRenderingToWindow.size.rotx1(), mRenderingToWindow.size.rotx2(),
+        mRenderingToWindow.size.roty1(), mRenderingToWindow.size.roty2(),
+        mRenderingToWindow.size.xOff(), mRenderingToWindow.size.yOff(),
+        mRenderingToWindow.size.scale(),
+        mVScale };
+    }
+    else
+    {
+      cbPosSize = CBPosSize{
+        mSizeManager.rotx1(), mSizeManager.rotx2(),
+        mSizeManager.roty1(), mSizeManager.roty2(),
+        mSizeManager.xOff(), mSizeManager.yOff(),
+        mSizeManager.scale(),
+        mVScale };
+    }
+    
     mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
     mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
     mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
-    
-    if ( config.renderMainWindow() )
-    {
-      mImmediateContext->Dispatch( 5, 51, 1 );
-    }
+    mImmediateContext->Dispatch( 5, 51, 1 );
+
 
     uavs[0] = nullptr;
     uavs[1] = nullptr;
@@ -743,9 +760,11 @@ ImTextureID WinRenderer::DX11Renderer::renderBoard( int id, int width, int heigh
   return it->second.srv.Get();
 }
 
-void* WinRenderer::DX11Renderer::mainRenderingTexture()
+void* WinRenderer::DX11Renderer::mainRenderingTexture( int w, int h )
 {
-  return mSourceSRV.Get();
+  mRenderingToWindow.width = w;
+  mRenderingToWindow.height = h;
+  return mRenderingToWindow.srv.Get();
 }
 
 WinRenderer::DX11Renderer::Board WinRenderer::DX11Renderer::createBoard( int width, int height )
@@ -1032,4 +1051,49 @@ void WinRenderer::DX11Renderer::BoardFont::initialize( ID3D11Device* pDevice, ID
   D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
   V_THROW( pDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
   V_THROW( pDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
+}
+
+bool WinRenderer::DX11Renderer::Rendering::enabled() const
+{
+  return width != 0 && height != 0;
+}
+
+void WinRenderer::DX11Renderer::Rendering::update( WinRenderer::DX11Renderer& r )
+{
+  if ( width == 0 || height == 0 )
+  {
+    srv.ReleaseAndGetAddressOf();
+    uav.ReleaseAndGetAddressOf();
+    return;
+  }
+
+  if ( size.windowHeight() != height || ( size.windowWidth() != width ) || size.rotation() != r.mRotation )
+  {
+    size = SizeManager{ width, height, r.mRotation };
+
+    if ( !size )
+    {
+      srv.ReleaseAndGetAddressOf();
+      uav.ReleaseAndGetAddressOf();
+      return;
+    }
+
+    D3D11_TEXTURE2D_DESC desc{
+      (uint32_t)width,
+      (uint32_t)height,
+      1,
+      1,
+      DXGI_FORMAT_R8G8B8A8_UNORM,
+      { 1, 0 },
+      D3D11_USAGE_DEFAULT,
+      D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+      0,
+      0
+    };
+
+    ComPtr<ID3D11Texture2D> tex;
+    V_THROW( r.mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
+    V_THROW( r.mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
+    V_THROW( r.mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
+  }
 }

@@ -709,10 +709,25 @@ void Manager::drawDebugWindows( ImGuiIO& io )
 
   if ( mDebugWindows.mainRenderingWindow )
   {
-    ImGui::Begin( "Rendering", &mDebugWindows.mainRenderingWindow, ImGuiWindowFlags_AlwaysAutoResize );
-    auto tex = mRenderer->mainRenderingTexture();
-    ImGui::Image( tex, ImVec2{ 160.0f, 102.0f } );
+    static const float xpad = 4.0f;
+    static const float ypad = 4.0f + 19.0f;
+
+    ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
+
+    ImGui::Begin( "Rendering", &mDebugWindows.mainRenderingWindow, 0 );
+    auto size = ImGui::GetWindowSize();
+    size.x -= xpad;
+    size.y -= ypad;
+    if ( auto tex = mRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
+    {
+      ImGui::Image( tex, size );
+    }
     ImGui::End();
+    ImGui::PopStyleVar();
+  }
+  else
+  {
+    mRenderer->mainRenderingTexture( 0, 0 );
   }
 
   if ( !debugWindowCpu )
@@ -762,11 +777,6 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   }
 
   drawDebugWindows( io );
-}
-
-bool Manager::renderMainWindow()
-{
-  return !mDebugWindows.mainRenderingWindow;
 }
 
 void Manager::processLua( std::filesystem::path const& path )
