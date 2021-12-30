@@ -28,6 +28,7 @@ public:
   int64_t render( Manager & config );
   bool canRenderBoards() const;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
+  void* mainRenderingTexture();
 
 private:
 
@@ -104,6 +105,7 @@ private:
     virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
     virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
     virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
+    virtual void* mainRenderingTexture();
     virtual bool canRenderBoards() const;
 
     std::shared_ptr<IVideoSink> getVideoSink() const;
@@ -156,6 +158,7 @@ private:
     int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
     bool canRenderBoards() const override;
     void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
+    void* mainRenderingTexture() override;
 
   private:
 

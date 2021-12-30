@@ -305,6 +305,7 @@ bool Manager::mainMenu( ImGuiIO& io )
         ImGui::MenuItem( "CPU", "Ctrl+C", &debugWindowCpu );
         ImGui::MenuItem( "Disassembly", "Ctrl+D", &debugWindowDisasm );
         ImGui::MenuItem( "History", "Ctrl+H", &debugWindowHistory );
+        ImGui::MenuItem( "Main Rendering", "Ctrl+R", &mDebugWindows.mainRenderingWindow );
         if ( ImGui::BeginMenu( "Options" ) )
         {
           ImGui::MenuItem( "Break on BRK", nullptr, mInstance->debugCPU().flagBreakOnBRK() );
@@ -389,6 +390,10 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::IsKeyPressed( 'H' ) )
     {
       debugWindowHistory = 1 - debugWindowHistory;
+    }
+    if ( ImGui::IsKeyPressed( 'R' ) )
+    {
+      mDebugWindows.mainRenderingWindow = 1 - mDebugWindows.mainRenderingWindow;
     }
   }
 
@@ -695,6 +700,14 @@ void Manager::drawDebugWindows( ImGuiIO& io )
     renderBoard( *mDebugWindows.history );
     ImGui::End();
   }
+
+  if ( mDebugWindows.mainRenderingWindow )
+  {
+    ImGui::Begin( "Rendering", nullptr, ImGuiWindowFlags_AlwaysAutoResize );
+    auto tex = mRenderer->mainRenderingTexture();
+    ImGui::Image( tex, ImVec2{ 160.0f, 102.0f } );
+    ImGui::End();
+  }
 }
 
 void Manager::updateDebugWindows()
@@ -734,6 +747,11 @@ void Manager::drawGui( int left, int top, int right, int bottom )
   }
 
   drawDebugWindows( io );
+}
+
+bool Manager::renderMainWindow()
+{
+  return !mDebugWindows.mainRenderingWindow;
 }
 
 void Manager::processLua( std::filesystem::path const& path )

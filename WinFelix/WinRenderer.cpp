@@ -125,6 +125,11 @@ void* WinRenderer::renderBoard( int id, int width, int height, std::span<uint8_t
   return mRenderer->renderBoard( id, width, height, data );
 }
 
+void* WinRenderer::mainRenderingTexture()
+{
+  return mRenderer->mainRenderingTexture();
+}
+
 int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
   switch ( msg )
@@ -406,6 +411,11 @@ ImTextureID WinRenderer::BaseRenderer::renderBoard( int id, int width, int heigh
   return ImTextureID{};
 }
 
+void* WinRenderer::BaseRenderer::mainRenderingTexture()
+{
+  return ImTextureID{};
+}
+
 bool WinRenderer::BaseRenderer::canRenderBoards() const
 {
   return false;
@@ -521,7 +531,7 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   V_THROW( mD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
 
   D3D11_TEXTURE2D_DESC desc{};
-  desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
   desc.Width = 160;
   desc.Height = 102;
   desc.MipLevels = 1;
@@ -636,7 +646,11 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
     mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
     mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
     mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
-    mImmediateContext->Dispatch( 5, 51, 1 );
+    
+    if ( config.renderMainWindow() )
+    {
+      mImmediateContext->Dispatch( 5, 51, 1 );
+    }
 
     uavs[0] = nullptr;
     uavs[1] = nullptr;
@@ -727,6 +741,11 @@ ImTextureID WinRenderer::DX11Renderer::renderBoard( int id, int width, int heigh
 
   it->second.render( *this, data );
   return it->second.srv.Get();
+}
+
+void* WinRenderer::DX11Renderer::mainRenderingTexture()
+{
+  return mSourceSRV.Get();
 }
 
 WinRenderer::DX11Renderer::Board WinRenderer::DX11Renderer::createBoard( int width, int height )
