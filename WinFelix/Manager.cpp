@@ -682,6 +682,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
 {
   std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
 
+  ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
+
   bool debugWindowCpu = (bool)mDebugWindows.cpu;
   bool debugWindowDisasm = (bool)mDebugWindows.disasm;
   bool debugWindowHistory = (bool)mDebugWindows.history;
@@ -719,6 +721,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
     mDebugWindows.disasm.reset();
   if ( !debugWindowHistory )
     mDebugWindows.history.reset();
+
+  ImGui::PopStyleVar();
 }
 
 void Manager::updateDebugWindows()
