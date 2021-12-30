@@ -362,9 +362,8 @@ CpuBreakType Core::executeCPUAction()
   switch ( action )
   {
   case CPUAction::FETCH_OPCODE_RAM:
-    mCpu->respond( fetchRAM( req.address ) );
     mCurrentTick += fetchRAMTiming( req.address );
-    return req.cpuBreakType;
+    return mCpu->respondFetchOpcode( fetchRAM( req.address ) );
   case CPUAction::FETCH_OPERAND_RAM:
     mCpu->respond( readRAM( req.address ) );
     mCurrentTick += fetchRAMTiming( req.address );
@@ -378,9 +377,8 @@ CpuBreakType Core::executeCPUAction()
     mCurrentTick += writeTiming( req.address );
     break;
   case CPUAction::FETCH_OPCODE_KENREL:
-    mCpu->respond( readROM( req.address & 0x1ff, true ) );
     mCurrentTick += fetchROMTiming( req.address );
-    return req.cpuBreakType;
+    return mCpu->respondFetchOpcode( readROM( req.address & 0x1ff, true ) );
   case CPUAction::FETCH_OPERAND_KENREL:
     mCpu->respond( readROM( req.address & 0x1ff, false ) );
     mCurrentTick += fetchROMTiming( req.address );
@@ -396,8 +394,7 @@ CpuBreakType Core::executeCPUAction()
   case CPUAction::FETCH_OPCODE_SUZY:
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
-    mCpu->respond( readSuzy( req.address ) );
-    return req.cpuBreakType;
+    return mCpu->respondFetchOpcode( readSuzy( req.address ) );
   case CPUAction::FETCH_OPERAND_SUZY:
     [[fallthrough]];
   case CPUAction::READ_SUZY:
@@ -413,8 +410,7 @@ CpuBreakType Core::executeCPUAction()
   case CPUAction::FETCH_OPCODE_MIKEY:
     //no code in Suzy napespace. Should trigger emulation break
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
-    mCpu->respond( readMikey( req.address ) );
-    return req.cpuBreakType;
+    return mCpu->respondFetchOpcode( readMikey( req.address ) );
   case CPUAction::FETCH_OPERAND_MIKEY:
     [[fallthrough]];
   case CPUAction::READ_MIKEY:

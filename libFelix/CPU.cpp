@@ -96,7 +96,7 @@ CPUState & CPU::state()
 }
 
 CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{ CPUState::reset() }, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, mHistory{}, mHistoryPresent{}, off{},
-  mPostponedStepOut{}, mStackBreakCondition{ 0xffff }
+  mPostponedStepOut{}, mStackBreakCondition{ 0xffff }, mBreakOnBrk{ false }
 {
   static constexpr char prototype[] = "PC:ffff A:ff X:ff Y:ff S:1ff P=NVDIZC ";
   memcpy( &buf[0], prototype, sizeof prototype );
@@ -141,9 +141,20 @@ void CPU::clearBreak()
   mStackBreakCondition = 0xffff;
 }
 
+bool* CPU::flagBreakOnBRK()
+{
+  return &mBreakOnBrk;
+}
+
 void CPU::respond( uint8_t value )
 {
   mRes.value = value;
+}
+
+CpuBreakType CPU::respondFetchOpcode( uint8_t value )
+{
+  mRes.value = value;
+  return mReq.cpuBreakType;
 }
 
 void CPU::assertInterrupt( int mask )
@@ -1802,8 +1813,21 @@ CPU::Execute CPU::execute()
       else
       {
         //on state.interrupt PC should point to interrupted instruction
-        //on BRK should after past BRK argument
-        state.pc += state.interrupt ? -1 : 1;
+        if ( state.interrupt )
+        {
+          state.pc -= 1;
+        }
+        //on BRK PC should point past BRK argument
+        else
+        {
+          state.pc += 1;
+        }
+        //BRK is treated as NOP if mBreakOnBrk is true
+        if ( mBreakOnBrk )
+        {
+          mReq.cpuBreakType = CpuBreakType::BRK_INSTRUCTION;
+          break;
+        }
         co_await write( state.s, state.pch );
         state.sl--;
         co_await write( state.s, state.pcl );
@@ -2640,7 +2664,6 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::IMP_TXA:
   case Opcode::IMP_TXS:
   case Opcode::IMP_TYA:
-  case Opcode::BRK_BRK:
   case Opcode::RTI_RTI:
   case Opcode::RTS_RTS:
   case Opcode::PHR_PHA:
@@ -2936,6 +2959,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_2_82:
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
+  case Opcode::BRK_BRK:
   {
     int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "#$" );;
@@ -3366,7 +3390,6 @@ void CPU::trace2()
   case Opcode::IMP_TXA:
   case Opcode::IMP_TXS:
   case Opcode::IMP_TYA:
-  case Opcode::BRK_BRK:
   case Opcode::RTI_RTI:
   case Opcode::RTS_RTS:
   case Opcode::PHR_PHA:
@@ -3397,6 +3420,7 @@ void CPU::trace2()
   case Opcode::UND_2_82:
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
+  case Opcode::BRK_BRK:
     off += sprintf( buf.data() + off, "#$%02x", mState.eal );
     break;
   case Opcode::BRL_BCC:

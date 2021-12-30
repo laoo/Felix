@@ -180,17 +180,9 @@ void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingT
 
     auto cpuBreakType = instance->advanceAudio( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, mRunMode.load() );
 
-    switch ( cpuBreakType )
+    if ( cpuBreakType != CpuBreakType::NEXT )
     {
-    case CpuBreakType::STEP_IN:
-      [[fallthrough]];
-    case CpuBreakType::STEP_OUT:
-      [[fallthrough]];
-    case CpuBreakType::STEP_OVER:
       mRunMode.store( RunMode::PAUSE );
-      break;
-    default:
-      break;
     }
 
     BYTE *pData;

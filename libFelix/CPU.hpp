@@ -62,8 +62,10 @@ public:
   //clears any step triggers previously set
   void clearBreak();
 
+  bool* flagBreakOnBRK();
 
   void respond( uint8_t value );
+  CpuBreakType respondFetchOpcode( uint8_t value );
   void assertInterrupt( int mask );
   void desertInterrupt( int mask );
   int interruptedMask() const;
@@ -205,5 +207,6 @@ private:
   //true if mStackBreakCondition is valid for CpuBreakType::STEP_OUT
   bool mPostponedStepOut;
   uint16_t mStackBreakCondition;
+  bool mBreakOnBrk;
 };
 

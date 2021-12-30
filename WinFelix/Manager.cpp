@@ -305,6 +305,11 @@ bool Manager::mainMenu( ImGuiIO& io )
         ImGui::MenuItem( "CPU", "Ctrl+C", &debugWindowCpu );
         ImGui::MenuItem( "Disassembly", "Ctrl+D", &debugWindowDisasm );
         ImGui::MenuItem( "History", "Ctrl+H", &debugWindowHistory );
+        if ( ImGui::BeginMenu( "Options" ) )
+        {
+          ImGui::MenuItem( "Break on BRK", nullptr, mInstance->debugCPU().flagBreakOnBRK() );
+          ImGui::EndMenu();
+        }
         ImGui::EndMenu();
       }
     }

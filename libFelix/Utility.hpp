@@ -28,7 +28,9 @@ enum class CpuBreakType
   //CPU break if CPU did not go into a subroutine in a response to RunMode::STEP_OVER
   STEP_OVER,
   //CPU break if CPU goes out from a subroutine in a response to RunMode::STEP_OUT
-  STEP_OUT
+  STEP_OUT,
+  //CPU break on brk instruction
+  BRK_INSTRUCTION
 };
 
 enum class RunMode
