@@ -981,19 +981,8 @@ void WinRenderer::DX11Renderer::Board::update( WinRenderer::DX11Renderer & r, in
     0
   };
 
-  std::vector<uint32_t> buf;
-  buf.resize( w * r.mBoardFont.width * h * r.mBoardFont.height, ~0 );
-
-  uint32_t seed = 3459173429;
-  for ( size_t i = 0; i < buf.size(); ++i )
-  {
-    buf[i] = seed;
-    seed += 910230123;
-  }
-
-  D3D11_SUBRESOURCE_DATA data{ buf.data(), w * r.mBoardFont.width * sizeof( uint32_t ), 0 };
   ComPtr<ID3D11Texture2D> tex;
-  V_THROW( r.mD3DDevice->CreateTexture2D( &desc, &data, tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( r.mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
   V_THROW( r.mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
   V_THROW( r.mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
 
