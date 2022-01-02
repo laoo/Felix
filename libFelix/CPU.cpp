@@ -945,7 +945,7 @@ CPU::Execute CPU::execute()
     case Opcode::RAB_SBC:
       ++state.pc;
       state.eah = co_await fetchOperand( state.pc++ );
-      state.m1 = co_await read( state.ea );      
+      state.m1 = co_await read( state.ea );
       state.sbc( state.m1 );
       if ( state.d )
       {
@@ -1369,7 +1369,7 @@ CPU::Execute CPU::execute()
       co_await read( state.ea );
       state.t += state.x;
       state.eal = co_await read( state.t++ );
-      state.eah = co_await read( state.t );      
+      state.eah = co_await read( state.t );
       state.pc = state.ea;
       break;
     case Opcode::JMI_JMP:
