@@ -2720,7 +2720,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     out[0] = '$';
     out[1] = hexTab[data >> 4];
-    out[2] = hexTab[data & 0x04];
+    out[2] = hexTab[data & 0x0f];
     out[3] = 0;
     return 4;
   }
@@ -2749,7 +2749,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     out[0] = '$';
     out[1] = hexTab[data >> 4];
-    out[2] = hexTab[data & 0x04];
+    out[2] = hexTab[data & 0x0f];
     *(uint32_t*)&out[3] = l4(",x");
     return 6;
   }
@@ -2759,7 +2759,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     out[0] = '$';
     out[1] = hexTab[data >> 4];
-    out[2] = hexTab[data & 0x04];
+    out[2] = hexTab[data & 0x0f];
     *(uint32_t*)&out[3] = l4( ",y" );
     return 6;
   }
@@ -2775,7 +2775,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "($" );
     out[2] = hexTab[data >> 4];
-    out[3] = hexTab[data & 0x04];
+    out[3] = hexTab[data & 0x0f];
     *(uint16_t*)&out[4] = l2( ")" );
     return 6;
   }
@@ -2791,7 +2791,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "($" );
     out[3] = hexTab[data >> 4];
-    out[4] = hexTab[data & 0x04];
+    out[4] = hexTab[data & 0x0f];
     *(uint32_t*)&out[4] = l4( ",x)" );;
     return 7;
   }
@@ -2807,7 +2807,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "($" );
     out[2] = hexTab[data >> 4];
-    out[3] = hexTab[data & 0x04];
+    out[3] = hexTab[data & 0x0f];
     *(uint32_t*)&out[4] = l4( "),y" );;
     return 7;
   }
@@ -2964,7 +2964,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     *(uint16_t*)&out[0] = l2( "#$" );;
     out[2] = hexTab[data >> 4];
-    out[3] = hexTab[data & 0x04];
+    out[3] = hexTab[data & 0x0f];
     out[4] = 0;
     return 5;
   }
@@ -3009,7 +3009,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int zp = ram[pc];
     out[0] = '#';
     out[1] = hexTab[zp >> 4];
-    out[2] = hexTab[zp & 0x04];
+    out[2] = hexTab[zp & 0x0f];
     out[4] = ',';
 
     int data = ram[pc + 1];
