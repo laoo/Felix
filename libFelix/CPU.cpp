@@ -2035,6 +2035,7 @@ void CPU::disassemblyFromPC( uint8_t const* ram, char* out, int columns, int row
   int pc = mState.pc;
 
   memset( out, ' ', rows * columns );
+  out[rows * columns - 1] = 0;
 
   for ( size_t i = 0; i < rows; ++i )
   {
@@ -2043,10 +2044,9 @@ void CPU::disassemblyFromPC( uint8_t const* ram, char* out, int columns, int row
     base[1] = hexTab[(pc >> 8) & 0xf];
     base[2] = hexTab[(pc >> 4) & 0xf];
     base[3] = hexTab[pc & 0xf];
-    base[4] = ' ';
 
-    int off = disasmOp( base + 5, (Opcode)ram[pc] );
-    disasmOpr( ram, (char*)base + 5 + off, pc );
+    (void)disasmOp( base + 5, (Opcode)ram[pc] );
+    disasmOpr( ram, (char*)base + 5 + 5, pc );
   }
 }
 
@@ -2346,55 +2346,55 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
     *(uint32_t*)out = l4( "jsr " );
     return 4;
   case Opcode::IMP_CLC:
-    *(uint32_t*)out = l4( "clc" );
+    *(uint32_t*)out = l4( "clc " );
     return 4;
   case Opcode::IMP_CLD:
-    *(uint32_t*)out = l4( "cld" );
+    *(uint32_t*)out = l4( "cld " );
     return 4;
   case Opcode::IMP_CLI:
-    *(uint32_t*)out = l4( "cli" );
+    *(uint32_t*)out = l4( "cli " );
     return 4;
   case Opcode::IMP_CLV:
-    *(uint32_t*)out = l4( "clv" );
+    *(uint32_t*)out = l4( "clv " );
     return 4;
   case Opcode::IMP_DEX:
-    *(uint32_t*)out = l4( "dex" );
+    *(uint32_t*)out = l4( "dex " );
     return 4;
   case Opcode::IMP_DEY:
-    *(uint32_t*)out = l4( "dey" );
+    *(uint32_t*)out = l4( "dey " );
     return 4;
   case Opcode::IMP_INX:
-    *(uint32_t*)out = l4( "inx" );
+    *(uint32_t*)out = l4( "inx " );
     return 4;
   case Opcode::IMP_INY:
-    *(uint32_t*)out = l4( "iny" );
+    *(uint32_t*)out = l4( "iny " );
     return 4;
   case Opcode::IMP_SEC:
-    *(uint32_t*)out = l4( "sec" );
+    *(uint32_t*)out = l4( "sec " );
     return 4;
   case Opcode::IMP_SED:
-    *(uint32_t*)out = l4( "sed" );
+    *(uint32_t*)out = l4( "sed " );
     return 4;
   case Opcode::IMP_SEI:
-    *(uint32_t*)out = l4( "sei" );
+    *(uint32_t*)out = l4( "sei " );
     return 4;
   case Opcode::IMP_TAX:
-    *(uint32_t*)out = l4( "tax" );
+    *(uint32_t*)out = l4( "tax " );
     return 4;
   case Opcode::IMP_TAY:
-    *(uint32_t*)out = l4( "tay" );
+    *(uint32_t*)out = l4( "tay " );
     return 4;
   case Opcode::IMP_TSX:
-    *(uint32_t*)out = l4( "tsx" );
+    *(uint32_t*)out = l4( "tsx " );
     return 4;
   case Opcode::IMP_TXA:
-    *(uint32_t*)out = l4( "txa" );
+    *(uint32_t*)out = l4( "txa " );
     return 4;
   case Opcode::IMP_TXS:
-    *(uint32_t*)out = l4( "txs" );
+    *(uint32_t*)out = l4( "txs " );
     return 4;
   case Opcode::IMP_TYA:
-    *(uint32_t*)out = l4( "tya" );
+    *(uint32_t*)out = l4( "tya " );
     return 4;
   case Opcode::BRL_BCC:
     *(uint32_t*)out = l4( "bcc " );
@@ -2508,44 +2508,44 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
       }
       else
       {
-        *(uint32_t*)out = l4( "brk" );
+        *(uint32_t*)out = l4( "brk " );
         return 4;
       }
     }
     else
     {
-      *(uint32_t*)out = l4( "brk" );
+      *(uint32_t*)out = l4( "brk " );
       return 4;
     }
   case Opcode::RTI_RTI:
-    *(uint32_t*)out = l4( "rti" );
+    *(uint32_t*)out = l4( "rti " );
     return 4;
   case Opcode::RTS_RTS:
-    *(uint32_t*)out = l4( "rts" );
+    *(uint32_t*)out = l4( "rts " );
     return 4;
   case Opcode::PHR_PHA:
-    *(uint32_t*)out = l4( "pha" );
+    *(uint32_t*)out = l4( "pha " );
     return 4;
   case Opcode::PHR_PHP:
-    *(uint32_t*)out = l4( "php" );
+    *(uint32_t*)out = l4( "php " );
     return 4;
   case Opcode::PHR_PHX:
-    *(uint32_t*)out = l4( "phx" );
+    *(uint32_t*)out = l4( "phx " );
     return 4;
   case Opcode::PHR_PHY:
-    *(uint32_t*)out = l4( "phy" );
+    *(uint32_t*)out = l4( "phy " );
     return 4;
   case Opcode::PLR_PLA:
-    *(uint32_t*)out = l4( "pla" );
+    *(uint32_t*)out = l4( "pla " );
     return 4;
   case Opcode::PLR_PLP:
-    *(uint32_t*)out = l4( "plp" );
+    *(uint32_t*)out = l4( "plp " );
     return 4;
   case Opcode::PLR_PLX:
-    *(uint32_t*)out = l4( "plx" );
+    *(uint32_t*)out = l4( "plx " );
     return 4;
   case Opcode::PLR_PLY:
-    *(uint32_t*)out = l4( "ply" );
+    *(uint32_t*)out = l4( "ply " );
     return 4;
   case Opcode::IMP_NOP:
   case Opcode::UND_1_03:
@@ -2580,7 +2580,7 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::UND_1_db:
   case Opcode::UND_1_eb:
   case Opcode::UND_1_fb:
-    *(uint32_t*)out = l4( "nop" );
+    *(uint32_t*)out = l4( "nop " );
     return 4;
   case Opcode::UND_2_02:
   case Opcode::UND_2_22:
@@ -2606,6 +2606,8 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
 int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
 {
   Opcode op = (Opcode)ram[pc++];
+  char *dst = out;
+
   switch ( op )
   {
   case Opcode::UND_1_03:
@@ -2717,12 +2719,17 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::WZP_STZ:
   case Opcode::UND_3_44:
   {
-    int data = ram[pc++];
-    out[0] = '$';
-    out[1] = hexTab[data >> 4];
-    out[2] = hexTab[data & 0x0f];
-    out[3] = 0;
-    return 4;
+    int zp = ram[pc++];
+    *dst++ = '$';
+    *dst++ = hexTab[zp >> 4];
+    *dst++ = hexTab[zp & 0x0f];
+    dst = &out[15];
+    *dst++ = ';';
+    *dst++ = '=';
+    *dst++ = '$';
+    *dst++ = hexTab[ram[zp] >> 4];
+    *dst++ = hexTab[ram[zp] & 0xf];
+    return  (int)(dst - out);
   }
   case Opcode::RZX_LDA:
   case Opcode::RZX_LDY:
@@ -2746,22 +2753,39 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_4_d4:
   case Opcode::UND_4_f4:
   {
-    int data = ram[pc++];
-    out[0] = '$';
-    out[1] = hexTab[data >> 4];
-    out[2] = hexTab[data & 0x0f];
-    *(uint32_t*)&out[3] = l4(",x");
-    return 6;
+    int zp = ram[pc++];
+    *dst++ = '$';
+    *dst++ = hexTab[zp >> 4];
+    *dst++ = hexTab[zp & 0x0f];
+    *dst++ = ',';
+    *dst++ = 'x';
+    dst = &out[15];
+    *dst++ = ';';
+    *dst++ = '=';
+    *dst++ = '$';
+    *dst++ = hexTab[ram[(zp + mState.x) & 0xff] >> 4];
+    *dst++ = hexTab[ram[(zp + mState.x) & 0xff] & 0xf];
+    return  (int)(dst - out);
   }
   case Opcode::RZY_LDX:
   case Opcode::WZY_STX:
   {
     int data = ram[pc++];
-    out[0] = '$';
-    out[1] = hexTab[data >> 4];
-    out[2] = hexTab[data & 0x0f];
-    *(uint32_t*)&out[3] = l4( ",y" );
-    return 6;
+    *dst++ = '$';
+    *dst++ = hexTab[data >> 4];
+    *dst++ = hexTab[data & 0x0f];
+    *dst++ = ',';
+    *dst++ = 'y';
+    dst = &out[15];
+    *dst++ = ';';
+    *dst++ = '$';
+    *dst++ = hexTab[((data+mState.y) >> 4) & 0xf];
+    *dst++ = hexTab[(data + mState.y) & 0xf];
+    *dst++ = '=';
+    *dst++ = '#';
+    *dst++ = hexTab[ram[(data + mState.y) & 0xff] >> 4];
+    *dst++ = hexTab[ram[(data + mState.y) & 0xff] & 0xf];
+    return (int)(dst - out);
   }
   case Opcode::RIN_LDA:
   case Opcode::RIN_AND:
@@ -2773,11 +2797,19 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::WIN_STA:
   {
     int data = ram[pc++];
-    *(uint16_t*)&out[0] = l2( "($" );
-    out[2] = hexTab[data >> 4];
-    out[3] = hexTab[data & 0x0f];
-    *(uint16_t*)&out[4] = l2( ")" );
-    return 6;
+    *dst++ = '(';
+    *dst++ = '$';
+    *dst++ = hexTab[data >> 4];
+    *dst++ = hexTab[data & 0x0f];
+    *dst++ = ')';
+    dst = &out[15];
+    *dst++ = ';';
+    *dst++ = '$';
+    *dst++ = hexTab[ram[data + 1] >> 4];
+    *dst++ = hexTab[ram[data + 1] & 0xf];
+    *dst++ = hexTab[ram[data] >> 4];
+    *dst++ = hexTab[ram[data] & 0xf];
+    return (int)(dst - out);
   }
   case Opcode::RIX_AND:
   case Opcode::RIX_CMP:
@@ -2789,11 +2821,14 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::WIX_STA:
   {
     int data = ram[pc++];
-    *(uint16_t*)&out[0] = l2( "($" );
-    out[3] = hexTab[data >> 4];
-    out[4] = hexTab[data & 0x0f];
-    *(uint32_t*)&out[4] = l4( ",x)" );;
-    return 7;
+    *dst++ = '(';
+    *dst++ = '$';
+    *dst++ = hexTab[data >> 4];
+    *dst++ = hexTab[data & 0x0f];
+    *dst++ = ',';
+    *dst++ = 'x';
+    *dst++ = ')';
+    return (int)(dst - out);
   }
   case Opcode::RIY_AND:
   case Opcode::RIY_CMP:
@@ -2805,11 +2840,14 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::WIY_STA:
   {
     int data = ram[pc++];
-    *(uint16_t*)&out[0] = l2( "($" );
-    out[2] = hexTab[data >> 4];
-    out[3] = hexTab[data & 0x0f];
-    *(uint32_t*)&out[4] = l4( "),y" );;
-    return 7;
+    *dst++ = '(';
+    *dst++ = '$';
+    *dst++ = hexTab[data >> 4];
+    *dst++ = hexTab[data & 0x0f];
+    *dst++ = ')';
+    *dst++ = ',';
+    *dst++ = 'y';
+    return (int)(dst - out);
   }
   case Opcode::RAB_AND:
   case Opcode::RAB_BIT:
@@ -2846,13 +2884,11 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
-    char* dst = out;
     while ( *txt )
     {
       *dst++ = *txt++;
     };
-    *dst++ = 0;
-    return (int)( dst - out );
+    return (int)(dst - out);
   }
   case Opcode::RAX_AND:
   case Opcode::RAX_BIT:
@@ -2877,13 +2913,13 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
-    char* dst = out;
     while ( *txt )
     {
       *dst++ = *txt++;
     };
-    *(uint32_t*)dst = l4( ",x" );;
-    return (int)( dst + 3 - out );
+    *dst++ = ',';
+    *dst++ = 'x';
+    return (int)( dst - out );
   }
   case Opcode::RAY_AND:
   case Opcode::RAY_CMP:
@@ -2900,13 +2936,13 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
-    char* dst = out;
     while ( *txt )
     {
       *dst++ = *txt++;
     };
-    *(uint32_t*)dst = l4( ",y" );;
-    return (int)( dst + 3 - out );
+    *dst++ = ',';
+    *dst++ = 'y';
+    return (int)( dst - out );
   }
   case Opcode::JMX_JMP:
   {
@@ -2915,14 +2951,15 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
-    char* dst = out;
     *dst++ = '(';
     while ( *txt )
     {
       *dst++ = *txt++;
     };
-    *(uint32_t*)dst = l4( ",x)" );;
-    return (int)( dst + 4 - out );
+    *dst++ = ',';
+    *dst++ = 'x';
+    *dst++ = ')';
+    return (int)( dst - out );
   }
   case Opcode::JMI_JMP:
   {
@@ -2931,14 +2968,23 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = lo + ( hi << 8 );
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( data );
-    char* dst = out;
     *dst++ = '(';
     while ( *txt )
     {
       *dst++ = *txt++;
     };
-    *(uint16_t*)dst = l2( ")" );;
-    return (int)( dst + 2 - out );
+    *dst++ = ')';
+    dst = &out[15];
+    *dst++ = ';';
+    *dst++ = '=';
+    *dst++ = '$';
+    lo = ram[data];
+    hi = ram[data + 1];
+    *dst++ = hexTab[hi >> 4];
+    *dst++ = hexTab[hi & 0x0f];
+    *dst++ = hexTab[lo >> 4];
+    *dst++ = hexTab[lo & 0x0f];
+    return (int)( dst - out );
   }
   case Opcode::IMM_AND:
   case Opcode::IMM_BIT:
@@ -2962,11 +3008,11 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::BRK_BRK:
   {
     int data = ram[pc++];
-    *(uint16_t*)&out[0] = l2( "#$" );;
-    out[2] = hexTab[data >> 4];
-    out[3] = hexTab[data & 0x0f];
-    out[4] = 0;
-    return 5;
+    *dst++ = '#';
+    *dst++ = '$';
+    *dst++ = hexTab[data >> 4];
+    *dst++ = hexTab[data & 0x0f];
+    return (int)(dst - out);
   }
   case Opcode::BRL_BCC:
   case Opcode::BRL_BCS:
@@ -2981,12 +3027,10 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     int dest = pc + (int8_t)data;
     char const* txt = mTraceHelper->addressLabel( dest );
-    char* dst = out;
     while ( *txt )
     {
       *dst++ = *txt++;
-    };
-    *dst++ = 0;
+    }
     return (int)( dst - out );
   }
   case Opcode::BZR_BBR0:
@@ -3007,21 +3051,27 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::BZR_BBS7:
   {
     int zp = ram[pc];
-    out[0] = '#';
-    out[1] = hexTab[zp >> 4];
-    out[2] = hexTab[zp & 0x0f];
-    out[4] = ',';
+
+    *dst++ = '$';
+    *dst++ = hexTab[zp >> 4];
+    *dst++ = hexTab[zp & 0x0f];
+    *dst++ = ',';
 
     int data = ram[pc + 1];
     pc += 2;
     int dest = pc + (int8_t)data;
     char const* txt = mTraceHelper->addressLabel( dest );
-    char* dst = out + 5;
+
     while ( *txt )
     {
       *dst++ = *txt++;
     };
-    *dst++ = 0;
+    dst = &out[15];
+    *dst++ = ';';
+    *dst++ = '=';
+    *dst++ = '$';
+    *dst++ = hexTab[ram[zp] >> 4];
+    *dst++ = hexTab[ram[zp] & 0xf];
     return (int)( dst - out );
   }
   default:
