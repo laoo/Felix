@@ -2073,7 +2073,7 @@ void CPU::copyHistory( std::span<char> out )
     mHistory->copy( out );
 }
 
-int CPU::disasmOp( char * out, Opcode op, CPUState* state )
+void CPU::disasmOp( char * out, Opcode op, CPUState* state )
 {
   switch ( op )
   {
@@ -2087,14 +2087,14 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::RAY_AND:
   case Opcode::IMM_AND:
     *(uint32_t*)out = l4( "and " );
-    return 4;
+    break;
   case Opcode::RZP_BIT:
   case Opcode::RZX_BIT:
   case Opcode::RAB_BIT:
   case Opcode::RAX_BIT:
   case Opcode::IMM_BIT:
     *(uint32_t*)out = l4( "bit ");
-    return 4;
+    break;
   case Opcode::RZP_CMP:
   case Opcode::RZX_CMP:
   case Opcode::RIN_CMP:
@@ -2105,17 +2105,17 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::RAY_CMP:
   case Opcode::IMM_CMP:
     *(uint32_t*)out = l4( "cmp " );
-    return 4;
+    break;
   case Opcode::RZP_CPX:
   case Opcode::RAB_CPX:
   case Opcode::IMM_CPX:
     *(uint32_t*)out = l4( "cpx " );
-    return 4;
+    break;
   case Opcode::RZP_CPY:
   case Opcode::RAB_CPY:
   case Opcode::IMM_CPY:
     *(uint32_t*)out = l4( "cpy " );
-    return 4;
+    break;
   case Opcode::RZP_EOR:
   case Opcode::RZX_EOR:
   case Opcode::RIN_EOR:
@@ -2126,7 +2126,7 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::RAY_EOR:
   case Opcode::IMM_EOR:
     *(uint32_t*)out = l4( "eor " );
-    return 4;
+    break;
   case Opcode::RZP_LDA:
   case Opcode::RZX_LDA:
   case Opcode::RIN_LDA:
@@ -2137,21 +2137,21 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::RAY_LDA:
   case Opcode::IMM_LDA:
     *(uint32_t*)out = l4( "lda " );
-    return 4;
+    break;
   case Opcode::RZP_LDX:
   case Opcode::RZY_LDX:
   case Opcode::RAB_LDX:
   case Opcode::RAY_LDX:
   case Opcode::IMM_LDX:
     *(uint32_t*)out = l4( "ldx " );
-    return 4;
+    break;
   case Opcode::RZP_LDY:
   case Opcode::RZX_LDY:
   case Opcode::RAB_LDY:
   case Opcode::RAX_LDY:
   case Opcode::IMM_LDY:
     *(uint32_t*)out = l4( "ldy " );
-    return 4;
+    break;
   case Opcode::RZP_ORA:
   case Opcode::RZX_ORA:
   case Opcode::RIN_ORA:
@@ -2162,7 +2162,7 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::RAY_ORA:
   case Opcode::IMM_ORA:
     *(uint32_t*)out = l4( "ora " );
-    return 4;
+    break;
   case Opcode::RZP_ADC:
   case Opcode::RZX_ADC:
   case Opcode::RIN_ADC:
@@ -2173,7 +2173,7 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::RAY_ADC:
   case Opcode::IMM_ADC:
     *(uint32_t*)out = l4( "adc " );
-    return 4;
+    break;
   case Opcode::RZP_SBC:
   case Opcode::RZX_SBC:
   case Opcode::RIN_SBC:
@@ -2184,7 +2184,7 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::RAY_SBC:
   case Opcode::IMM_SBC:
     *(uint32_t*)out = l4( "sbc " );
-    return 4;
+    break;
   case Opcode::WZP_STA:
   case Opcode::WZX_STA:
   case Opcode::WIN_STA:
@@ -2194,299 +2194,299 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::WAX_STA:
   case Opcode::WAY_STA:
     *(uint32_t*)out = l4( "sta " );
-    return 4;
+    break;
   case Opcode::WZP_STX:
   case Opcode::WZY_STX:
   case Opcode::WAB_STX:
     *(uint32_t*)out = l4( "stx " );
-    return 4;
+    break;
   case Opcode::WZP_STY:
   case Opcode::WZX_STY:
   case Opcode::WAB_STY:
     *(uint32_t*)out = l4( "sty " );
-    return 4;
+    break;
   case Opcode::WZP_STZ:
   case Opcode::WZX_STZ:
   case Opcode::WAB_STZ:
   case Opcode::WAX_STZ:
     *(uint32_t*)out = l4( "stz " );
-    return 4;
+    break;
   case Opcode::MZP_ASL:
   case Opcode::MZX_ASL:
   case Opcode::MAB_ASL:
   case Opcode::MAX_ASL:
     *(uint32_t*)out = l4( "asl " );
-    return 4;
+    break;
   case Opcode::IMP_ASL:
     *(uint32_t*)out = l4( "asl" );
-    return 4;
+    break;
   case Opcode::MZP_DEC:
   case Opcode::MZX_DEC:
   case Opcode::MAB_DEC:
   case Opcode::MAX_DEC:
     *(uint32_t*)out = l4( "dec " );
-    return 4;
+    break;
   case Opcode::IMP_DEC:
     *(uint32_t*)out = l4( "dec" );
-    return 4;
+    break;
   case Opcode::MZP_INC:
   case Opcode::MZX_INC:
   case Opcode::MAB_INC:
   case Opcode::MAX_INC:
     *(uint32_t*)out = l4( "inc " );
-    return 4;
+    break;
   case Opcode::IMP_INC:
     *(uint32_t*)out = l4( "inc" );
-    return 4;
+    break;
   case Opcode::MZP_LSR:
   case Opcode::MZX_LSR:
   case Opcode::MAB_LSR:
   case Opcode::MAX_LSR:
     *(uint32_t*)out = l4( "lsr " );
-    return 4;
+    break;
   case Opcode::IMP_LSR:
     *(uint32_t*)out = l4( "lsr" );
-    return 4;
+    break;
   case Opcode::MZP_ROL:
   case Opcode::MZX_ROL:
   case Opcode::MAB_ROL:
   case Opcode::MAX_ROL:
     *(uint32_t*)out = l4( "rol " );
-    return 4;
+    break;
   case Opcode::IMP_ROL:
     *(uint32_t*)out = l4( "rol" );
-    return 4;
+    break;
   case Opcode::MZP_ROR:
   case Opcode::MZX_ROR:
   case Opcode::MAB_ROR:
   case Opcode::MAX_ROR:
     *(uint32_t*)out = l4( "ror " );
-    return 4;
+    break;
   case Opcode::IMP_ROR:
     *(uint32_t*)out = l4( "ror" );
-    return 4;
+    break;
   case Opcode::MZP_TRB:
   case Opcode::MAB_TRB:
     *(uint32_t*)out = l4( "trb " );
-    return 4;
+    break;
   case Opcode::MZP_TSB:
   case Opcode::MAB_TSB:
     *(uint32_t*)out = l4( "tsb " );
-    return 4;
+    break;
   case Opcode::MZP_RMB0:
     *(uint32_t*)out = l4( "rmb0" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_RMB1:
     *(uint32_t*)out = l4( "rmb1" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_RMB2:
     *(uint32_t*)out = l4( "rmb2" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_RMB3:
     *(uint32_t*)out = l4( "rmb3" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_RMB4:
     *(uint32_t*)out = l4( "rmb4" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_RMB5:
     *(uint32_t*)out = l4( "rmb5" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_RMB6:
     *(uint32_t*)out = l4( "rmb6" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_RMB7:
     *(uint32_t*)out = l4( "rmb7" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB0:
     *(uint32_t*)out = l4( "smb0" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB1:
     *(uint32_t*)out = l4( "smb1" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB2:
     *(uint32_t*)out = l4( "smb2" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB3:
     *(uint32_t*)out = l4( "smb3" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB4:
     *(uint32_t*)out = l4( "smb4" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB5:
     *(uint32_t*)out = l4( "smb5" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB6:
     *(uint32_t*)out = l4( "smb6" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::MZP_SMB7:
     *(uint32_t*)out = l4( "smb7" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::JMA_JMP:
   case Opcode::JMX_JMP:
   case Opcode::JMI_JMP:
     *(uint32_t*)out = l4( "jmp " );
-    return 4;
+    break;
   case Opcode::JSA_JSR:
     *(uint32_t*)out = l4( "jsr " );
-    return 4;
+    break;
   case Opcode::IMP_CLC:
     *(uint32_t*)out = l4( "clc " );
-    return 4;
+    break;
   case Opcode::IMP_CLD:
     *(uint32_t*)out = l4( "cld " );
-    return 4;
+    break;
   case Opcode::IMP_CLI:
     *(uint32_t*)out = l4( "cli " );
-    return 4;
+    break;
   case Opcode::IMP_CLV:
     *(uint32_t*)out = l4( "clv " );
-    return 4;
+    break;
   case Opcode::IMP_DEX:
     *(uint32_t*)out = l4( "dex " );
-    return 4;
+    break;
   case Opcode::IMP_DEY:
     *(uint32_t*)out = l4( "dey " );
-    return 4;
+    break;
   case Opcode::IMP_INX:
     *(uint32_t*)out = l4( "inx " );
-    return 4;
+    break;
   case Opcode::IMP_INY:
     *(uint32_t*)out = l4( "iny " );
-    return 4;
+    break;
   case Opcode::IMP_SEC:
     *(uint32_t*)out = l4( "sec " );
-    return 4;
+    break;
   case Opcode::IMP_SED:
     *(uint32_t*)out = l4( "sed " );
-    return 4;
+    break;
   case Opcode::IMP_SEI:
     *(uint32_t*)out = l4( "sei " );
-    return 4;
+    break;
   case Opcode::IMP_TAX:
     *(uint32_t*)out = l4( "tax " );
-    return 4;
+    break;
   case Opcode::IMP_TAY:
     *(uint32_t*)out = l4( "tay " );
-    return 4;
+    break;
   case Opcode::IMP_TSX:
     *(uint32_t*)out = l4( "tsx " );
-    return 4;
+    break;
   case Opcode::IMP_TXA:
     *(uint32_t*)out = l4( "txa " );
-    return 4;
+    break;
   case Opcode::IMP_TXS:
     *(uint32_t*)out = l4( "txs " );
-    return 4;
+    break;
   case Opcode::IMP_TYA:
     *(uint32_t*)out = l4( "tya " );
-    return 4;
+    break;
   case Opcode::BRL_BCC:
     *(uint32_t*)out = l4( "bcc " );
-    return 4;
+    break;
   case Opcode::BRL_BCS:
     *(uint32_t*)out = l4( "bcs " );
-    return 4;
+    break;
   case Opcode::BRL_BEQ:
     *(uint32_t*)out = l4( "beq " );
-    return 4;
+    break;
   case Opcode::BRL_BMI:
     *(uint32_t*)out = l4( "bmi " );
-    return 4;
+    break;
   case Opcode::BRL_BNE:
     *(uint32_t*)out = l4( "bne " );
-    return 4;
+    break;
   case Opcode::BRL_BPL:
     *(uint32_t*)out = l4( "bpl " );
-    return 4;
+    break;
   case Opcode::BRL_BRA:
     *(uint32_t*)out = l4( "bra " );
-    return 4;
+    break;
   case Opcode::BRL_BVC:
     *(uint32_t*)out = l4( "bvc " );
-    return 4;
+    break;
   case Opcode::BRL_BVS:
     *(uint32_t*)out = l4( "bvs " );
-    return 4;
+    break;
   case Opcode::BZR_BBR0:
     *(uint32_t*)out = l4( "bbr0" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBR1:
     *(uint32_t*)out = l4( "bbr1" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBR2:
     *(uint32_t*)out = l4( "bbr2" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBR3:
     *(uint32_t*)out = l4( "bbr3" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBR4:
     *(uint32_t*)out = l4( "bbr4" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBR5:
     *(uint32_t*)out = l4( "bbr5" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBR6:
     *(uint32_t*)out = l4( "bbr6" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBR7:
     *(uint32_t*)out = l4( "bbr7" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS0:
     *(uint32_t*)out = l4( "bbs0" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS1:
     *(uint32_t*)out = l4( "bbs1" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS2:
     *(uint32_t*)out = l4( "bbs2" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS3:
     *(uint32_t*)out = l4( "bbs3" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS4:
     *(uint32_t*)out = l4( "bbs4" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS5:
     *(uint32_t*)out = l4( "bbs5" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS6:
     *(uint32_t*)out = l4( "bbs6" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BZR_BBS7:
     *(uint32_t*)out = l4( "bbs7" );
     out[4] = ' ';
-    return 5;
+    break;
   case Opcode::BRK_BRK:
     if ( state )
     {
@@ -2494,59 +2494,59 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
       {
         *(uint32_t*)out = l4( "RESE" );
         *(uint16_t*)&out[4] = l2( "T" );
-        return 6;
+        break;
       }
       else if ( ( state->interrupt & CPUState::I_NMI ) != 0 )
       {
         *(uint32_t*)out = l4( "NMI" );
-        return 4;
+        break;
       }
       else if ( ( state->interrupt & CPUState::I_IRQ ) != 0 )
       {
         *(uint32_t*)out = l4( "IRQ" );
-        return 4;
+        break;
       }
       else
       {
         *(uint32_t*)out = l4( "brk " );
-        return 4;
+        break;
       }
     }
     else
     {
       *(uint32_t*)out = l4( "brk " );
-      return 4;
+      break;
     }
   case Opcode::RTI_RTI:
     *(uint32_t*)out = l4( "rti " );
-    return 4;
+    break;
   case Opcode::RTS_RTS:
     *(uint32_t*)out = l4( "rts " );
-    return 4;
+    break;
   case Opcode::PHR_PHA:
     *(uint32_t*)out = l4( "pha " );
-    return 4;
+    break;
   case Opcode::PHR_PHP:
     *(uint32_t*)out = l4( "php " );
-    return 4;
+    break;
   case Opcode::PHR_PHX:
     *(uint32_t*)out = l4( "phx " );
-    return 4;
+    break;
   case Opcode::PHR_PHY:
     *(uint32_t*)out = l4( "phy " );
-    return 4;
+    break;
   case Opcode::PLR_PLA:
     *(uint32_t*)out = l4( "pla " );
-    return 4;
+    break;
   case Opcode::PLR_PLP:
     *(uint32_t*)out = l4( "plp " );
-    return 4;
+    break;
   case Opcode::PLR_PLX:
     *(uint32_t*)out = l4( "plx " );
-    return 4;
+    break;
   case Opcode::PLR_PLY:
     *(uint32_t*)out = l4( "ply " );
-    return 4;
+    break;
   case Opcode::IMP_NOP:
   case Opcode::UND_1_03:
   case Opcode::UND_1_13:
@@ -2581,7 +2581,7 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::UND_1_eb:
   case Opcode::UND_1_fb:
     *(uint32_t*)out = l4( "nop " );
-    return 4;
+    break;
   case Opcode::UND_2_02:
   case Opcode::UND_2_22:
   case Opcode::UND_2_42:
@@ -2597,13 +2597,13 @@ int CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
     *(uint32_t*)out = l4( "nop " );
-    return 4;
+    break;
   default:
-    return 0;
+    break;
   }
 }
 
-int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
+void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
 {
   Opcode op = (Opcode)ram[pc++];
   char *dst = out;
@@ -2676,7 +2676,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::PLR_PLP:
   case Opcode::PLR_PLX:
   case Opcode::PLR_PLY:
-    return 0;
+    break;
   case Opcode::RZP_LDA:
   case Opcode::RZP_LDX:
   case Opcode::RZP_LDY:
@@ -2729,7 +2729,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = '$';
     *dst++ = hexTab[ram[zp] >> 4];
     *dst++ = hexTab[ram[zp] & 0xf];
-    return  (int)(dst - out);
+    break;
   }
   case Opcode::RZX_LDA:
   case Opcode::RZX_LDY:
@@ -2765,7 +2765,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = '$';
     *dst++ = hexTab[ram[(zp + mState.x) & 0xff] >> 4];
     *dst++ = hexTab[ram[(zp + mState.x) & 0xff] & 0xf];
-    return  (int)(dst - out);
+    break;
   }
   case Opcode::RZY_LDX:
   case Opcode::WZY_STX:
@@ -2785,7 +2785,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = '#';
     *dst++ = hexTab[ram[(data + mState.y) & 0xff] >> 4];
     *dst++ = hexTab[ram[(data + mState.y) & 0xff] & 0xf];
-    return (int)(dst - out);
+    break;
   }
   case Opcode::RIN_LDA:
   case Opcode::RIN_AND:
@@ -2809,7 +2809,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = hexTab[ram[data + 1] & 0xf];
     *dst++ = hexTab[ram[data] >> 4];
     *dst++ = hexTab[ram[data] & 0xf];
-    return (int)(dst - out);
+    break;
   }
   case Opcode::RIX_AND:
   case Opcode::RIX_CMP:
@@ -2828,7 +2828,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = ',';
     *dst++ = 'x';
     *dst++ = ')';
-    return (int)(dst - out);
+    break;
   }
   case Opcode::RIY_AND:
   case Opcode::RIY_CMP:
@@ -2847,7 +2847,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = ')';
     *dst++ = ',';
     *dst++ = 'y';
-    return (int)(dst - out);
+    break;
   }
   case Opcode::RAB_AND:
   case Opcode::RAB_BIT:
@@ -2888,7 +2888,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     {
       *dst++ = *txt++;
     };
-    return (int)(dst - out);
+    break;
   }
   case Opcode::RAX_AND:
   case Opcode::RAX_BIT:
@@ -2919,7 +2919,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     };
     *dst++ = ',';
     *dst++ = 'x';
-    return (int)( dst - out );
+    break;
   }
   case Opcode::RAY_AND:
   case Opcode::RAY_CMP:
@@ -2942,7 +2942,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     };
     *dst++ = ',';
     *dst++ = 'y';
-    return (int)( dst - out );
+    break;
   }
   case Opcode::JMX_JMP:
   {
@@ -2959,7 +2959,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = ',';
     *dst++ = 'x';
     *dst++ = ')';
-    return (int)( dst - out );
+    break;
   }
   case Opcode::JMI_JMP:
   {
@@ -2984,7 +2984,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = hexTab[hi & 0x0f];
     *dst++ = hexTab[lo >> 4];
     *dst++ = hexTab[lo & 0x0f];
-    return (int)( dst - out );
+    break;
   }
   case Opcode::IMM_AND:
   case Opcode::IMM_BIT:
@@ -3012,7 +3012,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = '$';
     *dst++ = hexTab[data >> 4];
     *dst++ = hexTab[data & 0x0f];
-    return (int)(dst - out);
+    break;
   }
   case Opcode::BRL_BCC:
   case Opcode::BRL_BCS:
@@ -3031,7 +3031,7 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     {
       *dst++ = *txt++;
     }
-    return (int)( dst - out );
+    break;
   }
   case Opcode::BZR_BBR0:
   case Opcode::BZR_BBR1:
@@ -3072,10 +3072,10 @@ int CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     *dst++ = '$';
     *dst++ = hexTab[ram[zp] >> 4];
     *dst++ = hexTab[ram[zp] & 0xf];
-    return (int)( dst - out );
+    break;
   }
   default:
-    return 0;
+    break;
   }
 }
 
@@ -3084,7 +3084,8 @@ void CPU::trace2()
   if ( !mGlobalTrace )
     return;
 
-  off += disasmOp( buf.data() + off, mState.op, &mState );
+  disasmOp( buf.data() + off, mState.op, &mState );
+  off += 5;
 
   auto comment = mTraceHelper->getTraceComment();
 

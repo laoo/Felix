@@ -183,8 +183,8 @@ private:
 
   void trace1();
   void trace2();
-  static int disasmOp( char * out, Opcode op, CPUState* state = nullptr );
-  int disasmOpr( uint8_t const* ram, char * out, int & pc );
+  static void disasmOp( char * out, Opcode op, CPUState* state = nullptr );
+  void disasmOpr( uint8_t const* ram, char * out, int & pc );
 
 private:
 
