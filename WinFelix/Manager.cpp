@@ -466,7 +466,7 @@ bool Manager::mainMenu( ImGuiIO& io )
   if ( resetIssued )
   {
     reset();
-    mDebugger( RunMode::STEP_IN );
+    mDebugger( RunMode::PAUSE );
   }
   if ( stepOutIssued )
   {
