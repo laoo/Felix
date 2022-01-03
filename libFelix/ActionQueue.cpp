@@ -55,16 +55,10 @@ SequencedAction ActionQueue::pop()
   }
 }
 
-SequencedAction ActionQueue::head() const
+uint64_t ActionQueue::headTick() const
 {
-  if ( !mHeap.empty() )
-  {
-    return mHeap.front();
-  }
-  else
-  {
-    return {};
-  }
+  assert( !empty() );
+  return mHeap.front().getTick();
 }
 
 void ActionQueue::erase( Action action )
@@ -76,4 +70,9 @@ void ActionQueue::erase( Action action )
       e.clear();
     }
   }
+}
+
+bool ActionQueue::empty() const
+{
+  return mHeap.empty();
 }

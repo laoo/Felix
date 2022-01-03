@@ -61,8 +61,9 @@ public:
 
   void push( SequencedAction action );
   SequencedAction pop();
-  SequencedAction head() const;
+  uint64_t headTick() const;
   void erase( Action action );
+  bool empty() const;
 
 private:
 

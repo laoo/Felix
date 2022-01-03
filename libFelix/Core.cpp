@@ -461,7 +461,7 @@ CpuBreakType Core::run( RunMode runMode )
 
   for ( ;; )
   {
-    if ( mActionQueue.head().getTick() <= mCurrentTick )
+    if ( !mActionQueue.empty() && mActionQueue.headTick() <= mCurrentTick )
     {
       executeSequencedAction( mActionQueue.pop() );
     }
