@@ -82,6 +82,7 @@ private:
   {
   public:
     Debugger();
+    ~Debugger();
 
     void operator()( RunMode mode );
 

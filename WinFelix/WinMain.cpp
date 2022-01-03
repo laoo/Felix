@@ -9,7 +9,6 @@
 #include "ComLynxWire.hpp"
 #include "version.hpp"
 #include "ConfigProvider.hpp"
-#include "WinConfig.hpp"
 #include "SysConfig.hpp"
 
 wchar_t gClassName[] = L"FelixWindowClass";
@@ -147,12 +146,12 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     std::wstring name = L"Felix " + std::wstring{ version_string };
 
-    auto winConfig = gConfigProvider.winConfig();
+    auto sysConfig = gConfigProvider.sysConfig();
 
     if ( gConfigProvider.sysConfig()->singleInstance && checkInstance( name, arg ) )
       return 0;
 
-    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, winConfig->mainWindow.x, winConfig->mainWindow.y, winConfig->mainWindow.width, winConfig->mainWindow.height, nullptr, nullptr, hInstance, &manager );
+    HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, sysConfig->mainWindow.x, sysConfig->mainWindow.y, sysConfig->mainWindow.width, sysConfig->mainWindow.height, nullptr, nullptr, hInstance, &manager );
 
     if ( hwnd == nullptr )
     {

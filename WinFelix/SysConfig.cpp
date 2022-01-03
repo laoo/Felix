@@ -28,6 +28,12 @@ void SysConfig::serialize( std::filesystem::path path )
 
   std::ofstream fout{ path };
 
+  fout << "mainWindow = {\n";
+  fout << "\tx = " << mainWindow.x << ";\n";
+  fout << "\ty = " << mainWindow.y << ";\n";
+  fout << "\twidth = " << mainWindow.width << ";\n";
+  fout << "\theight = " << mainWindow.height << ";\n";
+  fout << "};\n";
   fout << "singleInstance = " << ( singleInstance ? "true;\n" : "false;\n" );
   fout << "bootROM = {\n";
   fout << "\tuseExternal = " << ( bootROM.useExternal ? "true;\n" : "false;\n" );
@@ -45,34 +51,37 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "\touter   = " << keyMapping.outer << ";\n";
   fout << "};\n";
   fout << "lastOpenDirectory = " << lastOpenDirectory << ";\n";
+  fout << "debugMode = " << ( debugMode ? "true;\n" : "false;\n" );
+  fout << "visualizeCPU = " << ( visualizeCPU ? "true;\n" : "false;\n" );
+  fout << "visualizeDisasm = " << ( visualizeDisasm ? "true;\n" : "false;\n" );
+  fout << "visualizeHistory = " << ( visualizeHistory ? "true;\n" : "false;\n" );
+  fout << "debugModeOnBreak = " << ( debugModeOnBreak ? "true;\n" : "false;\n" );
+  fout << "normalModeOnRun = " << ( normalModeOnRun ? "true;\n" : "false;\n" );
 }
 
 void SysConfig::load( sol::state const& lua )
 {
-  if ( sol::optional<bool> opt = lua["singleInstance"] )
-    singleInstance = *opt;
-  if ( sol::optional<bool> opt = lua["bootROM"]["useExternal"] )
-    bootROM.useExternal = *opt;
-  if ( sol::optional<std::string> opt = lua["bootROM"]["path"] )
-    bootROM.path = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["pause"] )
-    keyMapping.pause = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["down"] )
-    keyMapping.down = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["up"] )
-    keyMapping.up = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["right"] )
-    keyMapping.right = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["left"] )
-    keyMapping.left = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["option1"] )
-    keyMapping.option1 = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["option2"] )
-    keyMapping.option2 = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["inner"] )
-    keyMapping.inner = *opt;
-  if ( sol::optional<int> opt = lua["keyMapping"]["outer"] )
-    keyMapping.outer = *opt;
-  if ( sol::optional<std::string> opt = lua["lastOpenDirectory"] )
-    lastOpenDirectory = *opt;
+  mainWindow.x = lua["mainWindow"]["x"].get_or( CW_USEDEFAULT );
+  mainWindow.y = lua["mainWindow"]["y"].get_or( CW_USEDEFAULT );
+  mainWindow.width = lua["mainWindow"]["width"].get_or( 960 );
+  mainWindow.height = lua["mainWindow"]["height"].get_or( 630 );
+  singleInstance = lua["singleInstance"];
+  bootROM.useExternal = lua["bootROM"]["useExternal"];
+  bootROM.path = lua["bootROM"]["path"].get<std::string>();
+  keyMapping.pause = lua["keyMapping"]["pause"];
+  keyMapping.down = lua["keyMapping"]["down"];
+  keyMapping.up = lua["keyMapping"]["up"];
+  keyMapping.right = lua["keyMapping"]["right"];
+  keyMapping.left = lua["keyMapping"]["left"];
+  keyMapping.option1 = lua["keyMapping"]["option1"];
+  keyMapping.option2 = lua["keyMapping"]["option2"];
+  keyMapping.inner = lua["keyMapping"]["inner"];
+  keyMapping.outer = lua["keyMapping"]["outer"];
+  lastOpenDirectory = lua["lastOpenDirectory"].get<std::string>();
+  debugMode = lua["debugMode"].get_or( false );
+  visualizeCPU = lua["visualizeCPU"].get_or( false );
+  visualizeDisasm = lua["visualizeDisasm"].get_or( false );
+  visualizeHistory = lua["visualizeHistory"].get_or( false );
+  debugModeOnBreak = lua["debugModeOnBreak"].get_or( true );
+  normalModeOnRun = lua["normalModeOnRun"].get_or( false );
 }

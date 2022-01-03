@@ -159,7 +159,6 @@
     <ClCompile Include="SysConfig.cpp" />
     <ClCompile Include="UserInput.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
-    <ClCompile Include="WinConfig.cpp" />
     <ClCompile Include="WinImgui.cpp" />
     <ClCompile Include="WinImgui11.cpp" />
     <ClCompile Include="WinImgui9.cpp" />
@@ -182,7 +181,6 @@
     <ClInclude Include="version.hpp" />
     <ClInclude Include="vertex.hxx" />
     <ClInclude Include="WinAudioOut.hpp" />
-    <ClInclude Include="WinConfig.hpp" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui11.hpp" />
     <ClInclude Include="WinImgui9.hpp" />

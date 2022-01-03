@@ -1,22 +1,16 @@
 #include "pch.hpp"
 #include "ConfigProvider.hpp"
-#include "WinConfig.hpp"
 #include "SysConfig.hpp"
 
-ConfigProvider::ConfigProvider() : mAppDataFolder{ obtainAppDataFolder() }, mWinConfig{}
+ConfigProvider::ConfigProvider() : mAppDataFolder{ obtainAppDataFolder() }, mSysConfig{}
 {
   std::filesystem::create_directories( mAppDataFolder );
-  mWinConfig = WinConfig::load( mAppDataFolder );
   mSysConfig = SysConfig::load( mAppDataFolder );
 }
 
 ConfigProvider::~ConfigProvider()
 {
-}
-
-std::shared_ptr<WinConfig> ConfigProvider::winConfig() const
-{
-  return mWinConfig;
+  serialize();
 }
 
 std::shared_ptr<SysConfig> ConfigProvider::sysConfig() const
@@ -31,7 +25,6 @@ std::filesystem::path ConfigProvider::appDataFolder() const
 
 void ConfigProvider::serialize()
 {
-  mWinConfig->serialize( mAppDataFolder );
   mSysConfig->serialize( mAppDataFolder );
 }
 

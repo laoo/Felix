@@ -7,7 +7,6 @@
     <ClCompile Include="WinImgui11.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="WinRenderer.cpp" />
-    <ClCompile Include="WinConfig.cpp" />
     <ClCompile Include="WinImgui.cpp" />
     <ClCompile Include="WinImgui9.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
@@ -23,7 +22,6 @@
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinImgui11.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
-    <ClInclude Include="WinConfig.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="vertex.hxx" />
     <ClInclude Include="renderer.hxx" />

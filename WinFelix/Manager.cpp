@@ -13,7 +13,6 @@
 #include "CPUState.hpp"
 #include "IEncoder.hpp"
 #include "ConfigProvider.hpp"
-#include "WinConfig.hpp"
 #include "SysConfig.hpp"
 #include "ScriptDebuggerEscapes.hpp"
 #include "UserInput.hpp"
@@ -126,11 +125,11 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
   case WM_CLOSE:
     if ( GetWindowRect( hWnd, &r ) )
     {
-      auto winConfig = gConfigProvider.winConfig();
-      winConfig->mainWindow.x = r.left;
-      winConfig->mainWindow.y = r.top;
-      winConfig->mainWindow.width = r.right - r.left;
-      winConfig->mainWindow.height = r.bottom - r.top;
+      auto sysConfig = gConfigProvider.sysConfig();
+      sysConfig->mainWindow.x = r.left;
+      sysConfig->mainWindow.y = r.top;
+      sysConfig->mainWindow.width = r.right - r.left;
+      sysConfig->mainWindow.height = r.bottom - r.top;
     }
     DestroyWindow( hWnd );
     break;
@@ -181,7 +180,6 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 Manager::~Manager()
 {
   mIntputSource->serialize( *gConfigProvider.sysConfig() );
-  gConfigProvider.serialize();
   stopThreads();
 }
 
@@ -1002,6 +1000,18 @@ void Manager::reset()
     mImageProperties.reset();
   }
 
+  if ( mInstance )
+  {
+    if ( mDebugger.isHistoryVisualized() )
+    {
+      mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
+    }
+    else
+    {
+      mInstance->debugCPU().disableHistory();
+    }
+  }
+
   mProcessThreads.store( true );
   mDebugger( RunMode::RUN );
 }
@@ -1066,6 +1076,26 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
 
 Manager::Debugger::Debugger() : mutex{}, mDebugMode{}, mVisualizeCPU{}, mVisualizeDisasm{}, mVisualizeHistory{}, mDebugModeOnBreak{}, mNormalModeOnRun{}, mCpuVisualizer{ 0, 14, 3 }, mDisasmVisualizer{ 1, 32, 16 }, mHistoryVisualizer{ 2, 64, 16 }, mRunMode{ RunMode::RUN }
 {
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  mDebugMode = sysConfig->debugMode;
+  mVisualizeCPU = sysConfig->visualizeCPU;
+  mVisualizeDisasm = sysConfig->visualizeDisasm;
+  mVisualizeHistory = sysConfig->visualizeHistory;
+  mDebugModeOnBreak = sysConfig->debugModeOnBreak;
+  mNormalModeOnRun = sysConfig->normalModeOnRun;
+}
+
+Manager::Debugger::~Debugger()
+{
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  sysConfig->debugMode = mDebugMode;
+  sysConfig->visualizeCPU = mVisualizeCPU;
+  sysConfig->visualizeDisasm = mVisualizeDisasm;
+  sysConfig->visualizeHistory = mVisualizeHistory;
+  sysConfig->debugModeOnBreak = mDebugModeOnBreak;
+  sysConfig->normalModeOnRun = mNormalModeOnRun;
 }
 
 void Manager::Debugger::operator()( RunMode mode )

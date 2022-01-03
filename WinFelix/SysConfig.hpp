@@ -2,6 +2,13 @@
 
 struct SysConfig
 {
+  struct
+  {
+    int x = CW_USEDEFAULT;
+    int y = CW_USEDEFAULT;
+    int width = 960;
+    int height = 630;
+  } mainWindow;
   bool singleInstance = false;
   struct BootROM
   {
@@ -21,6 +28,12 @@ struct SysConfig
     int outer = 'X';
   } keyMapping;
   std::filesystem::path lastOpenDirectory{};
+  bool debugMode;
+  bool visualizeCPU;
+  bool visualizeDisasm;
+  bool visualizeHistory;
+  bool debugModeOnBreak;
+  bool normalModeOnRun;
 
   static std::shared_ptr<SysConfig> load( std::filesystem::path path );
   void serialize( std::filesystem::path path );
