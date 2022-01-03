@@ -320,6 +320,43 @@ bool Manager::mainMenu( ImGuiIO& io )
         {
           stepOutIssued = true;
         }
+        if ( ImGui::BeginMenu( "Debug Windows" ) )
+        {
+          bool cpuWindow = mDebugger.isCPUVisualized();
+          bool disasmWindow = mDebugger.isDisasmVisualized();
+          bool historyWindow = mDebugger.isHistoryVisualized();
+          if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
+          {
+            mDebugger.visualizeCPU( cpuWindow );
+          }
+          if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
+          {
+            mDebugger.visualizeDisasm( disasmWindow );
+          }
+          if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
+          {
+            if ( historyWindow )
+            {
+              mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
+              mDebugger.visualizeHistory( true );
+            }
+            else
+            {
+              mInstance->debugCPU().disableHistory();
+              mDebugger.visualizeHistory( false );
+            }
+          }
+          ImGui::EndMenu();
+        }
+        if ( ImGui::BeginMenu( "Options" ) )
+        {
+          bool breakOnBrk = mInstance->debugCPU().isBreakOnBrk();
+          if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
+          {
+            mInstance->debugCPU().breakOnBrk( breakOnBrk );
+          }
+          ImGui::EndMenu();
+        }
         ImGui::EndMenu();
       }
       ImGui::EndDisabled();
@@ -388,6 +425,28 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::IsKeyPressed( 'P' ) )
     {
       modalWindow = ModalWindow::PROPERTIES;
+    }
+    if ( ImGui::IsKeyPressed( 'C' ) )
+    {
+      mDebugger.visualizeCPU( !mDebugger.isCPUVisualized() );
+    }
+    if ( ImGui::IsKeyPressed( 'D' ) )
+    {
+      mDebugger.visualizeDisasm( !mDebugger.isDisasmVisualized() );
+    }
+    if ( ImGui::IsKeyPressed( 'H' ) )
+    {
+      bool historyWindow = !mDebugger.isHistoryVisualized();
+      if ( historyWindow )
+      {
+        mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
+        mDebugger.visualizeHistory( true );
+      }
+      else
+      {
+        mInstance->debugCPU().disableHistory();
+        mDebugger.visualizeHistory( false );
+      }
     }
   }
 
