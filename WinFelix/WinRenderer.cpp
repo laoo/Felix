@@ -1053,12 +1053,12 @@ void WinRenderer::DX11Renderer::BoardFont::initialize( ID3D11Device* pDevice, ID
   V_THROW( pDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
 }
 
-bool WinRenderer::DX11Renderer::Rendering::enabled() const
+bool WinRenderer::DX11Renderer::DebugRendering::enabled() const
 {
   return width != 0 && height != 0;
 }
 
-void WinRenderer::DX11Renderer::Rendering::update( WinRenderer::DX11Renderer& r )
+void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Renderer& r )
 {
   if ( width == 0 || height == 0 )
   {

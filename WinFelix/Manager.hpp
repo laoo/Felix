@@ -78,21 +78,50 @@ private:
     std::vector<uint8_t> data;
   };
 
-  struct DebugWindows
+  class Debugger
   {
-    std::mutex mutex;
-    std::unique_ptr<DebugWindow> cpu;
-    std::unique_ptr<DebugWindow> disasm;
-    std::unique_ptr<DebugWindow> history;
-    bool mainRenderingWindow;
-  } mDebugWindows;
+  public:
+    Debugger();
+
+    void operator()( RunMode mode );
+
+    bool isPaused() const;
+    bool isDebugMode() const;
+    bool isCPUVisualized() const;
+    bool isDisasmVisualized() const;
+    bool isHistoryVisualized() const;
+
+    void visualizeCPU( bool value );
+    void visualizeDisasm( bool value );
+    void visualizeHistory( bool value );
+    void debugMode( bool value );
+
+    void togglePause();
+
+    DebugWindow& cpuVisualizer();
+    DebugWindow& disasmVisualizer();
+    DebugWindow& historyVisualizer();
+
+    mutable std::mutex mutex;
+
+  private:
+    DebugWindow mCpuVisualizer;
+    DebugWindow mDisasmVisualizer;
+    DebugWindow mHistoryVisualizer;
+    bool mDebugMode;
+    bool mVisualizeCPU;
+    bool mVisualizeDisasm;
+    bool mVisualizeHistory;
+    friend class Manager;
+    std::atomic<RunMode> mRunMode;
+
+  } mDebugger;
 
   void renderBoard( DebugWindow& win );
 
   sol::state mLua;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
-  std::atomic<RunMode> mRunMode;
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;

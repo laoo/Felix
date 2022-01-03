@@ -31,14 +31,14 @@ namespace
 
 }
 
-Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugWindows{}, mProcessThreads{}, mJoinThreads{}, mRunMode{},
+Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugger{}, mProcessThreads{}, mJoinThreads{},
   mRenderThread{}, mAudioThread{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
   mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
   mImageProperties{}
 {
-  mRunMode.store( RunMode::RUN );
+  mDebugger( RunMode::RUN );
   mRenderer = std::make_shared<WinRenderer>();
-  mAudioOut = std::make_shared<WinAudioOut>( mRunMode );
+  mAudioOut = std::make_shared<WinAudioOut>( mDebugger.mRunMode );
   mComLynxWire = std::make_shared<ComLynxWire>();
   mIntputSource = std::make_shared<UserInput>( *gConfigProvider.sysConfig() );
 
@@ -224,30 +224,34 @@ bool Manager::mainMenu( ImGuiIO& io )
   auto sysConfig = gConfigProvider.sysConfig();
 
   bool openMenu = false;
-  bool debugWindowCpu = (bool)mDebugWindows.cpu;
-  bool debugWindowDisasm = (bool)mDebugWindows.disasm;
-  bool debugWindowHistory = (bool)mDebugWindows.history;
   bool pauseRunIssued = false;
   bool stepInIssued = false;
   bool stepOverIssued = false;
   bool stepOutIssued = false;
+  bool debugMode = mDebugger.isDebugMode();
 
-  if ( ImGui::IsKeyPressed( VK_F8 ) )
+  if ( ImGui::IsKeyPressed( VK_F4 ) )
   {
-    stepOutIssued = true;
+    debugMode = !debugMode;
   }
-  if ( ImGui::IsKeyPressed( VK_F7 ) )
-  {
-    stepOverIssued = true;
-  }
-  if ( ImGui::IsKeyPressed( VK_F6 ) )
-  {
-    stepInIssued = true;
-  }
-  else if ( ImGui::IsKeyPressed( VK_F5 ) )
+
+  if ( ImGui::IsKeyPressed( VK_F5 ) )
   {
     pauseRunIssued = true;
   }
+  else if ( ImGui::IsKeyPressed( VK_F6 ) )
+  {
+    stepInIssued = true;
+  }
+  else if ( ImGui::IsKeyPressed( VK_F7 ) )
+  {
+    stepOverIssued = true;
+  }
+  else if ( ImGui::IsKeyPressed( VK_F8 ) )
+  {
+    stepOutIssued = true;
+  }
+
 
   ImGui::PushStyleVar( ImGuiStyleVar_Alpha, mOpenMenu ? 1.0f : std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
   if ( ImGui::BeginMainMenuBar() )
@@ -287,7 +291,9 @@ bool Manager::mainMenu( ImGuiIO& io )
       {
         openMenu = true;
 
-        if ( ImGui::MenuItem( mRunMode.load() != RunMode::PAUSE ? "Break" : "Run", "F5") )
+        ImGui::MenuItem( "Debug Mode", "F4", &debugMode );
+
+        if ( ImGui::MenuItem( mDebugger.isPaused() ? "Run" : "Break", "F5") )
         {
           pauseRunIssued = true;
         }
@@ -302,15 +308,6 @@ bool Manager::mainMenu( ImGuiIO& io )
         if ( ImGui::MenuItem( "Step Out", "F8" ) )
         {
           stepOutIssued = true;
-        }
-        ImGui::MenuItem( "CPU", "Ctrl+C", &debugWindowCpu );
-        ImGui::MenuItem( "Disassembly", "Ctrl+D", &debugWindowDisasm );
-        ImGui::MenuItem( "History", "Ctrl+H", &debugWindowHistory );
-        ImGui::MenuItem( "Main Rendering", "Ctrl+R", &mDebugWindows.mainRenderingWindow );
-        if ( ImGui::BeginMenu( "Options" ) )
-        {
-          ImGui::MenuItem( "Break on BRK", nullptr, mInstance->debugCPU().flagBreakOnBRK() );
-          ImGui::EndMenu();
         }
         ImGui::EndMenu();
       }
@@ -381,47 +378,25 @@ bool Manager::mainMenu( ImGuiIO& io )
     {
       modalWindow = ModalWindow::PROPERTIES;
     }
-    if ( ImGui::IsKeyPressed( 'C' ) )
-    {
-      debugWindowCpu = 1 - debugWindowCpu;
-    }
-    if ( ImGui::IsKeyPressed( 'D' ) )
-    {
-      debugWindowDisasm = 1 - debugWindowDisasm;
-    }
-    if ( ImGui::IsKeyPressed( 'H' ) )
-    {
-      debugWindowHistory = 1 - debugWindowHistory;
-    }
-    if ( ImGui::IsKeyPressed( 'R' ) )
-    {
-      mDebugWindows.mainRenderingWindow = 1 - mDebugWindows.mainRenderingWindow;
-    }
   }
 
+  mDebugger.debugMode( debugMode );
 
   if ( stepOutIssued )
   {
-    mRunMode.store( RunMode::STEP_OUT );
+    mDebugger( RunMode::STEP_OUT );
   }
   if ( stepOverIssued )
   {
-    mRunMode.store( RunMode::STEP_OVER );
+    mDebugger( RunMode::STEP_OVER );
   }
   if ( stepInIssued )
   {
-    mRunMode.store( RunMode::STEP_IN );
+    mDebugger( RunMode::STEP_IN );
   }
   else if ( pauseRunIssued )
   {
-    if ( mRunMode.load() == RunMode::PAUSE )
-    {
-      mRunMode.store( RunMode::RUN );
-    }
-    else
-    {
-      mRunMode.store( RunMode::PAUSE );
-    }
+    mDebugger.togglePause();
   }
 
   switch ( modalWindow )
@@ -433,7 +408,7 @@ bool Manager::mainMenu( ImGuiIO& io )
     break;
   }
 
-  imagePropertiesWindow( modalWindow != ModalWindow::NONE );
+  imagePropertiesWindow( modalWindow == ModalWindow::PROPERTIES );
 
   modalWindow = ModalWindow::NONE;
 
@@ -462,48 +437,6 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
     mFileBrowser->ClearSelected();
     fileBrowserAction = NONE;
-  }
-
-
-  if ( (bool)mInstance )
-  {
-    std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
-    if ( debugWindowCpu != (bool)mDebugWindows.cpu )
-    {
-      if ( debugWindowCpu )
-      {
-        mDebugWindows.cpu.reset( new DebugWindow( 0, 14, 3 ) );
-      }
-      else
-      {
-        mDebugWindows.cpu.reset();
-      }
-    }
-
-    if ( debugWindowDisasm != (bool)mDebugWindows.disasm )
-    {
-      if ( debugWindowDisasm )
-      {
-        mDebugWindows.disasm.reset( new DebugWindow( 1, 32, 16 ) );
-      }
-      else
-      {
-        mDebugWindows.disasm.reset();
-      }
-    }
-    if ( debugWindowHistory != (bool)mDebugWindows.history )
-    {
-      if ( debugWindowHistory )
-      {
-        mDebugWindows.history.reset( new DebugWindow( 2, 64, 16 ) );
-        mInstance->debugCPU().enableHistory( 64, 16 );
-      }
-      else
-      {
-        mDebugWindows.history.reset();
-        mInstance->debugCPU().disableHistory();
-      }
-    }
   }
 
   return openMenu;
@@ -686,88 +619,120 @@ void Manager::renderBoard( DebugWindow& win )
 
 void Manager::drawDebugWindows( ImGuiIO& io )
 {
-  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
+  std::unique_lock<std::mutex> l{ mDebugger.mutex };
 
-  ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
+  bool cpuWindow = mDebugger.isCPUVisualized();
+  bool disasmWindow = mDebugger.isDisasmVisualized();
+  bool historyWindow = mDebugger.isHistoryVisualized();
+  bool debugMode = mDebugger.isDebugMode();
 
-  bool debugWindowCpu = (bool)mDebugWindows.cpu;
-  bool debugWindowDisasm = (bool)mDebugWindows.disasm;
-  bool debugWindowHistory = (bool)mDebugWindows.history;
-
-  if ( debugWindowCpu )
+  if ( debugMode )
   {
-    ImGui::Begin( "CPU", &debugWindowCpu, ImGuiWindowFlags_AlwaysAutoResize );
-    renderBoard( *mDebugWindows.cpu );
-    ImGui::End();
-  }
-  if ( debugWindowDisasm )
-  {
-    ImGui::Begin( "Disassembly", &debugWindowDisasm, ImGuiWindowFlags_AlwaysAutoResize );
-    renderBoard( *mDebugWindows.disasm );
-    ImGui::End();
-  }
-  if ( debugWindowHistory )
-  {
-    ImGui::Begin( "History", &debugWindowHistory, ImGuiWindowFlags_AlwaysAutoResize );
-    renderBoard( *mDebugWindows.history );
-    ImGui::End();
-  }
+    ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
 
-  if ( mDebugWindows.mainRenderingWindow )
-  {
-    static const float xpad = 4.0f;
-    static const float ypad = 4.0f + 19.0f;
-
-    ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
-
-    ImGui::Begin( "Rendering", &mDebugWindows.mainRenderingWindow, 0 );
-    auto size = ImGui::GetWindowSize();
-    size.x -= xpad;
-    size.y -= ypad;
-    if ( auto tex = mRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
+    if ( cpuWindow )
     {
-      ImGui::Image( tex, size );
+      ImGui::Begin( "CPU", &cpuWindow, ImGuiWindowFlags_AlwaysAutoResize );
+      renderBoard( mDebugger.cpuVisualizer() );
+      ImGui::End();
     }
-    ImGui::End();
+
+    if ( disasmWindow )
+    {
+      ImGui::Begin( "Disassembly", &disasmWindow, ImGuiWindowFlags_AlwaysAutoResize );
+      renderBoard( mDebugger.disasmVisualizer() );
+      ImGui::End();
+    }
+
+    if ( historyWindow )
+    {
+      ImGui::Begin( "History", &historyWindow, ImGuiWindowFlags_AlwaysAutoResize );
+      renderBoard( mDebugger.historyVisualizer() );
+      ImGui::End();
+    }
+
+    {
+      static const float xpad = 4.0f;
+      static const float ypad = 4.0f + 19.0f;
+      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
+
+      ImGui::Begin( "Rendering", &debugMode, 0 );
+      auto size = ImGui::GetWindowSize();
+      size.x -= xpad;
+      size.y -= ypad;
+      if ( auto tex = mRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
+      {
+        ImGui::Image( tex, size );
+      }
+      ImGui::End();
+      mDebugger.debugMode( debugMode );
+      ImGui::PopStyleVar();
+    }
     ImGui::PopStyleVar();
+
+
+    if ( ImGui::BeginPopupContextVoid() )
+    {
+      bool breakOnBrk = mInstance->debugCPU().isBreakOnBrk();
+
+      if ( ImGui::Checkbox( "CPU Window", &cpuWindow ) )
+      {
+        mDebugger.visualizeCPU( cpuWindow );
+      }
+      if ( ImGui::Checkbox( "Disassembly Window", &disasmWindow ) )
+      {
+        mDebugger.visualizeDisasm( disasmWindow );
+      }
+      if ( ImGui::Checkbox( "History Window", &historyWindow ) )
+      {
+        mDebugger.visualizeHistory( historyWindow );
+        if ( historyWindow )
+        {
+          mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
+        }
+        else
+        {
+          mInstance->debugCPU().disableHistory();
+        }
+      }
+      if ( ImGui::Checkbox( "Break on BRK", &breakOnBrk ) )
+      {
+        mInstance->debugCPU().breakOnBrk( breakOnBrk );
+      }
+      ImGui::EndPopup();
+    }
   }
   else
   {
     mRenderer->mainRenderingTexture( 0, 0 );
   }
-
-  if ( !debugWindowCpu )
-    mDebugWindows.cpu.reset();
-  if ( !debugWindowDisasm )
-    mDebugWindows.disasm.reset();
-  if ( !debugWindowHistory )
-    mDebugWindows.history.reset();
-
-  ImGui::PopStyleVar();
 }
 
 void Manager::updateDebugWindows()
 {
-  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
+  std::unique_lock<std::mutex> l{ mDebugger.mutex };
 
   if ( !mInstance )
     return;
 
   auto& cpu = mInstance->debugCPU();
 
-  if ( (bool)mDebugWindows.cpu )
+  if ( mDebugger.isCPUVisualized() )
   {
-    cpu.printStatus( std::span<uint8_t, 3 * 14>( mDebugWindows.cpu->data.data(), mDebugWindows.cpu->data.size() ) );
+    auto & cpuVis = mDebugger.cpuVisualizer();
+    cpu.printStatus( std::span<uint8_t, 3 * 14>( cpuVis.data.data(), cpuVis.data.size() ) );
   }
 
-  if ( (bool)mDebugWindows.disasm )
+  if ( mDebugger.isDisasmVisualized() )
   {
-    cpu.disassemblyFromPC( mInstance->debugRAM(), (char*)mDebugWindows.disasm->data.data(), 32, 16 );
+    auto & disVis = mDebugger.disasmVisualizer();
+    cpu.disassemblyFromPC( mInstance->debugRAM(), (char*)disVis.data.data(), disVis.columns, disVis.rows );
   }
 
-  if ( (bool)mDebugWindows.history )
+  if ( mDebugger.isHistoryVisualized() )
   {
-    cpu.copyHistory( std::span<char>( (char*)mDebugWindows.history->data.data(), mDebugWindows.history->data.size() ) );
+    auto & hisVis = mDebugger.historyVisualizer();
+    cpu.copyHistory( std::span<char>( (char*)hisVis.data.data(), hisVis.data.size() ) );
   }
 }
 
@@ -885,6 +850,10 @@ void Manager::processLua( std::filesystem::path const& path )
   {
     mInstance->debugCPU().disableTrace();
   };
+  mLua["break"] = [this]()
+  {
+
+  };
 
   mLua.script_file( luaPath.string() );
 
@@ -927,7 +896,7 @@ std::shared_ptr<ImageROM const> Manager::getOptionalBootROM()
 
 void Manager::reset()
 {
-  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
+  std::unique_lock<std::mutex> l{ mDebugger.mutex };
   mProcessThreads.store( false );
   //TODO wait for threads to stop.
   mInstance.reset();
@@ -948,7 +917,7 @@ void Manager::reset()
   }
 
   mProcessThreads.store( true );
-  mRunMode = RunMode::RUN;
+  mDebugger( RunMode::RUN );
 }
 
 void Manager::updateRotation()
@@ -1009,3 +978,84 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
   return false;
 }
 
+Manager::Debugger::Debugger() : mutex{}, mDebugMode{}, mVisualizeCPU{}, mVisualizeDisasm{}, mVisualizeHistory{}, mCpuVisualizer{ 0, 14, 3 }, mDisasmVisualizer{ 1, 32, 16 }, mHistoryVisualizer{ 2, 64, 16 }, mRunMode{ RunMode::RUN }
+{
+}
+
+void Manager::Debugger::operator()( RunMode mode )
+{
+  mDebugMode = mode != RunMode::RUN;
+  mRunMode.store( mode );
+}
+
+bool Manager::Debugger::isPaused() const
+{
+  return mRunMode.load() == RunMode::PAUSE;
+}
+
+bool Manager::Debugger::isDebugMode() const
+{
+  return mDebugMode;
+}
+
+bool Manager::Debugger::isCPUVisualized() const
+{
+  return mVisualizeCPU;
+}
+
+bool Manager::Debugger::isDisasmVisualized() const
+{
+  return mVisualizeDisasm;
+}
+
+bool Manager::Debugger::isHistoryVisualized() const
+{
+  return mVisualizeHistory;
+}
+
+void Manager::Debugger::visualizeCPU( bool value )
+{
+  mVisualizeCPU = value;
+}
+
+void Manager::Debugger::visualizeDisasm( bool value )
+{
+  mVisualizeDisasm = value;
+}
+
+void Manager::Debugger::visualizeHistory( bool value )
+{
+  mVisualizeHistory = value;
+}
+
+void Manager::Debugger::debugMode( bool value )
+{
+  mDebugMode = value;
+}
+
+void Manager::Debugger::togglePause()
+{
+  if ( mRunMode.load() == RunMode::PAUSE )
+  {
+    ( *this )( RunMode::RUN );
+  }
+  else
+  {
+    ( *this )( RunMode::PAUSE );
+  }
+}
+
+Manager::DebugWindow& Manager::Debugger::cpuVisualizer()
+{
+  return mCpuVisualizer;
+}
+
+Manager::DebugWindow& Manager::Debugger::disasmVisualizer()
+{
+  return mDisasmVisualizer;
+}
+
+Manager::DebugWindow& Manager::Debugger::historyVisualizer()
+{
+  return mHistoryVisualizer;
+}

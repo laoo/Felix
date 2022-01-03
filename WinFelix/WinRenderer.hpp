@@ -180,7 +180,7 @@ private:
       void render( WinRenderer::DX11Renderer& r, std::span<uint8_t const> data );
     };
 
-    struct Rendering
+    struct DebugRendering
     {
       int width;
       int height;
@@ -240,7 +240,7 @@ private:
     boost::rational<int32_t>          mRefreshRate;
     std::shared_ptr<IEncoder>         mEncoder;
     std::unordered_map<int, Board>    mBoards;
-    Rendering                         mRenderingToWindow;
+    DebugRendering                    mRenderingToWindow;
     uint32_t mVScale;
   };
 
