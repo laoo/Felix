@@ -351,9 +351,20 @@ bool Manager::mainMenu( ImGuiIO& io )
         if ( ImGui::BeginMenu( "Options" ) )
         {
           bool breakOnBrk = mInstance->debugCPU().isBreakOnBrk();
+          bool debugModeOnBreak = mDebugger.debugModeOnBreak();
+          bool normalModeOnRun = mDebugger.normalModeOnRun();
+
           if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
           {
             mInstance->debugCPU().breakOnBrk( breakOnBrk );
+          }
+          if ( ImGui::MenuItem( "Debug mode on break", nullptr, &debugModeOnBreak ) )
+          {
+            mDebugger.debugModeOnBreak( debugModeOnBreak );
+          }
+          if ( ImGui::MenuItem( "Normal mode on run", nullptr, &normalModeOnRun ) )
+          {
+            mDebugger.normalModeOnRun( normalModeOnRun );
           }
           ImGui::EndMenu();
         }
@@ -1053,13 +1064,21 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
   return false;
 }
 
-Manager::Debugger::Debugger() : mutex{}, mDebugMode{}, mVisualizeCPU{}, mVisualizeDisasm{}, mVisualizeHistory{}, mCpuVisualizer{ 0, 14, 3 }, mDisasmVisualizer{ 1, 32, 16 }, mHistoryVisualizer{ 2, 64, 16 }, mRunMode{ RunMode::RUN }
+Manager::Debugger::Debugger() : mutex{}, mDebugMode{}, mVisualizeCPU{}, mVisualizeDisasm{}, mVisualizeHistory{}, mDebugModeOnBreak{}, mNormalModeOnRun{}, mCpuVisualizer{ 0, 14, 3 }, mDisasmVisualizer{ 1, 32, 16 }, mHistoryVisualizer{ 2, 64, 16 }, mRunMode{ RunMode::RUN }
 {
 }
 
 void Manager::Debugger::operator()( RunMode mode )
 {
-  mDebugMode = mode != RunMode::RUN;
+  if ( mode == RunMode::RUN && mNormalModeOnRun )
+  {
+    mDebugMode = false;
+  }
+  if ( mode == RunMode::PAUSE && mDebugModeOnBreak )
+  {
+    mDebugMode = true;
+  }
+
   mRunMode.store( mode );
 }
 
@@ -1106,6 +1125,26 @@ void Manager::Debugger::visualizeHistory( bool value )
 void Manager::Debugger::debugMode( bool value )
 {
   mDebugMode = value;
+}
+
+bool Manager::Debugger::debugModeOnBreak() const
+{
+  return mDebugModeOnBreak;
+}
+
+void Manager::Debugger::debugModeOnBreak( bool value )
+{
+  mDebugModeOnBreak = value;
+}
+
+bool Manager::Debugger::normalModeOnRun() const
+{
+  return mNormalModeOnRun;
+}
+
+void Manager::Debugger::normalModeOnRun( bool value )
+{
+  mNormalModeOnRun = value;
 }
 
 void Manager::Debugger::togglePause()

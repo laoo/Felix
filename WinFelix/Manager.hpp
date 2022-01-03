@@ -95,6 +95,10 @@ private:
     void visualizeDisasm( bool value );
     void visualizeHistory( bool value );
     void debugMode( bool value );
+    bool debugModeOnBreak() const;
+    void debugModeOnBreak( bool value );
+    bool normalModeOnRun() const;
+    void normalModeOnRun( bool value );
 
     void togglePause();
 
@@ -112,6 +116,8 @@ private:
     bool mVisualizeCPU;
     bool mVisualizeDisasm;
     bool mVisualizeHistory;
+    bool mDebugModeOnBreak;
+    bool mNormalModeOnRun;
     friend class Manager;
     std::atomic<RunMode> mRunMode;
 
