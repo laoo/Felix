@@ -231,6 +231,7 @@ bool Manager::mainMenu( ImGuiIO& io )
   bool stepInIssued = false;
   bool stepOverIssued = false;
   bool stepOutIssued = false;
+  bool resetIssued = false;
 
   if ( ImGui::IsKeyPressed( VK_F8 ) )
   {
@@ -247,6 +248,10 @@ bool Manager::mainMenu( ImGuiIO& io )
   else if ( ImGui::IsKeyPressed( VK_F5 ) )
   {
     pauseRunIssued = true;
+  }
+  else if (ImGui::IsKeyPressed(VK_F3))
+  {
+      resetIssued = true;
   }
 
   ImGui::PushStyleVar( ImGuiStyleVar_Alpha, mOpenMenu ? 1.0f : std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
@@ -285,7 +290,10 @@ bool Manager::mainMenu( ImGuiIO& io )
       if ( ImGui::BeginMenu( "Debug" ) )
       {
         openMenu = true;
-
+        if (ImGui::MenuItem("Reset", "F3"))
+        {
+            resetIssued = true;
+        }
         if ( ImGui::MenuItem( mRunMode.load() != RunMode::PAUSE ? "Break" : "Run", "F5") )
         {
           pauseRunIssued = true;
@@ -306,10 +314,14 @@ bool Manager::mainMenu( ImGuiIO& io )
         ImGui::MenuItem( "Disassembly", "Ctrl+D", &debugWindowDisasm );
         ImGui::MenuItem( "History", "Ctrl+H", &debugWindowHistory );
         ImGui::MenuItem( "Main Rendering", "Ctrl+R", &mDebugWindows.mainRenderingWindow );
-        if ( ImGui::BeginMenu( "Options" ) )
+        if ( mInstance != NULL )
         {
-          ImGui::MenuItem( "Break on BRK", nullptr, mInstance->debugCPU().flagBreakOnBRK() );
-          ImGui::EndMenu();
+            if (ImGui::BeginMenu("Options"))
+            {
+                ImGui::MenuItem("Break on BRK", nullptr, mInstance->debugCPU().flagBreakOnBRK());
+                ImGui::EndMenu();
+
+            }
         }
         ImGui::EndMenu();
       }
@@ -397,6 +409,11 @@ bool Manager::mainMenu( ImGuiIO& io )
     }
   }
 
+  if (resetIssued)
+  {
+      reset();
+      mRunMode.store(RunMode::STEP_IN);
+  }
   if ( stepOutIssued )
   {
     mRunMode.store( RunMode::STEP_OUT );
