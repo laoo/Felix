@@ -1013,7 +1013,8 @@ void Manager::reset()
   }
 
   mProcessThreads.store( true );
-  mDebugger( RunMode::RUN );
+
+  mDebugger( mDebugger.isDebugMode() ? RunMode::PAUSE : RunMode::RUN );
 }
 
 void Manager::updateRotation()
