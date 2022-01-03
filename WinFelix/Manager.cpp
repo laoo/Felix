@@ -228,7 +228,13 @@ bool Manager::mainMenu( ImGuiIO& io )
   bool stepInIssued = false;
   bool stepOverIssued = false;
   bool stepOutIssued = false;
+  bool resetIssued = false;
   bool debugMode = mDebugger.isDebugMode();
+
+  if ( ImGui::IsKeyPressed( VK_F3 ) )
+  {
+    resetIssued = true;
+  }
 
   if ( ImGui::IsKeyPressed( VK_F4 ) )
   {
@@ -290,6 +296,11 @@ bool Manager::mainMenu( ImGuiIO& io )
       if ( ImGui::BeginMenu( "Debug" ) )
       {
         openMenu = true;
+
+        if ( ImGui::MenuItem( "Reset", "F3" ) )
+        {
+          resetIssued = true;
+        }
 
         ImGui::MenuItem( "Debug Mode", "F4", &debugMode );
 
@@ -382,6 +393,11 @@ bool Manager::mainMenu( ImGuiIO& io )
 
   mDebugger.debugMode( debugMode );
 
+  if ( resetIssued )
+  {
+    reset();
+    mDebugger( RunMode::STEP_IN );
+  }
   if ( stepOutIssued )
   {
     mDebugger( RunMode::STEP_OUT );
