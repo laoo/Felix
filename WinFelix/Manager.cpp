@@ -287,6 +287,7 @@ bool Manager::mainMenu( ImGuiIO& io )
     ImGui::EndDisabled();
     if ( mRenderer->canRenderBoards() )
     {
+      ImGui::BeginDisabled( !(bool)mInstance );
       if ( ImGui::BeginMenu( "Debug" ) )
       {
         openMenu = true;
@@ -325,6 +326,7 @@ bool Manager::mainMenu( ImGuiIO& io )
         }
         ImGui::EndMenu();
       }
+      ImGui::EndDisabled();
     }
     if ( ImGui::BeginMenu( "Options" ) )
     {
@@ -479,41 +481,44 @@ bool Manager::mainMenu( ImGuiIO& io )
   }
 
 
-  std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
-  if ( debugWindowCpu != (bool)mDebugWindows.cpu )
+  if ( (bool)mInstance )
   {
-    if ( debugWindowCpu )
+    std::unique_lock<std::mutex> l{ mDebugWindows.mutex };
+    if ( debugWindowCpu != (bool)mDebugWindows.cpu )
     {
-      mDebugWindows.cpu.reset( new DebugWindow( 0, 14, 3 ) );
+      if ( debugWindowCpu )
+      {
+        mDebugWindows.cpu.reset( new DebugWindow( 0, 14, 3 ) );
+      }
+      else
+      {
+        mDebugWindows.cpu.reset();
+      }
     }
-    else
-    {
-      mDebugWindows.cpu.reset();
-    }
-  }
 
-  if ( debugWindowDisasm != (bool)mDebugWindows.disasm )
-  {
-    if ( debugWindowDisasm )
+    if ( debugWindowDisasm != (bool)mDebugWindows.disasm )
     {
-      mDebugWindows.disasm.reset( new DebugWindow( 1, 32, 16 ) );
+      if ( debugWindowDisasm )
+      {
+        mDebugWindows.disasm.reset( new DebugWindow( 1, 32, 16 ) );
+      }
+      else
+      {
+        mDebugWindows.disasm.reset();
+      }
     }
-    else
+    if ( debugWindowHistory != (bool)mDebugWindows.history )
     {
-      mDebugWindows.disasm.reset();
-    }
-  }
-  if ( debugWindowHistory != (bool)mDebugWindows.history )
-  {
-    if ( debugWindowHistory )
-    {
-      mDebugWindows.history.reset( new DebugWindow( 2, 64, 16 ) );
-      mInstance->debugCPU().enableHistory( 64, 16 );
-    }
-    else
-    {
-      mDebugWindows.history.reset();
-      mInstance->debugCPU().disableHistory();
+      if ( debugWindowHistory )
+      {
+        mDebugWindows.history.reset( new DebugWindow( 2, 64, 16 ) );
+        mInstance->debugCPU().enableHistory( 64, 16 );
+      }
+      else
+      {
+        mDebugWindows.history.reset();
+        mInstance->debugCPU().disableHistory();
+      }
     }
   }
 
@@ -1008,7 +1013,7 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
   if ( copy )
   {
     std::span<wchar_t const> span{ (wchar_t const*)copy->lpData, copy->cbData / sizeof( wchar_t ) };
-    
+
     wchar_t const* ptr = span.data();
     if ( size_t size = std::wcslen( ptr ) )
     {
@@ -1019,4 +1024,3 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
 
   return false;
 }
-
