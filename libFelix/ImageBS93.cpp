@@ -41,7 +41,7 @@ std::optional<uint16_t> ImageBS93::load( std::span<uint8_t> memory ) const
 
   std::copy_n( beg, realSize, dest );
 
-  return realLoadAddress;
+  return realLoadAddress + 10; /* +10 => skip header */
 }
 
 uint16_t ImageBS93::getLoadAddress() const
