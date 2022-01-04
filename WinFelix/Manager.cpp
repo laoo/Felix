@@ -954,7 +954,7 @@ void Manager::processLua( std::filesystem::path const& path )
   };
   mLua["break"] = [this]()
   {
-
+    mInstance->debugCPU().breakFromLua();
   };
 
   mLua.script_file( luaPath.string() );

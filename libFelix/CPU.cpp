@@ -273,6 +273,11 @@ void CPU::breakOnStepOut()
     mStackBreakCondition = mState.s;
 }
 
+void CPU::breakFromLua()
+{
+  mReq.cpuBreakType = CpuBreakType::LUA_BREAK;
+}
+
 void CPU::clearBreak()
 {
   mReq.cpuBreakType = CpuBreakType::NONE;
