@@ -151,6 +151,9 @@ private:
     DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath );
     ~DX11Renderer() = default;
     void updateVscale( uint32_t vScale );
+    bool resizeOutput();
+    void updateSourceFromNextFrame();
+    void renderGui( Manager& config );
     void internalRender( Manager& config );
 
     void renderEncoding();
@@ -161,6 +164,7 @@ private:
     bool canRenderBoards() const override;
     void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
     void* mainRenderingTexture( int width, int height ) override;
+    void renderScreenView( SizeManager const& size, ID3D11UnorderedAccessView* target );
 
   private:
 

@@ -568,11 +568,11 @@ void WinRenderer::DX11Renderer::render( Manager& config )
   mSwapChain->Present( 1, 0 );
 }
 
-void WinRenderer::DX11Renderer::internalRender( Manager& config )
+bool WinRenderer::DX11Renderer::resizeOutput()
 {
   RECT r;
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
-    return;
+    return true;
 
   if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) || mSizeManager.rotation() != mRotation )
   {
@@ -580,7 +580,7 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
 
     if ( !mSizeManager )
     {
-      return;
+      return true;
     }
 
     mBackBufferUAV.Reset();
@@ -593,90 +593,49 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
     V_THROW( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
     V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
   }
+  return false;
+}
 
-  UINT v[4] = { 255, 255, 255, 255 };
-  mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
-  if ( mRenderingToWindow.enabled() )
+void WinRenderer::DX11Renderer::updateSourceFromNextFrame()
+{
+  if ( auto frame = mInstance->pullNextFrame() )
   {
-    mRenderingToWindow.update( *this );
-    mImmediateContext->ClearUnorderedAccessViewUint( mRenderingToWindow.uav.Get(), v );
-  }
+    D3D11_MAPPED_SUBRESOURCE d3dmap;
+    mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
 
-  std::array<ID3D11UnorderedAccessView*, 1> uavs{ mRenderingToWindow.enabled() ? mRenderingToWindow.uav.Get() : mBackBufferUAV.Get() };
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uavs.data(), nullptr );
-
-  {
-    if ( auto frame = mInstance->pullNextFrame() )
+    struct MappedTexture
     {
-      D3D11_MAPPED_SUBRESOURCE d3dmap;
-      mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+      DPixel* data;
+      uint32_t stride;
+    } map{ (DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( DPixel ) };
 
-      struct MappedTexture
+    for ( int i = 0; i < (int)frame->rows.size(); ++i )
+    {
+      auto const& row = frame->rows[i];
+      int size = frame->sizes[i];
+      DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
+
+      for ( int j = 0; j < size; ++j )
       {
-        DPixel* data;
-        uint32_t stride;
-      } map{ (DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( DPixel ) };
-
-      for ( int i = 0; i < (int)frame->rows.size(); ++i )
-      {
-        auto const& row = frame->rows[i];
-        int size = frame->sizes[i];
-        DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
-
-        for ( int j = 0; j < size; ++j )
+        uint16_t v = row.lineBuffer[j];
+        if ( std::bit_cast<int16_t>( v ) < 0 )
         {
-          uint16_t v = row.lineBuffer[j];
-          if ( std::bit_cast<int16_t>( v ) < 0 )
-          {
-            *dst++ = mInstance->mPalette[(uint8_t)v];
-          }
-          else
-          {
-            mInstance->updatePalette( v >> 8, (uint8_t)v );
-          }
+          *dst++ = mInstance->mPalette[(uint8_t)v];
+        }
+        else
+        {
+          mInstance->updatePalette( v >> 8, (uint8_t)v );
         }
       }
-
-      mImmediateContext->Unmap( mSource.Get(), 0 );
     }
 
-    CBPosSize cbPosSize;
-    if ( mRenderingToWindow.enabled() )
-    {
-      cbPosSize = CBPosSize{
-        mRenderingToWindow.size.rotx1(), mRenderingToWindow.size.rotx2(),
-        mRenderingToWindow.size.roty1(), mRenderingToWindow.size.roty2(),
-        mRenderingToWindow.size.xOff(), mRenderingToWindow.size.yOff(),
-        mRenderingToWindow.size.scale(),
-        mVScale };
-    }
-    else
-    {
-      cbPosSize = CBPosSize{
-        mSizeManager.rotx1(), mSizeManager.rotx2(),
-        mSizeManager.roty1(), mSizeManager.roty2(),
-        mSizeManager.xOff(), mSizeManager.yOff(),
-        mSizeManager.scale(),
-        mVScale };
-    }
-    
-    mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
-    mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-    mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
-    mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
-    mImmediateContext->Dispatch( 5, 51, 1 );
-
-
-    uavs[0] = nullptr;
-    mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uavs.data(), nullptr );
+    mImmediateContext->Unmap( mSource.Get(), 0 );
   }
+}
 
-  if ( mEncoder )
-  {
-    renderEncoding();
-  }
-
-
+void WinRenderer::DX11Renderer::renderGui( Manager& config )
+{
+  RECT r;
   GetWindowRect( mHWnd, &r );
   POINT p{ r.left, r.top };
   ScreenToClient( mHWnd, &p );
@@ -698,6 +657,56 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
 
   std::array<ID3D11RenderTargetView* const, 1> rtv{};
   mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
+}
+
+void WinRenderer::DX11Renderer::internalRender( Manager& config )
+{
+  if ( resizeOutput() )
+    return;
+
+  updateSourceFromNextFrame();
+
+  UINT v[4] = { 255, 255, 255, 255 };
+  mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
+
+  if ( mRenderingToWindow.enabled() )
+  {
+    mRenderingToWindow.update( *this );
+    mImmediateContext->ClearUnorderedAccessViewUint( mRenderingToWindow.uav.Get(), v );
+    renderScreenView( mRenderingToWindow.size, mRenderingToWindow.uav.Get() );
+  }
+  else
+  {
+    renderScreenView( mSizeManager, mBackBufferUAV.Get() );
+  }
+
+  if ( mEncoder )
+  {
+    renderEncoding();
+  }
+
+  renderGui( config );
+}
+
+void WinRenderer::DX11Renderer::renderScreenView( SizeManager const& size, ID3D11UnorderedAccessView * target )
+{
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
+
+  CBPosSize cbPosSize{
+    size.rotx1(), size.rotx2(),
+    size.roty1(), size.roty2(),
+    size.xOff(), size.yOff(),
+    size.scale()
+  };
+
+  mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
+  mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
+  mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
+  mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
+  mImmediateContext->Dispatch( 5, 51, 1 );
+
+  target = nullptr;
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
 }
 
 void WinRenderer::DX11Renderer::renderEncoding()
