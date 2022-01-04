@@ -463,7 +463,7 @@ void WinRenderer::BaseRenderer::setRotation( ImageProperties::Rotation rotation 
 }
 
 
-WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mRefreshRate{}, mEncoder{}, mRenderingToWindow{}, mVScale{ ~0u }
+WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mRefreshRate{}, mEncoder{}, mMainDebugRendering{}, mVScale{ ~0u }
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
@@ -669,11 +669,11 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
   UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
 
-  if ( mRenderingToWindow.enabled() )
+  if ( mMainDebugRendering.enabled() )
   {
-    mRenderingToWindow.update( *this );
-    mImmediateContext->ClearUnorderedAccessViewUint( mRenderingToWindow.uav.Get(), v );
-    renderScreenView( mRenderingToWindow.size, mRenderingToWindow.uav.Get() );
+    mMainDebugRendering.update( *this );
+    mImmediateContext->ClearUnorderedAccessViewUint( mMainDebugRendering.uav.Get(), v );
+    renderScreenView( mMainDebugRendering.size, mMainDebugRendering.uav.Get() );
   }
   else
   {
@@ -792,9 +792,9 @@ ImTextureID WinRenderer::DX11Renderer::renderBoard( int id, int width, int heigh
 
 void* WinRenderer::DX11Renderer::mainRenderingTexture( int w, int h )
 {
-  mRenderingToWindow.width = w;
-  mRenderingToWindow.height = h;
-  return mRenderingToWindow.srv.Get();
+  mMainDebugRendering.width = w;
+  mMainDebugRendering.height = h;
+  return mMainDebugRendering.srv.Get();
 }
 
 WinRenderer::DX11Renderer::Board WinRenderer::DX11Renderer::createBoard( int width, int height )

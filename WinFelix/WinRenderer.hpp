@@ -256,7 +256,7 @@ private:
     boost::rational<int32_t>          mRefreshRate;
     std::shared_ptr<IEncoder>         mEncoder;
     std::unordered_map<int, Board>    mBoards;
-    DebugRendering                    mRenderingToWindow;
+    DebugRendering                    mMainDebugRendering;
     uint32_t mVScale;
   };
 
