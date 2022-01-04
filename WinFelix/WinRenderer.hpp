@@ -203,7 +203,15 @@ private:
       int32_t roty1;
       int32_t roty2;
       int32_t size;
+      uint32_t padding;
+    };
+
+    struct CBVSize
+    {
       uint32_t vscale;
+      uint32_t padding1;
+      uint32_t padding2;
+      uint32_t padding3;
     };
 
     struct BoardFont
@@ -221,8 +229,10 @@ private:
     ComPtr<ID3D11DeviceContext>       mImmediateContext;
     ComPtr<IDXGISwapChain>            mSwapChain;
     ComPtr<ID3D11ComputeShader>       mRendererCS;
+    ComPtr<ID3D11ComputeShader>       mRendererYUVCS;
     ComPtr<ID3D11ComputeShader>       mBoardCS;
     ComPtr<ID3D11Buffer>              mPosSizeCB;
+    ComPtr<ID3D11Buffer>              mVSizeCB;
     ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
     ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
     ComPtr<ID3D11Texture2D>           mSource;

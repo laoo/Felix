@@ -5,6 +5,7 @@
 #include "WinImgui11.hpp"
 #include "WinImgui9.hpp"
 #include "renderer.hxx"
+#include "rendererYUV.hxx"
 #include "board.hxx"
 #include "fonts.hpp"
 #include "Log.hpp"
@@ -522,6 +523,7 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   L_INFO << "Refresh Rate: " << mRefreshRate << " = " << ( (double)mRefreshRate.numerator() / (double)mRefreshRate.denominator() );
 
   V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, mRendererCS.ReleaseAndGetAddressOf() ) );
+  V_THROW( mD3DDevice->CreateComputeShader( g_RendererYUV, sizeof g_RendererYUV, nullptr, mRendererYUVCS.ReleaseAndGetAddressOf() ) );
   V_THROW( mD3DDevice->CreateComputeShader( g_Board, sizeof g_Board, nullptr, mBoardCS.ReleaseAndGetAddressOf() ) );
 
   D3D11_BUFFER_DESC bd = {};
@@ -529,6 +531,11 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   bd.Usage = D3D11_USAGE_DEFAULT;
   bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   V_THROW( mD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
+
+  bd.ByteWidth = sizeof( CBVSize );
+  bd.Usage = D3D11_USAGE_DEFAULT;
+  bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  V_THROW( mD3DDevice->CreateBuffer( &bd, NULL, mVSizeCB.ReleaseAndGetAddressOf() ) );
 
   D3D11_TEXTURE2D_DESC desc{};
   desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -604,8 +611,8 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
     mImmediateContext->ClearUnorderedAccessViewUint( mRenderingToWindow.uav.Get(), v );
   }
 
-  std::array<ID3D11UnorderedAccessView*, 4> uavs{ mRenderingToWindow.enabled() ? mRenderingToWindow.uav.Get() : mBackBufferUAV.Get(), mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
+  std::array<ID3D11UnorderedAccessView*, 1> uavs{ mRenderingToWindow.enabled() ? mRenderingToWindow.uav.Get() : mBackBufferUAV.Get() };
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uavs.data(), nullptr );
 
   {
     if ( auto frame = mInstance->pullNextFrame() )
@@ -670,14 +677,28 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
 
 
     uavs[0] = nullptr;
-    uavs[1] = nullptr;
-    uavs[2] = nullptr;
-    uavs[3] = nullptr;
-    mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
+    mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uavs.data(), nullptr );
   }
 
   if ( mEncoder )
   {
+    std::array<ID3D11UnorderedAccessView*, 3> uavs{ mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
+    mImmediateContext->CSSetUnorderedAccessViews( 0, 3, uavs.data(), nullptr );
+
+    CBVSize cbVSize{ mVScale };
+
+    mImmediateContext->UpdateSubresource( mVSizeCB.Get(), 0, NULL, &cbVSize, 0, 0 );
+    mImmediateContext->CSSetConstantBuffers( 0, 1, mVSizeCB.GetAddressOf() );
+    mImmediateContext->CSSetShader( mRendererYUVCS.Get(), nullptr, 0 );
+    mImmediateContext->Dispatch( 5, 51, 1 );
+
+
+    uavs[0] = nullptr;
+    uavs[1] = nullptr;
+    uavs[2] = nullptr;
+    mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
+
+
     mImmediateContext->CopyResource( mStagingY.Get(), mPreStagingY.Get() );
     mImmediateContext->CopyResource( mStagingU.Get(), mPreStagingU.Get() );
     mImmediateContext->CopyResource( mStagingV.Get(), mPreStagingV.Get() );

@@ -35,11 +35,13 @@
     <ClInclude Include="LuaProxies.hpp" />
     <ClInclude Include="fonts.hpp" />
     <ClInclude Include="board.hxx" />
+    <ClInclude Include="rendererYUV.hxx" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="render.csh" />
     <FxCompile Include="imgui.vsh" />
     <FxCompile Include="imgui.psh" />
     <FxCompile Include="board.csh" />
+    <FxCompile Include="renderYUV.csh" />
   </ItemGroup>
 </Project>
