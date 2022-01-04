@@ -594,15 +594,6 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
     V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
   }
 
-  if ( mEncoder )
-  {
-    uint32_t encoderScale = mEncoder->width() / 160;
-    if ( encoderScale != mVScale )
-    {
-      updateVscale( encoderScale );
-    }
-  }
-
   UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
   if ( mRenderingToWindow.enabled() )
@@ -682,68 +673,77 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
 
   if ( mEncoder )
   {
-    std::array<ID3D11UnorderedAccessView*, 3> uavs{ mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
-    mImmediateContext->CSSetUnorderedAccessViews( 0, 3, uavs.data(), nullptr );
-
-    CBVSize cbVSize{ mVScale };
-
-    mImmediateContext->UpdateSubresource( mVSizeCB.Get(), 0, NULL, &cbVSize, 0, 0 );
-    mImmediateContext->CSSetConstantBuffers( 0, 1, mVSizeCB.GetAddressOf() );
-    mImmediateContext->CSSetShader( mRendererYUVCS.Get(), nullptr, 0 );
-    mImmediateContext->Dispatch( 5, 51, 1 );
-
-
-    uavs[0] = nullptr;
-    uavs[1] = nullptr;
-    uavs[2] = nullptr;
-    mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
-
-
-    mImmediateContext->CopyResource( mStagingY.Get(), mPreStagingY.Get() );
-    mImmediateContext->CopyResource( mStagingU.Get(), mPreStagingU.Get() );
-    mImmediateContext->CopyResource( mStagingV.Get(), mPreStagingV.Get() );
-
-    D3D11_MAPPED_SUBRESOURCE resY, resU, resV;
-    mImmediateContext->Map( mStagingY.Get(), 0, D3D11_MAP_READ, 0, &resY );
-    mImmediateContext->Map( mStagingU.Get(), 0, D3D11_MAP_READ, 0, &resU );
-    mImmediateContext->Map( mStagingV.Get(), 0, D3D11_MAP_READ, 0, &resV );
-
-    if ( !mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch ) )
-    {
-      mEncoder->startEncoding( mRefreshRate.numerator(), mRefreshRate.denominator() );
-      mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch );
-    }
-
-    mImmediateContext->Unmap( mStagingY.Get(), 0 );
-    mImmediateContext->Unmap( mStagingU.Get(), 0 );
-    mImmediateContext->Unmap( mStagingV.Get(), 0 );
+    renderEncoding();
   }
 
 
+  GetWindowRect( mHWnd, &r );
+  POINT p{ r.left, r.top };
+  ScreenToClient( mHWnd, &p );
+  GetClientRect( mHWnd, &r );
+  r.left = p.x;
+  r.top = p.y;
+
+  mImgui->dx11_NewFrame();
+  mImgui->win32_NewFrame();
+
+  ImGui::NewFrame();
+
+  config.drawGui( r.left, r.top, r.right, r.bottom );
+
+  ImGui::Render();
+
+  mImmediateContext->OMSetRenderTargets( 1, mBackBufferRTV.GetAddressOf(), nullptr );
+  mImgui->dx11_RenderDrawData( ImGui::GetDrawData() );
+
+  std::array<ID3D11RenderTargetView* const, 1> rtv{};
+  mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
+}
+
+void WinRenderer::DX11Renderer::renderEncoding()
+{
+  uint32_t encoderScale = mEncoder->width() / 160;
+  if ( encoderScale != mVScale )
   {
-    RECT r;
-    GetWindowRect( mHWnd, &r );
-    POINT p{ r.left, r.top };
-    ScreenToClient( mHWnd, &p );
-    GetClientRect( mHWnd, &r );
-    r.left = p.x;
-    r.top = p.y;
-
-    mImgui->dx11_NewFrame();
-    mImgui->win32_NewFrame();
-
-    ImGui::NewFrame();
-
-    config.drawGui( r.left, r.top, r.right, r.bottom );
-
-    ImGui::Render();
-
-    mImmediateContext->OMSetRenderTargets( 1, mBackBufferRTV.GetAddressOf(), nullptr );
-    mImgui->dx11_RenderDrawData( ImGui::GetDrawData() );
-
-    std::array<ID3D11RenderTargetView* const, 1> rtv{};
-    mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
+    updateVscale( encoderScale );
   }
+
+  std::array<ID3D11UnorderedAccessView*, 3> uavs{ mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 3, uavs.data(), nullptr );
+
+  CBVSize cbVSize{ mVScale };
+
+  mImmediateContext->UpdateSubresource( mVSizeCB.Get(), 0, NULL, &cbVSize, 0, 0 );
+  mImmediateContext->CSSetConstantBuffers( 0, 1, mVSizeCB.GetAddressOf() );
+  mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
+  mImmediateContext->CSSetShader( mRendererYUVCS.Get(), nullptr, 0 );
+  mImmediateContext->Dispatch( 5, 51, 1 );
+
+
+  uavs[0] = nullptr;
+  uavs[1] = nullptr;
+  uavs[2] = nullptr;
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
+
+
+  mImmediateContext->CopyResource( mStagingY.Get(), mPreStagingY.Get() );
+  mImmediateContext->CopyResource( mStagingU.Get(), mPreStagingU.Get() );
+  mImmediateContext->CopyResource( mStagingV.Get(), mPreStagingV.Get() );
+
+  D3D11_MAPPED_SUBRESOURCE resY, resU, resV;
+  mImmediateContext->Map( mStagingY.Get(), 0, D3D11_MAP_READ, 0, &resY );
+  mImmediateContext->Map( mStagingU.Get(), 0, D3D11_MAP_READ, 0, &resU );
+  mImmediateContext->Map( mStagingV.Get(), 0, D3D11_MAP_READ, 0, &resV );
+
+  if ( !mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch ) )
+  {
+    mEncoder->startEncoding( mRefreshRate.numerator(), mRefreshRate.denominator() );
+    mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch );
+  }
+
+  mImmediateContext->Unmap( mStagingY.Get(), 0 );
+  mImmediateContext->Unmap( mStagingU.Get(), 0 );
+  mImmediateContext->Unmap( mStagingV.Get(), 0 );
 }
 
 void WinRenderer::DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
