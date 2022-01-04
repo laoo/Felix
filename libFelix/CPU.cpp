@@ -2819,14 +2819,16 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_4_f4:
   {
     int zp = ram[pc++];
-    (void)da_sprintf(dst, "$%02x,x\t;=$%02x", zp, ram[(zp + mState.x) & 0xff]);
+    int addr = (zp + mState.x) & 0xff;
+    (void)da_sprintf(dst, "$%02x,x\t;[$%02x]=$%02x", zp, addr, ram[addr]);
     break;
   }
   case Opcode::RZY_LDX:
   case Opcode::WZY_STX:
   {
     int zp = ram[pc++];
-    (void)da_sprintf(dst, "$%02x,y\t;=$%02x", zp, ram[(zp + mState.y) & 0xff]);
+    int addr = (zp + mState.y) & 0xff;
+    (void)da_sprintf(dst, "$%02x,y\t;[$%02x]=$%02x", zp, addr, ram[addr]);
     break;
   }
   case Opcode::RIN_LDA:
