@@ -24,16 +24,34 @@
 #include "DebugRAM.hpp"
 #include <imfilebrowser.h>
 
+/* Debug Window Sizes */
+#define DISASM_WIDTH   40
+#define DISASM_HEIGHT  16
+#define CPU_WIDTH      14
+#define CPU_HEIGHT      3
+#define HISTORY_WIDTH  64
+#define HISTORY_HEIGHT 16
+
 namespace
 {
 
 
 }
 
-Manager::Manager() : mLua{}, mDoUpdate{ false }, mDebugger{}, mProcessThreads{}, mJoinThreads{},
-  mRenderThread{}, mAudioThread{}, mRenderingTime{}, mOpenMenu{ false }, mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
-  mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() }, mIntputSource{}, mKeyNames{ std::make_shared<KeyNames>() },
-  mImageProperties{}
+Manager::Manager() : mLua{},
+                     mDoUpdate{ false },
+                     mDebugger{},
+                     mProcessThreads{},
+                     mJoinThreads{},
+                     mRenderThread{},
+                     mAudioThread{},
+                     mRenderingTime{},
+                     mOpenMenu{ false },
+                     mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
+                     mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
+                     mIntputSource{},
+                     mKeyNames{ std::make_shared<KeyNames>() },
+                     mImageProperties{}
 {
   mDebugger( RunMode::RUN );
   mRenderer = std::make_shared<WinRenderer>();
@@ -1063,7 +1081,7 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
   if ( copy )
   {
     std::span<wchar_t const> span{ (wchar_t const*)copy->lpData, copy->cbData / sizeof( wchar_t ) };
-    
+
     wchar_t const* ptr = span.data();
     if ( size_t size = std::wcslen( ptr ) )
     {
@@ -1075,7 +1093,17 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
   return false;
 }
 
-Manager::Debugger::Debugger() : mutex{}, mDebugMode{}, mVisualizeCPU{}, mVisualizeDisasm{}, mVisualizeHistory{}, mDebugModeOnBreak{}, mNormalModeOnRun{}, mCpuVisualizer{ 0, 14, 3 }, mDisasmVisualizer{ 1, 32, 16 }, mHistoryVisualizer{ 2, 64, 16 }, mRunMode{ RunMode::RUN }
+Manager::Debugger::Debugger() : mutex{},
+                                mDebugMode{},
+                                mVisualizeCPU{},
+                                mVisualizeDisasm{},
+                                mVisualizeHistory{},
+                                mDebugModeOnBreak{},
+                                mNormalModeOnRun{},
+                                mCpuVisualizer{ 0, CPU_WIDTH, CPU_HEIGHT },
+                                mDisasmVisualizer{ 1, DISASM_WIDTH, DISASM_HEIGHT },
+                                mHistoryVisualizer{ 2, HISTORY_WIDTH, HISTORY_WIDTH },
+                                mRunMode{ RunMode::RUN }
 {
   auto sysConfig = gConfigProvider.sysConfig();
 

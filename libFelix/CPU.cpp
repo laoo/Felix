@@ -3,10 +3,148 @@
 #include "Opcodes.hpp"
 #include "TraceHelper.hpp"
 #include "DebugRAM.hpp"
+#include <stdarg.h>
 
 namespace
 {
-static constexpr uint8_t hexTab[16] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+static constexpr uint8_t hexTab[16] =
+{
+  '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+};
+
+char * da_sprintf (char *dst, const char *fmt, ...)
+{
+  char c, f;
+  char fill;
+  char *p;
+  int width;
+  char h[16];
+  unsigned long n;
+  va_list arg;
+  char *dst0;
+
+  dst0 = dst;
+  va_start (arg, fmt);
+
+  while ((c = *fmt++))
+  {
+    if (c != '%')
+    {
+      if ( c == '\t' )
+      {
+        for(int column = (int)(dst - dst0); column < 15; ++column)
+        {
+          *dst++ = ' ';
+        }
+      }
+      else
+      {
+        *dst++ = c;
+      }
+      continue;
+    }
+    c = *fmt++;
+    fill = ' ';
+    if (c == '0')
+    {
+      fill = c;
+      c = *fmt++;
+    }
+    for (width = 0; '0' <= c && c <= '9'; c = *fmt++)
+    {
+      width *= 10;
+      width += c - '0';
+    }
+    width = (width > 15) ? 15 : width;
+    p = h;
+    *p = '\0';
+    f = 0;
+    if (c == 'l' || c == 'L')
+    {
+      f = 1;
+      c = *fmt++;
+    }
+    switch (c)
+    {
+    case 'x':
+    case 'X':
+    case 'p':
+      if (f)
+      {
+        n = va_arg (arg, unsigned long);
+      }
+      else
+      {
+        n = (unsigned long) va_arg (arg, unsigned int);
+      }
+      do
+      {
+        *p++ = hexTab[(int)(n & 0xf)];
+        n >>= 4;
+      } while (n);
+      break;
+    case 'd':
+    case 'u':
+      if (f)
+      {
+        n = va_arg (arg, unsigned long);
+      }
+      else
+      {
+        n = (unsigned long) va_arg (arg, unsigned int);
+      }
+      if (c == 'd' && (signed long) n < 0)
+      {
+        *dst++ = '-';
+        n = (unsigned long) (-(signed long) n);
+      }
+      do
+      {
+        *p++ = hexTab[(int)(n % 10)];
+        n /= 10;
+      } while (n);
+      break;
+    case 'c':
+      c = va_arg (arg, int);
+      *p++ = c;
+      break;
+    case 's':
+      p = va_arg (arg, char *);
+      if ( p )
+      {
+        for (width -= (int)strlen (p); width > 0; --width)
+        {
+          *dst++ = fill;
+        }
+        while (*p)
+        {
+            *dst++ = *p++;
+        }
+      }
+      else
+      {
+        *dst++ = '(';
+        *dst++ = 'N';
+        *dst++ = 'I';
+        *dst++ = 'L';
+        *dst++ = ')';
+      }
+      continue;
+    default:
+      /*  empty */
+      break;
+    }
+    for (width = width - (int)(p - h); width > 0; --width)
+    {
+      *dst++ = fill;
+    }
+    for (--p; p >= h; --p)
+    {
+      *dst++ = *p;
+    }
+  }
+  return dst;
+}
 
 template<size_t N>
 consteval uint16_t l2( char const ( &t )[N] )
@@ -2045,13 +2183,9 @@ void CPU::disassemblyFromPC( uint8_t const* ram, char* out, int columns, int row
   for ( size_t i = 0; i < rows; ++i )
   {
     auto base = (char*)&out[i * columns];
-    base[0] = hexTab[pc >> 12];
-    base[1] = hexTab[(pc >> 8) & 0xf];
-    base[2] = hexTab[(pc >> 4) & 0xf];
-    base[3] = hexTab[pc & 0xf];
-
-    (void)disasmOp( base + 5, (Opcode)ram[pc] );
-    disasmOpr( ram, (char*)base + 5 + 5, pc );
+    base = da_sprintf(base, "%04x ", pc);
+    (void)disasmOp( base, (Opcode)ram[pc] );
+    disasmOpr( ram, (char*)base + 5, pc );
   }
 }
 
@@ -2080,6 +2214,8 @@ void CPU::copyHistory( std::span<char> out )
 
 void CPU::disasmOp( char * out, Opcode op, CPUState* state )
 {
+  out[4] = ' '; /* Hack for history */
+
   switch ( op )
   {
   case Opcode::RZP_AND:
@@ -2238,37 +2374,29 @@ void CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::MZX_INC:
   case Opcode::MAB_INC:
   case Opcode::MAX_INC:
-    *(uint32_t*)out = l4( "inc " );
-    break;
   case Opcode::IMP_INC:
-    *(uint32_t*)out = l4( "inc" );
+    *(uint32_t*)out = l4( "inc " );
     break;
   case Opcode::MZP_LSR:
   case Opcode::MZX_LSR:
   case Opcode::MAB_LSR:
   case Opcode::MAX_LSR:
-    *(uint32_t*)out = l4( "lsr " );
-    break;
   case Opcode::IMP_LSR:
-    *(uint32_t*)out = l4( "lsr" );
+    *(uint32_t*)out = l4( "lsr " );
     break;
   case Opcode::MZP_ROL:
   case Opcode::MZX_ROL:
   case Opcode::MAB_ROL:
   case Opcode::MAX_ROL:
-    *(uint32_t*)out = l4( "rol " );
-    break;
   case Opcode::IMP_ROL:
-    *(uint32_t*)out = l4( "rol" );
+    *(uint32_t*)out = l4( "rol " );
     break;
   case Opcode::MZP_ROR:
   case Opcode::MZX_ROR:
   case Opcode::MAB_ROR:
   case Opcode::MAX_ROR:
-    *(uint32_t*)out = l4( "ror " );
-    break;
   case Opcode::IMP_ROR:
-    *(uint32_t*)out = l4( "ror" );
+    *(uint32_t*)out = l4( "ror " );
     break;
   case Opcode::MZP_TRB:
   case Opcode::MAB_TRB:
@@ -2280,67 +2408,51 @@ void CPU::disasmOp( char * out, Opcode op, CPUState* state )
     break;
   case Opcode::MZP_RMB0:
     *(uint32_t*)out = l4( "rmb0" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_RMB1:
     *(uint32_t*)out = l4( "rmb1" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_RMB2:
     *(uint32_t*)out = l4( "rmb2" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_RMB3:
     *(uint32_t*)out = l4( "rmb3" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_RMB4:
     *(uint32_t*)out = l4( "rmb4" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_RMB5:
     *(uint32_t*)out = l4( "rmb5" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_RMB6:
     *(uint32_t*)out = l4( "rmb6" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_RMB7:
     *(uint32_t*)out = l4( "rmb7" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB0:
     *(uint32_t*)out = l4( "smb0" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB1:
     *(uint32_t*)out = l4( "smb1" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB2:
     *(uint32_t*)out = l4( "smb2" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB3:
     *(uint32_t*)out = l4( "smb3" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB4:
     *(uint32_t*)out = l4( "smb4" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB5:
     *(uint32_t*)out = l4( "smb5" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB6:
     *(uint32_t*)out = l4( "smb6" );
-    out[4] = ' ';
     break;
   case Opcode::MZP_SMB7:
     *(uint32_t*)out = l4( "smb7" );
-    out[4] = ' ';
     break;
   case Opcode::JMA_JMP:
   case Opcode::JMX_JMP:
@@ -2430,75 +2542,58 @@ void CPU::disasmOp( char * out, Opcode op, CPUState* state )
     break;
   case Opcode::BZR_BBR0:
     *(uint32_t*)out = l4( "bbr0" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBR1:
     *(uint32_t*)out = l4( "bbr1" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBR2:
     *(uint32_t*)out = l4( "bbr2" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBR3:
     *(uint32_t*)out = l4( "bbr3" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBR4:
     *(uint32_t*)out = l4( "bbr4" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBR5:
     *(uint32_t*)out = l4( "bbr5" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBR6:
     *(uint32_t*)out = l4( "bbr6" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBR7:
     *(uint32_t*)out = l4( "bbr7" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS0:
     *(uint32_t*)out = l4( "bbs0" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS1:
     *(uint32_t*)out = l4( "bbs1" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS2:
     *(uint32_t*)out = l4( "bbs2" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS3:
     *(uint32_t*)out = l4( "bbs3" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS4:
     *(uint32_t*)out = l4( "bbs4" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS5:
     *(uint32_t*)out = l4( "bbs5" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS6:
     *(uint32_t*)out = l4( "bbs6" );
-    out[4] = ' ';
     break;
   case Opcode::BZR_BBS7:
     *(uint32_t*)out = l4( "bbs7" );
-    out[4] = ' ';
     break;
   case Opcode::BRK_BRK:
     if ( state )
     {
       if ( ( state->interrupt & CPUState::I_RESET ) != 0 )
       {
-        *(uint32_t*)out = l4( "RESE" );
-        *(uint16_t*)&out[4] = l2( "T" );
+        da_sprintf(out,"RESET");
         break;
       }
       else if ( ( state->interrupt & CPUState::I_NMI ) != 0 )
@@ -2725,15 +2820,7 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_3_44:
   {
     int zp = ram[pc++];
-    *dst++ = '$';
-    *dst++ = hexTab[zp >> 4];
-    *dst++ = hexTab[zp & 0x0f];
-    dst = &out[15];
-    *dst++ = ';';
-    *dst++ = '=';
-    *dst++ = '$';
-    *dst++ = hexTab[ram[zp] >> 4];
-    *dst++ = hexTab[ram[zp] & 0xf];
+    (void)da_sprintf(dst, "$%02x\t;[$%02x]=$%02x", zp, zp, ram[zp]);
     break;
   }
   case Opcode::RZX_LDA:
@@ -2759,37 +2846,16 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_4_f4:
   {
     int zp = ram[pc++];
-    *dst++ = '$';
-    *dst++ = hexTab[zp >> 4];
-    *dst++ = hexTab[zp & 0x0f];
-    *dst++ = ',';
-    *dst++ = 'x';
-    dst = &out[15];
-    *dst++ = ';';
-    *dst++ = '=';
-    *dst++ = '$';
-    *dst++ = hexTab[ram[(zp + mState.x) & 0xff] >> 4];
-    *dst++ = hexTab[ram[(zp + mState.x) & 0xff] & 0xf];
+    int addr = (zp + mState.x) & 0xff;
+    (void)da_sprintf(dst, "$%02x,x\t;[$%02x]=$%02x", zp, addr, ram[addr]);
     break;
   }
   case Opcode::RZY_LDX:
   case Opcode::WZY_STX:
   {
-    int data = ram[pc++];
-    *dst++ = '$';
-    *dst++ = hexTab[data >> 4];
-    *dst++ = hexTab[data & 0x0f];
-    *dst++ = ',';
-    *dst++ = 'y';
-    dst = &out[15];
-    *dst++ = ';';
-    *dst++ = '$';
-    *dst++ = hexTab[((data+mState.y) >> 4) & 0xf];
-    *dst++ = hexTab[(data + mState.y) & 0xf];
-    *dst++ = '=';
-    *dst++ = '#';
-    *dst++ = hexTab[ram[(data + mState.y) & 0xff] >> 4];
-    *dst++ = hexTab[ram[(data + mState.y) & 0xff] & 0xf];
+    int zp = ram[pc++];
+    int addr = (zp + mState.y) & 0xff;
+    (void)da_sprintf(dst, "$%02x,y\t;[$%02x]=$%02x", zp, addr, ram[addr]);
     break;
   }
   case Opcode::RIN_LDA:
@@ -2801,19 +2867,22 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::RIN_SBC:
   case Opcode::WIN_STA:
   {
-    int data = ram[pc++];
-    *dst++ = '(';
-    *dst++ = '$';
-    *dst++ = hexTab[data >> 4];
-    *dst++ = hexTab[data & 0x0f];
-    *dst++ = ')';
-    dst = &out[15];
-    *dst++ = ';';
-    *dst++ = '$';
-    *dst++ = hexTab[ram[data + 1] >> 4];
-    *dst++ = hexTab[ram[data + 1] & 0xf];
-    *dst++ = hexTab[ram[data] >> 4];
-    *dst++ = hexTab[ram[data] & 0xf];
+    int zp = ram[pc++];
+    int addr = (ram[zp+1] << 8) | ram[zp];
+    char const* txt = mTraceHelper->addressLabel( addr );
+    if ( txt[0] == '$' )
+    {
+      int data = ram[addr];
+      (void)da_sprintf(dst, "($%02x)\t;[$%04x]=$%02x", zp, addr, data);
+    }
+    else if ( pc == mState.pc + 2)
+    {
+      (void)da_sprintf(dst, "($%02x)\t;[$%04x]=$%02x", zp, addr, mState.m1);
+    }
+    else
+    {
+      (void)da_sprintf(dst, "($%02x)\t;[%s]", zp, txt);
+    }
     break;
   }
   case Opcode::RIX_AND:
@@ -2825,14 +2894,22 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::RIX_SBC:
   case Opcode::WIX_STA:
   {
-    int data = ram[pc++];
-    *dst++ = '(';
-    *dst++ = '$';
-    *dst++ = hexTab[data >> 4];
-    *dst++ = hexTab[data & 0x0f];
-    *dst++ = ',';
-    *dst++ = 'x';
-    *dst++ = ')';
+    int zp = ram[pc++];
+    int addr = (ram[(zp + 1 + mState.x) & 0xff] << 8) | ram[(zp + mState.x) & 0xff];
+    char const* txt = mTraceHelper->addressLabel( addr );
+    if ( txt[0] == '$' )
+    {
+      int data = ram[addr];
+      (void)da_sprintf(dst, "($%02x,x)\t;[$%04x]=$%02x", zp, addr, data);
+    }
+    else if ( pc == mState.pc + 2)
+    {
+      (void)da_sprintf(dst, "($%02x,x)\t;[$%04x]=$%02x", zp, addr, mState.m1);
+    }
+    else
+    {
+      (void)da_sprintf(dst, "($%02x,x)\t;[%s]", zp, txt);
+    }
     break;
   }
   case Opcode::RIY_AND:
@@ -2844,14 +2921,22 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::RIY_SBC:
   case Opcode::WIY_STA:
   {
-    int data = ram[pc++];
-    *dst++ = '(';
-    *dst++ = '$';
-    *dst++ = hexTab[data >> 4];
-    *dst++ = hexTab[data & 0x0f];
-    *dst++ = ')';
-    *dst++ = ',';
-    *dst++ = 'y';
+    int zp = ram[pc++];
+    int addr = ((ram[(zp + 1) & 0xff] << 8) | ram[zp]) +  + mState.y;
+    char const* txt = mTraceHelper->addressLabel( addr );
+    if ( txt[0] == '$' )
+    {
+      int data = ram[addr];
+      (void)da_sprintf(dst, "($%02x),y\t;[$%04x]=$%02x", zp, addr, data);
+    }
+    else if ( pc == mState.pc + 2)
+    {
+      (void)da_sprintf(dst, "($%02x),y\t;[$%04x]=$%02x", zp, addr, mState.m1);
+    }
+    else
+    {
+      (void)da_sprintf(dst, "($%02x),y\t;[%s]", zp, txt);
+    }
     break;
   }
   case Opcode::RAB_AND:
@@ -2878,23 +2963,38 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::WAB_STX:
   case Opcode::WAB_STY:
   case Opcode::WAB_STZ:
+  {
+    int addr = (ram[pc + 1] << 8)|ram[pc];
+    pc += 2;
+    char const* txt = mTraceHelper->addressLabel( addr );
+    if ( txt[0] == '$' )
+    {
+      int data = ram[addr];
+      da_sprintf(dst, "%s\t;[$%04x]=$%02x", txt, addr, data);
+    }
+    else if ( pc == mState.pc + 3)
+    {
+      da_sprintf(dst, "%s\t;[$%04x]=$%02x", txt, addr, mState.m1);
+    }
+    else
+    {
+      da_sprintf(dst, "%s\t;[$%04x]", txt, addr);
+    }
+    break;
+  }
   case Opcode::JMA_JMP:
   case Opcode::JSA_JSR:
   case Opcode::UND_4_dc:
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
   {
-    int lo = ram[pc];
-    int hi = ram[pc + 1];
-    int data = lo + ( hi << 8 );
+    int addr = (ram[pc + 1] << 8)|ram[pc];
     pc += 2;
-    char const* txt = mTraceHelper->addressLabel( data );
-    while ( *txt )
-    {
-      *dst++ = *txt++;
-    };
+    char const* txt = mTraceHelper->addressLabel( addr );
+    da_sprintf(dst, "%s", txt);
     break;
   }
+
   case Opcode::RAX_AND:
   case Opcode::RAX_BIT:
   case Opcode::RAX_CMP:
@@ -2913,17 +3013,22 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::WAX_STA:
   case Opcode::WAX_STZ:
   {
-    int lo = ram[pc];
-    int hi = ram[pc + 1];
-    int data = lo + ( hi << 8 );
+    int addr = (ram[pc + 1] << 8)|ram[pc];
     pc += 2;
-    char const* txt = mTraceHelper->addressLabel( data );
-    while ( *txt )
+    char const* txt = mTraceHelper->addressLabel( addr );
+    if ( txt[0] == '$' )
     {
-      *dst++ = *txt++;
-    };
-    *dst++ = ',';
-    *dst++ = 'x';
+      int data = ram[addr + mState.x];
+      da_sprintf(dst, "%s,x\t;[$%04x]=$%02x", txt, addr + mState.x, data);
+    }
+    else if ( pc == mState.pc + 3)
+    {
+      da_sprintf(dst, "%s,x\t;[$%04x]=$%02x", txt, addr + mState.x, mState.m1);
+    }
+    else
+    {
+      da_sprintf(dst, "%s,x\t;[$%04x]", txt, addr + mState.x);
+    }
     break;
   }
   case Opcode::RAY_AND:
@@ -2936,59 +3041,42 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::RAY_SBC:
   case Opcode::WAY_STA:
   {
-    int lo = ram[pc];
-    int hi = ram[pc + 1];
-    int data = lo + ( hi << 8 );
+    int addr = (ram[pc + 1] << 8)|ram[pc];
     pc += 2;
-    char const* txt = mTraceHelper->addressLabel( data );
-    while ( *txt )
+    char const* txt = mTraceHelper->addressLabel( addr );
+    addr += mState.y;
+    if ( txt[0] == '$' )
     {
-      *dst++ = *txt++;
-    };
-    *dst++ = ',';
-    *dst++ = 'y';
+      int data = ram[addr];
+      (void)da_sprintf(dst, "%s,y\t;[$%04x]=$%02x", txt, addr, data);
+    }
+    else if ( pc == mState.pc + 3)
+    {
+      (void)da_sprintf(dst, "%s,y\t;[$%04x]=$%02x", txt, addr, mState.m1);
+    }
+    else
+    {
+      (void)da_sprintf(dst, "%s,y\t;[$%04x]", txt, addr);
+    }
     break;
   }
   case Opcode::JMX_JMP:
   {
-    int lo = ram[pc];
-    int hi = ram[pc + 1];
-    int data = lo + ( hi << 8 );
+    int addr = (ram[pc + 1] << 8)|ram[pc];
     pc += 2;
-    char const* txt = mTraceHelper->addressLabel( data );
-    *dst++ = '(';
-    while ( *txt )
-    {
-      *dst++ = *txt++;
-    };
-    *dst++ = ',';
-    *dst++ = 'x';
-    *dst++ = ')';
+    char const* txt = mTraceHelper->addressLabel( addr );
+    addr += mState.x;
+    int jmp_dst = (ram[addr + 1] << 8)|ram[addr];
+    (void)da_sprintf(dst, "(%s,x)\t;=>$%04x", txt, jmp_dst);
     break;
   }
   case Opcode::JMI_JMP:
   {
-    int lo = ram[pc];
-    int hi = ram[pc + 1];
-    int data = lo + ( hi << 8 );
+    int addr = (ram[pc+1] << 8) | ram[pc];
     pc += 2;
-    char const* txt = mTraceHelper->addressLabel( data );
-    *dst++ = '(';
-    while ( *txt )
-    {
-      *dst++ = *txt++;
-    };
-    *dst++ = ')';
-    dst = &out[15];
-    *dst++ = ';';
-    *dst++ = '=';
-    *dst++ = '$';
-    lo = ram[data];
-    hi = ram[data + 1];
-    *dst++ = hexTab[hi >> 4];
-    *dst++ = hexTab[hi & 0x0f];
-    *dst++ = hexTab[lo >> 4];
-    *dst++ = hexTab[lo & 0x0f];
+    int jmp_dst = (ram[addr+1] << 8) | ram[addr];
+    char const* txt = mTraceHelper->addressLabel( addr );
+    (void)da_sprintf(dst, "(%s)\t;=>$%04x", txt, jmp_dst);
     break;
   }
   case Opcode::IMM_AND:
@@ -3013,10 +3101,7 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::BRK_BRK:
   {
     int data = ram[pc++];
-    *dst++ = '#';
-    *dst++ = '$';
-    *dst++ = hexTab[data >> 4];
-    *dst++ = hexTab[data & 0x0f];
+    (void)da_sprintf(dst, "#$%02x", data);
     break;
   }
   case Opcode::BRL_BCC:
@@ -3032,10 +3117,7 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     int dest = pc + (int8_t)data;
     char const* txt = mTraceHelper->addressLabel( dest );
-    while ( *txt )
-    {
-      *dst++ = *txt++;
-    }
+    (void)da_sprintf(dst, "%s", txt);
     break;
   }
   case Opcode::BZR_BBR0:
@@ -3055,28 +3137,11 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::BZR_BBS6:
   case Opcode::BZR_BBS7:
   {
-    int zp = ram[pc];
-
-    *dst++ = '$';
-    *dst++ = hexTab[zp >> 4];
-    *dst++ = hexTab[zp & 0x0f];
-    *dst++ = ',';
-
-    int data = ram[pc + 1];
-    pc += 2;
+    int zp = ram[pc++];
+    int data = ram[pc++];
     int dest = pc + (int8_t)data;
     char const* txt = mTraceHelper->addressLabel( dest );
-
-    while ( *txt )
-    {
-      *dst++ = *txt++;
-    };
-    dst = &out[15];
-    *dst++ = ';';
-    *dst++ = '=';
-    *dst++ = '$';
-    *dst++ = hexTab[ram[zp] >> 4];
-    *dst++ = hexTab[ram[zp] & 0xf];
+    (void)da_sprintf(dst, "$%02x,%s\t;=[$%02x]=$%02x", zp,txt,zp, ram[zp]);
     break;
   }
   default:
