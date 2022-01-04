@@ -23,9 +23,6 @@
     <ClInclude Include="WinImgui11.hpp" />
     <ClInclude Include="WinRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
-    <ClInclude Include="vertex.hxx" />
-    <ClInclude Include="renderer.hxx" />
-    <ClInclude Include="pixel.hxx" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui9.hpp" />
     <ClInclude Include="ConfigProvider.hpp" />
@@ -34,14 +31,42 @@
     <ClInclude Include="KeyNames.hpp" />
     <ClInclude Include="LuaProxies.hpp" />
     <ClInclude Include="fonts.hpp" />
-    <ClInclude Include="board.hxx" />
-    <ClInclude Include="rendererYUV.hxx" />
+    <ClInclude Include="board.hxx">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="pixel.hxx">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer.hxx">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="rendererYUV.hxx">
+      <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="vertex.hxx">
+      <Filter>shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="render.csh" />
-    <FxCompile Include="imgui.vsh" />
-    <FxCompile Include="imgui.psh" />
-    <FxCompile Include="board.csh" />
-    <FxCompile Include="renderYUV.csh" />
+    <FxCompile Include="board.csh">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="imgui.psh">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="imgui.vsh">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="render.csh">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="renderYUV.csh">
+      <Filter>shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{14853794-850f-480b-9628-c9d4cd45b5b6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
