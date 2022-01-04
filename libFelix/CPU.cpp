@@ -7,7 +7,10 @@
 
 namespace
 {
-static constexpr uint8_t hexTab[16] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+static constexpr uint8_t hexTab[16] =
+{
+  '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+};
 
 char * da_sprintf (char *dst, const char *fmt, ...)
 {
@@ -23,25 +26,32 @@ char * da_sprintf (char *dst, const char *fmt, ...)
   dst0 = dst;
   va_start (arg, fmt);
 
-  while ((c = *fmt++)) {
-    if (c != '%') {
-      if ( c == '\t' ){
-        for(int column = (int)(dst - dst0); column < 15; ++column){
+  while ((c = *fmt++))
+  {
+    if (c != '%')
+    {
+      if ( c == '\t' )
+      {
+        for(int column = (int)(dst - dst0); column < 15; ++column)
+        {
           *dst++ = ' ';
         }
       }
-      else {
+      else
+      {
         *dst++ = c;
       }
       continue;
     }
     c = *fmt++;
     fill = ' ';
-    if (c == '0') {
+    if (c == '0')
+    {
       fill = c;
       c = *fmt++;
     }
-    for (width = 0; '0' <= c && c <= '9'; c = *fmt++) {
+    for (width = 0; '0' <= c && c <= '9'; c = *fmt++)
+    {
       width *= 10;
       width += c - '0';
     }
@@ -49,38 +59,47 @@ char * da_sprintf (char *dst, const char *fmt, ...)
     p = h;
     *p = '\0';
     f = 0;
-    if (c == 'l' || c == 'L') {
+    if (c == 'l' || c == 'L')
+    {
       f = 1;
       c = *fmt++;
     }
-    switch (c) {
+    switch (c)
+    {
     case 'x':
     case 'X':
     case 'p':
-      if (f) {
+      if (f)
+      {
         n = va_arg (arg, unsigned long);
       }
-      else {
+      else
+      {
         n = (unsigned long) va_arg (arg, unsigned int);
       }
-      do {
+      do
+      {
         *p++ = hexTab[(int)(n & 0xf)];
         n >>= 4;
       } while (n);
       break;
     case 'd':
     case 'u':
-      if (f) {
+      if (f)
+      {
         n = va_arg (arg, unsigned long);
       }
-      else {
+      else
+      {
         n = (unsigned long) va_arg (arg, unsigned int);
       }
-      if (c == 'd' && (signed long) n < 0) {
+      if (c == 'd' && (signed long) n < 0)
+      {
         *dst++ = '-';
         n = (unsigned long) (-(signed long) n);
       }
-      do {
+      do
+      {
         *p++ = hexTab[(int)(n % 10)];
         n /= 10;
       } while (n);
@@ -91,15 +110,19 @@ char * da_sprintf (char *dst, const char *fmt, ...)
       break;
     case 's':
       p = va_arg (arg, char *);
-      if (p) {
-        for (width -= (int)strlen (p); width > 0; --width) {
+      if ( p )
+      {
+        for (width -= (int)strlen (p); width > 0; --width)
+        {
           *dst++ = fill;
         }
-        while (*p) {
+        while (*p)
+        {
             *dst++ = *p++;
         }
       }
-      else {
+      else
+      {
         *dst++ = '(';
         *dst++ = 'N';
         *dst++ = 'I';
@@ -111,10 +134,12 @@ char * da_sprintf (char *dst, const char *fmt, ...)
       /*  empty */
       break;
     }
-    for (width = width - (int)(p - h); width > 0; --width) {
+    for (width = width - (int)(p - h); width > 0; --width)
+    {
       *dst++ = fill;
     }
-    for (--p; p >= h; --p) {
+    for (--p; p >= h; --p)
+    {
       *dst++ = *p;
     }
   }
@@ -2189,6 +2214,8 @@ void CPU::copyHistory( std::span<char> out )
 
 void CPU::disasmOp( char * out, Opcode op, CPUState* state )
 {
+  out[4] = ' '; /* Hack for history */
+
   switch ( op )
   {
   case Opcode::RZP_AND:
@@ -2793,7 +2820,7 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_3_44:
   {
     int zp = ram[pc++];
-    (void)da_sprintf(dst, "$%02x\t;=$%02x", zp, ram[zp]);
+    (void)da_sprintf(dst, "$%02x\t;[$%02x]=$%02x", zp, zp, ram[zp]);
     break;
   }
   case Opcode::RZX_LDA:
@@ -2843,12 +2870,17 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int zp = ram[pc++];
     int addr = (ram[zp+1] << 8) | ram[zp];
     char const* txt = mTraceHelper->addressLabel( addr );
-    if ( txt[0] == '$' ) {
+    if ( txt[0] == '$' )
+    {
       int data = ram[addr];
       (void)da_sprintf(dst, "($%02x)\t;[$%04x]=$%02x", zp, addr, data);
-    } else if ( pc == mState.pc + 2) {
+    }
+    else if ( pc == mState.pc + 2)
+    {
       (void)da_sprintf(dst, "($%02x)\t;[$%04x]=$%02x", zp, addr, mState.m1);
-    } else {
+    }
+    else
+    {
       (void)da_sprintf(dst, "($%02x)\t;[%s]", zp, txt);
     }
     break;
@@ -2865,12 +2897,17 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int zp = ram[pc++];
     int addr = (ram[(zp + 1 + mState.x) & 0xff] << 8) | ram[(zp + mState.x) & 0xff];
     char const* txt = mTraceHelper->addressLabel( addr );
-    if ( txt[0] == '$' ) {
+    if ( txt[0] == '$' )
+    {
       int data = ram[addr];
       (void)da_sprintf(dst, "($%02x,x)\t;[$%04x]=$%02x", zp, addr, data);
-    } else if ( pc == mState.pc + 2) {
+    }
+    else if ( pc == mState.pc + 2)
+    {
       (void)da_sprintf(dst, "($%02x,x)\t;[$%04x]=$%02x", zp, addr, mState.m1);
-    } else {
+    }
+    else
+    {
       (void)da_sprintf(dst, "($%02x,x)\t;[%s]", zp, txt);
     }
     break;
@@ -2887,12 +2924,17 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int zp = ram[pc++];
     int addr = ((ram[(zp + 1) & 0xff] << 8) | ram[zp]) +  + mState.y;
     char const* txt = mTraceHelper->addressLabel( addr );
-    if ( txt[0] == '$' ) {
+    if ( txt[0] == '$' )
+    {
       int data = ram[addr];
       (void)da_sprintf(dst, "($%02x),y\t;[$%04x]=$%02x", zp, addr, data);
-    } else if ( pc == mState.pc + 2) {
+    }
+    else if ( pc == mState.pc + 2)
+    {
       (void)da_sprintf(dst, "($%02x),y\t;[$%04x]=$%02x", zp, addr, mState.m1);
-    } else {
+    }
+    else
+    {
       (void)da_sprintf(dst, "($%02x),y\t;[%s]", zp, txt);
     }
     break;
@@ -2925,12 +2967,17 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int addr = (ram[pc + 1] << 8)|ram[pc];
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( addr );
-    if ( txt[0] == '$' ) {
+    if ( txt[0] == '$' )
+    {
       int data = ram[addr];
       da_sprintf(dst, "%s\t;[$%04x]=$%02x", txt, addr, data);
-    } else if ( pc == mState.pc + 3) {
+    }
+    else if ( pc == mState.pc + 3)
+    {
       da_sprintf(dst, "%s\t;[$%04x]=$%02x", txt, addr, mState.m1);
-    } else {
+    }
+    else
+    {
       da_sprintf(dst, "%s\t;[$%04x]", txt, addr);
     }
     break;
@@ -2969,12 +3016,17 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int addr = (ram[pc + 1] << 8)|ram[pc];
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( addr );
-    if ( txt[0] == '$' ) {
+    if ( txt[0] == '$' )
+    {
       int data = ram[addr + mState.x];
       da_sprintf(dst, "%s,x\t;[$%04x]=$%02x", txt, addr + mState.x, data);
-    } else if ( pc == mState.pc + 3) {
+    }
+    else if ( pc == mState.pc + 3)
+    {
       da_sprintf(dst, "%s,x\t;[$%04x]=$%02x", txt, addr + mState.x, mState.m1);
-    } else {
+    }
+    else
+    {
       da_sprintf(dst, "%s,x\t;[$%04x]", txt, addr + mState.x);
     }
     break;
@@ -2993,12 +3045,17 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     pc += 2;
     char const* txt = mTraceHelper->addressLabel( addr );
     addr += mState.y;
-    if ( txt[0] == '$' ) {
+    if ( txt[0] == '$' )
+    {
       int data = ram[addr];
       (void)da_sprintf(dst, "%s,y\t;[$%04x]=$%02x", txt, addr, data);
-    } else if ( pc == mState.pc + 3) {
+    }
+    else if ( pc == mState.pc + 3)
+    {
       (void)da_sprintf(dst, "%s,y\t;[$%04x]=$%02x", txt, addr, mState.m1);
-    } else {
+    }
+    else
+    {
       (void)da_sprintf(dst, "%s,y\t;[$%04x]", txt, addr);
     }
     break;
@@ -3084,7 +3141,7 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
     int data = ram[pc++];
     int dest = pc + (int8_t)data;
     char const* txt = mTraceHelper->addressLabel( dest );
-    (void)da_sprintf(dst, "$%02x,%s\t;=$%02x", zp,txt,ram[zp]);
+    (void)da_sprintf(dst, "$%02x,%s\t;=[$%02x]=$%02x", zp,txt,zp, ram[zp]);
     break;
   }
   default:
