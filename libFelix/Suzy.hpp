@@ -48,6 +48,8 @@ public:
   uint64_t requestWrite( uint64_t tick, uint16_t address );
   uint8_t read( uint16_t address );
   void write( uint16_t address, uint8_t value );
+  uint16_t debugVidBas() const;
+  uint16_t debugCollBas() const;
 
   std::shared_ptr<ISuzyProcess> suzyProcess();
 

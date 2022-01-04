@@ -421,6 +421,15 @@ void Suzy::write( uint16_t address, uint8_t value )
   }
 }
 
+uint16_t Suzy::debugVidBas() const
+{
+  return mSCB.vidbas;
+}
+
+uint16_t Suzy::debugCollBas() const
+{
+  return mSCB.collbas;
+}
 
 void Suzy::writeSPRCTL0( uint8_t value )
 {

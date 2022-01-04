@@ -131,6 +131,11 @@ void* WinRenderer::mainRenderingTexture( int width, int height )
   return mRenderer->mainRenderingTexture( width, height );
 }
 
+void* WinRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height )
+{
+  return mRenderer->screenViewRenderingTexture( id, type, data, width, height );
+}
+
 int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
   switch ( msg )
@@ -417,6 +422,11 @@ void* WinRenderer::BaseRenderer::mainRenderingTexture( int width, int height )
   return ImTextureID{};
 }
 
+void* WinRenderer::BaseRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height )
+{
+  return ImTextureID{};
+}
+
 bool WinRenderer::BaseRenderer::canRenderBoards() const
 {
   return false;
@@ -463,7 +473,7 @@ void WinRenderer::BaseRenderer::setRotation( ImageProperties::Rotation rotation 
 }
 
 
-WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mRefreshRate{}, mEncoder{}, mMainDebugRendering{}, mVScale{ ~0u }
+WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mRefreshRate{}, mEncoder{}, mWindowRenderings{}, mVScale{ ~0u }
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
@@ -555,6 +565,9 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   D3D11_SUBRESOURCE_DATA data{ buf.data(), desc.Width * sizeof( uint32_t ), 0 };
   mD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
+
+  mD3DDevice->CreateTexture2D( &desc, nullptr, mWindowRenderings.source.ReleaseAndGetAddressOf() );
+  V_THROW( mD3DDevice->CreateShaderResourceView( mWindowRenderings.source.Get(), NULL, mWindowRenderings.sourceSRV.ReleaseAndGetAddressOf() ) );
 
   updateVscale( 0 );
   mBoardFont.initialize( mD3DDevice.Get(), mImmediateContext.Get() );
@@ -669,11 +682,11 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
   UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
 
-  if ( mMainDebugRendering.enabled() )
+  if ( mWindowRenderings.main.enabled() )
   {
-    mMainDebugRendering.update( *this );
-    mImmediateContext->ClearUnorderedAccessViewUint( mMainDebugRendering.uav.Get(), v );
-    renderScreenView( mMainDebugRendering.size, mMainDebugRendering.uav.Get() );
+    mWindowRenderings.main.update( *this );
+    mImmediateContext->ClearUnorderedAccessViewUint( mWindowRenderings.main.uav.Get(), v );
+    renderScreenView( mWindowRenderings.main.size, mWindowRenderings.main.uav.Get() );
   }
   else
   {
@@ -783,28 +796,39 @@ ImTextureID WinRenderer::DX11Renderer::renderBoard( int id, int width, int heigh
   else
   {
     bool success;
-    std::tie( it, success ) = mBoards.insert( { id, createBoard( width, height ) } );
+    std::tie( it, success ) = mBoards.insert( { id, Board{} } );
+    it->second.update( *this, width, height );
   }
 
   it->second.render( *this, data );
   return it->second.srv.Get();
 }
 
-void* WinRenderer::DX11Renderer::mainRenderingTexture( int w, int h )
+ImTextureID WinRenderer::DX11Renderer::mainRenderingTexture( int w, int h )
 {
-  mMainDebugRendering.width = w;
-  mMainDebugRendering.height = h;
-  return mMainDebugRendering.srv.Get();
+  mWindowRenderings.main.width = w;
+  mWindowRenderings.main.height = h;
+  return mWindowRenderings.main.srv.Get();
 }
 
-WinRenderer::DX11Renderer::Board WinRenderer::DX11Renderer::createBoard( int width, int height )
+ImTextureID WinRenderer::DX11Renderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height )
 {
-  Board result{};
+  auto it = mWindowRenderings.screenViews.find( id );
+  if ( it != mWindowRenderings.screenViews.end() )
+  {
+    it->second.update( *this, width, height );
+  }
+  else
+  {
+    bool success;
+    std::tie( it, success ) = mWindowRenderings.screenViews.insert( { id, DebugRendering{} } );
+    it->second.update( *this, width, height );
+  }
 
-  result.update( *this, width, height );
-
-  return result;
+  it->second.render( *this, type, data );
+  return it->second.srv.Get();
 }
+
 
 void WinRenderer::DX11Renderer::updateVscale( uint32_t vScale )
 {
@@ -1088,6 +1112,13 @@ bool WinRenderer::DX11Renderer::DebugRendering::enabled() const
   return width != 0 && height != 0;
 }
 
+void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Renderer& r, int w, int h )
+{
+  width = w;
+  height = h;
+  update( r );
+}
+
 void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Renderer& r )
 {
   if ( width == 0 || height == 0 )
@@ -1125,5 +1156,61 @@ void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Rendere
     V_THROW( r.mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
     V_THROW( r.mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
     V_THROW( r.mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
+  }
+}
+
+void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data )
+{
+  D3D11_MAPPED_SUBRESOURCE d3dmap;
+  r.mImmediateContext->Map( r.mWindowRenderings.source.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+
+  struct MappedTexture
+  {
+    DPixel* data;
+    uint32_t stride;
+  } map{ (DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( DPixel ) };
+
+  if ( data.empty() )
+  {
+    memset( map.data, 0, 80 * 102 * sizeof( DPixel ) );
+  }
+  else
+  {
+    for ( int y = 0; y < 102; ++y )
+    {
+      DPixel* dst = map.data + y * map.stride;
+
+      for ( int x = 0; x < 80; ++x )
+      {
+        *dst++ = r.mInstance->mPalette[data[y * 80 + x]];
+      }
+    }
+  }
+
+
+  r.mImmediateContext->Unmap( r.mWindowRenderings.source.Get(), 0 );
+
+  if ( enabled() )
+  {
+    UINT v[4] = { 255, 255, 255, 255 };
+    auto rawUAV = uav.Get();
+    r.mImmediateContext->ClearUnorderedAccessViewUint( rawUAV, v );
+    r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );
+
+    CBPosSize cbPosSize{
+      size.rotx1(), size.rotx2(),
+      size.roty1(), size.roty2(),
+      size.xOff(), size.yOff(),
+      size.scale()
+    };
+
+    r.mImmediateContext->UpdateSubresource( r.mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
+    r.mImmediateContext->CSSetConstantBuffers( 0, 1, r.mPosSizeCB.GetAddressOf() );
+    r.mImmediateContext->CSSetShaderResources( 0, 1, r.mWindowRenderings.sourceSRV.GetAddressOf() );
+    r.mImmediateContext->CSSetShader( r.mRendererCS.Get(), nullptr, 0 );
+    r.mImmediateContext->Dispatch( 5, 51, 1 );
+
+    rawUAV = nullptr;
+    r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );
   }
 }

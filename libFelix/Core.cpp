@@ -832,3 +832,18 @@ uint8_t const* Core::debugRAM()
   return &mRAM[0];
 }
 
+uint16_t Core::debugDispAdr() const
+{
+  return mMikey->debugDispAdr();
+}
+
+uint16_t Core::debugVidBas() const
+{
+  return mSuzy->debugVidBas();
+}
+
+uint16_t Core::debugCollBas() const
+{
+  return mSuzy->debugCollBas();
+}
+

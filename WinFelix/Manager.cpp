@@ -767,9 +767,101 @@ void Manager::drawDebugWindows( ImGuiIO& io )
         ImGui::Image( tex, size );
       }
       ImGui::End();
-      mDebugger.debugMode( debugMode );
       ImGui::PopStyleVar();
     }
+
+
+    std::vector<int> removedIds;
+    for ( auto & sv : mDebugger.screenViews() )
+    {
+      static const float xpad = 4.0f;
+      static const float ypad = ( 4.0f + 19.0f ) * 2;
+      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
+
+      char buf[64];
+      std::sprintf( buf, "Screen View %d", sv.id );
+      bool open = true;
+      ImGui::Begin( buf, &open, 0 );
+      if ( !open )
+        removedIds.push_back( sv.id );
+      ImGui::SetNextItemWidth( 80 );
+      int t = (int)sv.type;
+      ImGui::Combo( "##sv", &t, "dispadr\0vidbase\0collbas\0custom\0" );
+      ImGui::SameLine();
+      sv.type = (ScreenViewType)t;
+      std::span<uint8_t const> data{};
+      switch ( sv.type )
+      {
+      case ScreenViewType::DISPADR:
+        ImGui::BeginDisabled();
+        if ( mInstance )
+        {
+          uint16_t addr = mInstance ? mInstance->debugDispAdr() : 0;
+          std::sprintf( buf, "%04x", addr );
+          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
+          sv.customAddress = std::nullopt;
+        }
+        break;
+      case ScreenViewType::VIDBAS:
+        ImGui::BeginDisabled();
+        if ( mInstance )
+        {
+          uint16_t addr = mInstance ? mInstance->debugVidBas() : 0;
+          std::sprintf( buf, "%04x", addr );
+          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
+          sv.customAddress = std::nullopt;
+        }
+        break;
+      case ScreenViewType::COLLBAS:
+        ImGui::BeginDisabled();
+        if ( mInstance )
+        {
+          uint16_t addr = mInstance ? mInstance->debugCollBas() : 0;
+          std::sprintf( buf, "%04x", addr );
+          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
+          sv.customAddress = std::nullopt;
+        }
+        break;
+      default:  //ScreenViewType::CUSTOM:
+        ImGui::BeginDisabled( false );
+        if ( sv.customAddress )
+        {
+          uint16_t addr = *sv.customAddress;
+          std::sprintf( buf, "%04x", addr );
+          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
+        }
+        else
+        {
+          buf[0] = 0;
+        }
+        break;
+      }
+      ImGui::SetNextItemWidth( 70 );
+      if ( ImGui::InputTextWithHint( "##ha", "hex addr", buf, 5, ImGuiInputTextFlags_CharsHexadecimal ) )
+      {
+        int hex;
+        std::from_chars( &buf[0], &buf[5], hex, 16 );
+        sv.customAddress = (uint16_t)( hex & 0b1111111111111100 );
+      }
+      ImGui::EndDisabled();
+      auto size = ImGui::GetWindowSize();
+      size.x -= xpad;
+      size.y -= ypad;
+
+      if ( auto tex = mRenderer->screenViewRenderingTexture( sv.id, sv.type, data, (int)size.x, (int)size.y ) )
+      {
+        ImGui::Image( tex, size );
+      }
+      ImGui::End();
+      ImGui::PopStyleVar();
+    }
+
+    for ( int id : removedIds )
+    {
+      mDebugger.delScreenView( id );
+    }
+
+    mDebugger.debugMode( debugMode );
     ImGui::PopStyleVar();
 
 
@@ -797,9 +889,9 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           mInstance->debugCPU().disableHistory();
         }
       }
-      if ( ImGui::Checkbox( "Break on BRK", &breakOnBrk ) )
+      if ( ImGui::Selectable( "New Screen View" ) )
       {
-        mInstance->debugCPU().breakOnBrk( breakOnBrk );
+        mDebugger.newScreenView();
       }
       ImGui::EndPopup();
     }
@@ -1166,6 +1258,18 @@ bool Manager::Debugger::isHistoryVisualized() const
   return mVisualizeHistory;
 }
 
+std::span<Manager::ScreenView> Manager::Debugger::screenViews()
+{
+  if ( mScreenViews.empty() )
+  {
+    return {};
+  }
+  else
+  {
+    return std::span<ScreenView>{ mScreenViews.data(), mScreenViews.size() };
+  }
+}
+
 void Manager::Debugger::visualizeCPU( bool value )
 {
   mVisualizeCPU = value;
@@ -1204,6 +1308,34 @@ bool Manager::Debugger::normalModeOnRun() const
 void Manager::Debugger::normalModeOnRun( bool value )
 {
   mNormalModeOnRun = value;
+}
+
+void Manager::Debugger::newScreenView()
+{
+  int minId = 0;
+
+  for ( ;; )
+  {
+    auto it = std::find_if( mScreenViews.cbegin(), mScreenViews.cend(), [=]( auto const& sv )
+    {
+      return sv.id == minId;
+    } );
+
+    if ( it == mScreenViews.cend() )
+      break;
+
+    minId += 1;
+  }
+
+  mScreenViews.emplace_back( minId, ScreenViewType::DISPADR );
+}
+
+void Manager::Debugger::delScreenView( int id )
+{
+  std::erase_if( mScreenViews, [=]( auto const& sv )
+  {
+    return sv.id == id;
+  } );
 }
 
 void Manager::Debugger::togglePause()

@@ -87,6 +87,7 @@ public:
   void setIRQ( uint8_t mask );
   void resetIRQ( uint8_t mask );
 
+  uint16_t debugDispAdr() const;
 
 private:
   Core & mCore;

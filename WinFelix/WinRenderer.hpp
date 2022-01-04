@@ -11,6 +11,14 @@ class WinImgui9;
 class Manager;
 class IEncoder;
 
+enum class ScreenViewType
+{
+  DISPADR,
+  VIDBAS,
+  COLLBAS,
+  CUSTOM
+};
+
 class WinRenderer
 {
 public:
@@ -29,6 +37,7 @@ public:
   bool canRenderBoards() const;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
   void* mainRenderingTexture( int width, int height );
+  void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height );
 
 private:
 
@@ -106,6 +115,7 @@ private:
     virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
     virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
     virtual void* mainRenderingTexture( int width, int height );
+    virtual void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height );
     virtual bool canRenderBoards() const;
 
     std::shared_ptr<IVideoSink> getVideoSink() const;
@@ -164,6 +174,7 @@ private:
     bool canRenderBoards() const override;
     void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
     void* mainRenderingTexture( int width, int height ) override;
+    void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height ) override;
     void renderScreenView( SizeManager const& size, ID3D11UnorderedAccessView* target );
 
   private:
@@ -185,20 +196,6 @@ private:
       void update( WinRenderer::DX11Renderer& r, int width, int height );
       void render( WinRenderer::DX11Renderer& r, std::span<uint8_t const> data );
     };
-
-    struct DebugRendering
-    {
-      int width;
-      int height;
-      SizeManager size;
-      ComPtr<ID3D11UnorderedAccessView> uav;
-      ComPtr<ID3D11ShaderResourceView> srv;
-
-      bool enabled() const;
-      void update( WinRenderer::DX11Renderer& r );
-    };
-
-    Board createBoard( int width, int height );
 
     struct CBPosSize
     {
@@ -230,6 +227,31 @@ private:
       ComPtr<ID3D11ShaderResourceView> srv;
     } mBoardFont;
 
+    struct DebugRendering
+    {
+      int width = {};
+      int height = {};
+      SizeManager size = {};
+      ComPtr<ID3D11UnorderedAccessView> uav = {};
+      ComPtr<ID3D11ShaderResourceView> srv = {};
+
+      bool enabled() const;
+      void update( WinRenderer::DX11Renderer& r );
+      void update( WinRenderer::DX11Renderer& r, int width, int height );
+      void render( WinRenderer::DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data );
+    };
+
+    struct WindowRenderings
+    {
+      ComPtr<ID3D11Texture2D>           source;
+      ComPtr<ID3D11ShaderResourceView>  sourceSRV;
+
+      // Normal rendering but to a window
+      DebugRendering main = {};
+      std::unordered_map<int, DebugRendering> screenViews;
+    } mWindowRenderings;
+
+
     std::shared_ptr<WinImgui11>       mImgui;
     ComPtr<ID3D11Device>              mD3DDevice;
     ComPtr<ID3D11DeviceContext>       mImmediateContext;
@@ -256,7 +278,6 @@ private:
     boost::rational<int32_t>          mRefreshRate;
     std::shared_ptr<IEncoder>         mEncoder;
     std::unordered_map<int, Board>    mBoards;
-    DebugRendering                    mMainDebugRendering;
     uint32_t mVScale;
   };
 

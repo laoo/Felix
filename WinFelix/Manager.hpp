@@ -3,8 +3,8 @@
 #include "ScriptDebugger.hpp"
 #include "IInputSource.hpp"
 #include "Utility.hpp"
+#include "WinRenderer.hpp"
 
-class WinRenderer;
 class WinAudioOut;
 class ComLynxWire;
 class Core;
@@ -78,6 +78,13 @@ private:
     std::vector<uint8_t> data;
   };
 
+  struct ScreenView
+  {
+    int id;
+    ScreenViewType type;
+    std::optional<uint16_t> customAddress;
+  };
+
   class Debugger
   {
   public:
@@ -92,6 +99,8 @@ private:
     bool isDisasmVisualized() const;
     bool isHistoryVisualized() const;
 
+    std::span<ScreenView> screenViews();
+
     void visualizeCPU( bool value );
     void visualizeDisasm( bool value );
     void visualizeHistory( bool value );
@@ -100,6 +109,8 @@ private:
     void debugModeOnBreak( bool value );
     bool normalModeOnRun() const;
     void normalModeOnRun( bool value );
+    void newScreenView();
+    void delScreenView( int id );
 
     void togglePause();
 
@@ -110,6 +121,7 @@ private:
     mutable std::mutex mutex;
 
   private:
+    std::vector<ScreenView> mScreenViews;
     DebugWindow mCpuVisualizer;
     DebugWindow mDisasmVisualizer;
     DebugWindow mHistoryVisualizer;

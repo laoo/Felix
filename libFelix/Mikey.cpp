@@ -494,3 +494,8 @@ void Mikey::resetIRQ( uint8_t mask )
     mCore.desertInterrupt( CPUState::I_IRQ );
   }
 }
+
+uint16_t Mikey::debugDispAdr() const
+{
+  return mDisplayRegs.dispAdr;
+}
