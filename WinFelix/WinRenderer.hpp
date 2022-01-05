@@ -227,6 +227,22 @@ private:
       ComPtr<ID3D11ShaderResourceView> srv;
     } mBoardFont;
 
+    struct HexFont
+    {
+      HexFont();
+      void initialize( ID3D11Device* pDevice, ID3D11DeviceContext* pContext );
+
+      static constexpr int width = 16;
+      static constexpr int height = 16;
+      static constexpr int srcWidth = 6;
+      static constexpr int srcHeight = 12;
+
+      ComPtr<ID3D11ShaderResourceView> srv;
+
+    private:
+      static uint8_t const* src( size_t idx, size_t row );
+    } mHexFont;
+
     struct DebugRendering
     {
       int width = {};
