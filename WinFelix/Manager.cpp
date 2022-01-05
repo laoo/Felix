@@ -362,6 +362,12 @@ bool Manager::mainMenu( ImGuiIO& io )
               mDebugger.visualizeHistory( false );
             }
           }
+          ImGui::BeginDisabled( !mDebugger.isDebugMode() );
+          if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
+          {
+            mDebugger.newScreenView();
+          }
+          ImGui::EndDisabled();
           ImGui::EndMenu();
         }
         if ( ImGui::BeginMenu( "Options" ) )
@@ -474,6 +480,10 @@ bool Manager::mainMenu( ImGuiIO& io )
         mInstance->debugCPU().disableHistory();
         mDebugger.visualizeHistory( false );
       }
+    }
+    if ( ImGui::IsKeyPressed( 'S' ) && mDebugger.isDebugMode() )
+    {
+      mDebugger.newScreenView();
     }
   }
 
