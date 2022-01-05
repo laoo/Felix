@@ -82,7 +82,7 @@ private:
   {
     int id;
     ScreenViewType type;
-    std::optional<uint16_t> customAddress;
+    uint16_t customAddress;
   };
 
   class Debugger

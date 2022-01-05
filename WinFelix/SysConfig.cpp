@@ -57,6 +57,12 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "visualizeHistory = " << ( visualizeHistory ? "true;\n" : "false;\n" );
   fout << "debugModeOnBreak = " << ( debugModeOnBreak ? "true;\n" : "false;\n" );
   fout << "normalModeOnRun = " << ( normalModeOnRun ? "true;\n" : "false;\n" );
+  fout << "screenViews = {\n";
+  for ( auto const& sv : screenViews )
+  {
+    fout << "\t{" << sv.id << ", " << sv.type << ", " << sv.customAddress << "};\n";
+  }
+  fout << "};\n";
 }
 
 void SysConfig::load( sol::state const& lua )
@@ -84,4 +90,12 @@ void SysConfig::load( sol::state const& lua )
   visualizeHistory = lua["visualizeHistory"].get_or( false );
   debugModeOnBreak = lua["debugModeOnBreak"].get_or( true );
   normalModeOnRun = lua["normalModeOnRun"].get_or( false );
+  if ( auto optSV = lua.get<sol::optional<sol::table>>( "screenViews" ) )
+  {
+    for ( auto sv : *optSV )
+    {
+      auto tab = sv.second.as<sol::table>();
+      screenViews.emplace_back( tab.get<int>( 1 ), tab.get<int>( 2 ), tab.get<int>( 3 ) );
+    }
+  }
 }

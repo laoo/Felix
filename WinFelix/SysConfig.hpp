@@ -34,6 +34,13 @@ struct SysConfig
   bool visualizeHistory;
   bool debugModeOnBreak;
   bool normalModeOnRun;
+  struct ScreenView
+  {
+    int id;
+    int type;
+    int customAddress;
+  };
+  std::vector<ScreenView> screenViews;
 
   static std::shared_ptr<SysConfig> load( std::filesystem::path path );
   void serialize( std::filesystem::path path );

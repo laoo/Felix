@@ -795,10 +795,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       if ( !open )
         removedIds.push_back( sv.id );
       ImGui::SetNextItemWidth( 80 );
-      int t = (int)sv.type;
-      ImGui::Combo( "##sv", &t, "dispadr\0vidbase\0collbas\0custom\0" );
+      ImGui::Combo( "##sv", (int*)&sv.type, "dispadr\0vidbase\0collbas\0custom\0" );
       ImGui::SameLine();
-      sv.type = (ScreenViewType)t;
       std::span<uint8_t const> data{};
       switch ( sv.type )
       {
@@ -809,7 +807,6 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance ? mInstance->debugDispAdr() : 0;
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          sv.customAddress = std::nullopt;
         }
         break;
       case ScreenViewType::VIDBAS:
@@ -819,7 +816,6 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance ? mInstance->debugVidBas() : 0;
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          sv.customAddress = std::nullopt;
         }
         break;
       case ScreenViewType::COLLBAS:
@@ -829,20 +825,15 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance ? mInstance->debugCollBas() : 0;
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          sv.customAddress = std::nullopt;
         }
         break;
       default:  //ScreenViewType::CUSTOM:
         ImGui::BeginDisabled( false );
-        if ( sv.customAddress )
+        if ( mInstance )
         {
-          uint16_t addr = *sv.customAddress;
-          std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-        }
-        else
-        {
-          buf[0] = 0;
+          uint16_t addr = sv.customAddress;
+          std::sprintf( buf, "%04x", sv.customAddress );
+          data = std::span<uint8_t const>{ mInstance->debugRAM() + sv.customAddress, 80 * 102 };
         }
         break;
       }
@@ -851,6 +842,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       {
         int hex;
         std::from_chars( &buf[0], &buf[5], hex, 16 );
+        hex = std::min( hex, 0xe000 );
         sv.customAddress = (uint16_t)( hex & 0b1111111111111100 );
       }
       ImGui::EndDisabled();
@@ -1215,6 +1207,10 @@ Manager::Debugger::Debugger() : mutex{},
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
   mNormalModeOnRun = sysConfig->normalModeOnRun;
+  for ( auto const& sv : sysConfig->screenViews )
+  {
+    mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress );
+  }
 }
 
 Manager::Debugger::~Debugger()
@@ -1227,6 +1223,11 @@ Manager::Debugger::~Debugger()
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
   sysConfig->normalModeOnRun = mNormalModeOnRun;
+  sysConfig->screenViews.clear();
+  for ( auto const& sv : mScreenViews )
+  {
+    sysConfig->screenViews.emplace_back( sv.id, (int)sv.type, (int)sv.customAddress );
+  }
 }
 
 void Manager::Debugger::operator()( RunMode mode )
