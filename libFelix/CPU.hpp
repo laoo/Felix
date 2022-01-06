@@ -64,7 +64,6 @@ public:
   //clears any step triggers previously set
   void clearBreak();
 
-  bool isBreakOnBrk() const;
   void breakOnBrk( bool value );
 
   void respond( uint8_t value );

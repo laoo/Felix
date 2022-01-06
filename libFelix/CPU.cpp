@@ -284,11 +284,6 @@ void CPU::clearBreak()
   mStackBreakCondition = 0xffff;
 }
 
-bool CPU::isBreakOnBrk() const
-{
-  return mBreakOnBrk;
-}
-
 void CPU::breakOnBrk( bool value )
 {
   mBreakOnBrk = value;

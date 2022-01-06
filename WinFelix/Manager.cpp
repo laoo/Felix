@@ -372,12 +372,13 @@ bool Manager::mainMenu( ImGuiIO& io )
         }
         if ( ImGui::BeginMenu( "Options" ) )
         {
-          bool breakOnBrk = mInstance->debugCPU().isBreakOnBrk();
+          bool breakOnBrk = mDebugger.isBreakOnBrk();
           bool debugModeOnBreak = mDebugger.debugModeOnBreak();
           bool normalModeOnRun = mDebugger.normalModeOnRun();
 
           if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
           {
+            mDebugger.breakOnBrk( breakOnBrk );
             mInstance->debugCPU().breakOnBrk( breakOnBrk );
           }
           if ( ImGui::MenuItem( "Debug mode on break", nullptr, &debugModeOnBreak ) )
@@ -869,8 +870,6 @@ void Manager::drawDebugWindows( ImGuiIO& io )
 
     if ( ImGui::BeginPopupContextVoid() )
     {
-      bool breakOnBrk = mInstance->debugCPU().isBreakOnBrk();
-
       if ( ImGui::Checkbox( "CPU Window", &cpuWindow ) )
       {
         mDebugger.visualizeCPU( cpuWindow );
@@ -1040,16 +1039,29 @@ void Manager::processLua( std::filesystem::path const& path )
 
   mLua["traceOn"] = [this]()
   {
-    mInstance->debugCPU().enableTrace();
+    if ( mInstance )
+    {
+      mInstance->debugCPU().enableTrace();
+    }
   };
   mLua["traceOf"] = [this]()
   {
-    mInstance->debugCPU().disableTrace();
+    if ( mInstance )
+    {
+      mInstance->debugCPU().disableTrace();
+    }
   };
-  mLua["break"] = [this]()
+
+  auto trap = [this]()
   {
-    mInstance->debugCPU().breakFromLua();
+    if ( mInstance )
+    {
+      mInstance->debugCPU().breakFromLua();
+    }
   };
+
+  mLua["trap"] = trap;
+  mLua["brk"] = trap;
 
   mLua.script_file( luaPath.string() );
 
@@ -1114,6 +1126,7 @@ void Manager::reset()
 
   if ( mInstance )
   {
+    mInstance->debugCPU().breakOnBrk( mDebugger.isBreakOnBrk() );
     if ( mDebugger.isHistoryVisualized() )
     {
       mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
@@ -1207,6 +1220,7 @@ Manager::Debugger::Debugger() : mutex{},
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
   mNormalModeOnRun = sysConfig->normalModeOnRun;
+  mBreakOnBrk = sysConfig->breakOnBrk;
   for ( auto const& sv : sysConfig->screenViews )
   {
     mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress );
@@ -1223,6 +1237,7 @@ Manager::Debugger::~Debugger()
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
   sysConfig->normalModeOnRun = mNormalModeOnRun;
+  sysConfig->breakOnBrk = mBreakOnBrk;
   sysConfig->screenViews.clear();
   for ( auto const& sv : mScreenViews )
   {
@@ -1267,6 +1282,11 @@ bool Manager::Debugger::isDisasmVisualized() const
 bool Manager::Debugger::isHistoryVisualized() const
 {
   return mVisualizeHistory;
+}
+
+bool Manager::Debugger::isBreakOnBrk() const
+{
+  return mBreakOnBrk;
 }
 
 std::span<Manager::ScreenView> Manager::Debugger::screenViews()
@@ -1319,6 +1339,11 @@ bool Manager::Debugger::normalModeOnRun() const
 void Manager::Debugger::normalModeOnRun( bool value )
 {
   mNormalModeOnRun = value;
+}
+
+void Manager::Debugger::breakOnBrk( bool value )
+{
+  mBreakOnBrk = value;
 }
 
 void Manager::Debugger::newScreenView()

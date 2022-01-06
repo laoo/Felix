@@ -98,6 +98,7 @@ private:
     bool isCPUVisualized() const;
     bool isDisasmVisualized() const;
     bool isHistoryVisualized() const;
+    bool isBreakOnBrk() const;
 
     std::span<ScreenView> screenViews();
 
@@ -109,6 +110,7 @@ private:
     void debugModeOnBreak( bool value );
     bool normalModeOnRun() const;
     void normalModeOnRun( bool value );
+    void breakOnBrk( bool value );
     void newScreenView();
     void delScreenView( int id );
 
@@ -131,6 +133,7 @@ private:
     bool mVisualizeHistory;
     bool mDebugModeOnBreak;
     bool mNormalModeOnRun;
+    bool mBreakOnBrk;
     friend class Manager;
     std::atomic<RunMode> mRunMode;
 

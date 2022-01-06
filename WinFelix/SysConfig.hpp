@@ -34,6 +34,7 @@ struct SysConfig
   bool visualizeHistory;
   bool debugModeOnBreak;
   bool normalModeOnRun;
+  bool breakOnBrk;
   struct ScreenView
   {
     int id;
