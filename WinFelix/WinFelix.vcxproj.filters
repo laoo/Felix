@@ -46,6 +46,9 @@
     <ClInclude Include="vertex.hxx">
       <Filter>shaders</Filter>
     </ClInclude>
+    <ClInclude Include="renderer2.hxx">
+      <Filter>shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">
@@ -61,6 +64,9 @@
       <Filter>shaders</Filter>
     </FxCompile>
     <FxCompile Include="renderYUV.csh">
+      <Filter>shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="render2.csh">
       <Filter>shaders</Filter>
     </FxCompile>
   </ItemGroup>

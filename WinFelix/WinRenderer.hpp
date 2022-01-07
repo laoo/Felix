@@ -37,7 +37,7 @@ public:
   bool canRenderBoards() const;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
   void* mainRenderingTexture( int width, int height );
-  void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height );
+  void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height );
 
 private:
 
@@ -115,7 +115,7 @@ private:
     virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
     virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
     virtual void* mainRenderingTexture( int width, int height );
-    virtual void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height );
+    virtual void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height );
     virtual bool canRenderBoards() const;
 
     std::shared_ptr<IVideoSink> getVideoSink() const;
@@ -174,12 +174,13 @@ private:
     bool canRenderBoards() const override;
     void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
     void* mainRenderingTexture( int width, int height ) override;
-    void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height ) override;
+    void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) override;
     void renderScreenView( SizeManager const& size, ID3D11UnorderedAccessView* target );
 
   private:
 
     void prepareFont();
+    static constexpr std::span<uint32_t const,16> safePalette();
 
     struct BoardFont;
 
@@ -254,13 +255,15 @@ private:
       bool enabled() const;
       void update( WinRenderer::DX11Renderer& r );
       void update( WinRenderer::DX11Renderer& r, int width, int height );
-      void render( WinRenderer::DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data );
+      void render( WinRenderer::DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette );
     };
 
     struct WindowRenderings
     {
       ComPtr<ID3D11Texture2D>           source;
       ComPtr<ID3D11ShaderResourceView>  sourceSRV;
+      ComPtr<ID3D11Texture1D>           palette;
+      ComPtr<ID3D11ShaderResourceView>  paletteSRV;
 
       // Normal rendering but to a window
       DebugRendering main = {};
@@ -273,6 +276,7 @@ private:
     ComPtr<ID3D11DeviceContext>       mImmediateContext;
     ComPtr<IDXGISwapChain>            mSwapChain;
     ComPtr<ID3D11ComputeShader>       mRendererCS;
+    ComPtr<ID3D11ComputeShader>       mRenderer2CS;
     ComPtr<ID3D11ComputeShader>       mRendererYUVCS;
     ComPtr<ID3D11ComputeShader>       mBoardCS;
     ComPtr<ID3D11Buffer>              mPosSizeCB;

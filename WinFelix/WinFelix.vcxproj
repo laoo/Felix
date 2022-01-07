@@ -176,6 +176,7 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="pixel.hxx" />
     <ClInclude Include="renderer.hxx" />
+    <ClInclude Include="renderer2.hxx" />
     <ClInclude Include="rendererYUV.hxx" />
     <ClInclude Include="SysConfig.hpp" />
     <ClInclude Include="UserInput.hpp" />
@@ -217,6 +218,14 @@
       <ShaderType>Compute</ShaderType>
       <VariableName>g_Renderer</VariableName>
       <HeaderFileOutput>renderer.hxx</HeaderFileOutput>
+      <DisableOptimizations>false</DisableOptimizations>
+      <EnableDebuggingInformation>false</EnableDebuggingInformation>
+    </FxCompile>
+    <FxCompile Include="render2.csh">
+      <ShaderModel>5.0</ShaderModel>
+      <ShaderType>Compute</ShaderType>
+      <VariableName>g_Renderer2</VariableName>
+      <HeaderFileOutput>renderer2.hxx</HeaderFileOutput>
       <DisableOptimizations>false</DisableOptimizations>
       <EnableDebuggingInformation>false</EnableDebuggingInformation>
     </FxCompile>

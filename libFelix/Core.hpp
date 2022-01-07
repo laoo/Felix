@@ -54,6 +54,7 @@ public:
   uint16_t debugDispAdr() const;
   uint16_t debugVidBas() const;
   uint16_t debugCollBas() const;
+  std::span<uint8_t const, 32> debugPalette() const;
 
 
 private:

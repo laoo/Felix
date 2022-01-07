@@ -799,33 +799,38 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::Combo( "##sv", (int*)&sv.type, "dispadr\0vidbase\0collbas\0custom\0" );
       ImGui::SameLine();
       std::span<uint8_t const> data{};
+      std::span<uint8_t const> palette{};
+
       switch ( sv.type )
       {
       case ScreenViewType::DISPADR:
         ImGui::BeginDisabled();
         if ( mInstance )
         {
-          uint16_t addr = mInstance ? mInstance->debugDispAdr() : 0;
+          uint16_t addr = mInstance->debugDispAdr();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
+          palette = mInstance->debugPalette();
         }
         break;
       case ScreenViewType::VIDBAS:
         ImGui::BeginDisabled();
         if ( mInstance )
         {
-          uint16_t addr = mInstance ? mInstance->debugVidBas() : 0;
+          uint16_t addr = mInstance->debugVidBas();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
+          palette = mInstance->debugPalette();
         }
         break;
       case ScreenViewType::COLLBAS:
         ImGui::BeginDisabled();
         if ( mInstance )
         {
-          uint16_t addr = mInstance ? mInstance->debugCollBas() : 0;
+          uint16_t addr = mInstance->debugCollBas();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
+          palette = mInstance->debugPalette();
         }
         break;
       default:  //ScreenViewType::CUSTOM:
@@ -835,6 +840,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = sv.customAddress;
           std::sprintf( buf, "%04x", sv.customAddress );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + sv.customAddress, 80 * 102 };
+          palette = mInstance->debugPalette();
         }
         break;
       }
@@ -851,7 +857,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       size.x -= xpad;
       size.y -= ypad;
 
-      if ( auto tex = mRenderer->screenViewRenderingTexture( sv.id, sv.type, data, (int)size.x, (int)size.y ) )
+      if ( auto tex = mRenderer->screenViewRenderingTexture( sv.id, sv.type, data, palette, (int)size.x, (int)size.y ) )
       {
         ImGui::Image( tex, size );
       }

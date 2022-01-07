@@ -5,6 +5,7 @@
 #include "WinImgui11.hpp"
 #include "WinImgui9.hpp"
 #include "renderer.hxx"
+#include "renderer2.hxx"
 #include "rendererYUV.hxx"
 #include "board.hxx"
 #include "fonts.hpp"
@@ -131,9 +132,9 @@ void* WinRenderer::mainRenderingTexture( int width, int height )
   return mRenderer->mainRenderingTexture( width, height );
 }
 
-void* WinRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height )
+void* WinRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
 {
-  return mRenderer->screenViewRenderingTexture( id, type, data, width, height );
+  return mRenderer->screenViewRenderingTexture( id, type, data, palette, width, height );
 }
 
 int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -422,7 +423,7 @@ void* WinRenderer::BaseRenderer::mainRenderingTexture( int width, int height )
   return ImTextureID{};
 }
 
-void* WinRenderer::BaseRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height )
+void* WinRenderer::BaseRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
 {
   return ImTextureID{};
 }
@@ -533,6 +534,7 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   L_INFO << "Refresh Rate: " << mRefreshRate << " = " << ( (double)mRefreshRate.numerator() / (double)mRefreshRate.denominator() );
 
   V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, mRendererCS.ReleaseAndGetAddressOf() ) );
+  V_THROW( mD3DDevice->CreateComputeShader( g_Renderer2, sizeof g_Renderer2, nullptr, mRenderer2CS.ReleaseAndGetAddressOf() ) );
   V_THROW( mD3DDevice->CreateComputeShader( g_RendererYUV, sizeof g_RendererYUV, nullptr, mRendererYUVCS.ReleaseAndGetAddressOf() ) );
   V_THROW( mD3DDevice->CreateComputeShader( g_Board, sizeof g_Board, nullptr, mBoardCS.ReleaseAndGetAddressOf() ) );
 
@@ -566,8 +568,13 @@ WinRenderer::DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const&
   mD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
-  mD3DDevice->CreateTexture2D( &desc, nullptr, mWindowRenderings.source.ReleaseAndGetAddressOf() );
+  D3D11_TEXTURE2D_DESC descsrc{ 80, 102, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  mD3DDevice->CreateTexture2D( &descsrc, nullptr, mWindowRenderings.source.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mWindowRenderings.source.Get(), NULL, mWindowRenderings.sourceSRV.ReleaseAndGetAddressOf() ) );
+
+  D3D11_TEXTURE1D_DESC descpal{ 16, 1, 1, DXGI_FORMAT_B8G8R8A8_UNORM, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  V_THROW( mD3DDevice->CreateTexture1D( &descpal, nullptr, mWindowRenderings.palette.ReleaseAndGetAddressOf() ) );
+  V_THROW( mD3DDevice->CreateShaderResourceView( mWindowRenderings.palette.Get(), NULL, mWindowRenderings.paletteSRV.ReleaseAndGetAddressOf() ) );
 
   updateVscale( 0 );
   mBoardFont.initialize( mD3DDevice.Get(), mImmediateContext.Get() );
@@ -723,6 +730,30 @@ void WinRenderer::DX11Renderer::renderScreenView( SizeManager const& size, ID3D1
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
 }
 
+constexpr std::span<uint32_t const,16> WinRenderer::DX11Renderer::safePalette()
+{
+  std::array<uint32_t, 16> palette = {
+    0x000000,
+    0x00007f,
+    0x007f00,
+    0x007f7f,
+    0x7f0000,
+    0x7f007f,
+    0x7f7f00,
+    0x7f7f7f,
+    0x000000,
+    0x0000ff,
+    0x00ff00,
+    0x00ffff,
+    0xff0000,
+    0xff00ff,
+    0xffff00,
+    0xffffff
+  };
+
+  return std::span<uint32_t const, 16>( palette.data(), 16 );
+}
+
 void WinRenderer::DX11Renderer::renderEncoding()
 {
   uint32_t encoderScale = mEncoder->width() / 160;
@@ -812,7 +843,7 @@ ImTextureID WinRenderer::DX11Renderer::mainRenderingTexture( int w, int h )
   return mWindowRenderings.main.srv.Get();
 }
 
-ImTextureID WinRenderer::DX11Renderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, int width, int height )
+ImTextureID WinRenderer::DX11Renderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
 {
   auto it = mWindowRenderings.screenViews.find( id );
   if ( it != mWindowRenderings.screenViews.end() )
@@ -826,7 +857,7 @@ ImTextureID WinRenderer::DX11Renderer::screenViewRenderingTexture( int id, Scree
     it->second.update( *this, width, height );
   }
 
-  it->second.render( *this, type, data );
+  it->second.render( *this, type, data, palette );
   return it->second.srv.Get();
 }
 
@@ -1199,42 +1230,57 @@ void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Rendere
   }
 }
 
-void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data )
+void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette )
 {
-  D3D11_MAPPED_SUBRESOURCE d3dmap;
-  r.mImmediateContext->Map( r.mWindowRenderings.source.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+  UINT v[4] = { 0, 0, 0, 0 };
+  auto rawUAV = uav.Get();
+  r.mImmediateContext->ClearUnorderedAccessViewUint( rawUAV, v );
 
-  struct MappedTexture
+  if ( enabled() && !data.empty() )
   {
-    DPixel* data;
-    uint32_t stride;
-  } map{ (DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( DPixel ) };
-
-  if ( data.empty() )
-  {
-    memset( map.data, 0, 80 * 102 * sizeof( DPixel ) );
-  }
-  else
-  {
-    for ( int y = 0; y < 102; ++y )
+    if ( palette.size() != 32 )
     {
-      DPixel* dst = map.data + y * map.stride;
-
-      for ( int x = 0; x < 80; ++x )
-      {
-        *dst++ = r.mInstance->mPalette[data[y * 80 + x]];
-      }
+      auto pal = WinRenderer::DX11Renderer::safePalette();
+      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal.data(), (uint32_t)pal.size() * sizeof( uint32_t ), 0 );
     }
-  }
+    else
+    {
+      uint32_t pal[16];
+
+      for ( size_t i = 0; i < 16; ++i )
+      {
+        uint32_t value = 0xff000000 |
+          ( palette[i + 16] & 0x0f ) |
+          ( ( palette[i + 16] & 0x0f ) << 4 ) |
+          ( ( palette[i] & 0x0f ) << 8 ) |
+          ( ( palette[i] & 0x0f ) << 12 ) |
+          ( ( palette[i + 16] & 0xf0 ) << 12 ) |
+          ( ( palette[i + 16] & 0xf0 ) << 16 );
+
+        pal[i] = value;
+      }
+
+      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal, sizeof pal, 0 );
+    }
 
 
-  r.mImmediateContext->Unmap( r.mWindowRenderings.source.Get(), 0 );
+    r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.source.Get(), 0, nullptr, data.data(), 80, 0 );
 
-  if ( enabled() )
-  {
-    UINT v[4] = { 255, 255, 255, 255 };
-    auto rawUAV = uav.Get();
-    r.mImmediateContext->ClearUnorderedAccessViewUint( rawUAV, v );
+    //{
+    //  D3D11_MAPPED_SUBRESOURCE d3dmap;
+    //  r.mImmediateContext->Map( r.mWindowRenderings.source.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+
+    //  for ( size_t y = 0; y < 102; ++y )
+    //  {
+    //    std::copy_n( data.data() + y * 80, 80, (uint8_t*)d3dmap.pData + y * d3dmap.RowPitch );
+    //  }
+
+    //  r.mImmediateContext->Unmap( r.mWindowRenderings.source.Get(), 0 );
+    //}
+
+
+
+
     r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );
 
     CBPosSize cbPosSize{
@@ -1246,8 +1292,9 @@ void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Rendere
 
     r.mImmediateContext->UpdateSubresource( r.mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     r.mImmediateContext->CSSetConstantBuffers( 0, 1, r.mPosSizeCB.GetAddressOf() );
-    r.mImmediateContext->CSSetShaderResources( 0, 1, r.mWindowRenderings.sourceSRV.GetAddressOf() );
-    r.mImmediateContext->CSSetShader( r.mRendererCS.Get(), nullptr, 0 );
+    ID3D11ShaderResourceView* tab[] = { r.mWindowRenderings.sourceSRV.Get(), r.mWindowRenderings.paletteSRV.Get() };
+    r.mImmediateContext->CSSetShaderResources( 0, 2, tab );
+    r.mImmediateContext->CSSetShader( r.mRenderer2CS.Get(), nullptr, 0 );
     r.mImmediateContext->Dispatch( 5, 51, 1 );
 
     rawUAV = nullptr;

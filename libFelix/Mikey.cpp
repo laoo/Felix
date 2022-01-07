@@ -499,3 +499,8 @@ uint16_t Mikey::debugDispAdr() const
 {
   return mDisplayRegs.dispAdr;
 }
+
+std::span<uint8_t const, 32> Mikey::debugPalette() const
+{
+  return std::span<uint8_t const, 32>( mPalette.data(), mPalette.size() );
+}

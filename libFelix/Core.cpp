@@ -847,3 +847,8 @@ uint16_t Core::debugCollBas() const
   return mSuzy->debugCollBas();
 }
 
+std::span<uint8_t const, 32> Core::debugPalette() const
+{
+  return mMikey->debugPalette();
+}
+

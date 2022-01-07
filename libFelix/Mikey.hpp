@@ -88,6 +88,7 @@ public:
   void resetIRQ( uint8_t mask );
 
   uint16_t debugDispAdr() const;
+  std::span<uint8_t const, 32> debugPalette() const;
 
 private:
   Core & mCore;
