@@ -40,6 +40,7 @@ struct SysConfig
     int id;
     int type;
     int customAddress;
+    int safePalette;
   };
   std::vector<ScreenView> screenViews;
 

@@ -810,7 +810,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance->debugDispAdr();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       case ScreenViewType::VIDBAS:
@@ -820,7 +821,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance->debugVidBas();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       case ScreenViewType::COLLBAS:
@@ -830,7 +832,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance->debugCollBas();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       default:  //ScreenViewType::CUSTOM:
@@ -840,11 +843,12 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = sv.customAddress;
           std::sprintf( buf, "%04x", sv.customAddress );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + sv.customAddress, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       }
-      ImGui::SetNextItemWidth( 70 );
+      ImGui::SetNextItemWidth( 40 );
       if ( ImGui::InputTextWithHint( "##ha", "hex addr", buf, 5, ImGuiInputTextFlags_CharsHexadecimal ) )
       {
         int hex;
@@ -853,6 +857,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
         sv.customAddress = (uint16_t)( hex & 0b1111111111111100 );
       }
       ImGui::EndDisabled();
+      ImGui::SameLine();
+      ImGui::Checkbox( "safe palette", &sv.safePalette );
       auto size = ImGui::GetWindowSize();
       size.x -= xpad;
       size.y -= ypad;
@@ -1229,7 +1235,7 @@ Manager::Debugger::Debugger() : mutex{},
   mBreakOnBrk = sysConfig->breakOnBrk;
   for ( auto const& sv : sysConfig->screenViews )
   {
-    mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress );
+    mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress, sv.safePalette );
   }
 }
 
@@ -1247,7 +1253,7 @@ Manager::Debugger::~Debugger()
   sysConfig->screenViews.clear();
   for ( auto const& sv : mScreenViews )
   {
-    sysConfig->screenViews.emplace_back( sv.id, (int)sv.type, (int)sv.customAddress );
+    sysConfig->screenViews.emplace_back( sv.id, (int)sv.type, (int)sv.customAddress, sv.safePalette );
   }
 }
 

@@ -61,7 +61,7 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "screenViews = {\n";
   for ( auto const& sv : screenViews )
   {
-    fout << "\t{" << sv.id << ", " << sv.type << ", " << sv.customAddress << "};\n";
+    fout << "\t{" << sv.id << ", " << sv.type << ", " << sv.customAddress << ", " << ( sv.safePalette ? "1" : "false" ) << "};\n";
   }
   fout << "};\n";
 }
@@ -97,7 +97,7 @@ void SysConfig::load( sol::state const& lua )
     for ( auto sv : *optSV )
     {
       auto tab = sv.second.as<sol::table>();
-      screenViews.emplace_back( tab.get<int>( 1 ), tab.get<int>( 2 ), tab.get<int>( 3 ) );
+      screenViews.emplace_back( tab.get<int>( 1 ), tab.get<int>( 2 ), tab.get<int>( 3 ), tab.get<sol::optional<bool>>( 4 ).value_or( false ) );
     }
   }
 }

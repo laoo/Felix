@@ -730,25 +730,25 @@ void WinRenderer::DX11Renderer::renderScreenView( SizeManager const& size, ID3D1
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
 }
 
-constexpr std::span<uint32_t const,16> WinRenderer::DX11Renderer::safePalette()
+std::span<uint32_t const,16> WinRenderer::DX11Renderer::safePalette()
 {
-  std::array<uint32_t, 16> palette = {
-    0x000000,
-    0x00007f,
-    0x007f00,
-    0x007f7f,
-    0x7f0000,
-    0x7f007f,
-    0x7f7f00,
-    0x7f7f7f,
-    0x000000,
-    0x0000ff,
-    0x00ff00,
-    0x00ffff,
-    0xff0000,
-    0xff00ff,
-    0xffff00,
-    0xffffff
+  static constexpr std::array<uint32_t, 16> palette = {
+    0xff000000,
+    0xff0000aa,
+    0xff00aa00,
+    0xff00aaaa,
+    0xffaa0000,
+    0xffaa00aa,
+    0xffaaaa00,
+    0xffaaaaaa,
+    0xff858585,
+    0xff8585ff,
+    0xff85ff85,
+    0xff85ffff,
+    0xffff8585,
+    0xffff85ff,
+    0xffffff85,
+    0xffffffff
   };
 
   return std::span<uint32_t const, 16>( palette.data(), 16 );
@@ -1241,7 +1241,7 @@ void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Rendere
     if ( palette.size() != 32 )
     {
       auto pal = WinRenderer::DX11Renderer::safePalette();
-      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal.data(), (uint32_t)pal.size() * sizeof( uint32_t ), 0 );
+      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal.data(), 16 * 4, 0 );
     }
     else
     {
@@ -1249,36 +1249,23 @@ void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Rendere
 
       for ( size_t i = 0; i < 16; ++i )
       {
-        uint32_t value = 0xff000000 |
-          ( palette[i + 16] & 0x0f ) |
-          ( ( palette[i + 16] & 0x0f ) << 4 ) |
-          ( ( palette[i] & 0x0f ) << 8 ) |
-          ( ( palette[i] & 0x0f ) << 12 ) |
-          ( ( palette[i + 16] & 0xf0 ) << 12 ) |
-          ( ( palette[i + 16] & 0xf0 ) << 16 );
+        Pixel value;
+        value.x = 0xff;
+        value.r = ( palette[i + 16] & 0x0f );
+        value.r |= value.r << 4;
+        value.g = ( palette[i] & 0x0f );
+        value.g |= value.g << 4;
+        value.b = ( palette[i + 16] & 0xf0 );
+        value.b |= value.r >> 4;
 
-        pal[i] = value;
+        pal[i] = std::bit_cast<uint32_t>( value );
       }
 
-      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal, sizeof pal, 0 );
+      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal, 16 * 4, 0 );
     }
 
 
     r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.source.Get(), 0, nullptr, data.data(), 80, 0 );
-
-    //{
-    //  D3D11_MAPPED_SUBRESOURCE d3dmap;
-    //  r.mImmediateContext->Map( r.mWindowRenderings.source.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
-
-    //  for ( size_t y = 0; y < 102; ++y )
-    //  {
-    //    std::copy_n( data.data() + y * 80, 80, (uint8_t*)d3dmap.pData + y * d3dmap.RowPitch );
-    //  }
-
-    //  r.mImmediateContext->Unmap( r.mWindowRenderings.source.Get(), 0 );
-    //}
-
-
 
 
     r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );

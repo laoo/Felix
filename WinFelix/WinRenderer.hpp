@@ -180,7 +180,7 @@ private:
   private:
 
     void prepareFont();
-    static constexpr std::span<uint32_t const,16> safePalette();
+    static std::span<uint32_t const,16> safePalette();
 
     struct BoardFont;
 
