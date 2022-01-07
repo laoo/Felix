@@ -769,10 +769,10 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       static const float ypad = 4.0f + 19.0f;
       ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
 
-      ImGui::Begin( "Rendering", &debugMode, 0 );
+      ImGui::Begin( "Rendering", &debugMode, ImGuiWindowFlags_NoCollapse );
       auto size = ImGui::GetWindowSize();
-      size.x -= xpad;
-      size.y -= ypad;
+      size.x = std::max( 0.0f, size.x - xpad );
+      size.y = std::max( 0.0f, size.y - ypad );
       if ( auto tex = mRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
       {
         ImGui::Image( tex, size );
@@ -860,8 +860,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::SameLine();
       ImGui::Checkbox( "safe palette", &sv.safePalette );
       auto size = ImGui::GetWindowSize();
-      size.x -= xpad;
-      size.y -= ypad;
+      size.x = std::max( 0.0f, size.x - xpad );
+      size.y = std::max( 0.0f, size.y - ypad );
 
       if ( auto tex = mRenderer->screenViewRenderingTexture( sv.id, sv.type, data, palette, (int)size.x, (int)size.y ) )
       {

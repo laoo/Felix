@@ -1196,6 +1196,7 @@ void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Rendere
   {
     srv.ReleaseAndGetAddressOf();
     uav.ReleaseAndGetAddressOf();
+    size = SizeManager{};
     return;
   }
 
@@ -1232,12 +1233,18 @@ void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Rendere
 
 void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette )
 {
-  UINT v[4] = { 0, 0, 0, 0 };
-  auto rawUAV = uav.Get();
-  r.mImmediateContext->ClearUnorderedAccessViewUint( rawUAV, v );
-
-  if ( enabled() && !data.empty() )
+  if ( enabled() )
   {
+    auto rawUAV = uav.Get();
+    if ( !rawUAV )
+      return;
+
+    UINT v[4] = { 0, 0, 0, 0 };
+    r.mImmediateContext->ClearUnorderedAccessViewUint( rawUAV, v );
+
+    if ( data.empty() )
+      return;
+
     if ( palette.size() != 32 )
     {
       auto pal = WinRenderer::DX11Renderer::safePalette();
@@ -1264,9 +1271,7 @@ void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Rendere
       r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal, 16 * 4, 0 );
     }
 
-
     r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.source.Get(), 0, nullptr, data.data(), 80, 0 );
-
 
     r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );
 
