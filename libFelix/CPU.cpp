@@ -1964,12 +1964,12 @@ CPU::Execute CPU::execute()
         else
         {
           state.pc += 1;
-        }
-        //BRK is treated as NOP if mBreakOnBrk is true
-        if ( mBreakOnBrk )
-        {
-          mReq.cpuBreakType = CpuBreakType::BRK_INSTRUCTION;
-          break;
+          //BRK is treated as NOP if mBreakOnBrk is true
+          if ( mBreakOnBrk )
+          {
+            mReq.cpuBreakType = CpuBreakType::BRK_INSTRUCTION;
+            break;
+          }
         }
         co_await write( state.s, state.pch );
         state.sl--;
