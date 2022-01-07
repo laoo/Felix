@@ -748,6 +748,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::Begin( "CPU", &cpuWindow, ImGuiWindowFlags_AlwaysAutoResize );
       renderBoard( mDebugger.cpuVisualizer() );
       ImGui::End();
+      mDebugger.visualizeCPU( cpuWindow );
     }
 
     if ( disasmWindow )
@@ -755,6 +756,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::Begin( "Disassembly", &disasmWindow, ImGuiWindowFlags_AlwaysAutoResize );
       renderBoard( mDebugger.disasmVisualizer() );
       ImGui::End();
+      mDebugger.visualizeDisasm( disasmWindow );
     }
 
     if ( historyWindow )
@@ -762,6 +764,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::Begin( "History", &historyWindow, ImGuiWindowFlags_AlwaysAutoResize );
       renderBoard( mDebugger.historyVisualizer() );
       ImGui::End();
+      mDebugger.visualizeHistory( historyWindow );
     }
 
     {
