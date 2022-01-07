@@ -741,13 +741,13 @@ std::span<uint32_t const,16> WinRenderer::DX11Renderer::safePalette()
     0xffaa00aa,
     0xffaaaa00,
     0xffaaaaaa,
-    0xff858585,
-    0xff8585ff,
-    0xff85ff85,
-    0xff85ffff,
-    0xffff8585,
-    0xffff85ff,
-    0xffffff85,
+    0xff555555,
+    0xff5555ff,
+    0xff55ff55,
+    0xff55ffff,
+    0xffff5555,
+    0xffff55ff,
+    0xffffff55,
     0xffffffff
   };
 
