@@ -83,6 +83,7 @@ private:
     int id;
     ScreenViewType type;
     uint16_t customAddress;
+    bool safePalette;
   };
 
   class Debugger

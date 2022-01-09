@@ -53,11 +53,13 @@ Manager::Manager() : mLua{},
                      mKeyNames{ std::make_shared<KeyNames>() },
                      mImageProperties{}
 {
+  auto sysConfig = gConfigProvider.sysConfig();
+
   mDebugger( RunMode::RUN );
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>( mDebugger.mRunMode );
   mComLynxWire = std::make_shared<ComLynxWire>();
-  mIntputSource = std::make_shared<UserInput>( *gConfigProvider.sysConfig() );
+  mIntputSource = std::make_shared<UserInput>( *sysConfig );
 
   mRenderThread = std::thread{ [this]
   {
@@ -111,6 +113,8 @@ Manager::Manager() : mLua{},
     std::terminate();
   }
   } };
+
+  mAudioOut->mute( sysConfig->audio.mute );
 }
 
 void Manager::update()
@@ -197,8 +201,12 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 
 Manager::~Manager()
 {
+  auto sysConfig = gConfigProvider.sysConfig();
+
   mIntputSource->serialize( *gConfigProvider.sysConfig() );
   stopThreads();
+
+  sysConfig->audio.mute = mAudioOut->mute();
 }
 
 void Manager::quit()
@@ -306,6 +314,16 @@ bool Manager::mainMenu( ImGuiIO& io )
       ImGui::EndMenu();
     }
     ImGui::EndDisabled();
+    if ( ImGui::BeginMenu( "Audio" ) )
+    {
+      openMenu = true;
+      bool mute = mAudioOut->mute();
+      if ( ImGui::MenuItem( "Mute", "Ctrl+M", &mute ) )
+      {
+        mAudioOut->mute( mute );
+      }
+      ImGui::EndMenu();
+    }
     if ( mRenderer->canRenderBoards() )
     {
       ImGui::BeginDisabled( !(bool)mInstance );
@@ -485,6 +503,10 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::IsKeyPressed( 'S' ) && mDebugger.isDebugMode() )
     {
       mDebugger.newScreenView();
+    }
+    if ( ImGui::IsKeyPressed( 'M' ) )
+    {
+      mAudioOut->mute( !mAudioOut->mute() );
     }
   }
 
@@ -748,6 +770,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::Begin( "CPU", &cpuWindow, ImGuiWindowFlags_AlwaysAutoResize );
       renderBoard( mDebugger.cpuVisualizer() );
       ImGui::End();
+      mDebugger.visualizeCPU( cpuWindow );
     }
 
     if ( disasmWindow )
@@ -755,6 +778,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::Begin( "Disassembly", &disasmWindow, ImGuiWindowFlags_AlwaysAutoResize );
       renderBoard( mDebugger.disasmVisualizer() );
       ImGui::End();
+      mDebugger.visualizeDisasm( disasmWindow );
     }
 
     if ( historyWindow )
@@ -762,6 +786,7 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       ImGui::Begin( "History", &historyWindow, ImGuiWindowFlags_AlwaysAutoResize );
       renderBoard( mDebugger.historyVisualizer() );
       ImGui::End();
+      mDebugger.visualizeHistory( historyWindow );
     }
 
     {
@@ -769,10 +794,10 @@ void Manager::drawDebugWindows( ImGuiIO& io )
       static const float ypad = 4.0f + 19.0f;
       ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
 
-      ImGui::Begin( "Rendering", &debugMode, 0 );
+      ImGui::Begin( "Rendering", &debugMode, ImGuiWindowFlags_NoCollapse );
       auto size = ImGui::GetWindowSize();
-      size.x -= xpad;
-      size.y -= ypad;
+      size.x = std::max( 0.0f, size.x - xpad );
+      size.y = std::max( 0.0f, size.y - ypad );
       if ( auto tex = mRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
       {
         ImGui::Image( tex, size );
@@ -810,7 +835,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance->debugDispAdr();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       case ScreenViewType::VIDBAS:
@@ -820,7 +846,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance->debugVidBas();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       case ScreenViewType::COLLBAS:
@@ -830,7 +857,8 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = mInstance->debugCollBas();
           std::sprintf( buf, "%04x", addr );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       default:  //ScreenViewType::CUSTOM:
@@ -840,11 +868,12 @@ void Manager::drawDebugWindows( ImGuiIO& io )
           uint16_t addr = sv.customAddress;
           std::sprintf( buf, "%04x", sv.customAddress );
           data = std::span<uint8_t const>{ mInstance->debugRAM() + sv.customAddress, 80 * 102 };
-          palette = mInstance->debugPalette();
+          if ( !sv.safePalette )
+            palette = mInstance->debugPalette();
         }
         break;
       }
-      ImGui::SetNextItemWidth( 70 );
+      ImGui::SetNextItemWidth( 40 );
       if ( ImGui::InputTextWithHint( "##ha", "hex addr", buf, 5, ImGuiInputTextFlags_CharsHexadecimal ) )
       {
         int hex;
@@ -853,9 +882,11 @@ void Manager::drawDebugWindows( ImGuiIO& io )
         sv.customAddress = (uint16_t)( hex & 0b1111111111111100 );
       }
       ImGui::EndDisabled();
+      ImGui::SameLine();
+      ImGui::Checkbox( "safe palette", &sv.safePalette );
       auto size = ImGui::GetWindowSize();
-      size.x -= xpad;
-      size.y -= ypad;
+      size.x = std::max( 0.0f, size.x - xpad );
+      size.y = std::max( 0.0f, size.y - ypad );
 
       if ( auto tex = mRenderer->screenViewRenderingTexture( sv.id, sv.type, data, palette, (int)size.x, (int)size.y ) )
       {
@@ -1229,7 +1260,7 @@ Manager::Debugger::Debugger() : mutex{},
   mBreakOnBrk = sysConfig->breakOnBrk;
   for ( auto const& sv : sysConfig->screenViews )
   {
-    mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress );
+    mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress, sv.safePalette );
   }
 }
 
@@ -1247,7 +1278,7 @@ Manager::Debugger::~Debugger()
   sysConfig->screenViews.clear();
   for ( auto const& sv : mScreenViews )
   {
-    sysConfig->screenViews.emplace_back( sv.id, (int)sv.type, (int)sv.customAddress );
+    sysConfig->screenViews.emplace_back( sv.id, (int)sv.type, (int)sv.customAddress, sv.safePalette );
   }
 }
 

@@ -4,7 +4,7 @@
 #include "Log.hpp"
 #include "IEncoder.hpp"
 
-WinAudioOut::WinAudioOut( std::atomic<RunMode>& runMode ) : mRunMode{ runMode }, mWav {}
+WinAudioOut::WinAudioOut( std::atomic<RunMode>& runMode ) : mRunMode{ runMode }, mWav{}, mNormalizer{ 1.0f / 32768.0f }
 {
   CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
@@ -119,6 +119,16 @@ void WinAudioOut::setWavOut( std::filesystem::path path )
   wav_set_sample_size( mWav, sizeof(float) );
 }
 
+void WinAudioOut::mute( bool value )
+{
+  mNormalizer = value ? 0.0f : 1 / 32768.0f;
+}
+
+bool WinAudioOut::mute() const
+{
+  return mNormalizer == 0;
+}
+
 int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t renderingTimeQPC )
 {
   int baseResult = mMixFormat->nSamplesPerSec;
@@ -192,8 +202,8 @@ void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingT
     float* pfData = reinterpret_cast<float*>( pData );
     for ( uint32_t i = 0; i < framesAvailable; ++i )
     {
-      pfData[i * mMixFormat->nChannels + 0] = mSamplesBuffer[i].left / 32768.0f;
-      pfData[i * mMixFormat->nChannels + 1] = mSamplesBuffer[i].right / 32768.0f;
+      pfData[i * mMixFormat->nChannels + 0] = mSamplesBuffer[i].left * mNormalizer;
+      pfData[i * mMixFormat->nChannels + 1] = mSamplesBuffer[i].right * mNormalizer;
     }
 
     if ( mEncoder )
