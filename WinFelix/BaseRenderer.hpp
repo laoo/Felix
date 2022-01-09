@@ -6,6 +6,7 @@
 class ScreenRenderingBuffer;
 class Manager;
 class IEncoder;
+struct VideoSink;
 
 enum class ScreenViewType
 {
@@ -23,40 +24,7 @@ public:
   static std::shared_ptr<BaseRenderer> createRenderer( HWND hWnd, std::filesystem::path const& iniPath );
 
 
-  struct Pixel
-  {
-    uint8_t b;
-    uint8_t g;
-    uint8_t r;
-    uint8_t x;
-  };
 
-  struct DPixel
-  {
-    Pixel left;
-    Pixel right;
-  };
-
-
-  struct Instance : public IVideoSink
-  {
-    Instance();
-
-    std::array<DPixel, 256> mPalette;
-    std::shared_ptr<ScreenRenderingBuffer> mActiveFrame;
-    std::queue<std::shared_ptr<ScreenRenderingBuffer>> mFinishedFrames;
-    mutable std::mutex mQueueMutex;
-    uint64_t mBeginTick;
-    uint64_t mLastTick;
-    uint64_t mFrameTicks;
-
-    void updatePalette( uint16_t reg, uint8_t value );
-    void newFrame( uint64_t tick, uint8_t hbackup ) override;
-    void newRow( uint64_t tick, int row ) override;
-    void emitScreenData( std::span<uint8_t const> data ) override;
-    void updateColorReg( uint8_t reg, uint8_t value ) override;
-    std::shared_ptr<ScreenRenderingBuffer> pullNextFrame();
-  };
 
   BaseRenderer( HWND hWnd );
   virtual ~BaseRenderer() = default;
@@ -80,7 +48,7 @@ protected:
 
 protected:
   HWND mHWnd;
-  std::shared_ptr<Instance> mInstance;
+  std::shared_ptr<VideoSink> mVideoSink;
   ScreenGeometry mScreenGeometry;
   ImageProperties::Rotation mRotation;
   int64_t mLastRenderTimePoint;

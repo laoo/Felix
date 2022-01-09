@@ -3,6 +3,7 @@
 #include "ScreenRenderingBuffer.hpp"
 #include "WinImgui9.hpp"
 #include "Manager.hpp"
+#include "VideoSink.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
@@ -85,34 +86,34 @@ void DX9Renderer::internalRender( Manager& config )
     V_THROW( mD3Device->CreateTexture( mScreenGeometry.width(), mScreenGeometry.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, mSource.ReleaseAndGetAddressOf(), nullptr ) );
     mSourceWidth = mScreenGeometry.width();
     mSourceHeight = mScreenGeometry.height();
-    mTempBuffer.resize( mSourceHeight * mSourceWidth / 2, DPixel{ Pixel{ 0xff, 0xff, 0xff, 0xff }, Pixel{ 0xff, 0xff, 0xff, 0xff } } );
+    mTempBuffer.resize( mSourceHeight * mSourceWidth / 2, ~0ull );
   }
 
   {
-    if ( auto frame = mInstance->pullNextFrame() )
+    if ( auto frame = mVideoSink->pullNextFrame() )
     {
       struct MappedTexture
       {
-        DPixel* data;
+        VideoSink::DPixel* data;
         uint32_t stride;
-      } map{ mTempBuffer.data(), (uint32_t)mSourceWidth / 2 };
+      } map{ ( VideoSink::DPixel *)mTempBuffer.data(), (uint32_t)mSourceWidth / 2 };
 
       for ( int i = 0; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
       {
         auto const& row = frame->row(i);
         int size = frame->size(i);
-        DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
+        VideoSink::DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
 
         for ( int j = 0; j < size; ++j )
         {
           uint16_t v = row[j];
           if ( std::bit_cast<int16_t>( v ) < 0 )
           {
-            *dst++ = mInstance->mPalette[(uint8_t)v];
+            *dst++ = mVideoSink->mPalette[(uint8_t)v];
           }
           else
           {
-            mInstance->updatePalette( v >> 8, (uint8_t)v );
+            mVideoSink->updatePalette( v >> 8, (uint8_t)v );
           }
         }
       }

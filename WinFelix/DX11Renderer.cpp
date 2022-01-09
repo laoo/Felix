@@ -10,6 +10,7 @@
 #include "Manager.hpp"
 #include "IEncoder.hpp"
 #include "fonts.hpp"
+#include "VideoSink.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
@@ -157,33 +158,33 @@ bool DX11Renderer::resizeOutput()
 
 void DX11Renderer::updateSourceFromNextFrame()
 {
-  if ( auto frame = mInstance->pullNextFrame() )
+  if ( auto frame = mVideoSink->pullNextFrame() )
   {
     D3D11_MAPPED_SUBRESOURCE d3dmap;
     mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
 
     struct MappedTexture
     {
-      DPixel* data;
+      VideoSink::DPixel* data;
       uint32_t stride;
-    } map{ (DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( DPixel ) };
+    } map{ (VideoSink::DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( VideoSink::DPixel ) };
 
     for ( int i = 0; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
     {
       auto const& row = frame->row(i);
       int size = frame->size(i);
-      DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
+      VideoSink::DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
 
       for ( int j = 0; j < size; ++j )
       {
         uint16_t v = row[j];
         if ( std::bit_cast<int16_t>( v ) < 0 )
         {
-          *dst++ = mInstance->mPalette[(uint8_t)v];
+          *dst++ = mVideoSink->mPalette[(uint8_t)v];
         }
         else
         {
-          mInstance->updatePalette( v >> 8, (uint8_t)v );
+          mVideoSink->updatePalette( v >> 8, (uint8_t)v );
         }
       }
     }
@@ -643,7 +644,7 @@ void DX11Renderer::DebugRendering::render( DX11Renderer& r, ScreenViewType type,
 
       for ( size_t i = 0; i < 16; ++i )
       {
-        Pixel value;
+        VideoSink::Pixel value;
         value.x = 0xff;
         value.r = ( palette[i + 16] & 0x0f );
         value.r |= value.r << 4;

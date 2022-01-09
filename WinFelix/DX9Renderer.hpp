@@ -27,5 +27,5 @@ private:
   int                               mSourceWidth;
   int                               mSourceHeight;
   RECT mRect;
-  std::vector<DPixel>               mTempBuffer;
+  std::vector<uint64_t>             mTempBuffer;
 };
