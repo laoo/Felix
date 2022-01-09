@@ -15,6 +15,7 @@
     <ClCompile Include="KeyNames.cpp" />
     <ClCompile Include="LuaProxies.cpp" />
     <ClCompile Include="ScreenRenderingBuffer.cpp" />
+    <ClCompile Include="ScreenGeometry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -51,6 +52,7 @@
       <Filter>shaders</Filter>
     </ClInclude>
     <ClInclude Include="ScreenRenderingBuffer.hpp" />
+    <ClInclude Include="ScreenGeometry.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">

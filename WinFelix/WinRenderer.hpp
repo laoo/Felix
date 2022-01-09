@@ -4,6 +4,7 @@
 #include "DisplayGenerator.hpp"
 #include "ImageCart.hpp"
 #include "ImageProperties.hpp"
+#include "ScreenGeometry.hpp"
 
 class ScreenRenderingBuffer;
 class WinImgui11;
@@ -55,35 +56,6 @@ private:
     Pixel right;
   };
 
-  class SizeManager
-  {
-  public:
-    SizeManager();
-    SizeManager( int windowWidth, int windowHeight, ImageProperties::Rotation rotation );
-
-    int windowWidth() const;
-    int windowHeight() const;
-    int minWindowWidth() const;
-    int minWindowHeight() const;
-    int width() const;
-    int height() const;
-    int xOff() const;
-    int yOff() const;
-    int scale() const;
-    int rotx1() const;
-    int rotx2() const;
-    int roty1() const;
-    int roty2() const;
-    ImageProperties::Rotation rotation() const;
-    explicit operator bool() const;
-
-  private:
-    int mWinWidth;
-    int mWinHeight;
-    int mScale;
-    ImageProperties::Rotation mRotation;
-  };
-
   struct Instance : public IVideoSink
   {
     Instance();
@@ -125,7 +97,7 @@ private:
   protected:
     HWND mHWnd;
     std::shared_ptr<Instance> mInstance;
-    SizeManager mSizeManager;
+    ScreenGeometry mScreenGeometry;
     ImageProperties::Rotation mRotation;
   };
 
@@ -175,7 +147,7 @@ private:
     void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
     void* mainRenderingTexture( int width, int height ) override;
     void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) override;
-    void renderScreenView( SizeManager const& size, ID3D11UnorderedAccessView* target );
+    void renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target );
 
   private:
 
@@ -248,7 +220,7 @@ private:
     {
       int width = {};
       int height = {};
-      SizeManager size = {};
+      ScreenGeometry geometry = {};
       ComPtr<ID3D11UnorderedAccessView> uav = {};
       ComPtr<ID3D11ShaderResourceView> srv = {};
 

@@ -156,6 +156,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='FastRelease|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="ScreenGeometry.cpp" />
     <ClCompile Include="ScreenRenderingBuffer.cpp" />
     <ClCompile Include="SysConfig.cpp" />
     <ClCompile Include="UserInput.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="renderer2.hxx" />
     <ClInclude Include="rendererYUV.hxx" />
+    <ClInclude Include="ScreenGeometry.hpp" />
     <ClInclude Include="ScreenRenderingBuffer.hpp" />
     <ClInclude Include="SysConfig.hpp" />
     <ClInclude Include="UserInput.hpp" />

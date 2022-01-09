@@ -102,153 +102,6 @@ void WinRenderer::setRotation( ImageProperties::Rotation rotation )
   mRenderer->setRotation( rotation );
 }
 
-
-WinRenderer::SizeManager::SizeManager() : mWinWidth{}, mWinHeight{}, mScale{ 1 }
-{
-}
-
-WinRenderer::SizeManager::SizeManager( int windowWidth, int windowHeight, ImageProperties::Rotation rotation ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }, mRotation{ rotation }
-{
-  int sx, sy;
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-  case ImageProperties::Rotation::RIGHT:
-    sx = (std::max)( 1, mWinWidth / 102 );
-    sy = (std::max)( 1, mWinHeight / 160 );
-    break;
-  default:
-    sx = (std::max)( 1, mWinWidth / 160 );
-    sy = (std::max)( 1, mWinHeight / 102 );
-    break;
-  }
-
-  mScale = (std::min)( sx, sy );
-}
-
-int WinRenderer::SizeManager::windowWidth() const
-{
-  return mWinWidth;
-}
-
-int WinRenderer::SizeManager::windowHeight() const
-{
-  return mWinHeight;
-}
-
-int WinRenderer::SizeManager::minWindowWidth() const
-{
-  return mRotation == ImageProperties::Rotation::NORMAL ? 160 : 102;
-}
-
-int WinRenderer::SizeManager::minWindowHeight() const
-{
-  return mRotation == ImageProperties::Rotation::NORMAL ? 102 : 160;
-}
-
-int WinRenderer::SizeManager::width() const
-{
-  return minWindowWidth();
-}
-
-int WinRenderer::SizeManager::height() const
-{
-  return minWindowHeight();
-}
-
-int WinRenderer::SizeManager::xOff() const
-{
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-    return ( mWinWidth + 102 * mScale ) / 2;
-  case ImageProperties::Rotation::RIGHT:
-    return ( mWinWidth - 102 * mScale ) / 2;
-  default:
-    return ( mWinWidth - 160 * mScale ) / 2;
-  }
-}
-
-int WinRenderer::SizeManager::yOff() const
-{
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-    return ( mWinHeight - 160 * mScale ) / 2;
-  case ImageProperties::Rotation::RIGHT:
-    return ( mWinHeight + 160 * mScale ) / 2;
-  default:
-    return ( mWinHeight - 102 * mScale ) / 2;
-  }
-}
-
-int WinRenderer::SizeManager::scale() const
-{
-  return mScale;
-}
-
-int WinRenderer::SizeManager::rotx1() const
-{
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-    return 0;  //mScale * cos( 90 )
-  case ImageProperties::Rotation::RIGHT:
-    return 0;  //mScale * cos( -90 )
-  default:
-    return mScale;  //mScale * cos( 0 )
-  }
-}
-
-int WinRenderer::SizeManager::rotx2() const
-{
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-    return -mScale;  //mScale * -sin( 90 )
-  case ImageProperties::Rotation::RIGHT:
-    return mScale;  //mScale * -sin( -90 )
-  default:
-    return 0;  //mScale * -sin( 0 )
-  }
-}
-
-int WinRenderer::SizeManager::roty1() const
-{
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-    return mScale;  //mScale * sin( 90 )
-  case ImageProperties::Rotation::RIGHT:
-    return -mScale;  //mScale * sin( -90 )
-  default:
-    return 0;  //mScale * sin( 0 )
-  }
-}
-
-int WinRenderer::SizeManager::roty2() const
-{
-  switch ( mRotation )
-  {
-  case ImageProperties::Rotation::LEFT:
-    return 0;  //mScale * cos( 90 )
-  case ImageProperties::Rotation::RIGHT:
-    return 0;  //mScale * cos( -90 )
-  default:
-    return mScale;  //mScale * cos( 0 )
-  }
-}
-
-ImageProperties::Rotation WinRenderer::SizeManager::rotation() const
-{
-  return mRotation;
-}
-
-WinRenderer::SizeManager::operator bool() const
-{
-  return mWinWidth != 0 && mWinHeight != 0;
-}
-
 void WinRenderer::Instance::newFrame( uint64_t tick, uint8_t hbackup )
 {
   mFrameTicks = tick - mBeginTick;
@@ -355,7 +208,7 @@ WinRenderer::Instance::Instance() : mActiveFrame{}, mFinishedFrames{}, mQueueMut
   }
 }
 
-WinRenderer::BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{ std::make_shared<Instance>() }, mSizeManager{}, mRotation{}
+WinRenderer::BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{ std::make_shared<Instance>() }, mScreenGeometry{}, mRotation{}
 {
 }
 
@@ -400,12 +253,12 @@ int WinRenderer::BaseRenderer::sizing( RECT& rect )
   int cW = cRect.right - cRect.left + dW;
   int cH = cRect.bottom - cRect.top + dH;
 
-  if ( cW < mSizeManager.minWindowWidth() )
+  if ( cW < mScreenGeometry.minWindowWidth() )
   {
     rect.left = wRect.left;
     rect.right = wRect.right;
   }
-  if ( cH < mSizeManager.minWindowHeight() )
+  if ( cH < mScreenGeometry.minWindowHeight() )
   {
     rect.top = wRect.top;
     rect.bottom = wRect.bottom;
@@ -541,11 +394,11 @@ bool WinRenderer::DX11Renderer::resizeOutput()
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return true;
 
-  if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) || mSizeManager.rotation() != mRotation )
+  if ( mScreenGeometry.windowHeight() != r.bottom || ( mScreenGeometry.windowWidth() != r.right ) || mScreenGeometry.rotation() != mRotation )
   {
-    mSizeManager = SizeManager{ r.right, r.bottom, mRotation };
+    mScreenGeometry = ScreenGeometry{ r.right, r.bottom, mRotation };
 
-    if ( !mSizeManager )
+    if ( !mScreenGeometry )
     {
       return true;
     }
@@ -553,7 +406,7 @@ bool WinRenderer::DX11Renderer::resizeOutput()
     mBackBufferUAV.Reset();
     mBackBufferRTV.Reset();
 
-    mSwapChain->ResizeBuffers( 0, mSizeManager.windowWidth(), mSizeManager.windowHeight(), DXGI_FORMAT_UNKNOWN, 0 );
+    mSwapChain->ResizeBuffers( 0, mScreenGeometry.windowWidth(), mScreenGeometry.windowHeight(), DXGI_FORMAT_UNKNOWN, 0 );
 
     ComPtr<ID3D11Texture2D> backBuffer;
     V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
@@ -640,11 +493,11 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
   {
     mWindowRenderings.main.update( *this );
     mImmediateContext->ClearUnorderedAccessViewUint( mWindowRenderings.main.uav.Get(), v );
-    renderScreenView( mWindowRenderings.main.size, mWindowRenderings.main.uav.Get() );
+    renderScreenView( mWindowRenderings.main.geometry, mWindowRenderings.main.uav.Get() );
   }
   else
   {
-    renderScreenView( mSizeManager, mBackBufferUAV.Get() );
+    renderScreenView( mScreenGeometry, mBackBufferUAV.Get() );
   }
 
   if ( mEncoder )
@@ -655,15 +508,15 @@ void WinRenderer::DX11Renderer::internalRender( Manager& config )
   renderGui( config );
 }
 
-void WinRenderer::DX11Renderer::renderScreenView( SizeManager const& size, ID3D11UnorderedAccessView * target )
+void WinRenderer::DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView * target )
 {
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
 
   CBPosSize cbPosSize{
-    size.rotx1(), size.rotx2(),
-    size.roty1(), size.roty2(),
-    size.xOff(), size.yOff(),
-    size.scale()
+    geometry.rotx1(), geometry.rotx2(),
+    geometry.roty1(), geometry.roty2(),
+    geometry.xOff(), geometry.yOff(),
+    geometry.scale()
   };
 
   mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
@@ -896,11 +749,11 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
 
-  if ( mSizeManager.windowHeight() != r.bottom || ( mSizeManager.windowWidth() != r.right ) || mSizeManager.rotation() != mRotation )
+  if ( mScreenGeometry.windowHeight() != r.bottom || ( mScreenGeometry.windowWidth() != r.right ) || mScreenGeometry.rotation() != mRotation )
   {
-    mSizeManager = SizeManager{ r.right, r.bottom, mRotation };
+    mScreenGeometry = ScreenGeometry{ r.right, r.bottom, mRotation };
 
-    if ( !mSizeManager )
+    if ( !mScreenGeometry )
     {
       return;
     }
@@ -913,12 +766,12 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
     presentParams.EnableAutoDepthStencil = false;
     presentParams.BackBufferCount = 1;
     presentParams.hDeviceWindow = mHWnd;
-    presentParams.BackBufferWidth = mSizeManager.windowWidth();
-    presentParams.BackBufferHeight = mSizeManager.windowHeight();
+    presentParams.BackBufferWidth = mScreenGeometry.windowWidth();
+    presentParams.BackBufferHeight = mScreenGeometry.windowHeight();
     presentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
     V_THROW( mD3Device->ResetEx( &presentParams, nullptr ) );
 
-    mRect = RECT{ mSizeManager.xOff(), mSizeManager.yOff(),  mSizeManager.xOff() + mSizeManager.width() * mSizeManager.scale(), mSizeManager.yOff() + mSizeManager.height() * mSizeManager.scale() };
+    mRect = RECT{ mScreenGeometry.xOff(), mScreenGeometry.yOff(),  mScreenGeometry.xOff() + mScreenGeometry.width() * mScreenGeometry.scale(), mScreenGeometry.yOff() + mScreenGeometry.height() * mScreenGeometry.scale() };
 
   }
   
@@ -927,11 +780,11 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
   V_THROW( mD3Device->GetBackBuffer( 0, 0, D3DBACKBUFFER_TYPE_MONO, rtSurface.ReleaseAndGetAddressOf() ) );
   V_THROW( mD3Device->ColorFill( rtSurface.Get(), NULL, D3DCOLOR_XRGB( 255, 255, 255 ) ) );
 
-  if ( mSourceWidth != mSizeManager.width() || mSourceHeight != mSizeManager.height() )
+  if ( mSourceWidth != mScreenGeometry.width() || mSourceHeight != mScreenGeometry.height() )
   {
-    V_THROW( mD3Device->CreateTexture( mSizeManager.width(), mSizeManager.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, mSource.ReleaseAndGetAddressOf(), nullptr ) );
-    mSourceWidth = mSizeManager.width();
-    mSourceHeight = mSizeManager.height();
+    V_THROW( mD3Device->CreateTexture( mScreenGeometry.width(), mScreenGeometry.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, mSource.ReleaseAndGetAddressOf(), nullptr ) );
+    mSourceWidth = mScreenGeometry.width();
+    mSourceHeight = mScreenGeometry.height();
     mTempBuffer.resize( mSourceHeight * mSourceWidth / 2, DPixel{ Pixel{ 0xff, 0xff, 0xff, 0xff }, Pixel{ 0xff, 0xff, 0xff, 0xff } } );
   }
 
@@ -968,7 +821,7 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
     ComPtr<IDirect3DTexture9> sysTexture;
     HANDLE h = (HANDLE)mTempBuffer.data();
 
-    V_THROW( mD3Device->CreateTexture( mSizeManager.width(), mSizeManager.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, sysTexture.ReleaseAndGetAddressOf(), &h ) );
+    V_THROW( mD3Device->CreateTexture( mScreenGeometry.width(), mScreenGeometry.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, sysTexture.ReleaseAndGetAddressOf(), &h ) );
     V_THROW( mD3Device->UpdateTexture( sysTexture.Get(), mSource.Get() ) );
 
     ComPtr<IDirect3DSurface9> srcSurface;
@@ -1142,15 +995,15 @@ void WinRenderer::DX11Renderer::DebugRendering::update( WinRenderer::DX11Rendere
   {
     srv.ReleaseAndGetAddressOf();
     uav.ReleaseAndGetAddressOf();
-    size = SizeManager{};
+    geometry = ScreenGeometry{};
     return;
   }
 
-  if ( size.windowHeight() != height || ( size.windowWidth() != width ) || size.rotation() != r.mRotation )
+  if ( geometry.windowHeight() != height || ( geometry.windowWidth() != width ) || geometry.rotation() != r.mRotation )
   {
-    size = SizeManager{ width, height, r.mRotation };
+    geometry = ScreenGeometry{ width, height, r.mRotation };
 
-    if ( !size )
+    if ( !geometry )
     {
       srv.ReleaseAndGetAddressOf();
       uav.ReleaseAndGetAddressOf();
@@ -1222,10 +1075,10 @@ void WinRenderer::DX11Renderer::DebugRendering::render( WinRenderer::DX11Rendere
     r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );
 
     CBPosSize cbPosSize{
-      size.rotx1(), size.rotx2(),
-      size.roty1(), size.roty2(),
-      size.xOff(), size.yOff(),
-      size.scale()
+      geometry.rotx1(), geometry.rotx2(),
+      geometry.roty1(), geometry.roty2(),
+      geometry.xOff(), geometry.yOff(),
+      geometry.scale()
     };
 
     r.mImmediateContext->UpdateSubresource( r.mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
