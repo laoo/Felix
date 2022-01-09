@@ -275,15 +275,6 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
   ctx->IASetInputLayout( old.InputLayout ); if ( old.InputLayout ) old.InputLayout->Release();
 }
 
-void* WinImgui11::createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt )
-{
-    return nullptr;
-}
-
-void WinImgui11::deleteTextureRaw( void* textureData )
-{
-}
-
 void WinImgui11::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
 {
   // Setup viewport

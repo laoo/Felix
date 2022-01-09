@@ -11,9 +11,6 @@ public:
   void     dx9_NewFrame();
   void     dx9_RenderDrawData( ImDrawData* draw_data );
 
-  void* createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt ) override;
-  void deleteTextureRaw( void* textureData ) override;
-
 private:
   void dx9_CreateFontsTexture();
   void dx9_SetupRenderState( ImDrawData* draw_data );

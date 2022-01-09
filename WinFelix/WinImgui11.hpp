@@ -11,9 +11,6 @@ public:
   void     dx11_NewFrame();
   void     dx11_RenderDrawData( ImDrawData* draw_data );
 
-  void* createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt ) override;
-  void deleteTextureRaw( void* textureData ) override;
-
 private:
   void dx11_InvalidateDeviceObjects();
   void dx11_CreateFontsTexture();
