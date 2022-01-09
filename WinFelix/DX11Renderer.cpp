@@ -345,9 +345,15 @@ void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 
 int DX11Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-  if ( mImgui )
-    return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
-  
+  switch ( msg )
+  {
+  case WM_SIZING:
+    return sizing( *(RECT*)lParam );
+  default:
+    if ( mImgui )
+      return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  }
+
   return 0;
 }
 

@@ -71,15 +71,7 @@ void* WinRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std:
 
 int WinRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-  switch ( msg )
-  {
-  case WM_SIZING:
-    return mRenderer->sizing( *(RECT*)lParam );
-  default:
-    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
-  }
-
-  return 0;
+  return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
 }
 
 void WinRenderer::setRotation( ImageProperties::Rotation rotation )
