@@ -11,64 +11,10 @@
 #include "fonts.hpp"
 #include "Log.hpp"
 #include "IEncoder.hpp"
+#include "ScreenRenderingBuffer.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
-
-struct RenderFrame
-{
-  static constexpr size_t DISPLAY_BYTES = 80;
-  static constexpr size_t MAX_COLOR_CHANGES = 256;
-  static constexpr size_t LINE_BUFFER_SIZE = 512;
-  static_assert( DISPLAY_BYTES + MAX_COLOR_CHANGES <= LINE_BUFFER_SIZE );
-
-  struct Row
-  {
-    std::array<uint16_t, LINE_BUFFER_SIZE> lineBuffer;
-  };
-
-  RenderFrame() : id{ sId++ }, currentRow{}
-  {
-    std::fill( sizes.begin(), sizes.end(), 0 );
-    newRow( 104 );
-  }
-
-  std::array<int, 105> sizes;
-  std::array<Row, 105> rows;
-  uint32_t id;
-  Row * currentRow;
-  int * size;
-
-  void newRow( int row )
-  {
-    int idx = 104 - std::clamp( row, 0, 104 );
-    currentRow = &rows[ idx ];
-    size = &sizes[ idx ];
-    *size = 0;
-  }
-
-  void pushColorChage( uint8_t reg, uint8_t value )
-  {
-    int idx = *size;
-    currentRow->lineBuffer[idx++] = ( reg << 8 ) | value;
-    
-    *size = idx & ( LINE_BUFFER_SIZE - 1 );
-  }
-
-  void pushScreenBytes( std::span<uint8_t const> data )
-  {
-    int idx = *size;
-    for ( uint8_t byte : data )
-    {
-      currentRow->lineBuffer[idx++] = 0xff00 | (uint16_t)byte;
-    }
-    *size = idx & ( LINE_BUFFER_SIZE - 1 );
-  }
-
-  static uint32_t sId;
-};
-
-uint32_t RenderFrame::sId = 0;
 
 WinRenderer::WinRenderer() : mRenderer{}, mLastRenderTimePoint{}
 {
@@ -317,7 +263,7 @@ void WinRenderer::Instance::newFrame( uint64_t tick, uint8_t hbackup )
     mFinishedFrames.push( std::move( mActiveFrame ) );
     mActiveFrame.reset();
   }
-  mActiveFrame = std::make_shared<RenderFrame>();
+  mActiveFrame = std::make_shared<ScreenRenderingBuffer>();
 }
 
 void WinRenderer::Instance::newRow( uint64_t tick, int row )
@@ -369,9 +315,9 @@ void WinRenderer::Instance::updatePalette( uint16_t reg, uint8_t value )
   }
 }
 
-std::shared_ptr<RenderFrame> WinRenderer::Instance::pullNextFrame()
+std::shared_ptr<ScreenRenderingBuffer> WinRenderer::Instance::pullNextFrame()
 {
-  std::shared_ptr<RenderFrame> result{};
+  std::shared_ptr<ScreenRenderingBuffer> result{};
 
   std::scoped_lock<std::mutex> lock( mQueueMutex );
   if ( !mFinishedFrames.empty() )
@@ -630,15 +576,15 @@ void WinRenderer::DX11Renderer::updateSourceFromNextFrame()
       uint32_t stride;
     } map{ (DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( DPixel ) };
 
-    for ( int i = 0; i < (int)frame->rows.size(); ++i )
+    for ( int i = 0; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
     {
-      auto const& row = frame->rows[i];
-      int size = frame->sizes[i];
+      auto const& row = frame->row(i);
+      int size = frame->size(i);
       DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
 
       for ( int j = 0; j < size; ++j )
       {
-        uint16_t v = row.lineBuffer[j];
+        uint16_t v = row[j];
         if ( std::bit_cast<int16_t>( v ) < 0 )
         {
           *dst++ = mInstance->mPalette[(uint8_t)v];
@@ -998,15 +944,15 @@ void WinRenderer::DX9Renderer::internalRender( Manager& config )
         uint32_t stride;
       } map{ mTempBuffer.data(), (uint32_t)mSourceWidth / 2 };
 
-      for ( int i = 0; i < (int)frame->rows.size(); ++i )
+      for ( int i = 0; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
       {
-        auto const& row = frame->rows[i];
-        int size = frame->sizes[i];
+        auto const& row = frame->row(i);
+        int size = frame->size(i);
         DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
 
         for ( int j = 0; j < size; ++j )
         {
-          uint16_t v = row.lineBuffer[j];
+          uint16_t v = row[j];
           if ( std::bit_cast<int16_t>( v ) < 0 )
           {
             *dst++ = mInstance->mPalette[(uint8_t)v];

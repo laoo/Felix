@@ -5,7 +5,7 @@
 #include "ImageCart.hpp"
 #include "ImageProperties.hpp"
 
-struct RenderFrame;
+class ScreenRenderingBuffer;
 class WinImgui11;
 class WinImgui9;
 class Manager;
@@ -89,8 +89,8 @@ private:
     Instance();
 
     std::array<DPixel, 256> mPalette;
-    std::shared_ptr<RenderFrame> mActiveFrame;
-    std::queue<std::shared_ptr<RenderFrame>> mFinishedFrames;
+    std::shared_ptr<ScreenRenderingBuffer> mActiveFrame;
+    std::queue<std::shared_ptr<ScreenRenderingBuffer>> mFinishedFrames;
     mutable std::mutex mQueueMutex;
     uint64_t mBeginTick;
     uint64_t mLastTick;
@@ -101,7 +101,7 @@ private:
     void newRow( uint64_t tick, int row ) override;
     void emitScreenData( std::span<uint8_t const> data ) override;
     void updateColorReg( uint8_t reg, uint8_t value ) override;
-    std::shared_ptr<RenderFrame> pullNextFrame();
+    std::shared_ptr<ScreenRenderingBuffer> pullNextFrame();
   };
 
   class BaseRenderer
