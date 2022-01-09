@@ -19,6 +19,10 @@ class BaseRenderer
 {
 public:
 
+
+  static std::shared_ptr<BaseRenderer> createRenderer( HWND hWnd, std::filesystem::path const& iniPath );
+
+
   struct Pixel
   {
     uint8_t b;

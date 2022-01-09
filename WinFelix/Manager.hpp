@@ -3,7 +3,7 @@
 #include "ScriptDebugger.hpp"
 #include "IInputSource.hpp"
 #include "Utility.hpp"
-#include "WinRenderer.hpp"
+#include "BaseRenderer.hpp"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -148,7 +148,7 @@ private:
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;
-  std::shared_ptr<WinRenderer> mRenderer;
+  std::shared_ptr<BaseRenderer> mRenderer;
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
   std::shared_ptr<IEncoder> mEncoder;

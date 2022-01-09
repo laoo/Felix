@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "Manager.hpp"
 #include "InputFile.hpp"
-#include "WinRenderer.hpp"
 #include "WinImgui.hpp"
 #include "WinAudioOut.hpp"
 #include "ComLynxWire.hpp"
@@ -51,12 +50,12 @@ Manager::Manager() : mLua{},
                      mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
                      mIntputSource{},
                      mKeyNames{ std::make_shared<KeyNames>() },
-                     mImageProperties{}
+                     mImageProperties{},
+                     mRenderer{}
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
   mDebugger( RunMode::RUN );
-  mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>( mDebugger.mRunMode );
   mComLynxWire = std::make_shared<ComLynxWire>();
   mIntputSource = std::make_shared<UserInput>( *sysConfig );
@@ -135,8 +134,8 @@ void Manager::doArg( std::wstring arg )
 void Manager::initialize( HWND hWnd )
 {
   mhWnd = hWnd;
-  assert( mRenderer );
-  mRenderer->initialize( hWnd, gConfigProvider.appDataFolder() );
+  assert( !mRenderer );
+  mRenderer = BaseRenderer::createRenderer( hWnd, gConfigProvider.appDataFolder() );
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )

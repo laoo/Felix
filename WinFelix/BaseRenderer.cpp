@@ -2,6 +2,103 @@
 #include "BaseRenderer.hpp"
 #include "ScreenRenderingBuffer.hpp"
 #include "imgui.h"
+#include "DX9Renderer.hpp"
+#include "DX11Renderer.hpp"
+
+
+std::shared_ptr<BaseRenderer> BaseRenderer::createRenderer( HWND hWnd, std::filesystem::path const& iniPath )
+{
+  try
+  {
+    return std::make_shared<DX11Renderer>( hWnd, iniPath );
+  }
+  catch ( ... )
+  {
+    return std::make_shared<DX9Renderer>( hWnd, iniPath );
+  }
+}
+
+
+BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{ std::make_shared<Instance>() }, mScreenGeometry{}, mRotation{}, mLastRenderTimePoint{}
+{
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+  mLastRenderTimePoint = l.QuadPart;
+}
+
+int64_t BaseRenderer::render( Manager& config )
+{
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+
+  internalRender( config );
+  present();
+
+  auto result = l.QuadPart - mLastRenderTimePoint;
+  mLastRenderTimePoint = l.QuadPart;
+  return result;
+}
+
+ImTextureID BaseRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
+{
+  return ImTextureID{};
+}
+
+void* BaseRenderer::mainRenderingTexture( int width, int height )
+{
+  return ImTextureID{};
+}
+
+void* BaseRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
+{
+  return ImTextureID{};
+}
+
+bool BaseRenderer::canRenderBoards() const
+{
+  return false;
+}
+
+std::shared_ptr<IVideoSink> BaseRenderer::getVideoSink() const
+{
+  return mInstance;
+}
+
+int BaseRenderer::sizing( RECT& rect )
+{
+  RECT wRect, cRect;
+  GetWindowRect( mHWnd, &wRect );
+  GetClientRect( mHWnd, &cRect );
+
+  int lastW = wRect.right - wRect.left;
+  int lastH = wRect.bottom - wRect.top;
+  int newW = rect.right - rect.left;
+  int newH = rect.bottom - rect.top;
+  int dW = newW - lastW;
+  int dH = newH - lastH;
+
+  int cW = cRect.right - cRect.left + dW;
+  int cH = cRect.bottom - cRect.top + dH;
+
+  if ( cW < mScreenGeometry.minWindowWidth() )
+  {
+    rect.left = wRect.left;
+    rect.right = wRect.right;
+  }
+  if ( cH < mScreenGeometry.minWindowHeight() )
+  {
+    rect.top = wRect.top;
+    rect.bottom = wRect.bottom;
+  }
+
+  return 1;
+}
+
+void BaseRenderer::setRotation( ImageProperties::Rotation rotation )
+{
+  mRotation = rotation;
+}
+
 
 void BaseRenderer::Instance::newFrame( uint64_t tick, uint8_t hbackup )
 {
@@ -107,84 +204,4 @@ BaseRenderer::Instance::Instance() : mActiveFrame{}, mFinishedFrames{}, mQueueMu
   {
     mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
   }
-}
-
-BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{ std::make_shared<Instance>() }, mScreenGeometry{}, mRotation{}, mLastRenderTimePoint{}
-{
-  LARGE_INTEGER l;
-  QueryPerformanceCounter( &l );
-  mLastRenderTimePoint = l.QuadPart;
-}
-
-int64_t BaseRenderer::render( Manager& config )
-{
-  LARGE_INTEGER l;
-  QueryPerformanceCounter( &l );
-
-  internalRender( config );
-  present();
-
-  auto result = l.QuadPart - mLastRenderTimePoint;
-  mLastRenderTimePoint = l.QuadPart;
-  return result;
-}
-
-ImTextureID BaseRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
-{
-  return ImTextureID{};
-}
-
-void* BaseRenderer::mainRenderingTexture( int width, int height )
-{
-  return ImTextureID{};
-}
-
-void* BaseRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
-{
-  return ImTextureID{};
-}
-
-bool BaseRenderer::canRenderBoards() const
-{
-  return false;
-}
-
-std::shared_ptr<IVideoSink> BaseRenderer::getVideoSink() const
-{
-  return mInstance;
-}
-
-int BaseRenderer::sizing( RECT& rect )
-{
-  RECT wRect, cRect;
-  GetWindowRect( mHWnd, &wRect );
-  GetClientRect( mHWnd, &cRect );
-
-  int lastW = wRect.right - wRect.left;
-  int lastH = wRect.bottom - wRect.top;
-  int newW = rect.right - rect.left;
-  int newH = rect.bottom - rect.top;
-  int dW = newW - lastW;
-  int dH = newH - lastH;
-
-  int cW = cRect.right - cRect.left + dW;
-  int cH = cRect.bottom - cRect.top + dH;
-
-  if ( cW < mScreenGeometry.minWindowWidth() )
-  {
-    rect.left = wRect.left;
-    rect.right = wRect.right;
-  }
-  if ( cH < mScreenGeometry.minWindowHeight() )
-  {
-    rect.top = wRect.top;
-    rect.bottom = wRect.bottom;
-  }
-
-  return 1;
-}
-
-void BaseRenderer::setRotation( ImageProperties::Rotation rotation )
-{
-  mRotation = rotation;
 }

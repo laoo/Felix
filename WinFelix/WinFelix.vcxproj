@@ -168,7 +168,6 @@
     <ClCompile Include="WinImgui11.cpp" />
     <ClCompile Include="WinImgui9.cpp" />
     <ClCompile Include="WinMain.cpp" />
-    <ClCompile Include="WinRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseRenderer.hpp" />
@@ -196,7 +195,6 @@
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui11.hpp" />
     <ClInclude Include="WinImgui9.hpp" />
-    <ClInclude Include="WinRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">

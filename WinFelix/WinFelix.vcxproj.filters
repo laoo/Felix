@@ -6,7 +6,6 @@
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinImgui11.cpp" />
     <ClCompile Include="WinMain.cpp" />
-    <ClCompile Include="WinRenderer.cpp" />
     <ClCompile Include="WinImgui.cpp" />
     <ClCompile Include="WinImgui9.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
@@ -26,7 +25,6 @@
     <ClInclude Include="version.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinImgui11.hpp" />
-    <ClInclude Include="WinRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui9.hpp" />
