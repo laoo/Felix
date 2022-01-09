@@ -12,11 +12,8 @@
 
 
 
-WinRenderer::WinRenderer() : mRenderer{}, mLastRenderTimePoint{}
+WinRenderer::WinRenderer() : mRenderer{}
 {
-  LARGE_INTEGER l;
-  QueryPerformanceCounter( &l );
-  mLastRenderTimePoint = l.QuadPart;
 }
 
 WinRenderer::~WinRenderer()
@@ -49,14 +46,7 @@ std::shared_ptr<IVideoSink> WinRenderer::getVideoSink() const
 
 int64_t WinRenderer::render( Manager& config )
 {
-  LARGE_INTEGER l;
-  QueryPerformanceCounter( &l );
-
-  mRenderer->render( config );
-
-  auto result = l.QuadPart - mLastRenderTimePoint;
-  mLastRenderTimePoint = l.QuadPart;
-  return result;
+  return mRenderer->render( config );
 }
 
 bool WinRenderer::canRenderBoards() const

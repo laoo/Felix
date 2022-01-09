@@ -122,9 +122,8 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
   mImgui = std::make_shared<WinImgui11>( mHWnd, mD3DDevice, mImmediateContext, iniPath );
 }
 
-void DX11Renderer::render( Manager& config )
+void DX11Renderer::present()
 {
-  internalRender( config );
   mSwapChain->Present( 1, 0 );
 }
 

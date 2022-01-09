@@ -8,11 +8,14 @@ class DX9Renderer : public BaseRenderer
 public:
   DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath );
   ~DX9Renderer() = default;
-  void internalRender( Manager& config );
 
-  void render( Manager& config ) override;
+  void present() override;
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
+
+protected:
+  void internalRender( Manager& config ) override;
+
 
 private:
 

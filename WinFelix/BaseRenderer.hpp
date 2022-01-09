@@ -57,7 +57,8 @@ public:
   BaseRenderer( HWND hWnd );
   virtual ~BaseRenderer() = default;
 
-  virtual void render( Manager& config ) = 0;
+  int64_t render( Manager& config );
+  virtual void present() = 0;
   virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
   virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
   virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
@@ -70,9 +71,14 @@ public:
   void setRotation( ImageProperties::Rotation rotation );
 
 protected:
+  virtual void internalRender( Manager& config ) = 0;
+
+
+protected:
   HWND mHWnd;
   std::shared_ptr<Instance> mInstance;
   ScreenGeometry mScreenGeometry;
   ImageProperties::Rotation mRotation;
+  int64_t mLastRenderTimePoint;
 };
 

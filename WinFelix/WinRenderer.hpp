@@ -41,5 +41,4 @@ private:
 
 
   std::shared_ptr<BaseRenderer> mRenderer;
-  int64_t mLastRenderTimePoint;
 };

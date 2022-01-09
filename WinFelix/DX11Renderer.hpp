@@ -12,11 +12,10 @@ public:
   bool resizeOutput();
   void updateSourceFromNextFrame();
   void renderGui( Manager& config );
-  void internalRender( Manager& config );
 
   void renderEncoding();
 
-  void render( Manager& config ) override;
+  void present() override;
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
   bool canRenderBoards() const override;
@@ -24,6 +23,10 @@ public:
   void* mainRenderingTexture( int width, int height ) override;
   void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) override;
   void renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target );
+
+protected:
+
+  void internalRender( Manager& config ) override;
 
 private:
 

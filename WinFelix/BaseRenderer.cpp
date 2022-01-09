@@ -109,8 +109,24 @@ BaseRenderer::Instance::Instance() : mActiveFrame{}, mFinishedFrames{}, mQueueMu
   }
 }
 
-BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{ std::make_shared<Instance>() }, mScreenGeometry{}, mRotation{}
+BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mInstance{ std::make_shared<Instance>() }, mScreenGeometry{}, mRotation{}, mLastRenderTimePoint{}
 {
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+  mLastRenderTimePoint = l.QuadPart;
+}
+
+int64_t BaseRenderer::render( Manager& config )
+{
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+
+  internalRender( config );
+  present();
+
+  auto result = l.QuadPart - mLastRenderTimePoint;
+  mLastRenderTimePoint = l.QuadPart;
+  return result;
 }
 
 ImTextureID BaseRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
