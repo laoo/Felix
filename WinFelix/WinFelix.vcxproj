@@ -147,7 +147,10 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BaseRenderer.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
+    <ClCompile Include="DX11Renderer.cpp" />
+    <ClCompile Include="DX9Renderer.cpp" />
     <ClCompile Include="KeyNames.cpp" />
     <ClCompile Include="LuaProxies.cpp" />
     <ClCompile Include="Manager.cpp" />
@@ -168,8 +171,11 @@
     <ClCompile Include="WinRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BaseRenderer.hpp" />
     <ClInclude Include="board.hxx" />
     <ClInclude Include="ConfigProvider.hpp" />
+    <ClInclude Include="DX11Renderer.hpp" />
+    <ClInclude Include="DX9Renderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="fonts.hpp" />
     <ClInclude Include="KeyNames.hpp" />

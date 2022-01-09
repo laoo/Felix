@@ -16,6 +16,9 @@
     <ClCompile Include="LuaProxies.cpp" />
     <ClCompile Include="ScreenRenderingBuffer.cpp" />
     <ClCompile Include="ScreenGeometry.cpp" />
+    <ClCompile Include="BaseRenderer.cpp" />
+    <ClCompile Include="DX9Renderer.cpp" />
+    <ClCompile Include="DX11Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -53,6 +56,9 @@
     </ClInclude>
     <ClInclude Include="ScreenRenderingBuffer.hpp" />
     <ClInclude Include="ScreenGeometry.hpp" />
+    <ClInclude Include="BaseRenderer.hpp" />
+    <ClInclude Include="DX9Renderer.hpp" />
+    <ClInclude Include="DX11Renderer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">
