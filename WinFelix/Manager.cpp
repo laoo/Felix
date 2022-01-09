@@ -53,11 +53,13 @@ Manager::Manager() : mLua{},
                      mKeyNames{ std::make_shared<KeyNames>() },
                      mImageProperties{}
 {
+  auto sysConfig = gConfigProvider.sysConfig();
+
   mDebugger( RunMode::RUN );
   mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>( mDebugger.mRunMode );
   mComLynxWire = std::make_shared<ComLynxWire>();
-  mIntputSource = std::make_shared<UserInput>( *gConfigProvider.sysConfig() );
+  mIntputSource = std::make_shared<UserInput>( *sysConfig );
 
   mRenderThread = std::thread{ [this]
   {
@@ -111,6 +113,8 @@ Manager::Manager() : mLua{},
     std::terminate();
   }
   } };
+
+  mAudioOut->mute( sysConfig->audio.mute );
 }
 
 void Manager::update()
@@ -197,8 +201,12 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 
 Manager::~Manager()
 {
+  auto sysConfig = gConfigProvider.sysConfig();
+
   mIntputSource->serialize( *gConfigProvider.sysConfig() );
   stopThreads();
+
+  sysConfig->audio.mute = mAudioOut->mute();
 }
 
 void Manager::quit()
@@ -306,6 +314,16 @@ bool Manager::mainMenu( ImGuiIO& io )
       ImGui::EndMenu();
     }
     ImGui::EndDisabled();
+    if ( ImGui::BeginMenu( "Audio" ) )
+    {
+      openMenu = true;
+      bool mute = mAudioOut->mute();
+      if ( ImGui::MenuItem( "Mute", "Ctrl+M", &mute ) )
+      {
+        mAudioOut->mute( mute );
+      }
+      ImGui::EndMenu();
+    }
     if ( mRenderer->canRenderBoards() )
     {
       ImGui::BeginDisabled( !(bool)mInstance );
@@ -485,6 +503,10 @@ bool Manager::mainMenu( ImGuiIO& io )
     if ( ImGui::IsKeyPressed( 'S' ) && mDebugger.isDebugMode() )
     {
       mDebugger.newScreenView();
+    }
+    if ( ImGui::IsKeyPressed( 'M' ) )
+    {
+      mAudioOut->mute( !mAudioOut->mute() );
     }
   }
 

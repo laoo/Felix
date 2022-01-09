@@ -16,6 +16,8 @@ public:
   void setEncoder( std::shared_ptr<IEncoder> pEncoder );
   void fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTime );
   void setWavOut( std::filesystem::path path );
+  void mute( bool value );
+  bool mute() const;
 
 private:
 
@@ -40,4 +42,6 @@ private:
   int32_t mSamplesDeltaDelta;
 
   std::array<int, 32> mWindow;
+
+  float mNormalizer;
 };

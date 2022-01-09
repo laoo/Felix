@@ -43,6 +43,10 @@ struct SysConfig
     int safePalette;
   };
   std::vector<ScreenView> screenViews;
+  struct Audio
+  {
+    bool mute;
+  } audio;
 
   static std::shared_ptr<SysConfig> load( std::filesystem::path path );
   void serialize( std::filesystem::path path );
