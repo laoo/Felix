@@ -156,7 +156,6 @@ private:
   std::shared_ptr<Core> mInstance;
   std::shared_ptr<ScriptDebuggerEscapes> mScriptDebuggerEscapes;
   std::shared_ptr<UserInput> mIntputSource;
-  std::shared_ptr<KeyNames> mKeyNames;
   std::shared_ptr<ImageProperties> mImageProperties;
   std::filesystem::path mArg;
   std::filesystem::path mLogPath;

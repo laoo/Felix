@@ -1,12 +1,4 @@
 #pragma once
 
-class KeyNames
-{
-public:
-  KeyNames();
-  char const* name( uint32_t Key ) const;
+char const* keyName( uint32_t key );
 
-private:
-  std::array<char const*, 256> mNames;
-
-};

@@ -49,7 +49,6 @@ Manager::Manager() : mLua{},
                      mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
                      mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
                      mIntputSource{},
-                     mKeyNames{ std::make_shared<KeyNames>() },
                      mImageProperties{},
                      mRenderer{}
 {
@@ -237,7 +236,7 @@ bool Manager::mainMenu( ImGuiIO& io )
     ImGui::Text( name );
     ImGui::SameLine( 60 );
 
-    if ( ImGui::Button( mKeyNames->name( mIntputSource->getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
+    if ( ImGui::Button( keyName( mIntputSource->getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
     {
       keyToConfigure = k;
       ImGui::OpenPopup( "Configure Key" );
@@ -601,7 +600,7 @@ void Manager::configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure )
       {
         code = c;
       }
-      ImGui::Text( mKeyNames->name( code ) );
+      ImGui::Text( keyName( code ) );
       ImGui::TableNextRow();
       ImGui::TableNextColumn();
       if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )

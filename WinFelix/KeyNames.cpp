@@ -1,6 +1,18 @@
 #include "pch.hpp"
 #include "KeyNames.hpp"
 
+namespace
+{
+
+class KeyNames
+{
+public:
+  KeyNames();
+  char const* name( uint32_t key ) const;
+private:
+  std::array<char const*, 256> mNames;
+};
+
 KeyNames::KeyNames() : mNames{}
 {
   mNames[VK_LBUTTON] = "Left Button";
@@ -203,8 +215,16 @@ KeyNames::KeyNames() : mNames{}
   mNames[VK_OEM_CLEAR] = "OemClr";
 }
 
-char const * KeyNames::name( uint32_t key ) const
+char const* KeyNames::name( uint32_t key ) const
 {
   return key < mNames.size() ? mNames[key] : nullptr;
 }
 
+}
+
+char const* keyName( uint32_t key )
+{
+  static KeyNames keyNames;
+
+  return keyNames.name( key );
+}
