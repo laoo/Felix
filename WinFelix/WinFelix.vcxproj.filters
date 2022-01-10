@@ -20,6 +20,7 @@
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="VideoSink.cpp" />
     <ClCompile Include="UI.cpp" />
+    <ClCompile Include="Debugger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -61,6 +62,7 @@
     <ClInclude Include="DX11Renderer.hpp" />
     <ClInclude Include="VideoSink.hpp" />
     <ClInclude Include="UI.hpp" />
+    <ClInclude Include="Debugger.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">
