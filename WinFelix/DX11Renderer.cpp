@@ -315,7 +315,7 @@ void DX11Renderer::renderEncoding()
   uavs[0] = nullptr;
   uavs[1] = nullptr;
   uavs[2] = nullptr;
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 4, uavs.data(), nullptr );
+  mImmediateContext->CSSetUnorderedAccessViews( 0, 3, uavs.data(), nullptr );
 
 
   mImmediateContext->CopyResource( mStagingY.Get(), mPreStagingY.Get() );
