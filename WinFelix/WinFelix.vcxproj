@@ -152,6 +152,7 @@
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="DX9Renderer.cpp" />
+    <ClCompile Include="EncodingRenderer.cpp" />
     <ClCompile Include="KeyNames.cpp" />
     <ClCompile Include="LuaProxies.cpp" />
     <ClCompile Include="Manager.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="Debugger.hpp" />
     <ClInclude Include="DX11Renderer.hpp" />
     <ClInclude Include="DX9Renderer.hpp" />
+    <ClInclude Include="EncodingRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="fonts.hpp" />
     <ClInclude Include="KeyNames.hpp" />

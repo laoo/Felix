@@ -2,6 +2,7 @@
 #include "BaseRenderer.hpp"
 
 class WinImgui11;
+class EncodingRenderer;
 
 class DX11Renderer : public BaseRenderer
 {
@@ -22,7 +23,6 @@ protected:
 
 private:
   void renderEncoding();
-  void updateVscale( uint32_t vScale );
   bool resizeOutput();
   void updateSourceFromNextFrame();
   void renderGui( UI& ui );
@@ -60,13 +60,6 @@ private:
     uint32_t padding;
   };
 
-  struct CBVSize
-  {
-    uint32_t vscale;
-    uint32_t padding1;
-    uint32_t padding2;
-    uint32_t padding3;
-  };
 
   struct BoardFont
   {
@@ -125,27 +118,15 @@ private:
   ComPtr<IDXGISwapChain>            mSwapChain;
   ComPtr<ID3D11ComputeShader>       mRendererCS;
   ComPtr<ID3D11ComputeShader>       mRenderer2CS;
-  ComPtr<ID3D11ComputeShader>       mRendererYUVCS;
   ComPtr<ID3D11ComputeShader>       mBoardCS;
   ComPtr<ID3D11Buffer>              mPosSizeCB;
-  ComPtr<ID3D11Buffer>              mVSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
   ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
   ComPtr<ID3D11Texture2D>           mSource;
   ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
 
-  ComPtr<ID3D11Texture2D>           mPreStagingY;
-  ComPtr<ID3D11Texture2D>           mPreStagingU;
-  ComPtr<ID3D11Texture2D>           mPreStagingV;
-  ComPtr<ID3D11Texture2D>           mStagingY;
-  ComPtr<ID3D11Texture2D>           mStagingU;
-  ComPtr<ID3D11Texture2D>           mStagingV;
-  ComPtr<ID3D11UnorderedAccessView> mPreStagingYUAV;
-  ComPtr<ID3D11UnorderedAccessView> mPreStagingUUAV;
-  ComPtr<ID3D11UnorderedAccessView> mPreStagingVUAV;
   boost::rational<int32_t>          mRefreshRate;
-  std::shared_ptr<IEncoder>         mEncoder;
+  std::shared_ptr<EncodingRenderer> mEncodingRenderer;
   std::unordered_map<int, Board>    mBoards;
-  uint32_t mVScale;
 };
 
