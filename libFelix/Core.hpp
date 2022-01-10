@@ -79,7 +79,7 @@ private:
   void executeSequencedAction( SequencedAction );
   bool executeSuzyAction();
   CpuBreakType executeCPUAction();
-  void setDefaultROM();
+  void setROM( std::shared_ptr<ImageROM const> bootROM );
 
   uint8_t fetchRAM( uint16_t address );
   uint8_t readRAM( uint16_t address );

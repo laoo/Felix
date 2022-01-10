@@ -59,18 +59,11 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
       pulseReset( runAddress );
       initMikeyRegisters( *this );
     }
-    setDefaultROM();
+    setROM( bootROM );
     break;
   case InputFile::FileType::CART:
     mCartridge = std::make_shared<Cartridge>( imageProperties, inputFile.getCart(), mTraceHelper );
-    if ( bootROM )
-    {
-      bootROM->load( { mROM.data(), mROM.size() } );
-    }
-    else
-    {
-      setDefaultROM();
-    }
+    setROM( bootROM );
     pulseReset();
     break;
   default:
@@ -80,8 +73,14 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
   scriptDebuggerEscapes->populateScriptDebugger( *mScriptDebugger );
 }
 
-void Core::setDefaultROM()
+void Core::setROM( std::shared_ptr<ImageROM const> bootROM )
 {
+  if ( bootROM )
+  {
+    bootROM->load( { mROM.data(), mROM.size() } );
+    return;
+  }
+
   std::fill( mROM.begin(), mROM.end(), 0xff );
 
   auto setVec = [mem = mROM.data() - 0xfe00]( uint16_t src, uint16_t dst )
@@ -112,8 +111,8 @@ void Core::pulseReset( std::optional<uint16_t> resetAddress )
   if ( resetAddress )
   {
     writeMAPCTL( 0x08 );  //enable RAM in vector space
-    mRAM[0xfffc] = *resetAddress & 0xff;
-    mRAM[0xfffd] = *resetAddress >> 8;
+    mRAM[CPU::RESET_VECTOR + 0] = *resetAddress & 0xff;
+    mRAM[CPU::RESET_VECTOR + 1] = *resetAddress >> 8;
   }
   else
   {
