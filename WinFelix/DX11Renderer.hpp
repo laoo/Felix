@@ -11,7 +11,7 @@ public:
   void updateVscale( uint32_t vScale );
   bool resizeOutput();
   void updateSourceFromNextFrame();
-  void renderGui( Manager& config );
+  void renderGui( UI& ui );
 
   void renderEncoding();
 
@@ -26,7 +26,7 @@ public:
 
 protected:
 
-  void internalRender( Manager& config ) override;
+  void internalRender( UI& ui ) override;
 
 private:
 

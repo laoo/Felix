@@ -14,7 +14,7 @@ public:
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
 protected:
-  void internalRender( Manager& config ) override;
+  void internalRender( UI& ui ) override;
 
 
 private:

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ScriptDebugger.hpp"
-#include "IInputSource.hpp"
 #include "Utility.hpp"
 #include "BaseRenderer.hpp"
+#include "UI.hpp"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -18,11 +18,6 @@ class KeyNames;
 class ImageProperties;
 class ImageROM;
 struct ImGuiIO;
-
-namespace ImGui
-{
-class FileBrowser;
-}
 
 class Manager
 {
@@ -39,7 +34,6 @@ public:
 
   void quit();
 
-  void drawGui( int left, int top, int right, int bottom );
 
 private:
   void processLua( std::filesystem::path const& path );
@@ -48,10 +42,6 @@ private:
   void handleFileDrop( HDROP hDrop );
   bool handleCopyData( COPYDATASTRUCT const* copy );
 
-  bool mainMenu( ImGuiIO& io );
-  void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
-  void imagePropertiesWindow( bool init );
-  void drawDebugWindows( ImGuiIO& io );
   void updateDebugWindows();
 
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
@@ -62,6 +52,7 @@ private:
   friend struct MikeyProxy;
   friend struct SuzyProxy;
   friend struct CPUProxy;
+  friend class UI;
 
   bool mDoUpdate;
 
@@ -142,6 +133,7 @@ private:
 
   void renderBoard( DebugWindow& win );
 
+  UI mUI;
   sol::state mLua;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
@@ -161,7 +153,6 @@ private:
   std::filesystem::path mLogPath;
   std::mutex mMutex;
   int64_t mRenderingTime;
-  bool mOpenMenu;
-  std::unique_ptr<ImGui::FileBrowser> mFileBrowser;
   HWND mhWnd;
+
 };

@@ -162,6 +162,7 @@
     <ClCompile Include="ScreenGeometry.cpp" />
     <ClCompile Include="ScreenRenderingBuffer.cpp" />
     <ClCompile Include="SysConfig.cpp" />
+    <ClCompile Include="UI.cpp" />
     <ClCompile Include="UserInput.cpp" />
     <ClCompile Include="VideoSink.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
@@ -189,6 +190,7 @@
     <ClInclude Include="ScreenGeometry.hpp" />
     <ClInclude Include="ScreenRenderingBuffer.hpp" />
     <ClInclude Include="SysConfig.hpp" />
+    <ClInclude Include="UI.hpp" />
     <ClInclude Include="UserInput.hpp" />
     <ClInclude Include="version.hpp" />
     <ClInclude Include="vertex.hxx" />

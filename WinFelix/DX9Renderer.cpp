@@ -16,7 +16,7 @@ void DX9Renderer::present()
   mD3Device->PresentEx( nullptr, nullptr, nullptr, nullptr, 0 );
 }
 
-void DX9Renderer::internalRender( Manager& config )
+void DX9Renderer::internalRender( UI& ui )
 {
   if ( !mD3Device )
   {
@@ -142,7 +142,7 @@ void DX9Renderer::internalRender( Manager& config )
 
   ImGui::NewFrame();
 
-  config.drawGui( r.left, r.top, r.right, r.bottom );
+  ui.drawGui( r.left, r.top, r.right, r.bottom );
 
 
   V_THROW( mD3Device->BeginScene() );

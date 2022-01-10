@@ -4,7 +4,7 @@
 #include "ScreenGeometry.hpp"
 
 class ScreenRenderingBuffer;
-class Manager;
+class UI;
 class IEncoder;
 struct VideoSink;
 
@@ -29,7 +29,7 @@ public:
   BaseRenderer( HWND hWnd );
   virtual ~BaseRenderer() = default;
 
-  int64_t render( Manager& config );
+  int64_t render( UI& ui );
   virtual void present() = 0;
   virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
   virtual int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
@@ -43,7 +43,7 @@ public:
   void setRotation( ImageProperties::Rotation rotation );
 
 protected:
-  virtual void internalRender( Manager& config ) = 0;
+  virtual void internalRender( UI& ui ) = 0;
 
 
 protected:

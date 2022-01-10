@@ -19,6 +19,7 @@
     <ClCompile Include="DX9Renderer.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="VideoSink.cpp" />
+    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -59,6 +60,7 @@
     <ClInclude Include="DX9Renderer.hpp" />
     <ClInclude Include="DX11Renderer.hpp" />
     <ClInclude Include="VideoSink.hpp" />
+    <ClInclude Include="UI.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">

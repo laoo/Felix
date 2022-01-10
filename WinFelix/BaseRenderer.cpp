@@ -27,12 +27,12 @@ BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mVideoSink{ std::make_s
   mLastRenderTimePoint = l.QuadPart;
 }
 
-int64_t BaseRenderer::render( Manager& config )
+int64_t BaseRenderer::render( UI& ui )
 {
   LARGE_INTEGER l;
   QueryPerformanceCounter( &l );
 
-  internalRender( config );
+  internalRender( ui );
   present();
 
   auto result = l.QuadPart - mLastRenderTimePoint;

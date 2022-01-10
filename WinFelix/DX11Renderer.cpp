@@ -193,7 +193,7 @@ void DX11Renderer::updateSourceFromNextFrame()
   }
 }
 
-void DX11Renderer::renderGui( Manager& config )
+void DX11Renderer::renderGui( UI& ui )
 {
   RECT r;
   GetWindowRect( mHWnd, &r );
@@ -208,7 +208,7 @@ void DX11Renderer::renderGui( Manager& config )
 
   ImGui::NewFrame();
 
-  config.drawGui( r.left, r.top, r.right, r.bottom );
+  ui.drawGui( r.left, r.top, r.right, r.bottom );
 
   ImGui::Render();
 
@@ -219,7 +219,7 @@ void DX11Renderer::renderGui( Manager& config )
   mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
 }
 
-void DX11Renderer::internalRender( Manager& config )
+void DX11Renderer::internalRender( UI& ui )
 {
   if ( resizeOutput() )
     return;
@@ -245,7 +245,7 @@ void DX11Renderer::internalRender( Manager& config )
     renderEncoding();
   }
 
-  renderGui( config );
+  renderGui( ui );
 }
 
 void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView * target )
