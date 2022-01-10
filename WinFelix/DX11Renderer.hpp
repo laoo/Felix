@@ -17,7 +17,6 @@ public:
 
   void present() override;
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
-  int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
   bool canRenderBoards() const override;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
   void* mainRenderingTexture( int width, int height ) override;
@@ -120,8 +119,6 @@ private:
     std::unordered_map<int, DebugRendering> screenViews;
   } mWindowRenderings;
 
-
-  std::shared_ptr<WinImgui11>       mImgui;
   ComPtr<ID3D11Device>              mD3DDevice;
   ComPtr<ID3D11DeviceContext>       mImmediateContext;
   ComPtr<IDXGISwapChain>            mSwapChain;

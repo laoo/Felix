@@ -7,7 +7,7 @@
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
-DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mIniPath{ iniPath }, mImgui{}, mD3D{}, mD3Device{}, mRect{}, mSource{}, mSourceWidth{}, mSourceHeight{}
+DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mIniPath{ iniPath }, mD3D{}, mD3Device{}, mRect{}, mSource{}, mSourceWidth{}, mSourceHeight{}
 {
 }
 
@@ -137,8 +137,7 @@ void DX9Renderer::internalRender( UI& ui )
   r.left = p.x;
   r.top = p.y;
 
-  mImgui->dx9_NewFrame();
-  mImgui->win32_NewFrame();
+  mImgui->newFrame();
 
   ImGui::NewFrame();
 
@@ -148,26 +147,7 @@ void DX9Renderer::internalRender( UI& ui )
   V_THROW( mD3Device->BeginScene() );
 
   ImGui::Render();
-  mImgui->dx9_RenderDrawData( ImGui::GetDrawData() );
+  mImgui->renderDrawData( ImGui::GetDrawData() );
 
   V_THROW( mD3Device->EndScene() );
 }
-
-void DX9Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
-{
-}
-
-int DX9Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
-{
-  switch ( msg )
-  {
-  case WM_SIZING:
-    return sizing( *(RECT*)lParam );
-  default:
-    if ( mImgui )
-      return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
-  }
-
-  return 0;
-}
-

@@ -8,12 +8,12 @@ public:
   WinImgui9( HWND hWnd, ComPtr<IDirect3DDevice9> pD3DDevice, std::filesystem::path const& iniPath );
   ~WinImgui9() override;
 
-  void     dx9_NewFrame();
-  void     dx9_RenderDrawData( ImDrawData* draw_data );
+  void renderNewFrame() override;
+  void renderDrawData( ImDrawData* draw_data ) override;
 
 private:
-  void dx9_CreateFontsTexture();
-  void dx9_SetupRenderState( ImDrawData* draw_data );
+  void createFontsTexture();
+  void setupRenderState( ImDrawData* draw_data );
 
 
 private:

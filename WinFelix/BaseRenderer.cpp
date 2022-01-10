@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "DX9Renderer.hpp"
 #include "DX11Renderer.hpp"
+#include "WinImgui.hpp"
 #include "VideoSink.hpp"
 
 
@@ -20,7 +21,7 @@ std::shared_ptr<BaseRenderer> BaseRenderer::createRenderer( HWND hWnd, std::file
 }
 
 
-BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mVideoSink{ std::make_shared<VideoSink>() }, mScreenGeometry{}, mRotation{}, mLastRenderTimePoint{}
+BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mImgui{}, mVideoSink{ std::make_shared<VideoSink>() }, mScreenGeometry{}, mRotation{}, mLastRenderTimePoint{}
 {
   LARGE_INTEGER l;
   QueryPerformanceCounter( &l );
@@ -38,6 +39,10 @@ int64_t BaseRenderer::render( UI& ui )
   auto result = l.QuadPart - mLastRenderTimePoint;
   mLastRenderTimePoint = l.QuadPart;
   return result;
+}
+
+void BaseRenderer::setEncoder( std::shared_ptr<IEncoder> encoder )
+{
 }
 
 ImTextureID BaseRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
@@ -101,3 +106,16 @@ void BaseRenderer::setRotation( ImageProperties::Rotation rotation )
 }
 
 
+int BaseRenderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+  switch ( msg )
+  {
+  case WM_SIZING:
+    return sizing( *(RECT*)lParam );
+  default:
+    if ( mImgui )
+      return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  }
+
+  return 0;
+}

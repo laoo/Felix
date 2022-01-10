@@ -9,7 +9,9 @@ public:
   WinImgui( HWND hWnd, std::filesystem::path const& iniPath );
   virtual ~WinImgui();
 
-  void win32_NewFrame();
+  void newFrame();
+  virtual void renderNewFrame() = 0;
+  virtual void renderDrawData( ImDrawData* draw_data ) = 0;
 
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 

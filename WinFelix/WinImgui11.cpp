@@ -13,7 +13,7 @@ WinImgui11::~WinImgui11()
 }
 
 
-void WinImgui11::dx11_NewFrame()
+void WinImgui11::renderNewFrame()
 {
   if ( mFontSampler )
     return;
@@ -92,10 +92,10 @@ void WinImgui11::dx11_NewFrame()
     md3dDevice->CreateDepthStencilState( &desc, mDepthStencilState.ReleaseAndGetAddressOf() );
   }
 
-  dx11_CreateFontsTexture();
+  createFontsTexture();
 }
 
-void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
+void WinImgui11::renderDrawData( ImDrawData * draw_data )
 {
   // Avoid rendering when minimized
   if ( draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f )
@@ -217,7 +217,7 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
   ctx->IAGetInputLayout( &old.InputLayout );
 
   // Setup desired DX state
-  dx11_SetupRenderState( draw_data, ctx );
+  setupRenderState( draw_data, ctx );
 
   // Render command lists
   // (Because we merged all buffers into a single one, we maintain our own offset into them)
@@ -235,7 +235,7 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
         // User callback, registered via ImDrawList::AddCallback()
         // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
         if ( pcmd->UserCallback == ImDrawCallback_ResetRenderState )
-          dx11_SetupRenderState( draw_data, ctx );
+          setupRenderState( draw_data, ctx );
         else
           pcmd->UserCallback( cmd_list, pcmd );
       }
@@ -275,7 +275,7 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
   ctx->IASetInputLayout( old.InputLayout ); if ( old.InputLayout ) old.InputLayout->Release();
 }
 
-void WinImgui11::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
+void WinImgui11::setupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
 {
   // Setup viewport
   D3D11_VIEWPORT vp;
@@ -310,26 +310,7 @@ void WinImgui11::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceConte
   ctx->RSSetState( mRasterizerState.Get() );
 }
 
-void WinImgui11::dx11_InvalidateDeviceObjects()
-{
-  if ( !md3dDevice )
-    return;
-
-  if ( mFontSampler ) { mFontSampler.Reset(); }
-  if ( mFontTextureView ) { mFontTextureView.Reset(); ImGui::GetIO().Fonts->TexID = NULL; } // We copied mFontTextureView to io.Fonts->TexID so let's clear that as well.
-  if ( mIB ) { mIB.Reset(); }
-  if ( mVB ) { mVB.Reset(); }
-
-  if ( mBlendState ) { mBlendState.Reset(); }
-  if ( mDepthStencilState ) { mDepthStencilState.Reset(); }
-  if ( mRasterizerState ) { mRasterizerState.Reset(); }
-  if ( mPixelShader ) { mPixelShader.Reset(); }
-  if ( mVertexConstantBuffer ) { mVertexConstantBuffer.Reset(); }
-  if ( mInputLayout ) { mInputLayout.Reset(); }
-  if ( mVertexShader ) { mVertexShader.Reset(); }
-}
-
-void WinImgui11::dx11_CreateFontsTexture()
+void WinImgui11::createFontsTexture()
 {
   // Build texture atlas
   ImGuiIO& io = ImGui::GetIO();

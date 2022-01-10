@@ -203,8 +203,7 @@ void DX11Renderer::renderGui( UI& ui )
   r.left = p.x;
   r.top = p.y;
 
-  mImgui->dx11_NewFrame();
-  mImgui->win32_NewFrame();
+  mImgui->newFrame();
 
   ImGui::NewFrame();
 
@@ -213,7 +212,7 @@ void DX11Renderer::renderGui( UI& ui )
   ImGui::Render();
 
   mImmediateContext->OMSetRenderTargets( 1, mBackBufferRTV.GetAddressOf(), nullptr );
-  mImgui->dx11_RenderDrawData( ImGui::GetDrawData() );
+  mImgui->renderDrawData( ImGui::GetDrawData() );
 
   std::array<ID3D11RenderTargetView* const, 1> rtv{};
   mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
@@ -342,20 +341,6 @@ void DX11Renderer::renderEncoding()
 void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 {
   mEncoder = std::move( encoder );
-}
-
-int DX11Renderer::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
-{
-  switch ( msg )
-  {
-  case WM_SIZING:
-    return sizing( *(RECT*)lParam );
-  default:
-    if ( mImgui )
-      return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
-  }
-
-  return 0;
 }
 
 bool DX11Renderer::canRenderBoards() const
