@@ -7,12 +7,12 @@ class DX9Renderer : public BaseRenderer
 {
 public:
   DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath );
-  ~DX9Renderer() = default;
+  ~DX9Renderer() override;
 
-  void present() override;
 
 protected:
   void internalRender( UI& ui ) override;
+  void present() override;
 
 
 private:

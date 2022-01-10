@@ -11,6 +11,10 @@ DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : Ba
 {
 }
 
+DX9Renderer::~DX9Renderer()
+{
+}
+
 void DX9Renderer::present()
 {
   mD3Device->PresentEx( nullptr, nullptr, nullptr, nullptr, 0 );

@@ -21,19 +21,14 @@ class BaseRenderer
 {
 public:
 
-
   static std::shared_ptr<BaseRenderer> createRenderer( HWND hWnd, std::filesystem::path const& iniPath );
 
-
-
-
   BaseRenderer( HWND hWnd );
-  virtual ~BaseRenderer() = default;
+  virtual ~BaseRenderer();
 
   int64_t render( UI& ui );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
-  virtual void present() = 0;
   virtual void setEncoder( std::shared_ptr<IEncoder> encoder );
   virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
   virtual void* mainRenderingTexture( int width, int height );
@@ -46,6 +41,7 @@ public:
 
 protected:
   virtual void internalRender( UI& ui ) = 0;
+  virtual void present() = 0;
 
 
 protected:

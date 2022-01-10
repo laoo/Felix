@@ -7,25 +7,26 @@ class DX11Renderer : public BaseRenderer
 {
 public:
   DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath );
-  ~DX11Renderer() = default;
-  void updateVscale( uint32_t vScale );
-  bool resizeOutput();
-  void updateSourceFromNextFrame();
-  void renderGui( UI& ui );
+  ~DX11Renderer() override;
 
-  void renderEncoding();
-
-  void present() override;
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   bool canRenderBoards() const override;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
   void* mainRenderingTexture( int width, int height ) override;
   void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) override;
-  void renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target );
 
 protected:
 
   void internalRender( UI& ui ) override;
+  void present() override;
+
+private:
+  void renderEncoding();
+  void updateVscale( uint32_t vScale );
+  bool resizeOutput();
+  void updateSourceFromNextFrame();
+  void renderGui( UI& ui );
+  void renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target );
 
 private:
 

@@ -28,6 +28,10 @@ BaseRenderer::BaseRenderer( HWND hWnd ) : mHWnd{ hWnd }, mImgui{}, mVideoSink{ s
   mLastRenderTimePoint = l.QuadPart;
 }
 
+BaseRenderer::~BaseRenderer()
+{
+}
+
 int64_t BaseRenderer::render( UI& ui )
 {
   LARGE_INTEGER l;
