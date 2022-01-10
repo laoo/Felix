@@ -304,7 +304,7 @@ void Manager::processLua( std::filesystem::path const& path )
     s_createEncoder = (PCREATE_ENCODER)GetProcAddress( mEncoderMod, "createEncoder" );
     s_disposeEncoder = (PDISPOSE_ENCODER)GetProcAddress( mEncoderMod, "disposeEncoder" );
 
-    mEncoder = std::shared_ptr<IEncoder>( s_createEncoder( path.string().c_str(), vbitrate, abitrate, 160 * vscale, 102 * vscale ), s_disposeEncoder );
+    mEncoder = std::shared_ptr<IEncoder>( s_createEncoder( path.string().c_str(), vbitrate, abitrate, SCREEN_WIDTH * vscale, SCREEN_HEIGHT * vscale ), s_disposeEncoder );
     mRenderer->setEncoder( mEncoder );
     mAudioOut->setEncoder( mEncoder );
   };

@@ -441,7 +441,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       static const float xpad = 4.0f;
       static const float ypad = 4.0f + 19.0f;
-      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
+      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ SCREEN_WIDTH + xpad, SCREEN_HEIGHT + ypad } );
 
       ImGui::Begin( "Rendering", &debugMode, ImGuiWindowFlags_NoCollapse );
       auto size = ImGui::GetWindowSize();
@@ -461,7 +461,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       static const float xpad = 4.0f;
       static const float ypad = ( 4.0f + 19.0f ) * 2;
-      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
+      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ SCREEN_WIDTH + xpad, SCREEN_HEIGHT + ypad } );
 
       char buf[64];
       std::sprintf( buf, "Screen View %d", sv.id );
@@ -483,7 +483,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugDispAdr();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, 80 * 102 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -494,7 +494,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugVidBas();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, 80 * 102 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -505,7 +505,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugCollBas();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, 80 * 102 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -516,7 +516,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = sv.customAddress;
           std::sprintf( buf, "%04x", sv.customAddress );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + sv.customAddress, 80 * 102 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + sv.customAddress, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }

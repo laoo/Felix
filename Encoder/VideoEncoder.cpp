@@ -1,5 +1,6 @@
 #include "VideoEncoder.hpp"
 #include "Ex.hpp"
+#include "Utility.hpp"
 #include <cassert>
 
 VideoEncoder::VideoEncoder( std::filesystem::path const& path, int vbitrate, int abitrate, int width, int height ) : mPath{ path }, mVbitrate{ vbitrate }, mAbitrate{ abitrate }, mFormatContext{}, mAudioCodec{}, mVideoCodec{}, mWidth{ width }, mHeight{ height }, mMutex{}
@@ -86,10 +87,10 @@ uint32_t VideoEncoder::height() const
 
 uint32_t VideoEncoder::vscale() const
 {
-  if ( mWidth / 160 != mHeight / 102 )
+  if ( mWidth / SCREEN_WIDTH != mHeight / SCREEN_HEIGHT )
     throw Ex{} << "Scale error";
 
-  return mWidth / 160;
+  return mWidth / SCREEN_WIDTH;
 }
 
 int VideoEncoder::pushFrame( AVCodecContext *c, AVStream *st, AVFrame const* frame )

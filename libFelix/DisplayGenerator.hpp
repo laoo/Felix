@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParallelPort.hpp"
+#include "Utility.hpp"
 
 class IVideoSink;
 
@@ -56,7 +57,7 @@ private:
   static constexpr uint64_t DMA_ITERATIONS = 10;
   static constexpr uint64_t TICKS_PER_PIXEL = 12;
   static constexpr uint64_t TICKS_PER_BYTE = TICKS_PER_PIXEL * 2;
-  static constexpr uint64_t ROW_TICKS = TICKS_PER_PIXEL * 160;
+  static constexpr uint64_t ROW_TICKS = TICKS_PER_PIXEL * SCREEN_WIDTH;
 
 
 };

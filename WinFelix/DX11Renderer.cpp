@@ -85,8 +85,8 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
 
   D3D11_TEXTURE2D_DESC desc{};
   desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-  desc.Width = 160;
-  desc.Height = 102;
+  desc.Width = SCREEN_WIDTH;
+  desc.Height = SCREEN_HEIGHT;
   desc.MipLevels = 1;
   desc.ArraySize = 1;
   desc.SampleDesc.Count = 1;
@@ -102,7 +102,7 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
   mD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
-  D3D11_TEXTURE2D_DESC descsrc{ 80, 102, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  D3D11_TEXTURE2D_DESC descsrc{ SCREEN_WIDTH / 2, SCREEN_HEIGHT, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
   mD3DDevice->CreateTexture2D( &descsrc, nullptr, mWindowRenderings.source.ReleaseAndGetAddressOf() );
   V_THROW( mD3DDevice->CreateShaderResourceView( mWindowRenderings.source.Get(), NULL, mWindowRenderings.sourceSRV.ReleaseAndGetAddressOf() ) );
 
@@ -259,7 +259,7 @@ void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11Unord
   mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
   mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
   mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
-  mImmediateContext->Dispatch( 5, 51, 1 );
+  mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 
   target = nullptr;
   mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
@@ -566,7 +566,7 @@ void DX11Renderer::DebugRendering::render( DX11Renderer& r, ScreenViewType type,
     ID3D11ShaderResourceView* tab[] = { r.mWindowRenderings.sourceSRV.Get(), r.mWindowRenderings.paletteSRV.Get() };
     r.mImmediateContext->CSSetShaderResources( 0, 2, tab );
     r.mImmediateContext->CSSetShader( r.mRenderer2CS.Get(), nullptr, 0 );
-    r.mImmediateContext->Dispatch( 5, 51, 1 );
+    r.mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 
     rawUAV = nullptr;
     r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );

@@ -2,18 +2,19 @@
 #include "EncodingRenderer.hpp"
 #include "IEncoder.hpp"
 #include "rendererYUV.hxx"
+#include "Utility.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
 EncodingRenderer::EncodingRenderer( std::shared_ptr<IEncoder> encoder, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext, boost::rational<int32_t> refreshRate ) :
   mEncoder{ std::move( encoder ) }, mD3DDevice{ std::move( pD3DDevice ) }, mImmediateContext{ std::move( pImmediateContext ) }, mCb{}, mRefreshRate{ refreshRate }
 {
-  mCb.vscale = mEncoder->width() / 160;
+  mCb.vscale = mEncoder->width() / SCREEN_WIDTH;
 
   if ( mCb.vscale == 0 )
     return;
-  uint32_t width = 160 * std::max( 1u, mCb.vscale );
-  uint32_t height = 102 * std::max( 1u, mCb.vscale );
+  uint32_t width = SCREEN_WIDTH * std::max( 1u, mCb.vscale );
+  uint32_t height = SCREEN_HEIGHT * std::max( 1u, mCb.vscale );
 
   {
     D3D11_TEXTURE2D_DESC descsrc{ width, height, 1, 1, DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_UNORDERED_ACCESS };
@@ -63,7 +64,7 @@ void EncodingRenderer::renderEncoding( ID3D11ShaderResourceView* srv )
   mImmediateContext->CSSetConstantBuffers( 0, 1, mVSizeCB.GetAddressOf() );
   mImmediateContext->CSSetShaderResources( 0, 1, &srv );
   mImmediateContext->CSSetShader( mRendererYUVCS.Get(), nullptr, 0 );
-  mImmediateContext->Dispatch( 5, 51, 1 );
+  mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 
 
   uavs[0] = nullptr;

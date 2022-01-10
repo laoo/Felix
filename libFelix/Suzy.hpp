@@ -346,9 +346,6 @@ private:
     std::array<Quadrant, 4>{ Quadrant::UP_RIGHT, Quadrant::UP_LEFT, Quadrant::DOWN_LEFT, Quadrant::DOWN_RIGHT },
     std::array<Quadrant, 4>{ Quadrant::UP_LEFT, Quadrant::DOWN_LEFT, Quadrant::DOWN_RIGHT, Quadrant::UP_RIGHT }
   };
-
-  static constexpr int mScreenWidth = 160;
-  static constexpr int mScreenHeight = 102;
 };
 
 
