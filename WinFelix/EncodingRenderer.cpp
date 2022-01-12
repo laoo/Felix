@@ -3,6 +3,7 @@
 #include "IEncoder.hpp"
 #include "rendererYUV.hxx"
 #include "Utility.hpp"
+#include "DX11Helpers.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
@@ -57,20 +58,16 @@ EncodingRenderer::EncodingRenderer( std::shared_ptr<IEncoder> encoder, ComPtr<ID
 
 void EncodingRenderer::renderEncoding( ID3D11ShaderResourceView* srv )
 {
-  std::array<ID3D11UnorderedAccessView*, 3> uavs{ mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() };
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 3, uavs.data(), nullptr );
+  {
+    UAVGuard ug{ mImmediateContext, { mPreStagingYUAV.Get(), mPreStagingUUAV.Get(), mPreStagingVUAV.Get() } };
+    SRVGuard sg{ mImmediateContext, srv };
 
-  mImmediateContext->UpdateSubresource( mVSizeCB.Get(), 0, NULL, &mCb, 0, 0 );
-  mImmediateContext->CSSetConstantBuffers( 0, 1, mVSizeCB.GetAddressOf() );
-  mImmediateContext->CSSetShaderResources( 0, 1, &srv );
-  mImmediateContext->CSSetShader( mRendererYUVCS.Get(), nullptr, 0 );
-  mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
+    mImmediateContext->UpdateSubresource( mVSizeCB.Get(), 0, NULL, &mCb, 0, 0 );
+    mImmediateContext->CSSetConstantBuffers( 0, 1, mVSizeCB.GetAddressOf() );
+    mImmediateContext->CSSetShader( mRendererYUVCS.Get(), nullptr, 0 );
 
-
-  uavs[0] = nullptr;
-  uavs[1] = nullptr;
-  uavs[2] = nullptr;
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 3, uavs.data(), nullptr );
+    mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
+  }
 
   mImmediateContext->CopyResource( mStagingY.Get(), mPreStagingY.Get() );
   mImmediateContext->CopyResource( mStagingU.Get(), mPreStagingU.Get() );

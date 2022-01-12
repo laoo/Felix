@@ -150,6 +150,7 @@
     <ClCompile Include="BaseRenderer.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
     <ClCompile Include="Debugger.cpp" />
+    <ClCompile Include="DX11Helpers.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="DX9Renderer.cpp" />
     <ClCompile Include="EncodingRenderer.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="board.hxx" />
     <ClInclude Include="ConfigProvider.hpp" />
     <ClInclude Include="Debugger.hpp" />
+    <ClInclude Include="DX11Helpers.hpp" />
     <ClInclude Include="DX11Renderer.hpp" />
     <ClInclude Include="DX9Renderer.hpp" />
     <ClInclude Include="EncodingRenderer.hpp" />

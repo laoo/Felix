@@ -22,6 +22,7 @@
     <ClCompile Include="UI.cpp" />
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="EncodingRenderer.cpp" />
+    <ClCompile Include="DX11Helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -65,6 +66,7 @@
     <ClInclude Include="UI.hpp" />
     <ClInclude Include="Debugger.hpp" />
     <ClInclude Include="EncodingRenderer.hpp" />
+    <ClInclude Include="DX11Helpers.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">

@@ -1,5 +1,6 @@
-#include "pch.hpp"
+﻿#include "pch.hpp"
 #include "DX11Renderer.hpp"
+#include "DX11Helpers.hpp"
 #include "Log.hpp"
 #include "renderer.hxx"
 #include "renderer2.hxx"
@@ -208,11 +209,8 @@ void DX11Renderer::renderGui( UI& ui )
 
   ImGui::Render();
 
-  mImmediateContext->OMSetRenderTargets( 1, mBackBufferRTV.GetAddressOf(), nullptr );
+  RTVGuard rt{ mImmediateContext, mBackBufferRTV.Get() };
   mImgui->renderDrawData( ImGui::GetDrawData() );
-
-  std::array<ID3D11RenderTargetView* const, 1> rtv{};
-  mImmediateContext->OMSetRenderTargets( 1, rtv.data(), nullptr );
 }
 
 void DX11Renderer::internalRender( UI& ui )
@@ -244,9 +242,9 @@ void DX11Renderer::internalRender( UI& ui )
   renderGui( ui );
 }
 
-void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView * target )
+void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target )
 {
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
+  UAVGuard uav{ mImmediateContext, target };
 
   CBPosSize cbPosSize{
     geometry.rotx1(), geometry.rotx2(),
@@ -257,12 +255,9 @@ void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11Unord
 
   mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
   mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-  mImmediateContext->CSSetShaderResources( 0, 1, mSourceSRV.GetAddressOf() );
+  SRVGuard srvg{ mImmediateContext, mSourceSRV.Get() };
   mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
   mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
-
-  target = nullptr;
-  mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &target, nullptr );
 }
 
 std::span<uint32_t const,16> DX11Renderer::safePalette()
@@ -347,17 +342,10 @@ void DX11Renderer::Board::render( DX11Renderer& r, std::span<uint8_t const> data
 {
   r.mImmediateContext->UpdateSubresource( src.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
   std::array<ID3D11ShaderResourceView* const, 2> srv{ r.mBoardFont.srv.Get(), srcSRV.Get() };
-  r.mImmediateContext->CSSetShaderResources( 0, 2, srv.data() );
-  r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.GetAddressOf(), nullptr );
   r.mImmediateContext->CSSetShader( r.mBoardCS.Get(), nullptr, 0 );
-
+  SRVGuard sg{ r.mImmediateContext, { r.mBoardFont.srv.Get(), srcSRV.Get() } };
+  UAVGuard ug{ r.mImmediateContext, uav.Get() };
   r.mImmediateContext->Dispatch( width, height, 1 );
-
-  std::array<ID3D11UnorderedAccessView* const, 1> uav{};
-  r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, uav.data(), nullptr );
-
-  std::array<ID3D11ShaderResourceView* const, 2> srvc{};
-  r.mImmediateContext->CSSetShaderResources( 0, 2, srvc.data() );
 }
 
 DX11Renderer::BoardFont::BoardFont() : width{}, height{}, srv{}
@@ -552,8 +540,6 @@ void DX11Renderer::DebugRendering::render( DX11Renderer& r, ScreenViewType type,
 
     r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.source.Get(), 0, nullptr, data.data(), 80, 0 );
 
-    r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );
-
     CBPosSize cbPosSize{
       geometry.rotx1(), geometry.rotx2(),
       geometry.roty1(), geometry.roty2(),
@@ -563,12 +549,9 @@ void DX11Renderer::DebugRendering::render( DX11Renderer& r, ScreenViewType type,
 
     r.mImmediateContext->UpdateSubresource( r.mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
     r.mImmediateContext->CSSetConstantBuffers( 0, 1, r.mPosSizeCB.GetAddressOf() );
-    ID3D11ShaderResourceView* tab[] = { r.mWindowRenderings.sourceSRV.Get(), r.mWindowRenderings.paletteSRV.Get() };
-    r.mImmediateContext->CSSetShaderResources( 0, 2, tab );
     r.mImmediateContext->CSSetShader( r.mRenderer2CS.Get(), nullptr, 0 );
+    UAVGuard ug{ r.mImmediateContext, uav.Get() };
+    SRVGuard sg{ r.mImmediateContext, { r.mWindowRenderings.sourceSRV.Get(), r.mWindowRenderings.paletteSRV.Get() } };
     r.mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
-
-    rawUAV = nullptr;
-    r.mImmediateContext->CSSetUnorderedAccessViews( 0, 1, &rawUAV, nullptr );
   }
 }
