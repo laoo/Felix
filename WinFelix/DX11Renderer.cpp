@@ -290,9 +290,9 @@ void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
   mEncodingRenderer = std::make_shared<EncodingRenderer>( std::move( encoder ), mD3DDevice, mImmediateContext, mRefreshRate );
 }
 
-bool DX11Renderer::canRenderBoards() const
+std::shared_ptr<IExtendedRenderer> DX11Renderer::extendedRenderer()
 {
-  return true;
+  return std::dynamic_pointer_cast<IExtendedRenderer>( shared_from_this() );
 }
 
 ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )

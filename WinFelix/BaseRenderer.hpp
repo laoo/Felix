@@ -17,6 +17,17 @@ enum class ScreenViewType
   CUSTOM
 };
 
+class IExtendedRenderer
+{
+public:
+  virtual ~IExtendedRenderer() = default;
+
+  virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) = 0;
+  virtual void* mainRenderingTexture( int width, int height ) = 0;
+  virtual void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) = 0;
+};
+
+
 class BaseRenderer
 {
 public:
@@ -30,10 +41,7 @@ public:
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
   virtual void setEncoder( std::shared_ptr<IEncoder> encoder );
-  virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data );
-  virtual void* mainRenderingTexture( int width, int height );
-  virtual void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height );
-  virtual bool canRenderBoards() const;
+  virtual std::shared_ptr<IExtendedRenderer> extendedRenderer() = 0;
 
   std::shared_ptr<IVideoSink> getVideoSink() const;
   int sizing( RECT& rect );

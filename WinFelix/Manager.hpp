@@ -71,6 +71,7 @@ private:
   std::thread mRenderThread;
   std::thread mAudioThread;
   std::shared_ptr<BaseRenderer> mRenderer;
+  std::shared_ptr<IExtendedRenderer> mExtendedRenderer;
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
   std::shared_ptr<IEncoder> mEncoder;

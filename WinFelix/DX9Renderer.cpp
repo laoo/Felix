@@ -15,6 +15,11 @@ DX9Renderer::~DX9Renderer()
 {
 }
 
+std::shared_ptr<IExtendedRenderer> DX9Renderer::extendedRenderer()
+{
+  return {};
+}
+
 void DX9Renderer::present()
 {
   mD3Device->PresentEx( nullptr, nullptr, nullptr, nullptr, 0 );

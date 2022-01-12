@@ -49,26 +49,6 @@ void BaseRenderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 {
 }
 
-ImTextureID BaseRenderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
-{
-  return ImTextureID{};
-}
-
-void* BaseRenderer::mainRenderingTexture( int width, int height )
-{
-  return ImTextureID{};
-}
-
-void* BaseRenderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
-{
-  return ImTextureID{};
-}
-
-bool BaseRenderer::canRenderBoards() const
-{
-  return false;
-}
-
 std::shared_ptr<IVideoSink> BaseRenderer::getVideoSink() const
 {
   return mVideoSink;

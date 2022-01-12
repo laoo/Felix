@@ -34,7 +34,8 @@ void UI::drawGui( int left, int top, int right, int bottom )
     mOpenMenu = mainMenu( io );
   }
 
-  drawDebugWindows( io );
+  if ( mManager.mExtendedRenderer )
+    drawDebugWindows( io );
 }
 
 bool UI::mainMenu( ImGuiIO& io )
@@ -83,7 +84,7 @@ bool UI::mainMenu( ImGuiIO& io )
     resetIssued = true;
   }
 
-  if ( ImGui::IsKeyPressed( VK_F4 ) )
+  if ( ImGui::IsKeyPressed( VK_F4 ) && mManager.mExtendedRenderer )
   {
     debugMode = !debugMode;
   }
@@ -147,7 +148,7 @@ bool UI::mainMenu( ImGuiIO& io )
       }
       ImGui::EndMenu();
     }
-    if ( mManager.mRenderer->canRenderBoards() )
+    if ( mManager.mExtendedRenderer )
     {
       ImGui::BeginDisabled( !(bool)mManager.mInstance );
       if ( ImGui::BeginMenu( "Debug" ) )
@@ -403,6 +404,8 @@ bool UI::mainMenu( ImGuiIO& io )
 
 void UI::drawDebugWindows( ImGuiIO& io )
 {
+  assert( mManager.mExtendedRenderer );
+
   std::unique_lock<std::mutex> l{ mManager.mDebugger.mutex };
 
   bool cpuWindow = mManager.mDebugger.isCPUVisualized();
@@ -447,7 +450,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       auto size = ImGui::GetWindowSize();
       size.x = std::max( 0.0f, size.x - xpad );
       size.y = std::max( 0.0f, size.y - ypad );
-      if ( auto tex = mManager.mRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
+      if ( auto tex = mManager.mExtendedRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
       {
         ImGui::Image( tex, size );
       }
@@ -537,7 +540,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       size.x = std::max( 0.0f, size.x - xpad );
       size.y = std::max( 0.0f, size.y - ypad );
 
-      if ( auto tex = mManager.mRenderer->screenViewRenderingTexture( sv.id, sv.type, data, palette, (int)size.x, (int)size.y ) )
+      if ( auto tex = mManager.mExtendedRenderer->screenViewRenderingTexture( sv.id, sv.type, data, palette, (int)size.x, (int)size.y ) )
       {
         ImGui::Image( tex, size );
       }
@@ -585,7 +588,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
   }
   else
   {
-  mManager.mRenderer->mainRenderingTexture( 0, 0 );
+    mManager.mExtendedRenderer->mainRenderingTexture( 0, 0 );
   }
 }
 

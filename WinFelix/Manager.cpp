@@ -120,6 +120,7 @@ void Manager::initialize( HWND hWnd )
   mhWnd = hWnd;
   assert( !mRenderer );
   mRenderer = BaseRenderer::createRenderer( hWnd, gConfigProvider.appDataFolder() );
+  mExtendedRenderer = mRenderer->extendedRenderer();
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -201,7 +202,8 @@ void Manager::quit()
 
 void Manager::renderBoard( DebugWindow& win )
 {
-  auto tex = mRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+  assert( mExtendedRenderer );
+  auto tex = mExtendedRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
   ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
 }
 

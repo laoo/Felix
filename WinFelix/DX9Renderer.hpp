@@ -9,6 +9,8 @@ public:
   DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath );
   ~DX9Renderer() override;
 
+  std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
+
 
 protected:
   void internalRender( UI& ui ) override;
