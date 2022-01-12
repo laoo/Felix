@@ -25,7 +25,7 @@
 
 Manager::Manager() : mUI{ *this },
                      mLua{},
-                     mDoUpdate{ false },
+                     mDoReset{ false },
                      mDebugger{},
                      mProcessThreads{},
                      mJoinThreads{},
@@ -104,9 +104,9 @@ void Manager::update()
 {
   mIntputSource->updateGamepad();
 
-  if ( mDoUpdate )
+  if ( mDoReset )
     reset();
-  mDoUpdate = false;
+  mDoReset = false;
 }
 
 void Manager::doArg( std::wstring arg )
@@ -138,22 +138,16 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
       sysConfig->mainWindow.height = r.bottom - r.top;
     }
     DestroyWindow( hWnd );
-    break;
+    return 0;
   case WM_DESTROY:
     PostQuitMessage( 0 );
-    break;
+    return 0;
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
     SetForegroundWindow( hWnd );
-    reset();
-    break;
+    return 0;
   case WM_COPYDATA:
-    if ( handleCopyData( std::bit_cast<COPYDATASTRUCT const*>( lParam ) ) )
-    {
-      reset();
-      return true;
-    }
-    break;
+    return handleCopyData( std::bit_cast<COPYDATASTRUCT const*>( lParam ) ) ? 1 : 0;
   case WM_KEYDOWN:
   case WM_SYSKEYDOWN:
     if ( wParam < 256 )
@@ -179,8 +173,6 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     assert( mRenderer );
     return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
   }
-
-  return 0;
 }
 
 Manager::~Manager()
@@ -472,7 +464,8 @@ void Manager::handleFileDrop( HDROP hDrop )
   }
 
   DragFinish( hDrop );
-  mDoUpdate = true;
+  mDoReset = true;
+  reset();
 }
 
 bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
@@ -485,6 +478,7 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
     if ( size_t size = std::wcslen( ptr ) )
     {
       mArg = { ptr, size };
+      reset();
       return true;
     }
   }

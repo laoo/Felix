@@ -55,7 +55,7 @@ private:
   friend struct CPUProxy;
   friend class UI;
 
-  bool mDoUpdate;
+  bool mDoReset;
 
 
 

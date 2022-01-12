@@ -264,7 +264,7 @@ bool UI::mainMenu( ImGuiIO& io )
         {
           if ( ImGui::Checkbox( "Enabled", &sysConfig->bootROM.useExternal ) )
           {
-            mManager.mDoUpdate = true;
+            mManager.mDoReset = true;
           }
           if ( ImGui::MenuItem( "Clear boot ROM path" ) )
           {
@@ -272,7 +272,7 @@ bool UI::mainMenu( ImGuiIO& io )
             if ( sysConfig->bootROM.useExternal )
             {
               sysConfig->bootROM.useExternal = false;
-              mManager.mDoUpdate = true;
+              mManager.mDoReset = true;
             }
           }
           ImGui::EndMenu();
@@ -388,7 +388,7 @@ bool UI::mainMenu( ImGuiIO& io )
       {
         gConfigProvider.sysConfig()->lastOpenDirectory = mManager.mArg.parent_path();
       }
-      mManager.mDoUpdate = true;
+      mManager.mDoReset = true;
       break;
     case OPEN_BOOTROM:
       sysConfig->bootROM.path = mFileBrowser->GetSelected();
@@ -746,7 +746,7 @@ void UI::imagePropertiesWindow( bool init )
       if ( eeprom.bits != mManager.mImageProperties->getEEPROM().bits )
       {
         mManager.mImageProperties->setEEPROM( eeprom.bits );
-        mManager.mDoUpdate = true;
+        mManager.mDoReset = true;
       }
       ImGui::CloseCurrentPopup();
     }
