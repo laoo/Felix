@@ -57,11 +57,7 @@ private:
 
   bool mDoReset;
 
-
-
   Debugger mDebugger;
-
-  void renderBoard( DebugWindow& win );
 
   UI mUI;
   sol::state mLua;

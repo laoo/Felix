@@ -420,7 +420,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     if ( cpuWindow )
     {
       ImGui::Begin( "CPU", &cpuWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      mManager.renderBoard( mManager.mDebugger.cpuVisualizer() );
+      renderBoard( mManager.mDebugger.cpuVisualizer() );
       ImGui::End();
       mManager.mDebugger.visualizeCPU( cpuWindow );
     }
@@ -428,7 +428,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     if ( disasmWindow )
     {
       ImGui::Begin( "Disassembly", &disasmWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      mManager.renderBoard( mManager.mDebugger.disasmVisualizer() );
+      renderBoard( mManager.mDebugger.disasmVisualizer() );
       ImGui::End();
       mManager.mDebugger.visualizeDisasm( disasmWindow );
     }
@@ -436,7 +436,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     if ( historyWindow )
     {
       ImGui::Begin( "History", &historyWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      mManager.renderBoard( mManager.mDebugger.historyVisualizer() );
+      renderBoard( mManager.mDebugger.historyVisualizer() );
       ImGui::End();
       mManager.mDebugger.visualizeHistory( historyWindow );
     }
@@ -759,4 +759,11 @@ void UI::imagePropertiesWindow( bool init )
     }
     ImGui::EndPopup();
   }
+}
+
+void UI::renderBoard( DebugWindow& win )
+{
+  assert( mManager.mExtendedRenderer );
+  auto tex = mManager.mExtendedRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+  ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
 }

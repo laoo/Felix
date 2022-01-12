@@ -15,6 +15,23 @@
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
+namespace
+{
+
+struct CBPosSize
+{
+  int32_t posx;
+  int32_t posy;
+  int32_t rotx1;
+  int32_t rotx2;
+  int32_t roty1;
+  int32_t roty2;
+  int32_t size;
+  uint32_t padding;
+};
+
+}
+
 DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mHexFont{}, mRefreshRate{}, mEncodingRenderer{}, mWindowRenderings{}
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
@@ -121,6 +138,46 @@ DX11Renderer::~DX11Renderer()
 {
 }
 
+void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
+{
+  mEncodingRenderer = std::make_shared<EncodingRenderer>( std::move( encoder ), mD3DDevice, mImmediateContext, mRefreshRate );
+}
+
+std::shared_ptr<IExtendedRenderer> DX11Renderer::extendedRenderer()
+{
+  return std::dynamic_pointer_cast<IExtendedRenderer>( shared_from_this() );
+}
+
+
+void DX11Renderer::internalRender( UI& ui )
+{
+  if ( resizeOutput() )
+    return;
+
+  updateSourceFromNextFrame();
+
+  UINT v[4] = { 255, 255, 255, 255 };
+  mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
+
+  if ( mWindowRenderings.main.enabled() )
+  {
+    mWindowRenderings.main.update( *this );
+    mImmediateContext->ClearUnorderedAccessViewUint( mWindowRenderings.main.uav.Get(), v );
+    renderScreenView( mWindowRenderings.main.geometry, mWindowRenderings.main.uav.Get() );
+  }
+  else
+  {
+    renderScreenView( mScreenGeometry, mBackBufferUAV.Get() );
+  }
+
+  if ( mEncodingRenderer )
+  {
+    mEncodingRenderer->renderEncoding( mSourceSRV.Get() );
+  }
+
+  renderGui( ui );
+}
+
 void DX11Renderer::present()
 {
   mSwapChain->Present( 1, 0 );
@@ -213,34 +270,6 @@ void DX11Renderer::renderGui( UI& ui )
   mImgui->renderDrawData( ImGui::GetDrawData() );
 }
 
-void DX11Renderer::internalRender( UI& ui )
-{
-  if ( resizeOutput() )
-    return;
-
-  updateSourceFromNextFrame();
-
-  UINT v[4] = { 255, 255, 255, 255 };
-  mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
-
-  if ( mWindowRenderings.main.enabled() )
-  {
-    mWindowRenderings.main.update( *this );
-    mImmediateContext->ClearUnorderedAccessViewUint( mWindowRenderings.main.uav.Get(), v );
-    renderScreenView( mWindowRenderings.main.geometry, mWindowRenderings.main.uav.Get() );
-  }
-  else
-  {
-    renderScreenView( mScreenGeometry, mBackBufferUAV.Get() );
-  }
-
-  if ( mEncodingRenderer )
-  {
-    mEncodingRenderer->renderEncoding( mSourceSRV.Get() );
-  }
-
-  renderGui( ui );
-}
 
 void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target )
 {
@@ -260,40 +289,6 @@ void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11Unord
   mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 }
 
-std::span<uint32_t const,16> DX11Renderer::safePalette()
-{
-  static constexpr std::array<uint32_t, 16> palette = {
-    0xff000000,
-    0xff0000aa,
-    0xff00aa00,
-    0xff00aaaa,
-    0xffaa0000,
-    0xffaa00aa,
-    0xffaaaa00,
-    0xffaaaaaa,
-    0xff555555,
-    0xff5555ff,
-    0xff55ff55,
-    0xff55ffff,
-    0xffff5555,
-    0xffff55ff,
-    0xffffff55,
-    0xffffffff
-  };
-
-  return std::span<uint32_t const, 16>( palette.data(), 16 );
-}
-
-
-void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
-{
-  mEncodingRenderer = std::make_shared<EncodingRenderer>( std::move( encoder ), mD3DDevice, mImmediateContext, mRefreshRate );
-}
-
-std::shared_ptr<IExtendedRenderer> DX11Renderer::extendedRenderer()
-{
-  return std::dynamic_pointer_cast<IExtendedRenderer>( shared_from_this() );
-}
 
 ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
 {
@@ -337,6 +332,31 @@ ImTextureID DX11Renderer::screenViewRenderingTexture( int id, ScreenViewType typ
   it->second.render( *this, type, data, palette );
   return it->second.srv.Get();
 }
+
+std::span<uint32_t const, 16> DX11Renderer::safePalette()
+{
+  static constexpr std::array<uint32_t, 16> palette = {
+    0xff000000,
+    0xff0000aa,
+    0xff00aa00,
+    0xff00aaaa,
+    0xffaa0000,
+    0xffaa00aa,
+    0xffaaaa00,
+    0xffaaaaaa,
+    0xff555555,
+    0xff5555ff,
+    0xff55ff55,
+    0xff55ffff,
+    0xffff5555,
+    0xffff55ff,
+    0xffffff55,
+    0xffffffff
+  };
+
+  return std::span<uint32_t const, 16>( palette.data(), 16 );
+}
+
 
 void DX11Renderer::Board::render( DX11Renderer& r, std::span<uint8_t const> data )
 {
@@ -555,3 +575,4 @@ void DX11Renderer::DebugRendering::render( DX11Renderer& r, ScreenViewType type,
     r.mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
   }
 }
+

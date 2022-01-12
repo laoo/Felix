@@ -27,12 +27,9 @@ private:
   void updateSourceFromNextFrame();
   void renderGui( UI& ui );
   void renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target );
-
-private:
-
   static std::span<uint32_t const, 16> safePalette();
 
-  struct BoardFont;
+private:
 
   struct Board
   {
@@ -47,19 +44,6 @@ private:
     void update( DX11Renderer& r, int width, int height );
     void render( DX11Renderer& r, std::span<uint8_t const> data );
   };
-
-  struct CBPosSize
-  {
-    int32_t posx;
-    int32_t posy;
-    int32_t rotx1;
-    int32_t rotx2;
-    int32_t roty1;
-    int32_t roty2;
-    int32_t size;
-    uint32_t padding;
-  };
-
 
   struct BoardFont
   {

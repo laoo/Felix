@@ -190,16 +190,6 @@ void Manager::quit()
   PostMessage( mhWnd, WM_CLOSE, 0, 0 );
 }
 
-
-
-void Manager::renderBoard( DebugWindow& win )
-{
-  assert( mExtendedRenderer );
-  auto tex = mExtendedRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
-  ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
-}
-
-
 void Manager::updateDebugWindows()
 {
   std::unique_lock<std::mutex> l{ mDebugger.mutex };

@@ -4,6 +4,7 @@
 
 class Manager;
 struct ImGuiIO;
+struct DebugWindow;
 
 namespace ImGui
 {
@@ -23,6 +24,7 @@ private:
   void drawDebugWindows( ImGuiIO& io );
   void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
   void imagePropertiesWindow( bool init );
+  void renderBoard( DebugWindow& win );
 
 private:
   Manager& mManager;
