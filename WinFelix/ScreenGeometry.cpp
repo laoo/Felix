@@ -57,12 +57,12 @@ int ScreenGeometry::minWindowHeight() const
 
 int ScreenGeometry::width() const
 {
-  return minWindowWidth();
+  return minWindowWidth() * mScale;
 }
 
 int ScreenGeometry::height() const
 {
-  return minWindowHeight();
+  return minWindowHeight() * mScale;
 }
 
 int ScreenGeometry::xOff() const

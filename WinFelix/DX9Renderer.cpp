@@ -74,7 +74,7 @@ void DX9Renderer::internalRender( UI& ui )
     presentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
     V_THROW( mD3Device->ResetEx( &presentParams, nullptr ) );
 
-    mRect = RECT{ mScreenGeometry.xOff(), mScreenGeometry.yOff(),  mScreenGeometry.xOff() + mScreenGeometry.width() * mScreenGeometry.scale(), mScreenGeometry.yOff() + mScreenGeometry.height() * mScreenGeometry.scale() };
+    mRect = RECT{ mScreenGeometry.xOff(), mScreenGeometry.yOff(),  mScreenGeometry.xOff() + mScreenGeometry.width(), mScreenGeometry.yOff() + mScreenGeometry.height() };
   }
 
   if ( !mScreenGeometry )
@@ -84,12 +84,10 @@ void DX9Renderer::internalRender( UI& ui )
   V_THROW( mD3Device->GetBackBuffer( 0, 0, D3DBACKBUFFER_TYPE_MONO, rtSurface.ReleaseAndGetAddressOf() ) );
   V_THROW( mD3Device->ColorFill( rtSurface.Get(), NULL, D3DCOLOR_XRGB( 255, 255, 255 ) ) );
 
-  if ( mSourceWidth != mScreenGeometry.width() || mSourceHeight != mScreenGeometry.height() )
+  if ( !mSource )
   {
-    V_THROW( mD3Device->CreateTexture( mScreenGeometry.width(), mScreenGeometry.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, mSource.ReleaseAndGetAddressOf(), nullptr ) );
-    mSourceWidth = mScreenGeometry.width();
-    mSourceHeight = mScreenGeometry.height();
-    mTempBuffer.resize( mSourceHeight * mSourceWidth / 2, ~0ull );
+    V_THROW( mD3Device->CreateTexture( SCREEN_WIDTH, SCREEN_HEIGHT, 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_DEFAULT, mSource.ReleaseAndGetAddressOf(), nullptr ) );
+    mTempBuffer.resize( SCREEN_WIDTH * SCREEN_HEIGHT / 2, ~0ull );
   }
 
   {
@@ -99,7 +97,7 @@ void DX9Renderer::internalRender( UI& ui )
       {
         VideoSink::DPixel* data;
         uint32_t stride;
-      } map{ ( VideoSink::DPixel *)mTempBuffer.data(), (uint32_t)mSourceWidth / 2 };
+      } map{ ( VideoSink::DPixel *)mTempBuffer.data(), (uint32_t)SCREEN_WIDTH / 2 };
 
       for ( int i = 0; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
       {
@@ -125,7 +123,7 @@ void DX9Renderer::internalRender( UI& ui )
     ComPtr<IDirect3DTexture9> sysTexture;
     HANDLE h = (HANDLE)mTempBuffer.data();
 
-    V_THROW( mD3Device->CreateTexture( mScreenGeometry.width(), mScreenGeometry.height(), 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, sysTexture.ReleaseAndGetAddressOf(), &h ) );
+    V_THROW( mD3Device->CreateTexture( SCREEN_WIDTH, SCREEN_HEIGHT, 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, sysTexture.ReleaseAndGetAddressOf(), &h ) );
     V_THROW( mD3Device->UpdateTexture( sysTexture.Get(), mSource.Get() ) );
 
     ComPtr<IDirect3DSurface9> srcSurface;
