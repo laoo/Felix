@@ -13,22 +13,52 @@ public:
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
-  void* mainRenderingTexture( int width, int height ) override;
   void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) override;
+
+  std::shared_ptr<IScreenView> makeMainScreenView() override;
+  std::shared_ptr<ICustomScreenView> makeCustomScreenView( ScreenViewType type ) override;
 
 protected:
 
   void internalRender( UI& ui ) override;
   void present() override;
+  void updateRotation() override;
 
 private:
+  class ScreenView;
+
   bool resizeOutput();
   void updateSourceFromNextFrame();
   void renderGui( UI& ui );
   void renderScreenView( ScreenGeometry const& geometry, ID3D11ShaderResourceView* sourceSRV, ID3D11UnorderedAccessView* target );
+  bool mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView );
   static std::span<uint32_t const, 16> safePalette();
 
 private:
+
+  class ScreenView : public IScreenView
+  {
+  public:
+    ScreenView( ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext );
+
+    void update( ImageProperties::Rotation rotation );
+    void update( int width, int height ) override;
+    void* getTexture() override;
+    ScreenGeometry const& getGeometry() const;
+    ID3D11UnorderedAccessView* getUAV();
+    bool geometryChanged() const;
+
+  private:
+    void updateBuffers();
+
+  private:
+    ComPtr<ID3D11Device>              mD3DDevice;
+    ComPtr<ID3D11DeviceContext>       mImmediateContext;
+    ComPtr<ID3D11UnorderedAccessView> mUav = {};
+    ComPtr<ID3D11ShaderResourceView> mSrv = {};
+    ScreenGeometry mGeometry = {};
+    bool mGeometryChanged = {};
+  };
 
   struct Board
   {
@@ -91,8 +121,6 @@ private:
     ComPtr<ID3D11Texture1D>           palette;
     ComPtr<ID3D11ShaderResourceView>  paletteSRV;
 
-    // Normal rendering but to a window
-    DebugRendering main = {};
     std::unordered_map<int, DebugRendering> screenViews;
   } mWindowRenderings;
 
@@ -111,5 +139,7 @@ private:
   boost::rational<int32_t>          mRefreshRate;
   std::shared_ptr<EncodingRenderer> mEncodingRenderer;
   std::unordered_map<int, Board>    mBoards;
+  mutable std::mutex                mDebugViewMutex;
+  std::weak_ptr<ScreenView>         mMainScreenView;
 };
 

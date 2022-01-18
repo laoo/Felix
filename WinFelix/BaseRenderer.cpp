@@ -87,6 +87,7 @@ int BaseRenderer::sizing( RECT& rect )
 void BaseRenderer::setRotation( ImageProperties::Rotation rotation )
 {
   mRotation = rotation;
+  updateRotation();
 }
 
 

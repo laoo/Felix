@@ -17,13 +17,32 @@ enum class ScreenViewType
   CUSTOM
 };
 
+class IScreenView
+{
+public:
+  virtual ~IScreenView() = default;
+
+  virtual void update( int width, int height ) = 0;
+  virtual void* getTexture() = 0;
+};
+
+class ICustomScreenView : public IScreenView
+{
+public:
+  ~ICustomScreenView() override = default;
+
+  virtual void* update( ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette ) = 0;
+};
+
 class IExtendedRenderer
 {
 public:
   virtual ~IExtendedRenderer() = default;
 
+  virtual std::shared_ptr<IScreenView> makeMainScreenView() = 0;
+  virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView( ScreenViewType type ) = 0;
+
   virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) = 0;
-  virtual void* mainRenderingTexture( int width, int height ) = 0;
   virtual void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) = 0;
 };
 
@@ -50,6 +69,7 @@ public:
 protected:
   virtual void internalRender( UI& ui ) = 0;
   virtual void present() = 0;
+  virtual void updateRotation() = 0;
 
 
 protected:

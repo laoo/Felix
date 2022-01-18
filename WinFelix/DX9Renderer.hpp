@@ -15,6 +15,7 @@ public:
 protected:
   void internalRender( UI& ui ) override;
   void present() override;
+  void updateRotation() override;
 
 
 private:

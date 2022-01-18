@@ -59,10 +59,14 @@ public:
   DebugWindow& disasmVisualizer();
   DebugWindow& historyVisualizer();
 
+  void mainScreenView( std::shared_ptr<IScreenView> mainDebugView );
+  std::shared_ptr<IScreenView> mainScreenView() const;
+
   mutable std::mutex mutex;
 
 private:
   std::vector<ScreenView> mScreenViews;
+  std::shared_ptr<IScreenView> mMainScreenView;
   DebugWindow mCpuVisualizer;
   DebugWindow mDisasmVisualizer;
   DebugWindow mHistoryVisualizer;

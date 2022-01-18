@@ -192,10 +192,16 @@ void Manager::quit()
 
 void Manager::updateDebugWindows()
 {
+
+  if ( !mInstance || !mDebugger.isDebugMode() || !mExtendedRenderer )
+    return;
+
   std::unique_lock<std::mutex> l{ mDebugger.mutex };
 
-  if ( !mInstance )
-    return;
+  if ( !mDebugger.mainScreenView() )
+  {
+    mDebugger.mainScreenView( mExtendedRenderer->makeMainScreenView() );
+  }
 
   auto& cpu = mInstance->debugCPU();
 

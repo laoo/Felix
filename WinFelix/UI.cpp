@@ -441,6 +441,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       mManager.mDebugger.visualizeHistory( historyWindow );
     }
 
+    if ( auto mainScreenView = mManager.mDebugger.mainScreenView() )
     {
       static const float xpad = 4.0f;
       static const float ypad = 4.0f + 19.0f;
@@ -450,14 +451,14 @@ void UI::drawDebugWindows( ImGuiIO& io )
       auto size = ImGui::GetWindowSize();
       size.x = std::max( 0.0f, size.x - xpad );
       size.y = std::max( 0.0f, size.y - ypad );
-      if ( auto tex = mManager.mExtendedRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
+      if ( auto tex = mainScreenView->getTexture() )
       {
         ImGui::Image( tex, size );
       }
       ImGui::End();
       ImGui::PopStyleVar();
+      mainScreenView->update( (int)size.x, (int)size.y );
     }
-
 
     std::vector<int> removedIds;
     for ( auto& sv : mManager.mDebugger.screenViews() )
@@ -585,10 +586,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
       }
       ImGui::EndPopup();
     }
-  }
-  else
-  {
-    mManager.mExtendedRenderer->mainRenderingTexture( 0, 0 );
   }
 }
 

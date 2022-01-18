@@ -149,6 +149,21 @@ std::shared_ptr<IExtendedRenderer> DX11Renderer::extendedRenderer()
   return std::dynamic_pointer_cast<IExtendedRenderer>( shared_from_this() );
 }
 
+bool DX11Renderer::mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView )
+{
+  if ( mainScreenView )
+  {
+    if ( auto uav = mainScreenView->getUAV() )
+    {
+      UINT v[4] = { 255, 255, 255, 255 };
+      mImmediateContext->ClearUnorderedAccessViewUint( uav, v );
+      renderScreenView( mainScreenView->getGeometry(), mSourceSRV.Get(), uav );
+      return true;
+    }
+  }
+
+  return false;
+}
 
 void DX11Renderer::internalRender( UI& ui )
 {
@@ -160,13 +175,7 @@ void DX11Renderer::internalRender( UI& ui )
   UINT v[4] = { 255, 255, 255, 255 };
   mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
 
-  if ( mWindowRenderings.main.enabled() )
-  {
-    mWindowRenderings.main.update( *this );
-    mImmediateContext->ClearUnorderedAccessViewUint( mWindowRenderings.main.uav.Get(), v );
-    renderScreenView( mWindowRenderings.main.geometry, mSourceSRV.Get(), mWindowRenderings.main.uav.Get() );
-  }
-  else
+  if ( !mainScreenViewDebugRendering( mMainScreenView.lock() ) )
   {
     renderScreenView( mScreenGeometry, mSourceSRV.Get(), mBackBufferUAV.Get() );
   }
@@ -182,6 +191,14 @@ void DX11Renderer::internalRender( UI& ui )
 void DX11Renderer::present()
 {
   mSwapChain->Present( 1, 0 );
+}
+
+void DX11Renderer::updateRotation()
+{
+  if ( auto mainScreenView = mMainScreenView.lock() )
+  {
+    mainScreenView->update( mRotation );
+  }
 }
 
 bool DX11Renderer::resizeOutput()
@@ -304,13 +321,6 @@ ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<
   return it->second.srv.Get();
 }
 
-ImTextureID DX11Renderer::mainRenderingTexture( int w, int h )
-{
-  mWindowRenderings.main.width = w;
-  mWindowRenderings.main.height = h;
-  return mWindowRenderings.main.srv.Get();
-}
-
 ImTextureID DX11Renderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
 {
   auto it = mWindowRenderings.screenViews.find( id );
@@ -327,6 +337,26 @@ ImTextureID DX11Renderer::screenViewRenderingTexture( int id, ScreenViewType typ
 
   it->second.render( *this, type, data, palette );
   return it->second.srv.Get();
+}
+
+std::shared_ptr<IScreenView> DX11Renderer::makeMainScreenView()
+{
+  if ( auto view = mMainScreenView.lock() )
+  {
+    return view;
+  }
+  else
+  {
+    auto ptr = std::make_shared<ScreenView>( mD3DDevice, mImmediateContext );
+    ptr->update( mRotation );
+    mMainScreenView = ptr;
+    return ptr;
+  }
+}
+
+std::shared_ptr<ICustomScreenView> DX11Renderer::makeCustomScreenView( ScreenViewType type )
+{
+  return std::shared_ptr<ICustomScreenView>();
 }
 
 std::span<uint32_t const, 16> DX11Renderer::safePalette()
@@ -568,3 +598,64 @@ void DX11Renderer::DebugRendering::render( DX11Renderer& r, ScreenViewType type,
   }
 }
 
+DX11Renderer::ScreenView::ScreenView( ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext ) : mD3DDevice{ std::move( pD3DDevice ) }, mImmediateContext{ std::move( pImmediateContext ) }
+{
+}
+
+void DX11Renderer::ScreenView::update( ImageProperties::Rotation rotation )
+{
+  mGeometryChanged |= mGeometry.update( mGeometry.windowWidth(), mGeometry.windowHeight(), rotation );
+}
+
+void DX11Renderer::ScreenView::update( int width, int height )
+{
+  mGeometryChanged |= mGeometry.update( width, height, mGeometry.rotation() );
+}
+
+void* DX11Renderer::ScreenView::getTexture()
+{
+  return mSrv.Get();
+}
+
+ScreenGeometry const& DX11Renderer::ScreenView::getGeometry() const
+{
+  return mGeometry;
+}
+
+ID3D11UnorderedAccessView* DX11Renderer::ScreenView::getUAV()
+{
+  if ( mGeometryChanged )
+    updateBuffers();
+
+  return mUav.Get();
+}
+
+void DX11Renderer::ScreenView::updateBuffers()
+{
+  assert( mGeometryChanged );
+
+  D3D11_TEXTURE2D_DESC desc{
+    (uint32_t)( mGeometry.windowWidth() ),
+    (uint32_t)( mGeometry.windowHeight() ),
+    1,
+    1,
+    DXGI_FORMAT_R8G8B8A8_UNORM,
+    { 1, 0 },
+    D3D11_USAGE_DEFAULT,
+    D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+    0,
+    0
+  };
+
+  ComPtr<ID3D11Texture2D> tex;
+  V_THROW( mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, mSrv.ReleaseAndGetAddressOf() ) );
+  V_THROW( mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, mUav.ReleaseAndGetAddressOf() ) );
+
+  mGeometryChanged = false;
+}
+
+bool DX11Renderer::ScreenView::geometryChanged() const
+{
+  return mGeometryChanged;
+}
