@@ -59,15 +59,8 @@ void DX9Renderer::internalRender( UI& ui )
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
 
-  if ( mScreenGeometry.windowHeight() != r.bottom || ( mScreenGeometry.windowWidth() != r.right ) || mScreenGeometry.rotation() != mRotation )
+  if ( mScreenGeometry.update( r.right, r.bottom, mRotation ) )
   {
-    mScreenGeometry = ScreenGeometry{ r.right, r.bottom, mRotation };
-
-    if ( !mScreenGeometry )
-    {
-      return;
-    }
-
     D3DPRESENT_PARAMETERS presentParams;
     ZeroMemory( &presentParams, sizeof( presentParams ) );
     presentParams.Windowed = TRUE;
@@ -82,9 +75,10 @@ void DX9Renderer::internalRender( UI& ui )
     V_THROW( mD3Device->ResetEx( &presentParams, nullptr ) );
 
     mRect = RECT{ mScreenGeometry.xOff(), mScreenGeometry.yOff(),  mScreenGeometry.xOff() + mScreenGeometry.width() * mScreenGeometry.scale(), mScreenGeometry.yOff() + mScreenGeometry.height() * mScreenGeometry.scale() };
-
   }
-  
+
+  if ( !mScreenGeometry )
+    return;
 
   ComPtr<IDirect3DSurface9> rtSurface;
   V_THROW( mD3Device->GetBackBuffer( 0, 0, D3DBACKBUFFER_TYPE_MONO, rtSurface.ReleaseAndGetAddressOf() ) );

@@ -14,6 +14,7 @@
 #include "EncodingRenderer.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
+#define V_RETURN_FALSE(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { return false; } }
 
 namespace
 {
@@ -151,7 +152,7 @@ std::shared_ptr<IExtendedRenderer> DX11Renderer::extendedRenderer()
 
 void DX11Renderer::internalRender( UI& ui )
 {
-  if ( resizeOutput() )
+  if ( !resizeOutput() )
     return;
 
   updateSourceFromNextFrame();
@@ -163,11 +164,11 @@ void DX11Renderer::internalRender( UI& ui )
   {
     mWindowRenderings.main.update( *this );
     mImmediateContext->ClearUnorderedAccessViewUint( mWindowRenderings.main.uav.Get(), v );
-    renderScreenView( mWindowRenderings.main.geometry, mWindowRenderings.main.uav.Get() );
+    renderScreenView( mWindowRenderings.main.geometry, mSourceSRV.Get(), mWindowRenderings.main.uav.Get() );
   }
   else
   {
-    renderScreenView( mScreenGeometry, mBackBufferUAV.Get() );
+    renderScreenView( mScreenGeometry, mSourceSRV.Get(), mBackBufferUAV.Get() );
   }
 
   if ( mEncodingRenderer )
@@ -189,14 +190,8 @@ bool DX11Renderer::resizeOutput()
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return true;
 
-  if ( mScreenGeometry.windowHeight() != r.bottom || ( mScreenGeometry.windowWidth() != r.right ) || mScreenGeometry.rotation() != mRotation )
+  if ( mScreenGeometry.update( r.right, r.bottom, mRotation ) )
   {
-    mScreenGeometry = ScreenGeometry{ r.right, r.bottom, mRotation };
-
-    if ( !mScreenGeometry )
-    {
-      return true;
-    }
 
     mBackBufferUAV.Reset();
     mBackBufferRTV.Reset();
@@ -204,11 +199,12 @@ bool DX11Renderer::resizeOutput()
     mSwapChain->ResizeBuffers( 0, mScreenGeometry.windowWidth(), mScreenGeometry.windowHeight(), DXGI_FORMAT_UNKNOWN, 0 );
 
     ComPtr<ID3D11Texture2D> backBuffer;
-    V_THROW( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
-    V_THROW( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
-    V_THROW( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
+    V_RETURN_FALSE( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
+    V_RETURN_FALSE( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
+    V_RETURN_FALSE( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
   }
-  return false;
+
+  return (bool)mScreenGeometry;
 }
 
 void DX11Renderer::updateSourceFromNextFrame()
@@ -271,7 +267,7 @@ void DX11Renderer::renderGui( UI& ui )
 }
 
 
-void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11UnorderedAccessView* target )
+void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11ShaderResourceView* sourceSRV, ID3D11UnorderedAccessView* target )
 {
   UAVGuard uav{ mImmediateContext, target };
 
@@ -284,7 +280,7 @@ void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11Unord
 
   mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
   mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-  SRVGuard srvg{ mImmediateContext, mSourceSRV.Get() };
+  SRVGuard srvg{ mImmediateContext, sourceSRV };
   mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
   mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 }
@@ -487,17 +483,8 @@ void DX11Renderer::DebugRendering::update( DX11Renderer& r )
     return;
   }
 
-  if ( geometry.windowHeight() != height || ( geometry.windowWidth() != width ) || geometry.rotation() != r.mRotation )
+  if ( geometry.update( width, height, r.mRotation ) )
   {
-    geometry = ScreenGeometry{ width, height, r.mRotation };
-
-    if ( !geometry )
-    {
-      srv.ReleaseAndGetAddressOf();
-      uav.ReleaseAndGetAddressOf();
-      return;
-    }
-
     D3D11_TEXTURE2D_DESC desc{
       (uint32_t)width,
       (uint32_t)height,
@@ -515,6 +502,11 @@ void DX11Renderer::DebugRendering::update( DX11Renderer& r )
     V_THROW( r.mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
     V_THROW( r.mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
     V_THROW( r.mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
+  }
+  else if ( !geometry )
+  {
+    srv.ReleaseAndGetAddressOf();
+    uav.ReleaseAndGetAddressOf();
   }
 }
 

@@ -5,7 +5,9 @@ class ScreenGeometry
 {
 public:
   ScreenGeometry();
-  ScreenGeometry( int windowWidth, int windowHeight, ImageProperties::Rotation rotation );
+
+  //returns whether something changed and is not empty
+  bool update( int windowWidth, int windowHeight, ImageProperties::Rotation rotation );
 
   int windowWidth() const;
   int windowHeight() const;

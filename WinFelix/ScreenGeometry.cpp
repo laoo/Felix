@@ -2,27 +2,37 @@
 #include "ScreenGeometry.hpp"
 #include "Utility.hpp"
 
-ScreenGeometry::ScreenGeometry() : mWinWidth{}, mWinHeight{}, mScale{ 1 }
+ScreenGeometry::ScreenGeometry() : mWinWidth{}, mWinHeight{}, mScale{ 1 }, mRotation{}
 {
 }
 
-ScreenGeometry::ScreenGeometry( int windowWidth, int windowHeight, ImageProperties::Rotation rotation ) : mWinWidth{ windowWidth }, mWinHeight{ windowHeight }, mScale{ 1 }, mRotation{ rotation }
+bool ScreenGeometry::update( int width, int height, ImageProperties::Rotation rotation )
 {
-  int sx, sy;
-  switch ( mRotation )
+  if ( mWinHeight != height || mWinWidth != width || mRotation != rotation )
   {
-  case ImageProperties::Rotation::LEFT:
-  case ImageProperties::Rotation::RIGHT:
-    sx = (std::max)( 1, mWinWidth / SCREEN_HEIGHT );
-    sy = (std::max)( 1, mWinHeight / SCREEN_WIDTH );
-    break;
-  default:
-    sx = (std::max)( 1, mWinWidth / SCREEN_WIDTH );
-    sy = (std::max)( 1, mWinHeight / SCREEN_HEIGHT );
-    break;
+    mWinHeight = height;
+    mWinWidth = width;
+    mRotation = rotation;
+
+    int sx, sy;
+    switch ( mRotation )
+    {
+    case ImageProperties::Rotation::LEFT:
+    case ImageProperties::Rotation::RIGHT:
+      sx = (std::max)( 1, mWinWidth / SCREEN_HEIGHT );
+      sy = (std::max)( 1, mWinHeight / SCREEN_WIDTH );
+      break;
+    default:
+      sx = (std::max)( 1, mWinWidth / SCREEN_WIDTH );
+      sy = (std::max)( 1, mWinHeight / SCREEN_HEIGHT );
+      break;
+    }
+
+    mScale = (std::min)( sx, sy );
+    return true;
   }
 
-  mScale = (std::min)( sx, sy );
+  return false;
 }
 
 int ScreenGeometry::windowWidth() const
