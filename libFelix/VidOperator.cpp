@@ -2,7 +2,12 @@
 #include "VidOperator.hpp"
 #include "SpriteTemplates.hpp"
 
-template<typename Type, int I>
+template<typename Type, int I> requires requires
+{
+  { Type::eor } -> std::convertible_to<bool>;
+  { Type::background } -> std::convertible_to<bool>;
+  { Type::opaque( 0 ) } -> std::convertible_to<bool>;
+}
 constexpr VidOperator::MemOp stateFun()
 {
   static constexpr int pixel = ( I & 0b111100 ) >> 2;  //pixel value

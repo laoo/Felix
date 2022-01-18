@@ -124,7 +124,13 @@ template<>
 struct SuzySprite<Suzy::Sprite::XOR>
 {
   static constexpr bool eor = true;
+  static constexpr bool background = false;
   static constexpr bool collDep = true;
+
+  static constexpr bool opaque( int pixel )
+  {
+    return true;
+  }
 
   static constexpr bool colliding( int pixel )
   {
