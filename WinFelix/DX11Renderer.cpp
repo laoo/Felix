@@ -306,16 +306,16 @@ ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<
   auto it = mBoards.find( id );
   if ( it != mBoards.end() )
   {
-    it->second.update( *this, width, height );
+    it->second.update( mBoardFont, width, height );
   }
   else
   {
     bool success;
     std::tie( it, success ) = mBoards.insert( { id, Board{} } );
-    it->second.update( *this, width, height );
+    it->second.update( mBoardFont, width, height );
   }
 
-  it->second.render( *this, data );
+  it->second.render( mBoardFont, data );
   return it->second.srv.Get();
 }
 
@@ -364,12 +364,12 @@ std::span<uint32_t const, 16> DX11Renderer::safePalette()
 }
 
 
-void DX11Renderer::Board::render( DX11Renderer& r, std::span<uint8_t const> data )
+void DX11Renderer::Board::render( BoardFont const& font, std::span<uint8_t const> data )
 {
   gImmediateContext->UpdateSubresource( src.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
-  std::array<ID3D11ShaderResourceView* const, 2> srv{ r.mBoardFont.srv.Get(), srcSRV.Get() };
+  std::array<ID3D11ShaderResourceView* const, 2> srv{ font.srv.Get(), srcSRV.Get() };
   gImmediateContext->CSSetShader( gBoardCS.Get(), nullptr, 0 );
-  SRVGuard sg{ gImmediateContext, { r.mBoardFont.srv.Get(), srcSRV.Get() } };
+  SRVGuard sg{ gImmediateContext, { font.srv.Get(), srcSRV.Get() } };
   UAVGuard ug{ gImmediateContext, uav.Get() };
   gImmediateContext->Dispatch( width, height, 1 );
 }
@@ -439,7 +439,7 @@ uint8_t const* DX11Renderer::HexFont::src( size_t idx, size_t row )
   return &hex_6x12[idx * srcWidth * srcHeight + row * srcWidth];
 }
 
-void DX11Renderer::Board::update( DX11Renderer& r, int w, int h )
+void DX11Renderer::Board::update( BoardFont const& font, int w, int h )
 {
   if ( w == width && h == height )
     return;
@@ -448,8 +448,8 @@ void DX11Renderer::Board::update( DX11Renderer& r, int w, int h )
   height = h;
 
   D3D11_TEXTURE2D_DESC desc{
-    (uint32_t)( w * r.mBoardFont.width ),
-    (uint32_t)( h * r.mBoardFont.height ),
+    (uint32_t)( w * font.width ),
+    (uint32_t)( h * font.height ),
     1,
     1,
     DXGI_FORMAT_R8G8B8A8_UNORM,

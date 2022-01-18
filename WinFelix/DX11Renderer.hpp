@@ -77,6 +77,16 @@ private:
     ComPtr<ID3D11Buffer>              mPosSizeCB;
   };
 
+  struct BoardFont
+  {
+    BoardFont();
+    void initialize();
+
+    int width;
+    int height;
+    ComPtr<ID3D11ShaderResourceView> srv;
+  } mBoardFont;
+
   struct Board
   {
     int width;
@@ -87,19 +97,10 @@ private:
     ComPtr<ID3D11ShaderResourceView> srv;
 
 
-    void update( DX11Renderer& r, int width, int height );
-    void render( DX11Renderer& r, std::span<uint8_t const> data );
+    void update( BoardFont const& font, int width, int height );
+    void render( BoardFont const& font, std::span<uint8_t const> data );
   };
 
-  struct BoardFont
-  {
-    BoardFont();
-    void initialize();
-
-    int width;
-    int height;
-    ComPtr<ID3D11ShaderResourceView> srv;
-  } mBoardFont;
 
   struct HexFont
   {
