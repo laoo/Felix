@@ -439,18 +439,6 @@ uint8_t const* DX11Renderer::HexFont::src( size_t idx, size_t row )
   return &hex_6x12[idx * srcWidth * srcHeight + row * srcWidth];
 }
 
-bool DX11Renderer::DebugRendering::enabled() const
-{
-  return width != 0 && height != 0;
-}
-
-void DX11Renderer::DebugRendering::update( DX11Renderer& r, int w, int h )
-{
-  width = w;
-  height = h;
-  update( r );
-}
-
 void DX11Renderer::Board::update( DX11Renderer& r, int w, int h )
 {
   if ( w == width && h == height )
@@ -480,44 +468,6 @@ void DX11Renderer::Board::update( DX11Renderer& r, int w, int h )
   D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)w, (uint32_t)h, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
   V_THROW( gD3DDevice->CreateTexture2D( &descsrc, nullptr, src.ReleaseAndGetAddressOf() ) );
   V_THROW( gD3DDevice->CreateShaderResourceView( src.Get(), NULL, srcSRV.ReleaseAndGetAddressOf() ) );
-}
-
-
-void DX11Renderer::DebugRendering::update( DX11Renderer& r )
-{
-  if ( width == 0 || height == 0 )
-  {
-    srv.ReleaseAndGetAddressOf();
-    uav.ReleaseAndGetAddressOf();
-    geometry = ScreenGeometry{};
-    return;
-  }
-
-  if ( geometry.update( width, height, r.mRotation ) )
-  {
-    D3D11_TEXTURE2D_DESC desc{
-      (uint32_t)width,
-      (uint32_t)height,
-      1,
-      1,
-      DXGI_FORMAT_R8G8B8A8_UNORM,
-      { 1, 0 },
-      D3D11_USAGE_DEFAULT,
-      D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
-      0,
-      0
-    };
-
-    ComPtr<ID3D11Texture2D> tex;
-    V_THROW( gD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
-    V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
-    V_THROW( gD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
-  }
-  else if ( !geometry )
-  {
-    srv.ReleaseAndGetAddressOf();
-    uav.ReleaseAndGetAddressOf();
-  }
 }
 
 DX11Renderer::ScreenView::ScreenView()

@@ -117,19 +117,6 @@ private:
     static uint8_t const* src( size_t idx, size_t row );
   } mHexFont;
 
-  struct DebugRendering
-  {
-    int width = {};
-    int height = {};
-    ScreenGeometry geometry = {};
-    ComPtr<ID3D11UnorderedAccessView> uav = {};
-    ComPtr<ID3D11ShaderResourceView> srv = {};
-
-    bool enabled() const;
-    void update( DX11Renderer& r );
-    void update( DX11Renderer& r, int width, int height );
-  };
-
   ComPtr<IDXGISwapChain>            mSwapChain;
   ComPtr<ID3D11Buffer>              mPosSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
