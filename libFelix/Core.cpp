@@ -81,7 +81,7 @@ void Core::setROM( std::shared_ptr<ImageROM const> bootROM )
     return;
   }
 
-  std::fill( mROM.begin(), mROM.end(), 0xff );
+  std::ranges::fill( mROM, 0xff );
 
   auto setVec = [mem = mROM.data() - 0xfe00]( uint16_t src, uint16_t dst )
   {

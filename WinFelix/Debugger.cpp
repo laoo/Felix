@@ -163,11 +163,7 @@ void Debugger::newScreenView()
 
   for ( ;; )
   {
-    auto it = std::find_if( mScreenViews.cbegin(), mScreenViews.cend(), [=]( auto const& sv )
-    {
-      return sv.id == minId;
-    } );
-
+    auto it = std::ranges::find( mScreenViews, minId, &ScreenView::id );
     if ( it == mScreenViews.cend() )
       break;
 

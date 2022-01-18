@@ -114,9 +114,10 @@ Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoS
   mAudioChannels[0x2] = std::make_unique<AudioChannel>( *mTimers[0xa] );
   mAudioChannels[0x3] = std::make_unique<AudioChannel>( *mTimers[0xb] );
 
-  std::fill(mPalette.begin(), mPalette.end(), 0xff);
-  for (int i = 0; i < 32; ++i) {
-    mDisplayGenerator->updatePalette(0, i, 0xff);
+  std::ranges::fill( mPalette, 0xff );
+  for ( int i = 0; i < 32; ++i )
+  {
+    mDisplayGenerator->updatePalette( 0, i, 0xff );
   }
 }
 

@@ -3,7 +3,7 @@
 
 ScreenRenderingBuffer::ScreenRenderingBuffer() : mCurrentRow{}
 {
-  std::fill( mSizes.begin(), mSizes.end(), 0 );
+  std::ranges::fill( mSizes, 0 );
   newRow( 104 );
 }
 
