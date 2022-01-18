@@ -441,7 +441,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       mManager.mDebugger.visualizeHistory( historyWindow );
     }
 
-    if ( auto mainScreenView = mManager.mDebugger.mainScreenView() )
+    if ( auto mainScreenView = mManager.mDebugWindows.mainScreenView )
     {
       static const float xpad = 4.0f;
       static const float ypad = 4.0f + 19.0f;
@@ -541,10 +541,20 @@ void UI::drawDebugWindows( ImGuiIO& io )
       size.x = std::max( 0.0f, size.x - xpad );
       size.y = std::max( 0.0f, size.y - ypad );
 
-      if ( auto tex = mManager.mExtendedRenderer->screenViewRenderingTexture( sv.id, sv.type, data, palette, (int)size.x, (int)size.y ) )
+      auto it = std::ranges::find( mManager.mDebugWindows.customScreenViews, sv.id, []( auto const& p ) { return p.first; } );
+      if ( it != mManager.mDebugWindows.customScreenViews.cend() )
       {
-        ImGui::Image( tex, size );
+        if ( auto tex = it->second->update( data, palette ) )
+        {
+          ImGui::Image( tex, size );
+        }
+        it->second->update( (int)size.x, (int)size.y );
       }
+      else
+      {
+        assert( false );
+      }
+
       ImGui::End();
       ImGui::PopStyleVar();
     }

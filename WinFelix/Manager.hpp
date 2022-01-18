@@ -59,6 +59,12 @@ private:
 
   Debugger mDebugger;
 
+  struct DebugWindows
+  {
+    std::shared_ptr<IScreenView> mainScreenView;
+    std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
+  } mDebugWindows;
+
   UI mUI;
   sol::state mLua;
   std::atomic_bool mProcessThreads;

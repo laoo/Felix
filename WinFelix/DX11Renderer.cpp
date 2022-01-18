@@ -31,9 +31,15 @@ struct CBPosSize
   uint32_t padding;
 };
 
+static ComPtr<ID3D11Device>        gD3DDevice;
+static ComPtr<ID3D11DeviceContext> gImmediateContext;
+static ComPtr<ID3D11ComputeShader> gRenderer2CS;
+static ComPtr<ID3D11ComputeShader> gRendererCS;
+static ComPtr<ID3D11ComputeShader> gBoardCS;
+
 }
 
-DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mHexFont{}, mRefreshRate{}, mEncodingRenderer{}, mWindowRenderings{}
+DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mHexFont{}, mRefreshRate{}, mEncodingRenderer{}
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
@@ -53,7 +59,7 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
 #else
     0,
 #endif
-    & featureLevelsRequested, 1, D3D11_SDK_VERSION, mD3DDevice.ReleaseAndGetAddressOf(), &featureLevelsSupported, mImmediateContext.ReleaseAndGetAddressOf() );
+    & featureLevelsRequested, 1, D3D11_SDK_VERSION, gD3DDevice.ReleaseAndGetAddressOf(), &featureLevelsSupported, gImmediateContext.ReleaseAndGetAddressOf() );
 
   V_THROW( hr );
 
@@ -73,7 +79,7 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
   sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
   ComPtr<IDXGIDevice> pDXGIDevice;
-  V_THROW( mD3DDevice.As( &pDXGIDevice ) );
+  V_THROW( gD3DDevice.As( &pDXGIDevice ) );
 
   ComPtr<IDXGIAdapter> pDXGIAdapter;
   V_THROW( pDXGIDevice->GetAdapter( pDXGIAdapter.ReleaseAndGetAddressOf() ) );
@@ -81,26 +87,26 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
   ComPtr<IDXGIFactory> pIDXGIFactory;
   V_THROW( pDXGIAdapter->GetParent( __uuidof( IDXGIFactory ), (void**)pIDXGIFactory.ReleaseAndGetAddressOf() ) );
 
-  V_THROW( pIDXGIFactory->CreateSwapChain( mD3DDevice.Get(), &sd, mSwapChain.ReleaseAndGetAddressOf() ) );
+  V_THROW( pIDXGIFactory->CreateSwapChain( gD3DDevice.Get(), &sd, mSwapChain.ReleaseAndGetAddressOf() ) );
 
   ComPtr<IDXGIOutput> pIDXGIOutput;
   V_THROW( mSwapChain->GetContainingOutput( pIDXGIOutput.ReleaseAndGetAddressOf() ) );
 
   DXGI_MODE_DESC md;
-  V_THROW( pIDXGIOutput->FindClosestMatchingMode( &sd.BufferDesc, &md, mD3DDevice.Get() ) );
+  V_THROW( pIDXGIOutput->FindClosestMatchingMode( &sd.BufferDesc, &md, gD3DDevice.Get() ) );
   mRefreshRate = { md.RefreshRate.Numerator, md.RefreshRate.Denominator };
 
   L_INFO << "Refresh Rate: " << mRefreshRate << " = " << ( (double)mRefreshRate.numerator() / (double)mRefreshRate.denominator() );
 
-  V_THROW( mD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, mRendererCS.ReleaseAndGetAddressOf() ) );
-  V_THROW( mD3DDevice->CreateComputeShader( g_Renderer2, sizeof g_Renderer2, nullptr, mRenderer2CS.ReleaseAndGetAddressOf() ) );
-  V_THROW( mD3DDevice->CreateComputeShader( g_Board, sizeof g_Board, nullptr, mBoardCS.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, gRendererCS.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateComputeShader( g_Renderer2, sizeof g_Renderer2, nullptr, gRenderer2CS.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateComputeShader( g_Board, sizeof g_Board, nullptr, gBoardCS.ReleaseAndGetAddressOf() ) );
 
   D3D11_BUFFER_DESC bd = {};
   bd.ByteWidth = sizeof( CBPosSize );
   bd.Usage = D3D11_USAGE_DEFAULT;
   bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-  V_THROW( mD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
 
   D3D11_TEXTURE2D_DESC desc{};
   desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -118,21 +124,13 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
   std::vector<uint32_t> buf;
   buf.resize( desc.Width* desc.Height, ~0 );
   D3D11_SUBRESOURCE_DATA data{ buf.data(), desc.Width * sizeof( uint32_t ), 0 };
-  mD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
-  V_THROW( mD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
+  gD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
+  V_THROW( gD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
-  D3D11_TEXTURE2D_DESC descsrc{ SCREEN_WIDTH / 2, SCREEN_HEIGHT, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  mD3DDevice->CreateTexture2D( &descsrc, nullptr, mWindowRenderings.source.ReleaseAndGetAddressOf() );
-  V_THROW( mD3DDevice->CreateShaderResourceView( mWindowRenderings.source.Get(), NULL, mWindowRenderings.sourceSRV.ReleaseAndGetAddressOf() ) );
+  mBoardFont.initialize();
+  mHexFont.initialize();
 
-  D3D11_TEXTURE1D_DESC descpal{ 16, 1, 1, DXGI_FORMAT_B8G8R8A8_UNORM, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( mD3DDevice->CreateTexture1D( &descpal, nullptr, mWindowRenderings.palette.ReleaseAndGetAddressOf() ) );
-  V_THROW( mD3DDevice->CreateShaderResourceView( mWindowRenderings.palette.Get(), NULL, mWindowRenderings.paletteSRV.ReleaseAndGetAddressOf() ) );
-
-  mBoardFont.initialize( mD3DDevice.Get(), mImmediateContext.Get() );
-  mHexFont.initialize( mD3DDevice.Get(), mImmediateContext.Get() );
-
-  mImgui = std::make_shared<WinImgui11>( mHWnd, mD3DDevice, mImmediateContext, iniPath );
+  mImgui = std::make_shared<WinImgui11>( mHWnd, gD3DDevice, gImmediateContext, iniPath );
 }
 
 DX11Renderer::~DX11Renderer()
@@ -141,7 +139,7 @@ DX11Renderer::~DX11Renderer()
 
 void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 {
-  mEncodingRenderer = std::make_shared<EncodingRenderer>( std::move( encoder ), mD3DDevice, mImmediateContext, mRefreshRate );
+  mEncodingRenderer = std::make_shared<EncodingRenderer>( std::move( encoder ), gD3DDevice, gImmediateContext, mRefreshRate );
 }
 
 std::shared_ptr<IExtendedRenderer> DX11Renderer::extendedRenderer()
@@ -156,7 +154,7 @@ bool DX11Renderer::mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mai
     if ( auto uav = mainScreenView->getUAV() )
     {
       UINT v[4] = { 255, 255, 255, 255 };
-      mImmediateContext->ClearUnorderedAccessViewUint( uav, v );
+      gImmediateContext->ClearUnorderedAccessViewUint( uav, v );
       renderScreenView( mainScreenView->getGeometry(), mSourceSRV.Get(), uav );
       return true;
     }
@@ -173,7 +171,7 @@ void DX11Renderer::internalRender( UI& ui )
   updateSourceFromNextFrame();
 
   UINT v[4] = { 255, 255, 255, 255 };
-  mImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
+  gImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
 
   if ( !mainScreenViewDebugRendering( mMainScreenView.lock() ) )
   {
@@ -217,8 +215,8 @@ bool DX11Renderer::resizeOutput()
 
     ComPtr<ID3D11Texture2D> backBuffer;
     V_RETURN_FALSE( mSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)backBuffer.ReleaseAndGetAddressOf() ) );
-    V_RETURN_FALSE( mD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
-    V_RETURN_FALSE( mD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
+    V_RETURN_FALSE( gD3DDevice->CreateUnorderedAccessView( backBuffer.Get(), nullptr, mBackBufferUAV.ReleaseAndGetAddressOf() ) );
+    V_RETURN_FALSE( gD3DDevice->CreateRenderTargetView( backBuffer.Get(), nullptr, mBackBufferRTV.ReleaseAndGetAddressOf() ) );
   }
 
   return (bool)mScreenGeometry;
@@ -229,7 +227,7 @@ void DX11Renderer::updateSourceFromNextFrame()
   if ( auto frame = mVideoSink->pullNextFrame() )
   {
     D3D11_MAPPED_SUBRESOURCE d3dmap;
-    mImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+    gImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
 
     struct MappedTexture
     {
@@ -257,7 +255,7 @@ void DX11Renderer::updateSourceFromNextFrame()
       }
     }
 
-    mImmediateContext->Unmap( mSource.Get(), 0 );
+    gImmediateContext->Unmap( mSource.Get(), 0 );
   }
 }
 
@@ -279,14 +277,14 @@ void DX11Renderer::renderGui( UI& ui )
 
   ImGui::Render();
 
-  RTVGuard rt{ mImmediateContext, mBackBufferRTV.Get() };
+  RTVGuard rt{ gImmediateContext, mBackBufferRTV.Get() };
   mImgui->renderDrawData( ImGui::GetDrawData() );
 }
 
 
 void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11ShaderResourceView* sourceSRV, ID3D11UnorderedAccessView* target )
 {
-  UAVGuard uav{ mImmediateContext, target };
+  UAVGuard uav{ gImmediateContext, target };
 
   CBPosSize cbPosSize{
     geometry.rotx1(), geometry.rotx2(),
@@ -295,11 +293,11 @@ void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11Shade
     geometry.scale()
   };
 
-  mImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
-  mImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-  SRVGuard srvg{ mImmediateContext, sourceSRV };
-  mImmediateContext->CSSetShader( mRendererCS.Get(), nullptr, 0 );
-  mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
+  gImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
+  gImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
+  SRVGuard srvg{ gImmediateContext, sourceSRV };
+  gImmediateContext->CSSetShader( gRendererCS.Get(), nullptr, 0 );
+  gImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 }
 
 
@@ -321,24 +319,6 @@ ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<
   return it->second.srv.Get();
 }
 
-ImTextureID DX11Renderer::screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height )
-{
-  auto it = mWindowRenderings.screenViews.find( id );
-  if ( it != mWindowRenderings.screenViews.end() )
-  {
-    it->second.update( *this, width, height );
-  }
-  else
-  {
-    bool success;
-    std::tie( it, success ) = mWindowRenderings.screenViews.insert( { id, DebugRendering{} } );
-    it->second.update( *this, width, height );
-  }
-
-  it->second.render( *this, type, data, palette );
-  return it->second.srv.Get();
-}
-
 std::shared_ptr<IScreenView> DX11Renderer::makeMainScreenView()
 {
   if ( auto view = mMainScreenView.lock() )
@@ -347,16 +327,16 @@ std::shared_ptr<IScreenView> DX11Renderer::makeMainScreenView()
   }
   else
   {
-    auto ptr = std::make_shared<ScreenView>( mD3DDevice, mImmediateContext );
+    auto ptr = std::make_shared<ScreenView>();
     ptr->update( mRotation );
     mMainScreenView = ptr;
     return ptr;
   }
 }
 
-std::shared_ptr<ICustomScreenView> DX11Renderer::makeCustomScreenView( ScreenViewType type )
+std::shared_ptr<ICustomScreenView> DX11Renderer::makeCustomScreenView()
 {
-  return std::shared_ptr<ICustomScreenView>();
+  return std::make_shared<CustomScreenView>();
 }
 
 std::span<uint32_t const, 16> DX11Renderer::safePalette()
@@ -386,19 +366,19 @@ std::span<uint32_t const, 16> DX11Renderer::safePalette()
 
 void DX11Renderer::Board::render( DX11Renderer& r, std::span<uint8_t const> data )
 {
-  r.mImmediateContext->UpdateSubresource( src.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
+  gImmediateContext->UpdateSubresource( src.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
   std::array<ID3D11ShaderResourceView* const, 2> srv{ r.mBoardFont.srv.Get(), srcSRV.Get() };
-  r.mImmediateContext->CSSetShader( r.mBoardCS.Get(), nullptr, 0 );
-  SRVGuard sg{ r.mImmediateContext, { r.mBoardFont.srv.Get(), srcSRV.Get() } };
-  UAVGuard ug{ r.mImmediateContext, uav.Get() };
-  r.mImmediateContext->Dispatch( width, height, 1 );
+  gImmediateContext->CSSetShader( gBoardCS.Get(), nullptr, 0 );
+  SRVGuard sg{ gImmediateContext, { r.mBoardFont.srv.Get(), srcSRV.Get() } };
+  UAVGuard ug{ gImmediateContext, uav.Get() };
+  gImmediateContext->Dispatch( width, height, 1 );
 }
 
 DX11Renderer::BoardFont::BoardFont() : width{}, height{}, srv{}
 {
 }
 
-void DX11Renderer::BoardFont::initialize( ID3D11Device* pDevice, ID3D11DeviceContext* pContext )
+void DX11Renderer::BoardFont::initialize()
 {
   width = 8;
   height = 16;
@@ -415,15 +395,15 @@ void DX11Renderer::BoardFont::initialize( ID3D11Device* pDevice, ID3D11DeviceCon
 
   ComPtr<ID3D11Texture2D> tex;
   D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( pDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
-  V_THROW( pDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
 }
 
 DX11Renderer::HexFont::HexFont() : srv{}
 {
 }
 
-void DX11Renderer::HexFont::initialize( ID3D11Device* pDevice, ID3D11DeviceContext* pContext )
+void DX11Renderer::HexFont::initialize()
 {
   std::array<D3D11_SUBRESOURCE_DATA, 256> initData;
   std::vector<uint8_t> buf;
@@ -450,8 +430,8 @@ void DX11Renderer::HexFont::initialize( ID3D11Device* pDevice, ID3D11DeviceConte
 
   ComPtr<ID3D11Texture2D> tex;
   D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( pDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
-  V_THROW( pDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
 }
 
 uint8_t const* DX11Renderer::HexFont::src( size_t idx, size_t row )
@@ -493,13 +473,13 @@ void DX11Renderer::Board::update( DX11Renderer& r, int w, int h )
   };
 
   ComPtr<ID3D11Texture2D> tex;
-  V_THROW( r.mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
-  V_THROW( r.mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
-  V_THROW( r.mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
 
   D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)w, (uint32_t)h, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( r.mD3DDevice->CreateTexture2D( &descsrc, nullptr, src.ReleaseAndGetAddressOf() ) );
-  V_THROW( r.mD3DDevice->CreateShaderResourceView( src.Get(), NULL, srcSRV.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateTexture2D( &descsrc, nullptr, src.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateShaderResourceView( src.Get(), NULL, srcSRV.ReleaseAndGetAddressOf() ) );
 }
 
 
@@ -529,9 +509,9 @@ void DX11Renderer::DebugRendering::update( DX11Renderer& r )
     };
 
     ComPtr<ID3D11Texture2D> tex;
-    V_THROW( r.mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
-    V_THROW( r.mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
-    V_THROW( r.mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
+    V_THROW( gD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
+    V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
+    V_THROW( gD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, uav.ReleaseAndGetAddressOf() ) );
   }
   else if ( !geometry )
   {
@@ -540,65 +520,7 @@ void DX11Renderer::DebugRendering::update( DX11Renderer& r )
   }
 }
 
-void DX11Renderer::DebugRendering::render( DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette )
-{
-  if ( enabled() )
-  {
-    auto rawUAV = uav.Get();
-    if ( !rawUAV )
-      return;
-
-    UINT v[4] = { 0, 0, 0, 0 };
-    r.mImmediateContext->ClearUnorderedAccessViewUint( rawUAV, v );
-
-    if ( data.empty() )
-      return;
-
-    if ( palette.size() != 32 )
-    {
-      auto pal = DX11Renderer::safePalette();
-      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal.data(), 16 * 4, 0 );
-    }
-    else
-    {
-      uint32_t pal[16];
-
-      for ( size_t i = 0; i < 16; ++i )
-      {
-        VideoSink::Pixel value;
-        value.x = 0xff;
-        value.r = ( palette[i + 16] & 0x0f );
-        value.r |= value.r << 4;
-        value.g = ( palette[i] & 0x0f );
-        value.g |= value.g << 4;
-        value.b = ( palette[i + 16] & 0xf0 );
-        value.b |= value.r >> 4;
-
-        pal[i] = std::bit_cast<uint32_t>( value );
-      }
-
-      r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.palette.Get(), 0, nullptr, pal, 16 * 4, 0 );
-    }
-
-    r.mImmediateContext->UpdateSubresource( r.mWindowRenderings.source.Get(), 0, nullptr, data.data(), 80, 0 );
-
-    CBPosSize cbPosSize{
-      geometry.rotx1(), geometry.rotx2(),
-      geometry.roty1(), geometry.roty2(),
-      geometry.xOff(), geometry.yOff(),
-      geometry.scale()
-    };
-
-    r.mImmediateContext->UpdateSubresource( r.mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
-    r.mImmediateContext->CSSetConstantBuffers( 0, 1, r.mPosSizeCB.GetAddressOf() );
-    r.mImmediateContext->CSSetShader( r.mRenderer2CS.Get(), nullptr, 0 );
-    UAVGuard ug{ r.mImmediateContext, uav.Get() };
-    SRVGuard sg{ r.mImmediateContext, { r.mWindowRenderings.sourceSRV.Get(), r.mWindowRenderings.paletteSRV.Get() } };
-    r.mImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
-  }
-}
-
-DX11Renderer::ScreenView::ScreenView( ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext ) : mD3DDevice{ std::move( pD3DDevice ) }, mImmediateContext{ std::move( pImmediateContext ) }
+DX11Renderer::ScreenView::ScreenView()
 {
 }
 
@@ -648,9 +570,9 @@ void DX11Renderer::ScreenView::updateBuffers()
   };
 
   ComPtr<ID3D11Texture2D> tex;
-  V_THROW( mD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
-  V_THROW( mD3DDevice->CreateShaderResourceView( tex.Get(), NULL, mSrv.ReleaseAndGetAddressOf() ) );
-  V_THROW( mD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, mUav.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, mSrv.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, mUav.ReleaseAndGetAddressOf() ) );
 
   mGeometryChanged = false;
 }
@@ -658,4 +580,83 @@ void DX11Renderer::ScreenView::updateBuffers()
 bool DX11Renderer::ScreenView::geometryChanged() const
 {
   return mGeometryChanged;
+}
+
+DX11Renderer::CustomScreenView::CustomScreenView() : ScreenView{}
+{
+  D3D11_TEXTURE2D_DESC descsrc{ SCREEN_WIDTH / 2, SCREEN_HEIGHT, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  gD3DDevice->CreateTexture2D( &descsrc, nullptr, mSource.ReleaseAndGetAddressOf() );
+  V_THROW( gD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
+
+  D3D11_TEXTURE1D_DESC descpal{ 16, 1, 1, DXGI_FORMAT_B8G8R8A8_UNORM, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  V_THROW( gD3DDevice->CreateTexture1D( &descpal, nullptr, mPalette.ReleaseAndGetAddressOf() ) );
+  V_THROW( gD3DDevice->CreateShaderResourceView( mPalette.Get(), NULL, mPaletteSRV.ReleaseAndGetAddressOf() ) );
+
+  D3D11_BUFFER_DESC bd = {};
+  bd.ByteWidth = sizeof( CBPosSize );
+  bd.Usage = D3D11_USAGE_DEFAULT;
+  bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  V_THROW( gD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
+}
+
+void DX11Renderer::CustomScreenView::update( int width, int height )
+{
+  ScreenView::update( width, height );
+}
+
+void* DX11Renderer::CustomScreenView::update( std::span<uint8_t const> data, std::span<uint8_t const> palette )
+{
+  auto rawUAV = getUAV();
+  if ( !rawUAV )
+    return nullptr;
+
+  UINT v[4] = { 255, 255, 255, 255 };
+  gImmediateContext->ClearUnorderedAccessViewUint( rawUAV, v );
+
+  if ( data.empty() )
+    return nullptr;
+
+  if ( palette.size() != 32 )
+  {
+    auto pal = DX11Renderer::safePalette();
+    gImmediateContext->UpdateSubresource( mPalette.Get(), 0, nullptr, pal.data(), 16 * 4, 0 );
+  }
+  else
+  {
+    uint32_t pal[16];
+
+    for ( size_t i = 0; i < 16; ++i )
+    {
+      VideoSink::Pixel value;
+      value.x = 0xff;
+      value.r = ( palette[i + 16] & 0x0f );
+      value.r |= value.r << 4;
+      value.g = ( palette[i] & 0x0f );
+      value.g |= value.g << 4;
+      value.b = ( palette[i + 16] & 0xf0 );
+      value.b |= value.r >> 4;
+
+      pal[i] = std::bit_cast<uint32_t>( value );
+    }
+
+    gImmediateContext->UpdateSubresource( mPalette.Get(), 0, nullptr, pal, 16 * 4, 0 );
+  }
+
+  gImmediateContext->UpdateSubresource( mSource.Get(), 0, nullptr, data.data(), 80, 0 );
+
+  CBPosSize cbPosSize{
+    mGeometry.rotx1(), mGeometry.rotx2(),
+    mGeometry.roty1(), mGeometry.roty2(),
+    mGeometry.xOff(), mGeometry.yOff(),
+    mGeometry.scale()
+  };
+
+  gImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
+  gImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
+  gImmediateContext->CSSetShader( gRenderer2CS.Get(), nullptr, 0 );
+  UAVGuard ug{ gImmediateContext, rawUAV };
+  SRVGuard sg{ gImmediateContext, { mSourceSRV.Get(), mPaletteSRV.Get() } };
+  gImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
+
+  return mSrv.Get();
 }

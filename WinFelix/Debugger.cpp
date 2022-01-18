@@ -130,8 +130,6 @@ void Debugger::visualizeHistory( bool value )
 void Debugger::debugMode( bool value )
 {
   mDebugMode = value;
-  if ( !mDebugMode )
-    mMainScreenView.reset();
 }
 
 bool Debugger::debugModeOnBreak() const
@@ -212,14 +210,4 @@ DebugWindow& Debugger::disasmVisualizer()
 DebugWindow& Debugger::historyVisualizer()
 {
   return mHistoryVisualizer;
-}
-
-void Debugger::mainScreenView( std::shared_ptr<IScreenView> mainScreenView )
-{
-  mMainScreenView = std::move( mainScreenView );
-}
-
-std::shared_ptr<IScreenView> Debugger::mainScreenView() const
-{
-  return mMainScreenView;
 }

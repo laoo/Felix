@@ -193,14 +193,34 @@ void Manager::quit()
 void Manager::updateDebugWindows()
 {
 
-  if ( !mInstance || !mDebugger.isDebugMode() || !mExtendedRenderer )
+  if ( !mInstance || !mExtendedRenderer )
     return;
+
+  if ( !mDebugger.isDebugMode() )
+  {
+    mDebugWindows.mainScreenView.reset();
+    return;
+  }
 
   std::unique_lock<std::mutex> l{ mDebugger.mutex };
 
-  if ( !mDebugger.mainScreenView() )
+  if ( !mDebugWindows.mainScreenView )
   {
-    mDebugger.mainScreenView( mExtendedRenderer->makeMainScreenView() );
+    mDebugWindows.mainScreenView = mExtendedRenderer->makeMainScreenView();
+  }
+
+  auto svs = mDebugger.screenViews();
+  auto& csvs = mDebugWindows.customScreenViews;
+  //removing elements in csvs that are not in svs 
+  auto ret = std::ranges::remove_if( csvs, [&]( int id ) { return std::ranges::find( svs, id, &ScreenView::id ) == svs.end(); }, []( auto const& p ) { return p.first; } );
+  csvs.erase( ret.begin(), ret.end() );
+  //add missing elements to csvs that are in svs
+  for ( auto const& sv : svs )
+  {
+    if ( std::ranges::find( csvs, sv.id, []( auto const& p ) { return p.first; } ) == csvs.end() )
+    {
+      csvs.emplace_back( sv.id, mExtendedRenderer->makeCustomScreenView() );
+    }
   }
 
   auto& cpu = mInstance->debugCPU();

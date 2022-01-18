@@ -13,10 +13,9 @@ public:
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
-  void* screenViewRenderingTexture( int id, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette, int width, int height ) override;
 
   std::shared_ptr<IScreenView> makeMainScreenView() override;
-  std::shared_ptr<ICustomScreenView> makeCustomScreenView( ScreenViewType type ) override;
+  std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
 
 protected:
 
@@ -39,7 +38,8 @@ private:
   class ScreenView : public IScreenView
   {
   public:
-    ScreenView( ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext );
+    ScreenView();
+    ~ScreenView() override = default;
 
     void update( ImageProperties::Rotation rotation );
     void update( int width, int height ) override;
@@ -48,16 +48,33 @@ private:
     ID3D11UnorderedAccessView* getUAV();
     bool geometryChanged() const;
 
-  private:
+  protected:
     void updateBuffers();
 
-  private:
-    ComPtr<ID3D11Device>              mD3DDevice;
-    ComPtr<ID3D11DeviceContext>       mImmediateContext;
-    ComPtr<ID3D11UnorderedAccessView> mUav = {};
-    ComPtr<ID3D11ShaderResourceView> mSrv = {};
+  protected:
     ScreenGeometry mGeometry = {};
+    ComPtr<ID3D11ShaderResourceView> mSrv = {};
+
+  private:
+    ComPtr<ID3D11UnorderedAccessView> mUav = {};
     bool mGeometryChanged = {};
+  };
+
+  class CustomScreenView : public ScreenView, public ICustomScreenView
+  {
+  public:
+    CustomScreenView();
+    ~CustomScreenView() override = default;
+    void update( int width, int height ) override;
+
+    void* update( std::span<uint8_t const> data, std::span<uint8_t const> palette ) override;
+
+  private:
+    ComPtr<ID3D11Texture2D>           mSource;
+    ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
+    ComPtr<ID3D11Texture1D>           mPalette;
+    ComPtr<ID3D11ShaderResourceView>  mPaletteSRV;
+    ComPtr<ID3D11Buffer>              mPosSizeCB;
   };
 
   struct Board
@@ -77,7 +94,7 @@ private:
   struct BoardFont
   {
     BoardFont();
-    void initialize( ID3D11Device* pDevice, ID3D11DeviceContext* pContext );
+    void initialize();
 
     int width;
     int height;
@@ -87,7 +104,7 @@ private:
   struct HexFont
   {
     HexFont();
-    void initialize( ID3D11Device* pDevice, ID3D11DeviceContext* pContext );
+    void initialize();
 
     static constexpr int width = 16;
     static constexpr int height = 16;
@@ -111,25 +128,9 @@ private:
     bool enabled() const;
     void update( DX11Renderer& r );
     void update( DX11Renderer& r, int width, int height );
-    void render( DX11Renderer& r, ScreenViewType type, std::span<uint8_t const> data, std::span<uint8_t const> palette );
   };
 
-  struct WindowRenderings
-  {
-    ComPtr<ID3D11Texture2D>           source;
-    ComPtr<ID3D11ShaderResourceView>  sourceSRV;
-    ComPtr<ID3D11Texture1D>           palette;
-    ComPtr<ID3D11ShaderResourceView>  paletteSRV;
-
-    std::unordered_map<int, DebugRendering> screenViews;
-  } mWindowRenderings;
-
-  ComPtr<ID3D11Device>              mD3DDevice;
-  ComPtr<ID3D11DeviceContext>       mImmediateContext;
   ComPtr<IDXGISwapChain>            mSwapChain;
-  ComPtr<ID3D11ComputeShader>       mRendererCS;
-  ComPtr<ID3D11ComputeShader>       mRenderer2CS;
-  ComPtr<ID3D11ComputeShader>       mBoardCS;
   ComPtr<ID3D11Buffer>              mPosSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
   ComPtr<ID3D11RenderTargetView>    mBackBufferRTV;
