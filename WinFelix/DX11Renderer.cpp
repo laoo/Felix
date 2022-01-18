@@ -31,6 +31,8 @@ struct CBPosSize
   uint32_t padding;
 };
 
+DX11Renderer::BoardFont gBoardFont;
+
 static ComPtr<ID3D11Device>        gD3DDevice;
 static ComPtr<ID3D11DeviceContext> gImmediateContext;
 static ComPtr<ID3D11ComputeShader> gRenderer2CS;
@@ -39,7 +41,7 @@ static ComPtr<ID3D11ComputeShader> gBoardCS;
 
 }
 
-DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mBoardFont{}, mHexFont{}, mRefreshRate{}, mEncodingRenderer{}
+DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mHexFont{}, mRefreshRate{}, mEncodingRenderer{}
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
@@ -127,7 +129,7 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
   gD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
   V_THROW( gD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
-  mBoardFont.initialize();
+  gBoardFont.initialize();
   mHexFont.initialize();
 
   mImgui = std::make_shared<WinImgui11>( mHWnd, gD3DDevice, gImmediateContext, iniPath );
@@ -306,16 +308,16 @@ ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<
   auto it = mBoards.find( id );
   if ( it != mBoards.end() )
   {
-    it->second.update( mBoardFont, width, height );
+    it->second.update( width, height );
   }
   else
   {
     bool success;
     std::tie( it, success ) = mBoards.insert( { id, Board{} } );
-    it->second.update( mBoardFont, width, height );
+    it->second.update( width, height );
   }
 
-  it->second.render( mBoardFont, data );
+  it->second.render( data );
   return it->second.srv.Get();
 }
 
@@ -364,12 +366,12 @@ std::span<uint32_t const, 16> DX11Renderer::safePalette()
 }
 
 
-void DX11Renderer::Board::render( BoardFont const& font, std::span<uint8_t const> data )
+void DX11Renderer::Board::render(  std::span<uint8_t const> data )
 {
   gImmediateContext->UpdateSubresource( src.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
-  std::array<ID3D11ShaderResourceView* const, 2> srv{ font.srv.Get(), srcSRV.Get() };
+  std::array<ID3D11ShaderResourceView* const, 2> srv{ gBoardFont.srv.Get(), srcSRV.Get() };
   gImmediateContext->CSSetShader( gBoardCS.Get(), nullptr, 0 );
-  SRVGuard sg{ gImmediateContext, { font.srv.Get(), srcSRV.Get() } };
+  SRVGuard sg{ gImmediateContext, { gBoardFont.srv.Get(), srcSRV.Get() } };
   UAVGuard ug{ gImmediateContext, uav.Get() };
   gImmediateContext->Dispatch( width, height, 1 );
 }
@@ -439,7 +441,7 @@ uint8_t const* DX11Renderer::HexFont::src( size_t idx, size_t row )
   return &hex_6x12[idx * srcWidth * srcHeight + row * srcWidth];
 }
 
-void DX11Renderer::Board::update( BoardFont const& font, int w, int h )
+void DX11Renderer::Board::update( int w, int h )
 {
   if ( w == width && h == height )
     return;
@@ -448,8 +450,8 @@ void DX11Renderer::Board::update( BoardFont const& font, int w, int h )
   height = h;
 
   D3D11_TEXTURE2D_DESC desc{
-    (uint32_t)( w * font.width ),
-    (uint32_t)( h * font.height ),
+    (uint32_t)( w * gBoardFont.width ),
+    (uint32_t)( h * gBoardFont.height ),
     1,
     1,
     DXGI_FORMAT_R8G8B8A8_UNORM,

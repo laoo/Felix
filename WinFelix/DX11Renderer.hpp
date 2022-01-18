@@ -17,6 +17,16 @@ public:
   std::shared_ptr<IScreenView> makeMainScreenView() override;
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
 
+  struct BoardFont
+  {
+    BoardFont();
+    void initialize();
+
+    int width;
+    int height;
+    ComPtr<ID3D11ShaderResourceView> srv;
+  };
+
 protected:
 
   void internalRender( UI& ui ) override;
@@ -77,15 +87,6 @@ private:
     ComPtr<ID3D11Buffer>              mPosSizeCB;
   };
 
-  struct BoardFont
-  {
-    BoardFont();
-    void initialize();
-
-    int width;
-    int height;
-    ComPtr<ID3D11ShaderResourceView> srv;
-  } mBoardFont;
 
   struct Board
   {
@@ -97,8 +98,8 @@ private:
     ComPtr<ID3D11ShaderResourceView> srv;
 
 
-    void update( BoardFont const& font, int width, int height );
-    void render( BoardFont const& font, std::span<uint8_t const> data );
+    void update( int width, int height );
+    void render( std::span<uint8_t const> data );
   };
 
 
