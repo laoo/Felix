@@ -350,7 +350,7 @@ std::span<uint32_t const, 16> DX11Renderer::safePalette()
     0xff00aaaa,
     0xffaa0000,
     0xffaa00aa,
-    0xffaaaa00,
+    0xffaa5500,
     0xffaaaaaa,
     0xff555555,
     0xff5555ff,
