@@ -48,13 +48,14 @@ constexpr VidOperator::MemOp stateFun()
 }
 
 template<int... I>
-static std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE*8> makeStateFunc( std::integer_sequence<int, I...> )
+static std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE * 8> makeStateFunc( std::integer_sequence<int, I...> )
 {
-  return { stateFun<SuzySprite<(Suzy::Sprite)(I>>6)>,I>()... };
+  return { stateFun<SuzySprite<(Suzy::Sprite)( I >> 6 )>,I>()... };
 }
 
+const std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE * 8> VidOperator::mStateFuncs = makeStateFunc( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE * 8>{} );
+
 VidOperator::VidOperator( Suzy::Sprite spriteType ) :
-  mStateFuncs{ makeStateFunc( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE * 8>{} ) },
   mSpriteType{ (int)spriteType }, mOff{}, mOp{}, mVidAdr{}, mEdge{}
 {
 }
