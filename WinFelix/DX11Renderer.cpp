@@ -19,6 +19,26 @@
 namespace
 {
 
+//CGA palette
+static constexpr std::array<uint32_t, 16> gSafePalette = {
+  0xff000000,
+  0xff0000aa,
+  0xff00aa00,
+  0xff00aaaa,
+  0xffaa0000,
+  0xffaa00aa,
+  0xffaa5500,
+  0xffaaaaaa,
+  0xff555555,
+  0xff5555ff,
+  0xff55ff55,
+  0xff55ffff,
+  0xffff5555,
+  0xffff55ff,
+  0xffffff55,
+  0xffffffff
+};
+
 struct CBPosSize
 {
   int32_t posx;
@@ -341,31 +361,6 @@ std::shared_ptr<ICustomScreenView> DX11Renderer::makeCustomScreenView()
   return std::make_shared<CustomScreenView>();
 }
 
-std::span<uint32_t const, 16> DX11Renderer::safePalette()
-{
-  static constexpr std::array<uint32_t, 16> palette = {
-    0xff000000,
-    0xff0000aa,
-    0xff00aa00,
-    0xff00aaaa,
-    0xffaa0000,
-    0xffaa00aa,
-    0xffaa5500,
-    0xffaaaaaa,
-    0xff555555,
-    0xff5555ff,
-    0xff55ff55,
-    0xff55ffff,
-    0xffff5555,
-    0xffff55ff,
-    0xffffff55,
-    0xffffffff
-  };
-
-  return std::span<uint32_t const, 16>( palette.data(), 16 );
-}
-
-
 void DX11Renderer::Board::render(  std::span<uint8_t const> data )
 {
   gImmediateContext->UpdateSubresource( src.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
@@ -570,8 +565,7 @@ void* DX11Renderer::CustomScreenView::update( std::span<uint8_t const> data, std
 
   if ( palette.size() != 32 )
   {
-    auto pal = DX11Renderer::safePalette();
-    gImmediateContext->UpdateSubresource( mPalette.Get(), 0, nullptr, pal.data(), 16 * 4, 0 );
+    gImmediateContext->UpdateSubresource( mPalette.Get(), 0, nullptr, gSafePalette.data(), 16 * 4, 0 );
   }
   else
   {

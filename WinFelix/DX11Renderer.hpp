@@ -41,7 +41,6 @@ private:
   void renderGui( UI& ui );
   void renderScreenView( ScreenGeometry const& geometry, ID3D11ShaderResourceView* sourceSRV, ID3D11UnorderedAccessView* target );
   bool mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView );
-  static std::span<uint32_t const, 16> safePalette();
 
 private:
 
