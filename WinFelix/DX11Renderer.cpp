@@ -338,8 +338,7 @@ ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<
   else
   {
     bool success;
-    std::tie( it, success ) = mBoards.insert( { id, Board{} } );
-    it->second.resize( width, height );
+    std::tie( it, success ) = mBoards.insert( { id, Board{ width, height } } );
   }
 
   return it->second.render( data );
@@ -442,8 +441,9 @@ uint8_t const* DX11Renderer::HexFont::src( size_t idx, size_t row )
   return &hex_6x12[idx * srcWidth * srcHeight + row * srcWidth];
 }
 
-DX11Renderer::Board::Board()
+DX11Renderer::Board::Board( int width, int height ) : width{}, height{}
 {
+  resize( width, height );
 }
 
 void DX11Renderer::Board::resize( int w, int h )

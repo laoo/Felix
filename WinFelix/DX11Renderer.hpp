@@ -91,7 +91,7 @@ private:
   class Board : public IBoard
   {
   public:
-    Board();
+    Board( int width, int height );
     ~Board() override = default;
 
     void* render( std::span<uint8_t const> data ) override;
