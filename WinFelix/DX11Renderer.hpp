@@ -12,6 +12,7 @@ public:
 
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
+  std::shared_ptr<IBoard> makeBoard( int width, int height ) override;
   void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
 
   std::shared_ptr<IScreenView> makeMainScreenView() override;
@@ -87,18 +88,23 @@ private:
   };
 
 
-  struct Board
+  class Board : public IBoard
   {
+  public:
+    Board();
+    ~Board() override = default;
+
+    void* render( std::span<uint8_t const> data ) override;
+    void resize( int width, int height ) override;
+
     int width;
     int height;
-    ComPtr<ID3D11Texture2D> src;
-    ComPtr<ID3D11ShaderResourceView> srcSRV;
-    ComPtr<ID3D11UnorderedAccessView> uav;
-    ComPtr<ID3D11ShaderResourceView> srv;
+    ComPtr<ID3D11Texture2D> mSrc;
+    ComPtr<ID3D11ShaderResourceView> mSrcSRV;
+    ComPtr<ID3D11UnorderedAccessView> mUav;
+    ComPtr<ID3D11ShaderResourceView> mSrv;
 
 
-    void update( int width, int height );
-    void render( std::span<uint8_t const> data );
   };
 
 

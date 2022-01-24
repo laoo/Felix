@@ -35,6 +35,15 @@ public:
   virtual void* render( std::span<uint8_t const> data, std::span<uint8_t const> palette ) = 0;
 };
 
+class IBoard
+{
+public:
+  virtual ~IBoard() = default;
+
+  virtual void* render( std::span<uint8_t const> data ) = 0;
+  virtual void resize( int width, int height ) = 0;
+};
+
 class IExtendedRenderer
 {
 public:
@@ -42,6 +51,7 @@ public:
 
   virtual std::shared_ptr<IScreenView> makeMainScreenView() = 0;
   virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView() = 0;
+  virtual std::shared_ptr<IBoard> makeBoard( int width, int height ) = 0;
 
   virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) = 0;
 };
