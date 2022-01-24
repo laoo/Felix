@@ -229,21 +229,90 @@ void Manager::updateDebugWindows()
   {
     auto & cpuVis = mDebugger.cpuVisualizer();
     cpu.printStatus( std::span<uint8_t, 3 * 14>( cpuVis.data.data(), cpuVis.data.size() ) );
+
+    if ( !mDebugWindows.cpuBoard )
+    {
+      mDebugWindows.cpuBoard = mExtendedRenderer->makeBoard( cpuVis.columns, cpuVis.rows );
+    }
   }
+  else if ( mDebugWindows.cpuBoard )
+  {
+    mDebugWindows.cpuBoard.reset();
+  }
+
 
   if ( mDebugger.isDisasmVisualized() )
   {
     auto & disVis = mDebugger.disasmVisualizer();
     cpu.disassemblyFromPC( mInstance->debugRAM(), (char*)disVis.data.data(), disVis.columns, disVis.rows );
+
+    if ( !mDebugWindows.disasmBoard )
+    {
+      mDebugWindows.disasmBoard = mExtendedRenderer->makeBoard( disVis.columns, disVis.rows );
+    }
+  }
+  else if ( !mDebugWindows.disasmBoard )
+  {
+    mDebugWindows.disasmBoard.reset();
   }
 
   if ( mDebugger.isHistoryVisualized() )
   {
     auto & hisVis = mDebugger.historyVisualizer();
     cpu.copyHistory( std::span<char>( (char*)hisVis.data.data(), hisVis.data.size() ) );
+
+    if ( !mDebugWindows.historyBoard )
+    {
+      mDebugWindows.historyBoard = mExtendedRenderer->makeBoard( hisVis.columns, hisVis.rows );
+    }
+  }
+  else if ( !mDebugWindows.historyBoard )
+  {
+    mDebugWindows.historyBoard.reset();
   }
 }
 
+BoardRendering Manager::renderCPUWindow()
+{
+  if ( mDebugger.isCPUVisualized() && mDebugWindows.cpuBoard )
+  {
+    auto win = mDebugger.cpuVisualizer();
+    auto tex = mDebugWindows.cpuBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
+  }
+  else
+  {
+    return {};
+  }
+}
+
+BoardRendering Manager::renderDisasmWindow()
+{
+  if ( mDebugger.isDisasmVisualized() && mDebugWindows.disasmBoard )
+  {
+    auto win = mDebugger.disasmVisualizer();
+    auto tex = mDebugWindows.disasmBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
+  }
+  else
+  {
+    return {};
+  }
+}
+
+BoardRendering Manager::renderHistoryWindow()
+{
+  if ( mDebugger.isHistoryVisualized() && mDebugWindows.historyBoard )
+  {
+    auto win = mDebugger.historyVisualizer();
+    auto tex = mDebugWindows.historyBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
+  }
+  else
+  {
+    return {};
+  }
+}
 
 void Manager::processLua( std::filesystem::path const& path )
 {

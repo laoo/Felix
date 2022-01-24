@@ -44,7 +44,10 @@ private:
   bool handleCopyData( COPYDATASTRUCT const* copy );
 
   void updateDebugWindows();
-
+  BoardRendering renderCPUWindow();
+  BoardRendering renderDisasmWindow();
+  BoardRendering renderHistoryWindow();
+  
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
 private:
 
@@ -63,6 +66,9 @@ private:
   {
     std::shared_ptr<IScreenView> mainScreenView;
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
+    std::shared_ptr<IBoard> cpuBoard;
+    std::shared_ptr<IBoard> disasmBoard;
+    std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
 
   UI mUI;

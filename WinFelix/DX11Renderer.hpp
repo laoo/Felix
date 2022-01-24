@@ -13,7 +13,6 @@ public:
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
   std::shared_ptr<IBoard> makeBoard( int width, int height ) override;
-  void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) override;
 
   std::shared_ptr<IScreenView> makeMainScreenView() override;
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
@@ -133,7 +132,6 @@ private:
 
   boost::rational<int32_t>          mRefreshRate;
   std::shared_ptr<EncodingRenderer> mEncodingRenderer;
-  std::unordered_map<int, Board>    mBoards;
   mutable std::mutex                mDebugViewMutex;
   std::weak_ptr<ScreenView>         mMainScreenView;
 };

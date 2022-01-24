@@ -401,50 +401,40 @@ bool UI::mainMenu( ImGuiIO& io )
   return openMenu;
 }
 
-void UI::renderBoard( DebugWindow& win )
-{
-  assert( mManager.mExtendedRenderer );
-  auto tex = mManager.mExtendedRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
-  ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
-}
-
 void UI::drawDebugWindows( ImGuiIO& io )
 {
   assert( mManager.mExtendedRenderer );
 
   std::unique_lock<std::mutex> l{ mManager.mDebugger.mutex };
 
-  bool cpuWindow = mManager.mDebugger.isCPUVisualized();
-  bool disasmWindow = mManager.mDebugger.isDisasmVisualized();
-  bool historyWindow = mManager.mDebugger.isHistoryVisualized();
+  auto cpuRendering = mManager.renderCPUWindow();
+  auto disasmRendering = mManager.renderDisasmWindow();
+  auto historyRendering = mManager.renderHistoryWindow();
   bool debugMode = mManager.mDebugger.isDebugMode();
 
   if ( debugMode )
   {
     ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
 
-    if ( cpuWindow )
+    if ( cpuRendering.enabled )
     {
-      ImGui::Begin( "CPU", &cpuWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      renderBoard( mManager.mDebugger.cpuVisualizer() );
+      ImGui::Begin( "CPU", &cpuRendering.enabled, ImGuiWindowFlags_AlwaysAutoResize );
+      ImGui::Image( cpuRendering.window, ImVec2{ cpuRendering.width, cpuRendering.height } );
       ImGui::End();
-      mManager.mDebugger.visualizeCPU( cpuWindow );
     }
 
-    if ( disasmWindow )
+    if ( disasmRendering.enabled )
     {
-      ImGui::Begin( "Disassembly", &disasmWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      renderBoard( mManager.mDebugger.disasmVisualizer() );
+      ImGui::Begin( "Disassembly", &disasmRendering.enabled, ImGuiWindowFlags_AlwaysAutoResize );
+      ImGui::Image( disasmRendering.window, ImVec2{ disasmRendering.width, disasmRendering.height } );
       ImGui::End();
-      mManager.mDebugger.visualizeDisasm( disasmWindow );
     }
 
-    if ( historyWindow )
+    if ( historyRendering.enabled )
     {
-      ImGui::Begin( "History", &historyWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      renderBoard( mManager.mDebugger.historyVisualizer() );
+      ImGui::Begin( "History", &historyRendering.enabled, ImGuiWindowFlags_AlwaysAutoResize );
+      ImGui::Image( historyRendering.window, ImVec2{ historyRendering.width, historyRendering.height } );
       ImGui::End();
-      mManager.mDebugger.visualizeHistory( historyWindow );
     }
 
     if ( auto mainScreenView = mManager.mDebugWindows.mainScreenView )
@@ -572,18 +562,11 @@ void UI::drawDebugWindows( ImGuiIO& io )
 
     if ( ImGui::BeginPopupContextVoid() )
     {
-      if ( ImGui::Checkbox( "CPU Window", &cpuWindow ) )
+      ImGui::Checkbox( "CPU Window", &cpuRendering.enabled );
+      ImGui::Checkbox( "Disassembly Window", &disasmRendering.enabled );
+      if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
       {
-        mManager.mDebugger.visualizeCPU( cpuWindow );
-      }
-      if ( ImGui::Checkbox( "Disassembly Window", &disasmWindow ) )
-      {
-        mManager.mDebugger.visualizeDisasm( disasmWindow );
-      }
-      if ( ImGui::Checkbox( "History Window", &historyWindow ) )
-      {
-        mManager.mDebugger.visualizeHistory( historyWindow );
-        if ( historyWindow )
+        if ( historyRendering.enabled )
         {
           mManager.mInstance->debugCPU().enableHistory( mManager.mDebugger.historyVisualizer().columns, mManager.mDebugger.historyVisualizer().rows );
         }
@@ -598,6 +581,10 @@ void UI::drawDebugWindows( ImGuiIO& io )
       }
       ImGui::EndPopup();
     }
+
+    mManager.mDebugger.visualizeCPU( cpuRendering.enabled );
+    mManager.mDebugger.visualizeDisasm( disasmRendering.enabled );
+    mManager.mDebugger.visualizeHistory( historyRendering.enabled );
   }
 }
 

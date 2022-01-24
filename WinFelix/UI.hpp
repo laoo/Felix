@@ -11,6 +11,14 @@ namespace ImGui
 class FileBrowser;
 }
 
+struct BoardRendering
+{
+  bool enabled;
+  void* window;
+  float width;
+  float height;
+};
+
 class UI
 {
 public:
@@ -24,7 +32,6 @@ private:
   void drawDebugWindows( ImGuiIO& io );
   void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
   void imagePropertiesWindow( bool init );
-  void renderBoard( DebugWindow& win );
 
 private:
   Manager& mManager;

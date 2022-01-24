@@ -52,8 +52,6 @@ public:
   virtual std::shared_ptr<IScreenView> makeMainScreenView() = 0;
   virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView() = 0;
   virtual std::shared_ptr<IBoard> makeBoard( int width, int height ) = 0;
-
-  virtual void* renderBoard( int id, int width, int height, std::span<uint8_t const> data ) = 0;
 };
 
 

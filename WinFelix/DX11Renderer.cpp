@@ -171,7 +171,7 @@ std::shared_ptr<IExtendedRenderer> DX11Renderer::extendedRenderer()
 
 std::shared_ptr<IBoard> DX11Renderer::makeBoard( int width, int height )
 {
-  return std::shared_ptr<IBoard>();
+  return std::make_shared<Board>( width, height );
 }
 
 bool DX11Renderer::mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView )
@@ -325,23 +325,6 @@ void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11Shade
   SRVGuard srvg{ gImmediateContext, sourceSRV };
   gImmediateContext->CSSetShader( gRendererCS.Get(), nullptr, 0 );
   gImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
-}
-
-
-ImTextureID DX11Renderer::renderBoard( int id, int width, int height, std::span<uint8_t const> data )
-{
-  auto it = mBoards.find( id );
-  if ( it != mBoards.end() )
-  {
-    it->second.resize( width, height );
-  }
-  else
-  {
-    bool success;
-    std::tie( it, success ) = mBoards.insert( { id, Board{ width, height } } );
-  }
-
-  return it->second.render( data );
 }
 
 std::shared_ptr<IScreenView> DX11Renderer::makeMainScreenView()
