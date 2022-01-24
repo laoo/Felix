@@ -18,9 +18,9 @@ Debugger::Debugger() : mutex{},
                                 mVisualizeHistory{},
                                 mDebugModeOnBreak{},
                                 mNormalModeOnRun{},
-                                mCpuVisualizer{ 0, CPU_WIDTH, CPU_HEIGHT },
-                                mDisasmVisualizer{ 1, DISASM_WIDTH, DISASM_HEIGHT },
-                                mHistoryVisualizer{ 2, HISTORY_WIDTH, HISTORY_HEIGHT },
+                                mCpuVisualizer{ CPU_WIDTH, CPU_HEIGHT },
+                                mDisasmVisualizer{ DISASM_WIDTH, DISASM_HEIGHT },
+                                mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
                                 mRunMode{ RunMode::RUN }
 {
   auto sysConfig = gConfigProvider.sysConfig();

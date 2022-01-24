@@ -5,12 +5,11 @@
 
 struct DebugWindow
 {
-  DebugWindow( int id, int columns, int rows ) : id{ id }, columns{ columns }, rows{ rows }
+  DebugWindow( int columns, int rows ) : columns{ columns }, rows{ rows }
   {
     data.resize( columns* rows );
   }
 
-  int id;
   int columns;
   int rows;
   std::vector<uint8_t> data;
