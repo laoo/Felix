@@ -556,10 +556,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
         }
         it->second->resize( (int)size.x, (int)size.y );
       }
-      else
-      {
-        assert( false );
-      }
 
       ImGui::End();
       ImGui::PopStyleVar();
