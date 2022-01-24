@@ -22,7 +22,7 @@ class IScreenView
 public:
   virtual ~IScreenView() = default;
 
-  virtual void update( int width, int height ) = 0;
+  virtual void resize( int width, int height ) = 0;
   virtual void* getTexture() = 0;
 };
 
@@ -31,8 +31,8 @@ class ICustomScreenView
 public:
   virtual ~ICustomScreenView() = default;
 
-  virtual void update( int width, int height ) = 0;
-  virtual void* update( std::span<uint8_t const> data, std::span<uint8_t const> palette ) = 0;
+  virtual void resize( int width, int height ) = 0;
+  virtual void* render( std::span<uint8_t const> data, std::span<uint8_t const> palette ) = 0;
 };
 
 class IExtendedRenderer

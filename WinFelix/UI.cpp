@@ -401,6 +401,12 @@ bool UI::mainMenu( ImGuiIO& io )
   return openMenu;
 }
 
+void UI::renderBoard( DebugWindow& win )
+{
+  assert( mManager.mExtendedRenderer );
+  auto tex = mManager.mExtendedRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+  ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
+}
 
 void UI::drawDebugWindows( ImGuiIO& io )
 {
@@ -457,7 +463,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       }
       ImGui::End();
       ImGui::PopStyleVar();
-      mainScreenView->update( (int)size.x, (int)size.y );
+      mainScreenView->resize( (int)size.x, (int)size.y );
     }
 
     std::vector<int> removedIds;
@@ -544,11 +550,11 @@ void UI::drawDebugWindows( ImGuiIO& io )
       auto it = std::ranges::find( mManager.mDebugWindows.customScreenViews, sv.id, []( auto const& p ) { return p.first; } );
       if ( it != mManager.mDebugWindows.customScreenViews.cend() )
       {
-        if ( auto tex = it->second->update( data, palette ) )
+        if ( auto tex = it->second->render( data, palette ) )
         {
           ImGui::Image( tex, size );
         }
-        it->second->update( (int)size.x, (int)size.y );
+        it->second->resize( (int)size.x, (int)size.y );
       }
       else
       {
@@ -768,9 +774,4 @@ void UI::imagePropertiesWindow( bool init )
   }
 }
 
-void UI::renderBoard( DebugWindow& win )
-{
-  assert( mManager.mExtendedRenderer );
-  auto tex = mManager.mExtendedRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
-  ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
-}
+

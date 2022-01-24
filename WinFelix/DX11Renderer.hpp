@@ -50,8 +50,8 @@ private:
     ScreenView();
     ~ScreenView() override = default;
 
-    void update( ImageProperties::Rotation rotation );
-    void update( int width, int height ) override;
+    void rotate( ImageProperties::Rotation rotation );
+    void resize( int width, int height ) override;
     void* getTexture() override;
     ScreenGeometry const& getGeometry() const;
     ID3D11UnorderedAccessView* getUAV();
@@ -74,9 +74,9 @@ private:
   public:
     CustomScreenView();
     ~CustomScreenView() override = default;
-    void update( int width, int height ) override;
+    void resize( int width, int height ) override;
 
-    void* update( std::span<uint8_t const> data, std::span<uint8_t const> palette ) override;
+    void* render( std::span<uint8_t const> data, std::span<uint8_t const> palette ) override;
 
   private:
     ComPtr<ID3D11Texture2D>           mSource;

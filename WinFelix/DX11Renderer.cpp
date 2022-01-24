@@ -217,7 +217,7 @@ void DX11Renderer::updateRotation()
 {
   if ( auto mainScreenView = mMainScreenView.lock() )
   {
-    mainScreenView->update( mRotation );
+    mainScreenView->rotate( mRotation );
   }
 }
 
@@ -350,7 +350,7 @@ std::shared_ptr<IScreenView> DX11Renderer::makeMainScreenView()
   else
   {
     auto ptr = std::make_shared<ScreenView>();
-    ptr->update( mRotation );
+    ptr->rotate( mRotation );
     mMainScreenView = ptr;
     return ptr;
   }
@@ -471,12 +471,12 @@ DX11Renderer::ScreenView::ScreenView()
 {
 }
 
-void DX11Renderer::ScreenView::update( ImageProperties::Rotation rotation )
+void DX11Renderer::ScreenView::rotate( ImageProperties::Rotation rotation )
 {
   mGeometryChanged |= mGeometry.update( mGeometry.windowWidth(), mGeometry.windowHeight(), rotation );
 }
 
-void DX11Renderer::ScreenView::update( int width, int height )
+void DX11Renderer::ScreenView::resize( int width, int height )
 {
   mGeometryChanged |= mGeometry.update( width, height, mGeometry.rotation() );
 }
@@ -546,12 +546,12 @@ DX11Renderer::CustomScreenView::CustomScreenView() : ScreenView{}
   V_THROW( gD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
 }
 
-void DX11Renderer::CustomScreenView::update( int width, int height )
+void DX11Renderer::CustomScreenView::resize( int width, int height )
 {
-  ScreenView::update( width, height );
+  ScreenView::resize( width, height );
 }
 
-void* DX11Renderer::CustomScreenView::update( std::span<uint8_t const> data, std::span<uint8_t const> palette )
+void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std::span<uint8_t const> palette )
 {
   auto rawUAV = getUAV();
   if ( !rawUAV )
