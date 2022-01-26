@@ -85,7 +85,7 @@ struct CPUState
     result.padding = ' ';
     result.interrupt = (uint8_t)I_RESET;
     result.pc = 0;
-    result.s = 0x1ff;
+    result.s = 0x100;
     result.op = Opcode::BRK_BRK;
     result.a = 0;
     result.x = 0;
