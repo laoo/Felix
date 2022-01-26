@@ -183,7 +183,9 @@ uint8_t Suzy::read( uint16_t address )
   }
   case SWITCHES:
   {
-    uint8_t switches = mInputSource->getInput( mLeftHand != 0 ).switches();
+    uint8_t switches = mInputSource->getInput( mLeftHand != 0 ).switches() |
+      ( mCore.getCartridge().isCart0Inactive() ? SWITCHES::CART0_STROBE : 0 ) |
+      ( mCore.getCartridge().isCart1Inactive() ? SWITCHES::CART1_STROBE : 0 );
     return switches;
   }
   case RCART0:

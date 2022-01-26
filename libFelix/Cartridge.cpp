@@ -138,6 +138,19 @@ void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
   }
 }
 
+bool Cartridge::isCart0Inactive() const
+{
+  //I don't know what does it mean, but normally it's true
+  return true;
+}
+
+bool Cartridge::isCart1Inactive() const
+{
+  //I don't know what does it mean, but normally it's true
+  return true;
+}
+
+
 uint8_t Cartridge::peek( CartBank const & bank )
 {
   mTraceHelper->comment( "Cart read from ${:02x}:${:03x}.", mShiftRegister, mCounter );
