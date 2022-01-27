@@ -75,21 +75,27 @@ struct CPUState
 
   static CPUState reset()
   {
+    std::random_device r{};
+    std::default_random_engine e{r()};
+    std::uniform_int_distribution randomByte{ 0, 255 };
+
     CPUState result;
-    result.n.clear();
-    result.v.clear();
+    result.n.set( randomByte( e ) > 127 );
+    result.v.set( randomByte( e ) > 127 );
     result.d.clear();
-    result.i.clear();
-    result.z.clear();
-    result.c.clear();
+    result.i.set();
+    result.z.set( randomByte( e ) > 127 );
+    result.c.set( randomByte( e ) > 127 );
     result.padding = ' ';
     result.interrupt = (uint8_t)I_RESET;
-    result.pc = 0;
-    result.s = 0x100;
+    result.pch = randomByte( e );
+    result.pcl = randomByte( e );
+    result.sh = 0x01;
+    result.sl = randomByte( e );
     result.op = Opcode::BRK_BRK;
-    result.a = 0;
-    result.x = 0;
-    result.y = 0;
+    result.a = randomByte( e );
+    result.x = randomByte( e );
+    result.y = randomByte( e );
     result.ea = 0;
     result.fa = 0;
     result.t = 0;
