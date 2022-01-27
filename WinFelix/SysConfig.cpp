@@ -71,30 +71,30 @@ void SysConfig::serialize( std::filesystem::path path )
 
 void SysConfig::load( sol::state const& lua )
 {
-  mainWindow.x = lua["mainWindow"]["x"].get_or( CW_USEDEFAULT );
-  mainWindow.y = lua["mainWindow"]["y"].get_or( CW_USEDEFAULT );
-  mainWindow.width = lua["mainWindow"]["width"].get_or( 960 );
-  mainWindow.height = lua["mainWindow"]["height"].get_or( 630 );
-  singleInstance = lua["singleInstance"];
-  bootROM.useExternal = lua["bootROM"]["useExternal"];
-  bootROM.path = lua["bootROM"]["path"].get<std::string>();
-  keyMapping.pause = lua["keyMapping"]["pause"];
-  keyMapping.down = lua["keyMapping"]["down"];
-  keyMapping.up = lua["keyMapping"]["up"];
-  keyMapping.right = lua["keyMapping"]["right"];
-  keyMapping.left = lua["keyMapping"]["left"];
-  keyMapping.option1 = lua["keyMapping"]["option1"];
-  keyMapping.option2 = lua["keyMapping"]["option2"];
-  keyMapping.inner = lua["keyMapping"]["inner"];
-  keyMapping.outer = lua["keyMapping"]["outer"];
-  lastOpenDirectory = lua["lastOpenDirectory"].get<std::string>();
-  debugMode = lua["debugMode"].get_or( false );
-  visualizeCPU = lua["visualizeCPU"].get_or( false );
-  visualizeDisasm = lua["visualizeDisasm"].get_or( false );
-  visualizeHistory = lua["visualizeHistory"].get_or( false );
-  debugModeOnBreak = lua["debugModeOnBreak"].get_or( true );
-  normalModeOnRun = lua["normalModeOnRun"].get_or( false );
-  breakOnBrk = lua["breakOnBrk"].get_or( false );
+  mainWindow.x = lua["mainWindow"]["x"].get_or( mainWindow.x );
+  mainWindow.y = lua["mainWindow"]["y"].get_or( mainWindow.y );
+  mainWindow.width = lua["mainWindow"]["width"].get_or( mainWindow.width );
+  mainWindow.height = lua["mainWindow"]["height"].get_or( mainWindow.height );
+  singleInstance = lua["singleInstance"].get_or( singleInstance );
+  bootROM.useExternal = lua["bootROM"]["useExternal"].get_or( bootROM.useExternal );
+  bootROM.path = lua["bootROM"]["path"].get_or<std::string>( {} );
+  keyMapping.pause = lua["keyMapping"]["pause"].get_or( keyMapping.pause );
+  keyMapping.down = lua["keyMapping"]["down"].get_or( keyMapping.down );
+  keyMapping.up = lua["keyMapping"]["up"].get_or( keyMapping.up );
+  keyMapping.right = lua["keyMapping"]["right"].get_or( keyMapping.right );
+  keyMapping.left = lua["keyMapping"]["left"].get_or( keyMapping.left );
+  keyMapping.option1 = lua["keyMapping"]["option1"].get_or( keyMapping.option1 );
+  keyMapping.option2 = lua["keyMapping"]["option2"].get_or( keyMapping.option2 );
+  keyMapping.inner = lua["keyMapping"]["inner"].get_or( keyMapping.inner );
+  keyMapping.outer = lua["keyMapping"]["outer"].get_or( keyMapping.outer );
+  lastOpenDirectory = lua["lastOpenDirectory"].get_or<std::string>( {} );
+  debugMode = lua["debugMode"].get_or( debugMode );
+  visualizeCPU = lua["visualizeCPU"].get_or( visualizeCPU );
+  visualizeDisasm = lua["visualizeDisasm"].get_or( visualizeDisasm );
+  visualizeHistory = lua["visualizeHistory"].get_or( visualizeHistory );
+  debugModeOnBreak = lua["debugModeOnBreak"].get_or( debugModeOnBreak );
+  normalModeOnRun = lua["normalModeOnRun"].get_or( normalModeOnRun );
+  breakOnBrk = lua["breakOnBrk"].get_or( breakOnBrk );
   if ( auto optSV = lua.get<sol::optional<sol::table>>( "screenViews" ) )
   {
     for ( auto sv : *optSV )
@@ -103,5 +103,5 @@ void SysConfig::load( sol::state const& lua )
       screenViews.emplace_back( tab.get<int>( 1 ), tab.get<int>( 2 ), tab.get<int>( 3 ), tab.get<sol::optional<bool>>( 4 ).value_or( false ) );
     }
   }
-  audio.mute = lua["audio"]["mute"].get_or( false );
+  audio.mute = lua["audio"]["mute"].get_or( audio.mute );
 }
