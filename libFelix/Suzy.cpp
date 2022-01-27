@@ -191,7 +191,12 @@ uint8_t Suzy::read( uint16_t address )
   case RCART0:
     return mCore.getCartridge().peekRCART0( mAccessTick );
   case RCART1:
-    return mCore.getCartridge().peekRCART1( mAccessTick );
+  {
+    //incrementing counter...
+    mCore.getCartridge().peekRCART1( mAccessTick );
+    //... but looks like mirror of joystick
+    return mInputSource->getInput( mLeftHand != 0 ).joystick();
+  }
   default:
     return uint8_t( 0xff );
   }
