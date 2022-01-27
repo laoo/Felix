@@ -118,6 +118,10 @@ bool UI::mainMenu( ImGuiIO& io )
       {
         mFileBrowser->SetTitle( "Open Cartridge image file" );
         mFileBrowser->SetTypeFilters( { ".lnx", ".lyx", ".o" } );
+        if ( auto openPath = gConfigProvider.sysConfig()->lastOpenDirectory; !openPath.empty() )
+        {
+          mFileBrowser->SetPwd( gConfigProvider.sysConfig()->lastOpenDirectory );
+        }
         mFileBrowser->Open();
         fileBrowserAction = FileBrowserAction::OPEN_CARTRIDGE;
       }
@@ -372,10 +376,6 @@ bool UI::mainMenu( ImGuiIO& io )
   modalWindow = ModalWindow::NONE;
 
 
-  if ( auto openPath = gConfigProvider.sysConfig()->lastOpenDirectory; !openPath.empty() )
-  {
-    mFileBrowser->SetPwd( gConfigProvider.sysConfig()->lastOpenDirectory );
-  }
   mFileBrowser->Display();
   if ( mFileBrowser->HasSelected() )
   {
