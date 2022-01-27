@@ -5,6 +5,7 @@
 #include <bit>
 #include <cassert>
 #include <chrono>
+#include <concepts>
 #include <coroutine>
 #include <cstdint>
 #include <filesystem>
@@ -15,6 +16,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <queue>
 #include <random>
 #include <span>

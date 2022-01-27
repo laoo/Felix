@@ -13,7 +13,7 @@ WinImgui11::~WinImgui11()
 }
 
 
-void WinImgui11::dx11_NewFrame()
+void WinImgui11::renderNewFrame()
 {
   if ( mFontSampler )
     return;
@@ -92,10 +92,10 @@ void WinImgui11::dx11_NewFrame()
     md3dDevice->CreateDepthStencilState( &desc, mDepthStencilState.ReleaseAndGetAddressOf() );
   }
 
-  dx11_CreateFontsTexture();
+  createFontsTexture();
 }
 
-void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
+void WinImgui11::renderDrawData( ImDrawData * draw_data )
 {
   // Avoid rendering when minimized
   if ( draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f )
@@ -171,53 +171,8 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
     ctx->Unmap( mVertexConstantBuffer.Get(), 0 );
   }
 
-  // Backup DX state that will be modified to restore it afterwards (unfortunately this is very ugly looking and verbose. Close your eyes!)
-  struct BACKUP_DX11_STATE
-  {
-    UINT                        ScissorRectsCount, ViewportsCount;
-    D3D11_RECT                  ScissorRects[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-    D3D11_VIEWPORT              Viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-    ID3D11RasterizerState*      RS;
-    ID3D11BlendState*           BlendState;
-    FLOAT                       BlendFactor[4];
-    UINT                        SampleMask;
-    UINT                        StencilRef;
-    ID3D11DepthStencilState*    DepthStencilState;
-    ID3D11ShaderResourceView*   PSShaderResource;
-    ID3D11SamplerState*         PSSampler;
-    ID3D11PixelShader*          PS;
-    ID3D11VertexShader*         VS;
-    ID3D11GeometryShader*       GS;
-    UINT                        PSInstancesCount, VSInstancesCount, GSInstancesCount;
-    ID3D11ClassInstance         *PSInstances[256], *VSInstances[256], *GSInstances[256];   // 256 is max according to PSSetShader documentation
-    D3D11_PRIMITIVE_TOPOLOGY    PrimitiveTopology;
-    ID3D11Buffer*               IndexBuffer, *VertexBuffer, *VSConstantBuffer;
-    UINT                        IndexBufferOffset, VertexBufferStride, VertexBufferOffset;
-    DXGI_FORMAT                 IndexBufferFormat;
-    ID3D11InputLayout*          InputLayout;
-  };
-  BACKUP_DX11_STATE old;
-  old.ScissorRectsCount = old.ViewportsCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
-  ctx->RSGetScissorRects( &old.ScissorRectsCount, old.ScissorRects );
-  ctx->RSGetViewports( &old.ViewportsCount, old.Viewports );
-  ctx->RSGetState( &old.RS );
-  ctx->OMGetBlendState( &old.BlendState, old.BlendFactor, &old.SampleMask );
-  ctx->OMGetDepthStencilState( &old.DepthStencilState, &old.StencilRef );
-  ctx->PSGetShaderResources( 0, 1, &old.PSShaderResource );
-  ctx->PSGetSamplers( 0, 1, &old.PSSampler );
-  old.PSInstancesCount = old.VSInstancesCount = old.GSInstancesCount = 256;
-  ctx->PSGetShader( &old.PS, old.PSInstances, &old.PSInstancesCount );
-  ctx->VSGetShader( &old.VS, old.VSInstances, &old.VSInstancesCount );
-  ctx->VSGetConstantBuffers( 0, 1, &old.VSConstantBuffer );
-  ctx->GSGetShader( &old.GS, old.GSInstances, &old.GSInstancesCount );
-
-  ctx->IAGetPrimitiveTopology( &old.PrimitiveTopology );
-  ctx->IAGetIndexBuffer( &old.IndexBuffer, &old.IndexBufferFormat, &old.IndexBufferOffset );
-  ctx->IAGetVertexBuffers( 0, 1, &old.VertexBuffer, &old.VertexBufferStride, &old.VertexBufferOffset );
-  ctx->IAGetInputLayout( &old.InputLayout );
-
   // Setup desired DX state
-  dx11_SetupRenderState( draw_data, ctx );
+  setupRenderState( draw_data, ctx );
 
   // Render command lists
   // (Because we merged all buffers into a single one, we maintain our own offset into them)
@@ -235,7 +190,7 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
         // User callback, registered via ImDrawList::AddCallback()
         // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
         if ( pcmd->UserCallback == ImDrawCallback_ResetRenderState )
-          dx11_SetupRenderState( draw_data, ctx );
+          setupRenderState( draw_data, ctx );
         else
           pcmd->UserCallback( cmd_list, pcmd );
       }
@@ -254,37 +209,11 @@ void WinImgui11::dx11_RenderDrawData( ImDrawData * draw_data )
     global_idx_offset += cmd_list->IdxBuffer.Size;
     global_vtx_offset += cmd_list->VtxBuffer.Size;
   }
-
-  // Restore modified DX state
-  ctx->RSSetScissorRects( old.ScissorRectsCount, old.ScissorRects );
-  ctx->RSSetViewports( old.ViewportsCount, old.Viewports );
-  ctx->RSSetState( old.RS ); if ( old.RS ) old.RS->Release();
-  ctx->OMSetBlendState( old.BlendState, old.BlendFactor, old.SampleMask ); if ( old.BlendState ) old.BlendState->Release();
-  ctx->OMSetDepthStencilState( old.DepthStencilState, old.StencilRef ); if ( old.DepthStencilState ) old.DepthStencilState->Release();
-  ctx->PSSetShaderResources( 0, 1, &old.PSShaderResource ); if ( old.PSShaderResource ) old.PSShaderResource->Release();
-  ctx->PSSetSamplers( 0, 1, &old.PSSampler ); if ( old.PSSampler ) old.PSSampler->Release();
-  ctx->PSSetShader( old.PS, old.PSInstances, old.PSInstancesCount ); if ( old.PS ) old.PS->Release();
-  for ( UINT i = 0; i < old.PSInstancesCount; i++ ) if ( old.PSInstances[i] ) old.PSInstances[i]->Release();
-  ctx->VSSetShader( old.VS, old.VSInstances, old.VSInstancesCount ); if ( old.VS ) old.VS->Release();
-  ctx->VSSetConstantBuffers( 0, 1, &old.VSConstantBuffer ); if ( old.VSConstantBuffer ) old.VSConstantBuffer->Release();
-  ctx->GSSetShader( old.GS, old.GSInstances, old.GSInstancesCount ); if ( old.GS ) old.GS->Release();
-  for ( UINT i = 0; i < old.VSInstancesCount; i++ ) if ( old.VSInstances[i] ) old.VSInstances[i]->Release();
-  //ctx->IASetPrimitiveTopology( old.PrimitiveTopology );
-  ctx->IASetIndexBuffer( old.IndexBuffer, old.IndexBufferFormat, old.IndexBufferOffset ); if ( old.IndexBuffer ) old.IndexBuffer->Release();
-  ctx->IASetVertexBuffers( 0, 1, &old.VertexBuffer, &old.VertexBufferStride, &old.VertexBufferOffset ); if ( old.VertexBuffer ) old.VertexBuffer->Release();
-  ctx->IASetInputLayout( old.InputLayout ); if ( old.InputLayout ) old.InputLayout->Release();
+  ID3D11ShaderResourceView* nullTex{};
+  ctx->PSSetShaderResources( 0, 1, &nullTex );
 }
 
-void* WinImgui11::createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt )
-{
-    return nullptr;
-}
-
-void WinImgui11::deleteTextureRaw( void* textureData )
-{
-}
-
-void WinImgui11::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
+void WinImgui11::setupRenderState( ImDrawData* draw_data, ID3D11DeviceContext* ctx )
 {
   // Setup viewport
   D3D11_VIEWPORT vp;
@@ -319,26 +248,7 @@ void WinImgui11::dx11_SetupRenderState( ImDrawData* draw_data, ID3D11DeviceConte
   ctx->RSSetState( mRasterizerState.Get() );
 }
 
-void WinImgui11::dx11_InvalidateDeviceObjects()
-{
-  if ( !md3dDevice )
-    return;
-
-  if ( mFontSampler ) { mFontSampler.Reset(); }
-  if ( mFontTextureView ) { mFontTextureView.Reset(); ImGui::GetIO().Fonts->TexID = NULL; } // We copied mFontTextureView to io.Fonts->TexID so let's clear that as well.
-  if ( mIB ) { mIB.Reset(); }
-  if ( mVB ) { mVB.Reset(); }
-
-  if ( mBlendState ) { mBlendState.Reset(); }
-  if ( mDepthStencilState ) { mDepthStencilState.Reset(); }
-  if ( mRasterizerState ) { mRasterizerState.Reset(); }
-  if ( mPixelShader ) { mPixelShader.Reset(); }
-  if ( mVertexConstantBuffer ) { mVertexConstantBuffer.Reset(); }
-  if ( mInputLayout ) { mInputLayout.Reset(); }
-  if ( mVertexShader ) { mVertexShader.Reset(); }
-}
-
-void WinImgui11::dx11_CreateFontsTexture()
+void WinImgui11::createFontsTexture()
 {
   // Build texture atlas
   ImGuiIO& io = ImGui::GetIO();

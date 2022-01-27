@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "Manager.hpp"
 #include "InputFile.hpp"
-#include "WinRenderer.hpp"
 #include "WinImgui.hpp"
 #include "WinAudioOut.hpp"
 #include "ComLynxWire.hpp"
@@ -17,46 +16,30 @@
 #include "ScriptDebuggerEscapes.hpp"
 #include "UserInput.hpp"
 #include "ImageROM.hpp"
-#include "KeyNames.hpp"
 #include "ImageProperties.hpp"
 #include "LuaProxies.hpp"
 #include "CPU.hpp"
 #include "DebugRAM.hpp"
-#include <imfilebrowser.h>
-
-/* Debug Window Sizes */
-#define DISASM_WIDTH   40
-#define DISASM_HEIGHT  16
-#define CPU_WIDTH      14
-#define CPU_HEIGHT      3
-#define HISTORY_WIDTH  64
-#define HISTORY_HEIGHT 16
-
-namespace
-{
 
 
-}
 
-Manager::Manager() : mLua{},
-                     mDoUpdate{ false },
+Manager::Manager() : mUI{ *this },
+                     mLua{},
+                     mDoReset{ false },
                      mDebugger{},
                      mProcessThreads{},
                      mJoinThreads{},
                      mRenderThread{},
                      mAudioThread{},
                      mRenderingTime{},
-                     mOpenMenu{ false },
-                     mFileBrowser{ std::make_unique<ImGui::FileBrowser>() },
                      mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
                      mIntputSource{},
-                     mKeyNames{ std::make_shared<KeyNames>() },
-                     mImageProperties{}
+                     mImageProperties{},
+                     mRenderer{}
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
   mDebugger( RunMode::RUN );
-  mRenderer = std::make_shared<WinRenderer>();
   mAudioOut = std::make_shared<WinAudioOut>( mDebugger.mRunMode );
   mComLynxWire = std::make_shared<ComLynxWire>();
   mIntputSource = std::make_shared<UserInput>( *sysConfig );
@@ -67,7 +50,7 @@ Manager::Manager() : mLua{},
     {
       if ( mProcessThreads.load() )
       {
-        auto renderingTime = mRenderer->render( *this );
+        auto renderingTime = mRenderer->render( mUI );
         std::scoped_lock<std::mutex> l{ mMutex };
         mRenderingTime = renderingTime;
       }
@@ -121,9 +104,9 @@ void Manager::update()
 {
   mIntputSource->updateGamepad();
 
-  if ( mDoUpdate )
+  if ( mDoReset )
     reset();
-  mDoUpdate = false;
+  mDoReset = false;
 }
 
 void Manager::doArg( std::wstring arg )
@@ -135,8 +118,9 @@ void Manager::doArg( std::wstring arg )
 void Manager::initialize( HWND hWnd )
 {
   mhWnd = hWnd;
-  assert( mRenderer );
-  mRenderer->initialize( hWnd, gConfigProvider.appDataFolder() );
+  assert( !mRenderer );
+  mRenderer = BaseRenderer::createRenderer( hWnd, gConfigProvider.appDataFolder() );
+  mExtendedRenderer = mRenderer->extendedRenderer();
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -154,22 +138,16 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
       sysConfig->mainWindow.height = r.bottom - r.top;
     }
     DestroyWindow( hWnd );
-    break;
+    return 0;
   case WM_DESTROY:
     PostQuitMessage( 0 );
-    break;
+    return 0;
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
     SetForegroundWindow( hWnd );
-    reset();
-    break;
+    return 0;
   case WM_COPYDATA:
-    if ( handleCopyData( std::bit_cast<COPYDATASTRUCT const*>( lParam ) ) )
-    {
-      reset();
-      return true;
-    }
-    break;
+    return handleCopyData( std::bit_cast<COPYDATASTRUCT const*>( lParam ) ) ? 1 : 0;
   case WM_KEYDOWN:
   case WM_SYSKEYDOWN:
     if ( wParam < 256 )
@@ -195,8 +173,6 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     assert( mRenderer );
     return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
   }
-
-  return 0;
 }
 
 Manager::~Manager()
@@ -214,738 +190,38 @@ void Manager::quit()
   PostMessage( mhWnd, WM_CLOSE, 0, 0 );
 }
 
-bool Manager::mainMenu( ImGuiIO& io )
-{
-  enum class FileBrowserAction
-  {
-    NONE,
-    OPEN_CARTRIDGE,
-    OPEN_BOOTROM
-  };
-
-  enum class ModalWindow
-  {
-    NONE,
-    PROPERTIES
-  };
-
-  static ModalWindow modalWindow = ModalWindow::NONE;
-  static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
-  static std::optional<KeyInput::Key> keyToConfigure;
-
-  auto configureKeyItem = [&]( char const* name, KeyInput::Key k )
-  {
-    ImGui::Text( name );
-    ImGui::SameLine( 60 );
-
-    if ( ImGui::Button( mKeyNames->name( mIntputSource->getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
-    {
-      keyToConfigure = k;
-      ImGui::OpenPopup( "Configure Key" );
-    }
-  };
-
-  auto sysConfig = gConfigProvider.sysConfig();
-
-  bool openMenu = false;
-  bool pauseRunIssued = false;
-  bool stepInIssued = false;
-  bool stepOverIssued = false;
-  bool stepOutIssued = false;
-  bool resetIssued = false;
-  bool debugMode = mDebugger.isDebugMode();
-
-  if ( ImGui::IsKeyPressed( VK_F3 ) )
-  {
-    resetIssued = true;
-  }
-
-  if ( ImGui::IsKeyPressed( VK_F4 ) )
-  {
-    debugMode = !debugMode;
-  }
-
-  if ( ImGui::IsKeyPressed( VK_F5 ) )
-  {
-    pauseRunIssued = true;
-  }
-  else if ( ImGui::IsKeyPressed( VK_F6 ) )
-  {
-    stepInIssued = true;
-  }
-  else if ( ImGui::IsKeyPressed( VK_F7 ) )
-  {
-    stepOverIssued = true;
-  }
-  else if ( ImGui::IsKeyPressed( VK_F8 ) )
-  {
-    stepOutIssued = true;
-  }
-
-
-  ImGui::PushStyleVar( ImGuiStyleVar_Alpha, mOpenMenu ? 1.0f : std::clamp( ( 100.0f - io.MousePos.y ) / 100.f, 0.0f, 1.0f ) );
-  if ( ImGui::BeginMainMenuBar() )
-  {
-    ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 1.0f );
-    if ( ImGui::BeginMenu( "File" ) )
-    {
-      openMenu = true;
-      if ( ImGui::MenuItem( "Open" ) )
-      {
-        mFileBrowser->SetTitle( "Open Cartridge image file" );
-        mFileBrowser->SetTypeFilters( { ".lnx", ".lyx", ".o" } );
-        mFileBrowser->Open();
-        fileBrowserAction = FileBrowserAction::OPEN_CARTRIDGE;
-      }
-      if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
-      {
-        quit();
-      }
-      ImGui::EndMenu();
-    }
-    ImGui::BeginDisabled( !(bool)mImageProperties );
-    if ( ImGui::BeginMenu( "Cartridge" ) )
-    {
-      openMenu = true;
-      if ( ImGui::MenuItem( "Properties", "Ctrl+P", nullptr ) )
-      {
-        modalWindow = ModalWindow::PROPERTIES;
-      }
-      ImGui::EndMenu();
-    }
-    ImGui::EndDisabled();
-    if ( ImGui::BeginMenu( "Audio" ) )
-    {
-      openMenu = true;
-      bool mute = mAudioOut->mute();
-      if ( ImGui::MenuItem( "Mute", "Ctrl+M", &mute ) )
-      {
-        mAudioOut->mute( mute );
-      }
-      ImGui::EndMenu();
-    }
-    if ( mRenderer->canRenderBoards() )
-    {
-      ImGui::BeginDisabled( !(bool)mInstance );
-      if ( ImGui::BeginMenu( "Debug" ) )
-      {
-        openMenu = true;
-
-        if ( ImGui::MenuItem( "Reset", "F3" ) )
-        {
-          resetIssued = true;
-        }
-
-        ImGui::MenuItem( "Debug Mode", "F4", &debugMode );
-
-        if ( ImGui::MenuItem( mDebugger.isPaused() ? "Run" : "Break", "F5") )
-        {
-          pauseRunIssued = true;
-        }
-        if ( ImGui::MenuItem( "Step In", "F6" ) )
-        {
-          stepInIssued = true;
-        }
-        if ( ImGui::MenuItem( "Step Over", "F7" ) )
-        {
-          stepOverIssued = true;
-        }
-        if ( ImGui::MenuItem( "Step Out", "F8" ) )
-        {
-          stepOutIssued = true;
-        }
-        if ( ImGui::BeginMenu( "Debug Windows" ) )
-        {
-          bool cpuWindow = mDebugger.isCPUVisualized();
-          bool disasmWindow = mDebugger.isDisasmVisualized();
-          bool historyWindow = mDebugger.isHistoryVisualized();
-          if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
-          {
-            mDebugger.visualizeCPU( cpuWindow );
-          }
-          if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
-          {
-            mDebugger.visualizeDisasm( disasmWindow );
-          }
-          if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
-          {
-            if ( historyWindow )
-            {
-              mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
-              mDebugger.visualizeHistory( true );
-            }
-            else
-            {
-              mInstance->debugCPU().disableHistory();
-              mDebugger.visualizeHistory( false );
-            }
-          }
-          ImGui::BeginDisabled( !mDebugger.isDebugMode() );
-          if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
-          {
-            mDebugger.newScreenView();
-          }
-          ImGui::EndDisabled();
-          ImGui::EndMenu();
-        }
-        if ( ImGui::BeginMenu( "Options" ) )
-        {
-          bool breakOnBrk = mDebugger.isBreakOnBrk();
-          bool debugModeOnBreak = mDebugger.debugModeOnBreak();
-          bool normalModeOnRun = mDebugger.normalModeOnRun();
-
-          if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
-          {
-            mDebugger.breakOnBrk( breakOnBrk );
-            mInstance->debugCPU().breakOnBrk( breakOnBrk );
-          }
-          if ( ImGui::MenuItem( "Debug mode on break", nullptr, &debugModeOnBreak ) )
-          {
-            mDebugger.debugModeOnBreak( debugModeOnBreak );
-          }
-          if ( ImGui::MenuItem( "Normal mode on run", nullptr, &normalModeOnRun ) )
-          {
-            mDebugger.normalModeOnRun( normalModeOnRun );
-          }
-          ImGui::EndMenu();
-        }
-        ImGui::EndMenu();
-      }
-      ImGui::EndDisabled();
-    }
-    if ( ImGui::BeginMenu( "Options" ) )
-    {
-      openMenu = true;
-      if ( ImGui::BeginMenu( "Input Configuration" ) )
-      {
-        configureKeyItem( "Left", KeyInput::LEFT );
-        configureKeyItem( "Right", KeyInput::RIGHT );
-        configureKeyItem( "Up", KeyInput::UP );
-        configureKeyItem( "Down", KeyInput::DOWN );
-        configureKeyItem( "A", KeyInput::OUTER );
-        configureKeyItem( "B", KeyInput::INNER );
-        configureKeyItem( "Opt1", KeyInput::OPTION1 );
-        configureKeyItem( "Pause", KeyInput::PAUSE );
-        configureKeyItem( "Opt2", KeyInput::OPTION2 );
-
-        configureKeyWindow( keyToConfigure );
-
-        ImGui::EndMenu();
-      }
-
-      if ( ImGui::BeginMenu( "Boot ROM" ) )
-      {
-        bool externalSelectEnabled = !sysConfig->bootROM.path.empty();
-        if ( ImGui::BeginMenu( "Use external ROM", externalSelectEnabled ) )
-        {
-          if ( ImGui::Checkbox( "Enabled", &sysConfig->bootROM.useExternal ) )
-          {
-            mDoUpdate = true;
-          }
-          if ( ImGui::MenuItem( "Clear boot ROM path" ) )
-          {
-            sysConfig->bootROM.path.clear();
-            if ( sysConfig->bootROM.useExternal )
-            {
-              sysConfig->bootROM.useExternal = false;
-              mDoUpdate = true;
-            }
-          }
-          ImGui::EndMenu();
-        }
-        if ( ImGui::MenuItem( "Select image" ) )
-        {
-          mFileBrowser->SetTitle( "Open boot ROM image file" );
-          mFileBrowser->SetTypeFilters( { ".img", ".*" } );
-          mFileBrowser->Open();
-          fileBrowserAction = FileBrowserAction::OPEN_BOOTROM;
-        }
-        ImGui::EndMenu();
-      }
-
-      ImGui::Checkbox( "Single emulator instance", &sysConfig->singleInstance );
-      ImGui::EndMenu();
-    }
-
-    ImGui::EndMainMenuBar();
-    ImGui::PopStyleVar();
-  }
-  ImGui::PopStyleVar();
-
-  if ( io.KeyCtrl )
-  {
-    if ( ImGui::IsKeyPressed( 'P' ) )
-    {
-      modalWindow = ModalWindow::PROPERTIES;
-    }
-    if ( ImGui::IsKeyPressed( 'C' ) )
-    {
-      mDebugger.visualizeCPU( !mDebugger.isCPUVisualized() );
-    }
-    if ( ImGui::IsKeyPressed( 'D' ) )
-    {
-      mDebugger.visualizeDisasm( !mDebugger.isDisasmVisualized() );
-    }
-    if ( ImGui::IsKeyPressed( 'H' ) )
-    {
-      bool historyWindow = !mDebugger.isHistoryVisualized();
-      if ( historyWindow )
-      {
-        mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
-        mDebugger.visualizeHistory( true );
-      }
-      else
-      {
-        mInstance->debugCPU().disableHistory();
-        mDebugger.visualizeHistory( false );
-      }
-    }
-    if ( ImGui::IsKeyPressed( 'S' ) && mDebugger.isDebugMode() )
-    {
-      mDebugger.newScreenView();
-    }
-    if ( ImGui::IsKeyPressed( 'M' ) )
-    {
-      mAudioOut->mute( !mAudioOut->mute() );
-    }
-  }
-
-  mDebugger.debugMode( debugMode );
-
-  if ( resetIssued )
-  {
-    reset();
-    mDebugger( RunMode::PAUSE );
-  }
-  if ( stepOutIssued )
-  {
-    mDebugger( RunMode::STEP_OUT );
-  }
-  if ( stepOverIssued )
-  {
-    mDebugger( RunMode::STEP_OVER );
-  }
-  if ( stepInIssued )
-  {
-    mDebugger( RunMode::STEP_IN );
-  }
-  else if ( pauseRunIssued )
-  {
-    mDebugger.togglePause();
-  }
-
-  switch ( modalWindow )
-  {
-  case ModalWindow::PROPERTIES:
-    ImGui::OpenPopup( "Image properties" );
-    break;
-  default:
-    break;
-  }
-
-  imagePropertiesWindow( modalWindow == ModalWindow::PROPERTIES );
-
-  modalWindow = ModalWindow::NONE;
-
-
-  if ( auto openPath = gConfigProvider.sysConfig()->lastOpenDirectory; !openPath.empty() )
-  {
-    mFileBrowser->SetPwd( gConfigProvider.sysConfig()->lastOpenDirectory );
-  }
-  mFileBrowser->Display();
-  if ( mFileBrowser->HasSelected() )
-  {
-    using enum FileBrowserAction;
-    switch ( fileBrowserAction )
-    {
-    case OPEN_CARTRIDGE:
-      mArg = mFileBrowser->GetSelected();
-      if ( auto parent = mArg.parent_path(); !parent.empty() )
-      {
-        gConfigProvider.sysConfig()->lastOpenDirectory = mArg.parent_path();
-      }
-      mDoUpdate = true;
-      break;
-    case OPEN_BOOTROM:
-      sysConfig->bootROM.path = mFileBrowser->GetSelected();
-      break;
-    }
-    mFileBrowser->ClearSelected();
-    fileBrowserAction = NONE;
-  }
-
-  return openMenu;
-}
-
-void Manager::configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure )
-{
-  if ( ImGui::BeginPopupModal( "Configure Key", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
-  {
-    if ( ImGui::BeginTable( "table", 3 ) )
-    {
-      ImGui::TableSetupColumn( "1", ImGuiTableColumnFlags_WidthFixed );
-      ImGui::TableSetupColumn( "2", ImGuiTableColumnFlags_WidthFixed, 100.0f );
-      ImGui::TableSetupColumn( "3", ImGuiTableColumnFlags_WidthFixed );
-
-      ImGui::TableNextRow();
-      ImGui::TableNextColumn();
-      ImGui::Text( "Press key" );
-      ImGui::TableNextRow( ImGuiTableRowFlags_None, 30.0f );
-      ImGui::TableNextColumn();
-      ImGui::TableNextColumn();
-      static int code = 0;
-      if ( code == 0 )
-      {
-        code = mIntputSource->getVirtualCode( *keyToConfigure );
-      }
-      if ( auto c = mIntputSource->firstKeyPressed() )
-      {
-        code = c;
-      }
-      ImGui::Text( mKeyNames->name( code ) );
-      ImGui::TableNextRow();
-      ImGui::TableNextColumn();
-      if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
-      {
-        mIntputSource->updateMapping( *keyToConfigure, code );
-        keyToConfigure = std::nullopt;
-        code = 0;
-        ImGui::CloseCurrentPopup();
-      }
-      ImGui::TableNextColumn();
-      ImGui::TableNextColumn();
-      ImGui::SetItemDefaultFocus();
-      if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
-      {
-        keyToConfigure = std::nullopt;
-        code = 0;
-        ImGui::CloseCurrentPopup();
-      }
-      ImGui::EndTable();
-    }
-    ImGui::EndPopup();
-  }
-}
-
-void Manager::imagePropertiesWindow( bool init )
-{
-  if ( ImGui::BeginPopupModal( "Image properties", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
-  {
-    static int rotation;
-    static ImageProperties::EEPROM eeprom;
-    if ( init )
-    {
-      rotation = (int)mImageProperties->getRotation();
-      eeprom = mImageProperties->getEEPROM();
-    }
-
-    auto isChanged = [&]
-    {
-      if ( rotation != (int)mImageProperties->getRotation() )
-        return true;
-      if ( eeprom.bits != mImageProperties->getEEPROM().bits )
-        return true;
-
-      return false;
-    };
-
-    auto cartName = mImageProperties->getCartridgeName();
-    auto manufName = mImageProperties->getMamufacturerName();
-    auto const& bankProps = mImageProperties->getBankProps();
-    ImGui::TextUnformatted( "Cart Name:" );
-    ImGui::SameLine();
-    ImGui::TextUnformatted( cartName.data(), cartName.data() + cartName.size() );
-    ImGui::TextUnformatted( "Manufacturer:" );
-    ImGui::SameLine();
-    ImGui::TextUnformatted( manufName.data(), manufName.data() + manufName.size() );
-    ImGui::TextUnformatted( "Size:" );
-    ImGui::SameLine();
-    if ( bankProps[2].numberOfPages > 0 )
-    {
-      ImGui::Text( "( %d + %d ) * %d B = %d B", bankProps[0].numberOfPages, bankProps[2].numberOfPages, bankProps[0].pageSize, ( bankProps[0].numberOfPages + bankProps[2].numberOfPages ) * bankProps[0].pageSize );
-    }
-    else
-    {
-      ImGui::Text( "%d * %d B = %d B", bankProps[0].numberOfPages, bankProps[0].pageSize, bankProps[0].numberOfPages * bankProps[0].pageSize );
-    }
-    if ( bankProps[1].pageSize * bankProps[1].numberOfPages > 0 )
-    {
-      ImGui::TextUnformatted( "Aux Size:" );
-      ImGui::SameLine();
-      if ( bankProps[3].numberOfPages > 0 )
-      {
-        ImGui::Text( "( %d + %d ) * %d B = %d B", bankProps[1].numberOfPages, bankProps[3].numberOfPages, bankProps[1].pageSize, ( bankProps[1].numberOfPages + bankProps[3].numberOfPages ) * bankProps[1].pageSize );
-      }
-      else
-      {
-        ImGui::Text( "%d * %d B = %d B", bankProps[1].numberOfPages, bankProps[1].pageSize, bankProps[1].numberOfPages * bankProps[1].pageSize );
-      }
-    }
-    ImGui::TextUnformatted( "AUDIn Used?:" );
-    ImGui::SameLine();
-    ImGui::TextUnformatted( mImageProperties->getAUDInUsed() ? "Yes" : "No" );
-    ImGui::TextUnformatted( "Rotation:" );
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth( 80 );
-    ImGui::Combo( "##r", &rotation, "Normal\0Left\0Right\0" );
-    ImGui::TextUnformatted( "EEPROM:" );
-    ImGui::SameLine();
-    int eepromType = eeprom.type();
-    ImGui::SetNextItemWidth( 80 );
-    if ( ImGui::Combo( "##", &eepromType, ImageProperties::EEPROM::NAMES.data(), ImageProperties::EEPROM::TYPE_COUNT ) )
-    {
-      eeprom.setType( eepromType );
-    }
-    if ( eeprom.type() != 0 )
-    {
-      ImGui::TextUnformatted( "EEPROM bitness:" );
-      ImGui::SameLine();
-      int bitness = eeprom.is16Bit() ? 1 : 0;
-      if ( ImGui::RadioButton( "8-bit", &bitness, 0 ) )
-      {
-        eeprom.set16bit( false );
-      }
-      ImGui::SameLine();
-      if ( ImGui::RadioButton( "16-bit", &bitness, 1 ) )
-      {
-        eeprom.set16bit( true );
-      }
-    }
-    ImGui::TextUnformatted( "SD Card support:" );
-    ImGui::SameLine();
-    int sd = eeprom.sd() ? 1 : 0;
-    if ( ImGui::RadioButton( "No", &sd, 0 ) )
-    {
-      eeprom.setSD( false );
-    }
-    ImGui::SameLine();
-    if ( ImGui::RadioButton( "Yes", &sd, 1 ) )
-    {
-      eeprom.setSD( true );
-    }
-    ImGui::BeginDisabled( !isChanged() );
-    if ( ImGui::Button( "Apply", ImVec2( 60, 0 ) ) )
-    {
-      mImageProperties->setRotation( rotation );
-      updateRotation();
-      if ( eeprom.bits != mImageProperties->getEEPROM().bits )
-      {
-        mImageProperties->setEEPROM( eeprom.bits );
-        mDoUpdate = true;
-      }
-      ImGui::CloseCurrentPopup();
-    }
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    ImGui::SetItemDefaultFocus();
-    if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
-    {
-      ImGui::CloseCurrentPopup();
-    }
-    ImGui::EndPopup();
-  }
-}
-
-void Manager::renderBoard( DebugWindow& win )
-{
-  auto tex = mRenderer->renderBoard( win.id, win.columns, win.rows, std::span<uint8_t const>{ win.data.data(), win.data.size() } );
-  ImGui::Image( tex, ImVec2{ 8.0f * win.columns , 16.0f * win.rows } );
-}
-
-void Manager::drawDebugWindows( ImGuiIO& io )
-{
-  std::unique_lock<std::mutex> l{ mDebugger.mutex };
-
-  bool cpuWindow = mDebugger.isCPUVisualized();
-  bool disasmWindow = mDebugger.isDisasmVisualized();
-  bool historyWindow = mDebugger.isHistoryVisualized();
-  bool debugMode = mDebugger.isDebugMode();
-
-  if ( debugMode )
-  {
-    ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
-
-    if ( cpuWindow )
-    {
-      ImGui::Begin( "CPU", &cpuWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      renderBoard( mDebugger.cpuVisualizer() );
-      ImGui::End();
-      mDebugger.visualizeCPU( cpuWindow );
-    }
-
-    if ( disasmWindow )
-    {
-      ImGui::Begin( "Disassembly", &disasmWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      renderBoard( mDebugger.disasmVisualizer() );
-      ImGui::End();
-      mDebugger.visualizeDisasm( disasmWindow );
-    }
-
-    if ( historyWindow )
-    {
-      ImGui::Begin( "History", &historyWindow, ImGuiWindowFlags_AlwaysAutoResize );
-      renderBoard( mDebugger.historyVisualizer() );
-      ImGui::End();
-      mDebugger.visualizeHistory( historyWindow );
-    }
-
-    {
-      static const float xpad = 4.0f;
-      static const float ypad = 4.0f + 19.0f;
-      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
-
-      ImGui::Begin( "Rendering", &debugMode, ImGuiWindowFlags_NoCollapse );
-      auto size = ImGui::GetWindowSize();
-      size.x = std::max( 0.0f, size.x - xpad );
-      size.y = std::max( 0.0f, size.y - ypad );
-      if ( auto tex = mRenderer->mainRenderingTexture( (int)size.x, (int)size.y ) )
-      {
-        ImGui::Image( tex, size );
-      }
-      ImGui::End();
-      ImGui::PopStyleVar();
-    }
-
-
-    std::vector<int> removedIds;
-    for ( auto & sv : mDebugger.screenViews() )
-    {
-      static const float xpad = 4.0f;
-      static const float ypad = ( 4.0f + 19.0f ) * 2;
-      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ 160.0f + xpad, 102.0f + ypad } );
-
-      char buf[64];
-      std::sprintf( buf, "Screen View %d", sv.id );
-      bool open = true;
-      ImGui::Begin( buf, &open, 0 );
-      if ( !open )
-        removedIds.push_back( sv.id );
-      ImGui::SetNextItemWidth( 80 );
-      ImGui::Combo( "##sv", (int*)&sv.type, "dispadr\0vidbase\0collbas\0custom\0" );
-      ImGui::SameLine();
-      std::span<uint8_t const> data{};
-      std::span<uint8_t const> palette{};
-
-      switch ( sv.type )
-      {
-      case ScreenViewType::DISPADR:
-        ImGui::BeginDisabled();
-        if ( mInstance )
-        {
-          uint16_t addr = mInstance->debugDispAdr();
-          std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          if ( !sv.safePalette )
-            palette = mInstance->debugPalette();
-        }
-        break;
-      case ScreenViewType::VIDBAS:
-        ImGui::BeginDisabled();
-        if ( mInstance )
-        {
-          uint16_t addr = mInstance->debugVidBas();
-          std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          if ( !sv.safePalette )
-            palette = mInstance->debugPalette();
-        }
-        break;
-      case ScreenViewType::COLLBAS:
-        ImGui::BeginDisabled();
-        if ( mInstance )
-        {
-          uint16_t addr = mInstance->debugCollBas();
-          std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mInstance->debugRAM() + addr, 80 * 102 };
-          if ( !sv.safePalette )
-            palette = mInstance->debugPalette();
-        }
-        break;
-      default:  //ScreenViewType::CUSTOM:
-        ImGui::BeginDisabled( false );
-        if ( mInstance )
-        {
-          uint16_t addr = sv.customAddress;
-          std::sprintf( buf, "%04x", sv.customAddress );
-          data = std::span<uint8_t const>{ mInstance->debugRAM() + sv.customAddress, 80 * 102 };
-          if ( !sv.safePalette )
-            palette = mInstance->debugPalette();
-        }
-        break;
-      }
-      ImGui::SetNextItemWidth( 40 );
-      if ( ImGui::InputTextWithHint( "##ha", "hex addr", buf, 5, ImGuiInputTextFlags_CharsHexadecimal ) )
-      {
-        int hex;
-        std::from_chars( &buf[0], &buf[5], hex, 16 );
-        hex = std::min( hex, 0xe000 );
-        sv.customAddress = (uint16_t)( hex & 0b1111111111111100 );
-      }
-      ImGui::EndDisabled();
-      ImGui::SameLine();
-      ImGui::Checkbox( "safe palette", &sv.safePalette );
-      auto size = ImGui::GetWindowSize();
-      size.x = std::max( 0.0f, size.x - xpad );
-      size.y = std::max( 0.0f, size.y - ypad );
-
-      if ( auto tex = mRenderer->screenViewRenderingTexture( sv.id, sv.type, data, palette, (int)size.x, (int)size.y ) )
-      {
-        ImGui::Image( tex, size );
-      }
-      ImGui::End();
-      ImGui::PopStyleVar();
-    }
-
-    for ( int id : removedIds )
-    {
-      mDebugger.delScreenView( id );
-    }
-
-    mDebugger.debugMode( debugMode );
-    ImGui::PopStyleVar();
-
-
-    if ( ImGui::BeginPopupContextVoid() )
-    {
-      if ( ImGui::Checkbox( "CPU Window", &cpuWindow ) )
-      {
-        mDebugger.visualizeCPU( cpuWindow );
-      }
-      if ( ImGui::Checkbox( "Disassembly Window", &disasmWindow ) )
-      {
-        mDebugger.visualizeDisasm( disasmWindow );
-      }
-      if ( ImGui::Checkbox( "History Window", &historyWindow ) )
-      {
-        mDebugger.visualizeHistory( historyWindow );
-        if ( historyWindow )
-        {
-          mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
-        }
-        else
-        {
-          mInstance->debugCPU().disableHistory();
-        }
-      }
-      if ( ImGui::Selectable( "New Screen View" ) )
-      {
-        mDebugger.newScreenView();
-      }
-      ImGui::EndPopup();
-    }
-  }
-  else
-  {
-    mRenderer->mainRenderingTexture( 0, 0 );
-  }
-}
-
 void Manager::updateDebugWindows()
 {
+
+  if ( !mInstance || !mExtendedRenderer )
+    return;
+
+  if ( !mDebugger.isDebugMode() )
+  {
+    mDebugWindows.mainScreenView.reset();
+    return;
+  }
+
   std::unique_lock<std::mutex> l{ mDebugger.mutex };
 
-  if ( !mInstance )
-    return;
+  if ( !mDebugWindows.mainScreenView )
+  {
+    mDebugWindows.mainScreenView = mExtendedRenderer->makeMainScreenView();
+  }
+
+  auto svs = mDebugger.screenViews();
+  auto& csvs = mDebugWindows.customScreenViews;
+  //removing elements in csvs that are not in svs 
+  auto ret = std::ranges::remove_if( csvs, [&]( int id ) { return std::ranges::find( svs, id, &ScreenView::id ) == svs.end(); }, []( auto const& p ) { return p.first; } );
+  csvs.erase( ret.begin(), ret.end() );
+  //add missing elements to csvs that are in svs
+  for ( auto const& sv : svs )
+  {
+    if ( std::ranges::find( csvs, sv.id, []( auto const& p ) { return p.first; } ) == csvs.end() )
+    {
+      csvs.emplace_back( sv.id, mExtendedRenderer->makeCustomScreenView() );
+    }
+  }
 
   auto& cpu = mInstance->debugCPU();
 
@@ -953,33 +229,89 @@ void Manager::updateDebugWindows()
   {
     auto & cpuVis = mDebugger.cpuVisualizer();
     cpu.printStatus( std::span<uint8_t, 3 * 14>( cpuVis.data.data(), cpuVis.data.size() ) );
+
+    if ( !mDebugWindows.cpuBoard )
+    {
+      mDebugWindows.cpuBoard = mExtendedRenderer->makeBoard( cpuVis.columns, cpuVis.rows );
+    }
   }
+  else if ( mDebugWindows.cpuBoard )
+  {
+    mDebugWindows.cpuBoard.reset();
+  }
+
 
   if ( mDebugger.isDisasmVisualized() )
   {
     auto & disVis = mDebugger.disasmVisualizer();
     cpu.disassemblyFromPC( mInstance->debugRAM(), (char*)disVis.data.data(), disVis.columns, disVis.rows );
+
+    if ( !mDebugWindows.disasmBoard )
+    {
+      mDebugWindows.disasmBoard = mExtendedRenderer->makeBoard( disVis.columns, disVis.rows );
+    }
+  }
+  else if ( !mDebugWindows.disasmBoard )
+  {
+    mDebugWindows.disasmBoard.reset();
   }
 
   if ( mDebugger.isHistoryVisualized() )
   {
     auto & hisVis = mDebugger.historyVisualizer();
     cpu.copyHistory( std::span<char>( (char*)hisVis.data.data(), hisVis.data.size() ) );
+
+    if ( !mDebugWindows.historyBoard )
+    {
+      mDebugWindows.historyBoard = mExtendedRenderer->makeBoard( hisVis.columns, hisVis.rows );
+    }
+  }
+  else if ( !mDebugWindows.historyBoard )
+  {
+    mDebugWindows.historyBoard.reset();
   }
 }
 
-void Manager::drawGui( int left, int top, int right, int bottom )
+BoardRendering Manager::renderCPUWindow()
 {
-  ImGuiIO & io = ImGui::GetIO();
-
-  bool hovered = io.MousePos.x > left && io.MousePos.y > top && io.MousePos.x < right && io.MousePos.y < bottom;
-
-  if ( hovered || mOpenMenu )
+  if ( mDebugger.isCPUVisualized() && mDebugWindows.cpuBoard )
   {
-    mOpenMenu = mainMenu( io );
+    auto win = mDebugger.cpuVisualizer();
+    auto tex = mDebugWindows.cpuBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
   }
+  else
+  {
+    return {};
+  }
+}
 
-  drawDebugWindows( io );
+BoardRendering Manager::renderDisasmWindow()
+{
+  if ( mDebugger.isDisasmVisualized() && mDebugWindows.disasmBoard )
+  {
+    auto win = mDebugger.disasmVisualizer();
+    auto tex = mDebugWindows.disasmBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
+  }
+  else
+  {
+    return {};
+  }
+}
+
+BoardRendering Manager::renderHistoryWindow()
+{
+  if ( mDebugger.isHistoryVisualized() && mDebugWindows.historyBoard )
+  {
+    auto win = mDebugger.historyVisualizer();
+    auto tex = mDebugWindows.historyBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
+    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
+  }
+  else
+  {
+    return {};
+  }
 }
 
 void Manager::processLua( std::filesystem::path const& path )
@@ -1051,7 +383,7 @@ void Manager::processLua( std::filesystem::path const& path )
     s_createEncoder = (PCREATE_ENCODER)GetProcAddress( mEncoderMod, "createEncoder" );
     s_disposeEncoder = (PDISPOSE_ENCODER)GetProcAddress( mEncoderMod, "disposeEncoder" );
 
-    mEncoder = std::shared_ptr<IEncoder>( s_createEncoder( path.string().c_str(), vbitrate, abitrate, 160 * vscale, 102 * vscale ), s_disposeEncoder );
+    mEncoder = std::shared_ptr<IEncoder>( s_createEncoder( path.string().c_str(), vbitrate, abitrate, SCREEN_WIDTH * vscale, SCREEN_HEIGHT * vscale ), s_disposeEncoder );
     mRenderer->setEncoder( mEncoder );
     mAudioOut->setEncoder( mEncoder );
   };
@@ -1217,7 +549,8 @@ void Manager::handleFileDrop( HDROP hDrop )
   }
 
   DragFinish( hDrop );
-  mDoUpdate = true;
+  mDoReset = true;
+  reset();
 }
 
 bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
@@ -1230,6 +563,7 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
     if ( size_t size = std::wcslen( ptr ) )
     {
       mArg = { ptr, size };
+      reset();
       return true;
     }
   }
@@ -1237,203 +571,3 @@ bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
   return false;
 }
 
-Manager::Debugger::Debugger() : mutex{},
-                                mDebugMode{},
-                                mVisualizeCPU{},
-                                mVisualizeDisasm{},
-                                mVisualizeHistory{},
-                                mDebugModeOnBreak{},
-                                mNormalModeOnRun{},
-                                mCpuVisualizer{ 0, CPU_WIDTH, CPU_HEIGHT },
-                                mDisasmVisualizer{ 1, DISASM_WIDTH, DISASM_HEIGHT },
-                                mHistoryVisualizer{ 2, HISTORY_WIDTH, HISTORY_HEIGHT },
-                                mRunMode{ RunMode::RUN }
-{
-  auto sysConfig = gConfigProvider.sysConfig();
-
-  mDebugMode = sysConfig->debugMode;
-  mVisualizeCPU = sysConfig->visualizeCPU;
-  mVisualizeDisasm = sysConfig->visualizeDisasm;
-  mVisualizeHistory = sysConfig->visualizeHistory;
-  mDebugModeOnBreak = sysConfig->debugModeOnBreak;
-  mNormalModeOnRun = sysConfig->normalModeOnRun;
-  mBreakOnBrk = sysConfig->breakOnBrk;
-  for ( auto const& sv : sysConfig->screenViews )
-  {
-    mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress, sv.safePalette );
-  }
-}
-
-Manager::Debugger::~Debugger()
-{
-  auto sysConfig = gConfigProvider.sysConfig();
-
-  sysConfig->debugMode = mDebugMode;
-  sysConfig->visualizeCPU = mVisualizeCPU;
-  sysConfig->visualizeDisasm = mVisualizeDisasm;
-  sysConfig->visualizeHistory = mVisualizeHistory;
-  sysConfig->debugModeOnBreak = mDebugModeOnBreak;
-  sysConfig->normalModeOnRun = mNormalModeOnRun;
-  sysConfig->breakOnBrk = mBreakOnBrk;
-  sysConfig->screenViews.clear();
-  for ( auto const& sv : mScreenViews )
-  {
-    sysConfig->screenViews.emplace_back( sv.id, (int)sv.type, (int)sv.customAddress, sv.safePalette );
-  }
-}
-
-void Manager::Debugger::operator()( RunMode mode )
-{
-  if ( mode == RunMode::RUN && mNormalModeOnRun )
-  {
-    mDebugMode = false;
-  }
-  if ( mode == RunMode::PAUSE && mDebugModeOnBreak )
-  {
-    mDebugMode = true;
-  }
-
-  mRunMode.store( mode );
-}
-
-bool Manager::Debugger::isPaused() const
-{
-  return mRunMode.load() == RunMode::PAUSE;
-}
-
-bool Manager::Debugger::isDebugMode() const
-{
-  return mDebugMode;
-}
-
-bool Manager::Debugger::isCPUVisualized() const
-{
-  return mVisualizeCPU;
-}
-
-bool Manager::Debugger::isDisasmVisualized() const
-{
-  return mVisualizeDisasm;
-}
-
-bool Manager::Debugger::isHistoryVisualized() const
-{
-  return mVisualizeHistory;
-}
-
-bool Manager::Debugger::isBreakOnBrk() const
-{
-  return mBreakOnBrk;
-}
-
-std::span<Manager::ScreenView> Manager::Debugger::screenViews()
-{
-  if ( mScreenViews.empty() )
-  {
-    return {};
-  }
-  else
-  {
-    return std::span<ScreenView>{ mScreenViews.data(), mScreenViews.size() };
-  }
-}
-
-void Manager::Debugger::visualizeCPU( bool value )
-{
-  mVisualizeCPU = value;
-}
-
-void Manager::Debugger::visualizeDisasm( bool value )
-{
-  mVisualizeDisasm = value;
-}
-
-void Manager::Debugger::visualizeHistory( bool value )
-{
-  mVisualizeHistory = value;
-}
-
-void Manager::Debugger::debugMode( bool value )
-{
-  mDebugMode = value;
-}
-
-bool Manager::Debugger::debugModeOnBreak() const
-{
-  return mDebugModeOnBreak;
-}
-
-void Manager::Debugger::debugModeOnBreak( bool value )
-{
-  mDebugModeOnBreak = value;
-}
-
-bool Manager::Debugger::normalModeOnRun() const
-{
-  return mNormalModeOnRun;
-}
-
-void Manager::Debugger::normalModeOnRun( bool value )
-{
-  mNormalModeOnRun = value;
-}
-
-void Manager::Debugger::breakOnBrk( bool value )
-{
-  mBreakOnBrk = value;
-}
-
-void Manager::Debugger::newScreenView()
-{
-  int minId = 0;
-
-  for ( ;; )
-  {
-    auto it = std::find_if( mScreenViews.cbegin(), mScreenViews.cend(), [=]( auto const& sv )
-    {
-      return sv.id == minId;
-    } );
-
-    if ( it == mScreenViews.cend() )
-      break;
-
-    minId += 1;
-  }
-
-  mScreenViews.emplace_back( minId, ScreenViewType::DISPADR );
-}
-
-void Manager::Debugger::delScreenView( int id )
-{
-  std::erase_if( mScreenViews, [=]( auto const& sv )
-  {
-    return sv.id == id;
-  } );
-}
-
-void Manager::Debugger::togglePause()
-{
-  if ( mRunMode.load() == RunMode::PAUSE )
-  {
-    ( *this )( RunMode::RUN );
-  }
-  else
-  {
-    ( *this )( RunMode::PAUSE );
-  }
-}
-
-Manager::DebugWindow& Manager::Debugger::cpuVisualizer()
-{
-  return mCpuVisualizer;
-}
-
-Manager::DebugWindow& Manager::Debugger::disasmVisualizer()
-{
-  return mDisasmVisualizer;
-}
-
-Manager::DebugWindow& Manager::Debugger::historyVisualizer()
-{
-  return mHistoryVisualizer;
-}

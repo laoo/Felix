@@ -6,7 +6,6 @@
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinImgui11.cpp" />
     <ClCompile Include="WinMain.cpp" />
-    <ClCompile Include="WinRenderer.cpp" />
     <ClCompile Include="WinImgui.cpp" />
     <ClCompile Include="WinImgui9.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
@@ -14,6 +13,16 @@
     <ClCompile Include="UserInput.cpp" />
     <ClCompile Include="KeyNames.cpp" />
     <ClCompile Include="LuaProxies.cpp" />
+    <ClCompile Include="ScreenRenderingBuffer.cpp" />
+    <ClCompile Include="ScreenGeometry.cpp" />
+    <ClCompile Include="BaseRenderer.cpp" />
+    <ClCompile Include="DX9Renderer.cpp" />
+    <ClCompile Include="DX11Renderer.cpp" />
+    <ClCompile Include="VideoSink.cpp" />
+    <ClCompile Include="UI.cpp" />
+    <ClCompile Include="Debugger.cpp" />
+    <ClCompile Include="EncodingRenderer.cpp" />
+    <ClCompile Include="DX11Helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -21,7 +30,6 @@
     <ClInclude Include="version.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinImgui11.hpp" />
-    <ClInclude Include="WinRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui9.hpp" />
@@ -49,6 +57,16 @@
     <ClInclude Include="renderer2.hxx">
       <Filter>shaders</Filter>
     </ClInclude>
+    <ClInclude Include="ScreenRenderingBuffer.hpp" />
+    <ClInclude Include="ScreenGeometry.hpp" />
+    <ClInclude Include="BaseRenderer.hpp" />
+    <ClInclude Include="DX9Renderer.hpp" />
+    <ClInclude Include="DX11Renderer.hpp" />
+    <ClInclude Include="VideoSink.hpp" />
+    <ClInclude Include="UI.hpp" />
+    <ClInclude Include="Debugger.hpp" />
+    <ClInclude Include="EncodingRenderer.hpp" />
+    <ClInclude Include="DX11Helpers.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">

@@ -1,5 +1,4 @@
 #include "pch.hpp"
-#include "WinRenderer.hpp"
 #include "Core.hpp"
 #include "IInputSource.hpp"
 #include "Log.hpp"

@@ -46,3 +46,5 @@ enum class RunMode
 
 std::vector<uint8_t> readFile( std::filesystem::path const& path );
 
+static constexpr int SCREEN_WIDTH = 160;
+static constexpr int SCREEN_HEIGHT = 102;

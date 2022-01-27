@@ -37,7 +37,7 @@ uint16_t convertSigned( uint16_t value, int & sign )
 
 SuzyMath::SuzyMath( std::shared_ptr<TraceHelper> traceHelper ) : mArea{}, mTraceHelper{ std::move( traceHelper ) }, mFinishTick{}, mSignAB{}, mSignCD{}, mUnsafeAccess{}, mSignMath{}, mAccumulate{}, mMathWarning{}, mMathCarry{}
 {
-  std::fill( mArea.begin(), mArea.end(), 0xff );
+  std::ranges::fill( mArea, 0xff );
 }
 
 bool SuzyMath::poke( uint64_t tick, uint8_t offset, uint8_t value )

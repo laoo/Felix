@@ -35,7 +35,7 @@ EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::
   }
 
   mData.resize( mAddressMask + 1 );
-  std::fill( mData.begin(), mData.end(), 0xff );
+  std::ranges::fill( mData, 0xff );
 
   if ( is16Bit )
   {
@@ -308,7 +308,7 @@ void EEPROM::eral()
   if ( mWriteEnable )
   {
     mTraceHelper->comment( "EEPROM: EXECUTE ERAL." );
-    std::fill( mData.begin(), mData.end(), 0xff );
+    std::ranges::fill( mData, 0xff );
     mChanged = true;
     startProgram( ERAL_TICKS );
   }
@@ -332,7 +332,7 @@ void EEPROM::wral( int data )
     }
     else
     {
-      std::fill( mData.begin(), mData.end(), data & 0xff );
+      std::ranges::fill( mData, data & 0xff );
       mTraceHelper->comment( "EEPROM: EXECUTE WRAL8 ${:x}.", data );
     }
     mChanged = true;

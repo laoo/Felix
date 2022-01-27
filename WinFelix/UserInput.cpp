@@ -250,7 +250,7 @@ int UserInput::firstKeyPressed() const
 
 bool UserInput::pressed( int code ) const
 {
-  return std::find( mPressedCodes.cbegin(), mPressedCodes.cend(), code ) != mPressedCodes.cend();
+  return std::ranges::find( mPressedCodes, code ) != mPressedCodes.cend();
 }
 
 bool UserInput::pressed( KeyInput::Key key ) const

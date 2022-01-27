@@ -2,7 +2,12 @@
 #include "VidOperator.hpp"
 #include "SpriteTemplates.hpp"
 
-template<typename Type, int I>
+template<typename Type, int I> requires requires
+{
+  { Type::eor } -> std::convertible_to<bool>;
+  { Type::background } -> std::convertible_to<bool>;
+  { Type::opaque( 0 ) } -> std::convertible_to<bool>;
+}
 constexpr VidOperator::MemOp stateFun()
 {
   static constexpr int pixel = ( I & 0b111100 ) >> 2;  //pixel value
@@ -43,13 +48,14 @@ constexpr VidOperator::MemOp stateFun()
 }
 
 template<int... I>
-static std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE*8> makeStateFunc( std::integer_sequence<int, I...> )
+static std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE * 8> makeStateFunc( std::integer_sequence<int, I...> )
 {
-  return { stateFun<SuzySprite<(Suzy::Sprite)(I>>6)>,I>()... };
+  return { stateFun<SuzySprite<(Suzy::Sprite)( I >> 6 )>,I>()... };
 }
 
+const std::array<VidOperator::MemOp, VidOperator::STATEFUN_SIZE * 8> VidOperator::mStateFuncs = makeStateFunc( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE * 8>{} );
+
 VidOperator::VidOperator( Suzy::Sprite spriteType ) :
-  mStateFuncs{ makeStateFunc( std::make_integer_sequence<int, VidOperator::STATEFUN_SIZE * 8>{} ) },
   mSpriteType{ (int)spriteType }, mOff{}, mOp{}, mVidAdr{}, mEdge{}
 {
 }

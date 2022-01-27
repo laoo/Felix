@@ -56,8 +56,10 @@ WinImgui::~WinImgui()
 }
 
 
-void WinImgui::win32_NewFrame()
+void WinImgui::newFrame()
 {
+  renderNewFrame();
+
   ImGuiIO& io = ImGui::GetIO();
   IM_ASSERT( io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer back-end. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame()." );
 

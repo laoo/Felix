@@ -37,11 +37,9 @@ public:
     mSize += 8;
   }
 
-  template<typename T>
+  template<std::integral T>
   bool push( T value )
   {
-    static_assert( std::is_integral_v<T> );
-
     if (  mSize + ( int )sizeof( T ) <= 64 )
     {
       for ( int i = 0; i < sizeof( T ) * 8; i += 8 )

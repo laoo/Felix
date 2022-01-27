@@ -4,6 +4,7 @@
 #include "ColOperator.hpp"
 #include "Log.hpp"
 #include "SpriteLineParser.hpp"
+#include "Utility.hpp"
 
 SuzyProcess::ProcessCoroutine SuzyProcess::process()
 {
@@ -137,12 +138,12 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
             shifter.push( co_await suzyRead4( scb.procadr ) );
             scb.procadr += 4;
             SpriteLineParser slp{ shifter, suzy.mLiteral, suzy.bpp(), (scb.sprdoff - 1) * 8 };
-            if ( !up && (int16_t)scb.sprvpos >= Suzy::mScreenHeight || up && (int16_t) scb.sprvpos < 0 )
+            if ( !up && (int16_t)scb.sprvpos >= SCREEN_HEIGHT || up && (int16_t) scb.sprvpos < 0 )
               break;
-            if ( (int16_t)scb.sprvpos < Suzy::mScreenHeight && (int16_t)scb.sprvpos >= 0 )
+            if ( (int16_t)scb.sprvpos < SCREEN_HEIGHT && (int16_t)scb.sprvpos >= 0 )
             {
-              scb.vidadr = scb.vidbas + scb.sprvpos * Suzy::mScreenWidth / 2;
-              scb.colladr = scb.collbas + scb.sprvpos * Suzy::mScreenWidth / 2;
+              scb.vidadr = scb.vidbas + scb.sprvpos * SCREEN_WIDTH / 2;
+              scb.colladr = scb.collbas + scb.sprvpos * SCREEN_WIDTH / 2;
               vidOp.newLine( scb.vidadr );
               colOp.newLine( scb.colladr );
               scb.hposstrt += (int8_t)scb.tiltacum.h;
@@ -169,7 +170,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
                 for ( int pixelCol = 0; pixelCol < pixelWidth; pixelCol++ )
                 {
                   // Stop horizontal loop if outside of screen bounds
-                  if ( sprhpos >= 0 && sprhpos < Suzy::mScreenWidth )
+                  if ( sprhpos >= 0 && sprhpos < SCREEN_WIDTH )
                   {
                     const uint8_t penNumber = suzy.mPalette[*penIndex];
 

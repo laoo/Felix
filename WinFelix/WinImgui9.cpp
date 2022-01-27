@@ -20,7 +20,7 @@ WinImgui9::~WinImgui9()
 {
 }
 
-void WinImgui9::dx9_CreateFontsTexture()
+void WinImgui9::createFontsTexture()
 {
   // Build texture atlas
   ImGuiIO& io = ImGui::GetIO();
@@ -56,7 +56,7 @@ void WinImgui9::dx9_CreateFontsTexture()
 #endif
 }
 
-void WinImgui9::dx9_SetupRenderState( ImDrawData* draw_data )
+void WinImgui9::setupRenderState( ImDrawData* draw_data )
 {
   // Setup viewport
   D3DVIEWPORT9 vp;
@@ -123,39 +123,16 @@ void WinImgui9::dx9_SetupRenderState( ImDrawData* draw_data )
   }
 }
 
-void WinImgui9::dx9_NewFrame()
+void WinImgui9::renderNewFrame()
 {
   if ( !md3dDevice )
     throw std::exception{};
 
   if ( !mFontTexture )
-    dx9_CreateFontsTexture();
+    createFontsTexture();
 }
 
-void* WinImgui9::createTextureRaw( uint8_t const* textureData, int width, int height, TextureFormat fmt )
-{
-  IDirect3DTexture9* result;
-  V_THROW( md3dDevice->CreateTexture( width, height, 0, D3DUSAGE_AUTOGENMIPMAP, fmt == TextureFormat::BGRA ? D3DFMT_A8R8G8B8 : D3DFMT_A8B8G8R8, D3DPOOL_DEFAULT, &result, nullptr ) );
-
-  ComPtr<IDirect3DTexture9> sysTexture;
-  HANDLE h = (HANDLE)textureData;
-
-  V_THROW( md3dDevice->CreateTexture( width, height, 1, 0, fmt == TextureFormat::BGRA ? D3DFMT_A8R8G8B8 : D3DFMT_A8B8G8R8, D3DPOOL_SYSTEMMEM, sysTexture.ReleaseAndGetAddressOf(), &h ) );
-  V_THROW( md3dDevice->UpdateTexture( sysTexture.Get(), result ) );
-
-  return result;
-}
-
-void WinImgui9::deleteTextureRaw( void* textureData )
-{
-  if ( textureData )
-  {
-    static_cast<IDirect3DTexture9*>( textureData )->Release();
-  }
-}
-
-
-void WinImgui9::dx9_RenderDrawData( ImDrawData* draw_data )
+void WinImgui9::renderDrawData( ImDrawData* draw_data )
 {
   // Avoid rendering when minimized
   if ( draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f )
@@ -227,7 +204,7 @@ void WinImgui9::dx9_RenderDrawData( ImDrawData* draw_data )
   md3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
 
   // Setup desired DX state
-  dx9_SetupRenderState( draw_data );
+  setupRenderState( draw_data );
 
   // Render command lists
   // (Because we merged all buffers into a single one, we maintain our own offset into them)
@@ -245,7 +222,7 @@ void WinImgui9::dx9_RenderDrawData( ImDrawData* draw_data )
         // User callback, registered via ImDrawList::AddCallback()
         // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
         if ( pcmd->UserCallback == ImDrawCallback_ResetRenderState )
-          dx9_SetupRenderState( draw_data );
+          setupRenderState( draw_data );
         else
           pcmd->UserCallback( cmd_list, pcmd );
       }

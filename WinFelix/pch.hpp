@@ -10,9 +10,11 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <queue>
 #include <random>
 #include <span>
