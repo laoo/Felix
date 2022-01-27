@@ -59,7 +59,13 @@ public:
     {
       state.debugWriteRAM( addr++, byte );
     }
-    //value of stack pointer at exit point from ROM is 0x101
+    //values of registers at exit of ROM
+    state.debugState().a = 0x00;
+    state.debugState().x = 0x00;
+    state.debugState().y = 0x02;
+    state.debugState().i.set();
+    state.debugState().d.clear();
+    //assumed SP=0x100 at startup
     state.debugState().sl = 0x01;
     //jumps to 0x200 held in two next bytes after trap hander address
     return (uint8_t)Opcode::JMA_JMP;
