@@ -198,7 +198,16 @@ uint8_t Suzy::read( uint16_t address )
     return mInputSource->getInput( mLeftHand != 0 ).joystick();
   }
   default:
-    return uint8_t( 0xff );
+    if ( address < 0x80 )
+    {
+      //reading these registers looks like being mirrored in the rane $fc00-$fc40. Needs more investigation
+      return 0;
+    }
+    else
+    {
+      //undefined registers in range $fc80-$fcff are noicy
+      return noice( mAccessTick );
+    }
   }
 }
 
@@ -464,6 +473,20 @@ void Suzy::writeSPRCOLL( uint8_t value )
 int Suzy::bpp() const
 {
   return ( ( int )mBpp >> 6 ) + 1;
+}
+
+uint8_t Suzy::noice( uint64_t tick )
+{
+  //undefined registers (with address > $FC80) has some peculiar random noice characteristics that looks something like this
+  auto v = std::hash<uint64_t>()( tick ) & 0xffff;
+  if ( v < 700 )
+  {
+    return v & 1 ? 0 : 0xff;
+  }
+  else
+  {
+    return 0b11111100;
+  }
 }
 
 std::shared_ptr<ISuzyProcess> Suzy::suzyProcess()

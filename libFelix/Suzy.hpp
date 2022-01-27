@@ -281,6 +281,7 @@ private:
   void writeSPRCTL1( uint8_t value );
   void writeSPRCOLL( uint8_t value );
   int bpp() const;
+  uint8_t noice( uint64_t tick );
 
   void debugCollisions();
 
