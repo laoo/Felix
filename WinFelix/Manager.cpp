@@ -282,7 +282,7 @@ BoardRendering Manager::renderCPUWindow()
   }
   else
   {
-    return {};
+    return { mDebugger.isCPUVisualized() };
   }
 }
 
@@ -296,7 +296,7 @@ BoardRendering Manager::renderDisasmWindow()
   }
   else
   {
-    return {};
+    return { mDebugger.isDisasmVisualized() };
   }
 }
 
@@ -310,7 +310,7 @@ BoardRendering Manager::renderHistoryWindow()
   }
   else
   {
-    return {};
+    return { mDebugger.isHistoryVisualized() };
   }
 }
 
