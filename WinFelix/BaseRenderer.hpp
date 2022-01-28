@@ -1,13 +1,10 @@
 #pragma once
-#include "IVideoSink.hpp"
 #include "ImageProperties.hpp"
 #include "ScreenGeometry.hpp"
 
-class ScreenRenderingBuffer;
 class UI;
 class IEncoder;
-class WinImgui;
-struct VideoSink;
+struct IVideoSink;
 
 enum class ScreenViewType
 {
@@ -56,36 +53,19 @@ public:
 };
 
 
-class BaseRenderer
+class IBaseRenderer
 {
 public:
 
-  static std::shared_ptr<BaseRenderer> createRenderer( HWND hWnd, std::filesystem::path const& iniPath );
+  virtual ~IBaseRenderer() = default;
 
-  BaseRenderer( HWND hWnd );
-  virtual ~BaseRenderer();
-
-  int64_t render( UI& ui );
-  int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-
+  virtual int64_t render( UI& ui ) = 0;
   virtual std::shared_ptr<IExtendedRenderer> extendedRenderer() = 0;
+  virtual void setRotation( ImageProperties::Rotation rotation ) = 0;
+  virtual std::shared_ptr<IVideoSink> getVideoSink() = 0;
+  virtual int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
 
-  std::shared_ptr<IVideoSink> getVideoSink() const;
-  int sizing( RECT& rect );
-  void setRotation( ImageProperties::Rotation rotation );
-
-protected:
-  virtual void internalRender( UI& ui ) = 0;
-  virtual void present() = 0;
-  virtual void updateRotation() = 0;
-
-
-protected:
-  HWND mHWnd;
-  std::shared_ptr<WinImgui> mImgui;
-  std::shared_ptr<VideoSink> mVideoSink;
-  ScreenGeometry mScreenGeometry;
-  ImageProperties::Rotation mRotation;
-  int64_t mLastRenderTimePoint;
 };
 
+
+std::shared_ptr<IBaseRenderer> createRenderer( HWND hWnd, std::filesystem::path const& iniPath );

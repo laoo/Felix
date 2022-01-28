@@ -61,8 +61,12 @@ static ComPtr<ID3D11ComputeShader> gBoardCS;
 
 }
 
-DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mRefreshRate{}, mEncodingRenderer{}
+DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : mHWnd{ hWnd }, mRefreshRate{}, mEncodingRenderer{}, mVideoSink{ std::make_shared<VideoSink>() }, mLastRenderTimePoint{}
 {
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+  mLastRenderTimePoint = l.QuadPart;
+
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
   HMODULE hModD3D11 = ::LoadLibrary( L"d3d11.dll" );
@@ -158,6 +162,33 @@ DX11Renderer::~DX11Renderer()
 {
 }
 
+int64_t DX11Renderer::render( UI& ui )
+{
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+
+  internalRender( ui );
+  mSwapChain->Present( 1, 0 );
+
+  auto result = l.QuadPart - mLastRenderTimePoint;
+  mLastRenderTimePoint = l.QuadPart;
+  return result;
+}
+
+void DX11Renderer::setRotation( ImageProperties::Rotation rotation )
+{
+  mRotation = rotation;
+  if ( auto mainScreenView = mMainScreenView.lock() )
+  {
+    mainScreenView->rotate( mRotation );
+  }
+}
+
+std::shared_ptr<IVideoSink> DX11Renderer::getVideoSink()
+{
+  return mVideoSink;
+}
+
 void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
 {
   mEncodingRenderer = std::make_shared<EncodingRenderer>( std::move( encoder ), gD3DDevice, gImmediateContext, mRefreshRate );
@@ -189,6 +220,36 @@ bool DX11Renderer::mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mai
   return false;
 }
 
+int DX11Renderer::sizing( RECT& rect )
+{
+  RECT wRect, cRect;
+  GetWindowRect( mHWnd, &wRect );
+  GetClientRect( mHWnd, &cRect );
+
+  int lastW = wRect.right - wRect.left;
+  int lastH = wRect.bottom - wRect.top;
+  int newW = rect.right - rect.left;
+  int newH = rect.bottom - rect.top;
+  int dW = newW - lastW;
+  int dH = newH - lastH;
+
+  int cW = cRect.right - cRect.left + dW;
+  int cH = cRect.bottom - cRect.top + dH;
+
+  if ( cW < mScreenGeometry.minWindowWidth() )
+  {
+    rect.left = wRect.left;
+    rect.right = wRect.right;
+  }
+  if ( cH < mScreenGeometry.minWindowHeight() )
+  {
+    rect.top = wRect.top;
+    rect.bottom = wRect.bottom;
+  }
+
+  return 1;
+}
+
 void DX11Renderer::internalRender( UI& ui )
 {
   if ( !resizeOutput() )
@@ -210,19 +271,6 @@ void DX11Renderer::internalRender( UI& ui )
   }
 
   renderGui( ui );
-}
-
-void DX11Renderer::present()
-{
-  mSwapChain->Present( 1, 0 );
-}
-
-void DX11Renderer::updateRotation()
-{
-  if ( auto mainScreenView = mMainScreenView.lock() )
-  {
-    mainScreenView->rotate( mRotation );
-  }
 }
 
 bool DX11Renderer::resizeOutput()
@@ -557,4 +605,18 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
   gImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 
   return mSrv.Get();
+}
+
+int DX11Renderer::wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+  switch ( msg )
+  {
+  case WM_SIZING:
+    return sizing( *(RECT*)lParam );
+  default:
+    if ( mImgui )
+      return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  }
+
+  return 0;
 }

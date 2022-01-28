@@ -119,7 +119,7 @@ void Manager::initialize( HWND hWnd )
 {
   mhWnd = hWnd;
   assert( !mRenderer );
-  mRenderer = BaseRenderer::createRenderer( hWnd, gConfigProvider.appDataFolder() );
+  mRenderer = createRenderer( hWnd, gConfigProvider.appDataFolder() );
   mExtendedRenderer = mRenderer->extendedRenderer();
 }
 
@@ -153,24 +153,24 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     {
       mIntputSource->keyDown( (int)wParam );
     }
-    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   case WM_KEYUP:
   case WM_SYSKEYUP:
     if ( wParam < 256 )
     {
       mIntputSource->keyUp( (int)wParam );
     }
-    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   case WM_KILLFOCUS:
     mIntputSource->lostFocus();
-    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   case WM_DEVICECHANGE:
     if ( (UINT)wParam == DBT_DEVNODES_CHANGED )
       mIntputSource->recheckGamepad();
     return 0;
   default:
     assert( mRenderer );
-    return mRenderer->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   }
 }
 

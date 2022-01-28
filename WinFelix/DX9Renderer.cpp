@@ -7,8 +7,12 @@
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
-DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mIniPath{ iniPath }, mD3D{}, mD3Device{}, mRect{}, mSource{}, mSourceWidth{}, mSourceHeight{}
+DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : mHWnd{ hWnd }, mIniPath{ iniPath }, mVideoSink{ std::make_shared<VideoSink>() },
+  mD3D{}, mD3Device{}, mRect{}, mSource{}, mSourceWidth{}, mSourceHeight{}, mLastRenderTimePoint{}
 {
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+  mLastRenderTimePoint = l.QuadPart;
 }
 
 DX9Renderer::~DX9Renderer()
@@ -20,51 +24,66 @@ std::shared_ptr<IExtendedRenderer> DX9Renderer::extendedRenderer()
   return {};
 }
 
-void DX9Renderer::present()
+int64_t DX9Renderer::render( UI& ui )
 {
+  LARGE_INTEGER l;
+  QueryPerformanceCounter( &l );
+
+  internalRender( ui );
   mD3Device->PresentEx( nullptr, nullptr, nullptr, nullptr, 0 );
+
+  auto result = l.QuadPart - mLastRenderTimePoint;
+  mLastRenderTimePoint = l.QuadPart;
+  return result;
 }
 
-void DX9Renderer::updateRotation()
+void DX9Renderer::setRotation( ImageProperties::Rotation rotation )
 {
+  mRotation = rotation;
+}
+
+std::shared_ptr<IVideoSink> DX9Renderer::getVideoSink()
+{
+  return mVideoSink;
 }
 
 void DX9Renderer::internalRender( UI& ui )
 {
-  if ( !mD3Device )
-  {
-    typedef HRESULT( WINAPI* LPDIRECT3DCREATE9EX )( UINT SDKVersion, IDirect3D9Ex** );
-    static LPDIRECT3DCREATE9EX s_Direct3DCreate9Ex = nullptr;
-    HMODULE hModD3D9 = ::LoadLibrary( L"d3d9.dll" );
-    if ( hModD3D9 == nullptr )
-      throw std::runtime_error{ "DXError" };
-
-    s_Direct3DCreate9Ex = (LPDIRECT3DCREATE9EX)GetProcAddress( hModD3D9, "Direct3DCreate9Ex" );
-
-    V_THROW( s_Direct3DCreate9Ex( D3D_SDK_VERSION, mD3D.ReleaseAndGetAddressOf() ) );
-
-    D3DPRESENT_PARAMETERS presentParams;
-    ZeroMemory( &presentParams, sizeof( presentParams ) );
-    presentParams.Windowed = TRUE;
-    presentParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    presentParams.BackBufferFormat = D3DFMT_X8R8G8B8;
-    presentParams.BackBufferCount = 1;
-    presentParams.BackBufferWidth = 256;
-    presentParams.BackBufferHeight = 256;
-    presentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-    presentParams.Flags = D3DPRESENTFLAG_VIDEO;
-
-    V_THROW( mD3D->CreateDeviceEx( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, nullptr, D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &presentParams, nullptr, mD3Device.ReleaseAndGetAddressOf() ) );
-
-    mImgui = std::make_shared<WinImgui9>( mHWnd, mD3Device, mIniPath );
-  }
-
   RECT r;
   if ( ::GetClientRect( mHWnd, &r ) == 0 )
     return;
 
   if ( mScreenGeometry.update( r.right, r.bottom, mRotation ) )
   {
+    if ( !mD3Device )
+    {
+      typedef HRESULT( WINAPI* LPDIRECT3DCREATE9EX )( UINT SDKVersion, IDirect3D9Ex** );
+      static LPDIRECT3DCREATE9EX s_Direct3DCreate9Ex = nullptr;
+      HMODULE hModD3D9 = ::LoadLibrary( L"d3d9.dll" );
+      if ( hModD3D9 == nullptr )
+        throw std::runtime_error{ "DXError" };
+
+      s_Direct3DCreate9Ex = (LPDIRECT3DCREATE9EX)GetProcAddress( hModD3D9, "Direct3DCreate9Ex" );
+
+      V_THROW( s_Direct3DCreate9Ex( D3D_SDK_VERSION, mD3D.ReleaseAndGetAddressOf() ) );
+
+      D3DPRESENT_PARAMETERS presentParams;
+      ZeroMemory( &presentParams, sizeof( presentParams ) );
+      presentParams.Windowed = TRUE;
+      presentParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
+      presentParams.BackBufferFormat = D3DFMT_X8R8G8B8;
+      presentParams.BackBufferCount = 1;
+      presentParams.BackBufferWidth = 256;
+      presentParams.BackBufferHeight = 256;
+      presentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+      presentParams.Flags = D3DPRESENTFLAG_VIDEO;
+
+      V_THROW( mD3D->CreateDeviceEx( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, nullptr, D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED, &presentParams, nullptr, mD3Device.ReleaseAndGetAddressOf() ) );
+
+      mImgui = std::make_shared<WinImgui9>( mHWnd, mD3Device, mIniPath );
+    }
+
+
     D3DPRESENT_PARAMETERS presentParams;
     ZeroMemory( &presentParams, sizeof( presentParams ) );
     presentParams.Windowed = TRUE;
@@ -155,4 +174,48 @@ void DX9Renderer::internalRender( UI& ui )
   mImgui->renderDrawData( ImGui::GetDrawData() );
 
   V_THROW( mD3Device->EndScene() );
+}
+
+int DX9Renderer::sizing( RECT& rect )
+{
+  RECT wRect, cRect;
+  GetWindowRect( mHWnd, &wRect );
+  GetClientRect( mHWnd, &cRect );
+
+  int lastW = wRect.right - wRect.left;
+  int lastH = wRect.bottom - wRect.top;
+  int newW = rect.right - rect.left;
+  int newH = rect.bottom - rect.top;
+  int dW = newW - lastW;
+  int dH = newH - lastH;
+
+  int cW = cRect.right - cRect.left + dW;
+  int cH = cRect.bottom - cRect.top + dH;
+
+  if ( cW < mScreenGeometry.minWindowWidth() )
+  {
+    rect.left = wRect.left;
+    rect.right = wRect.right;
+  }
+  if ( cH < mScreenGeometry.minWindowHeight() )
+  {
+    rect.top = wRect.top;
+    rect.bottom = wRect.bottom;
+  }
+
+  return 1;
+}
+
+int DX9Renderer::wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
+{
+  switch ( msg )
+  {
+  case WM_SIZING:
+    return sizing( *(RECT*)lParam );
+  default:
+    if ( mImgui )
+      return mImgui->win32_WndProcHandler( hWnd, msg, wParam, lParam );
+  }
+
+  return 0;
 }

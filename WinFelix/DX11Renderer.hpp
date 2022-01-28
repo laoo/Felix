@@ -3,12 +3,17 @@
 
 class WinImgui11;
 class EncodingRenderer;
+struct VideoSink;
 
-class DX11Renderer : public BaseRenderer, public IExtendedRenderer, public std::enable_shared_from_this<DX11Renderer>
+class DX11Renderer : public IBaseRenderer, public IExtendedRenderer, public std::enable_shared_from_this<DX11Renderer>
 {
 public:
   DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath );
   ~DX11Renderer() override;
+
+  int64_t render( UI& ui ) override;
+  void setRotation( ImageProperties::Rotation rotation ) override;
+  std::shared_ptr<IVideoSink> getVideoSink() override;
 
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
@@ -16,6 +21,7 @@ public:
 
   std::shared_ptr<IScreenView> makeMainScreenView() override;
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
+  int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
   struct BoardFont
   {
@@ -27,20 +33,16 @@ public:
     ComPtr<ID3D11ShaderResourceView> srv;
   };
 
-protected:
-
-  void internalRender( UI& ui ) override;
-  void present() override;
-  void updateRotation() override;
-
 private:
   class ScreenView;
 
+  void internalRender( UI& ui );
   bool resizeOutput();
   void updateSourceFromNextFrame();
   void renderGui( UI& ui );
   void renderScreenView( ScreenGeometry const& geometry, ID3D11ShaderResourceView* sourceSRV, ID3D11UnorderedAccessView* target );
   bool mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView );
+  int sizing( RECT& rect );
 
 private:
 
@@ -106,6 +108,10 @@ private:
 
   };
 
+  HWND mHWnd;
+  std::shared_ptr<WinImgui11>       mImgui;
+  ScreenGeometry                    mScreenGeometry;
+  ImageProperties::Rotation         mRotation;
 
   ComPtr<IDXGISwapChain>            mSwapChain;
   ComPtr<ID3D11Buffer>              mPosSizeCB;
@@ -116,7 +122,9 @@ private:
 
   boost::rational<int32_t>          mRefreshRate;
   std::shared_ptr<EncodingRenderer> mEncodingRenderer;
+  std::shared_ptr<VideoSink>        mVideoSink;
   mutable std::mutex                mDebugViewMutex;
   std::weak_ptr<ScreenView>         mMainScreenView;
+  int64_t                           mLastRenderTimePoint;
 };
 

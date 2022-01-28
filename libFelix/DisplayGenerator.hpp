@@ -3,7 +3,7 @@
 #include "ParallelPort.hpp"
 #include "Utility.hpp"
 
-class IVideoSink;
+struct IVideoSink;
 
 class DisplayGenerator : public RestProvider
 {
