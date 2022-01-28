@@ -1,5 +1,5 @@
 #pragma once
-#include "BaseRenderer.hpp"
+#include "ISystemDriver.hpp"
 
 class IBaseRenderer;
 class IExtendedRenderer;

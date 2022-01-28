@@ -22,6 +22,7 @@
 #include "DebugRAM.hpp"
 #include "BaseRenderer.hpp"
 #include "IInputSource.hpp"
+#include "ISystemDriver.hpp"
 
 
 Manager::Manager() : mUI{ *this },

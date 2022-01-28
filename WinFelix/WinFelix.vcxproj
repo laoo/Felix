@@ -186,6 +186,7 @@
     <ClInclude Include="EncodingRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="fonts.hpp" />
+    <ClInclude Include="ISystemDriver.hpp" />
     <ClInclude Include="IUserInput.hpp" />
     <ClInclude Include="KeyNames.hpp" />
     <ClInclude Include="LuaProxies.hpp" />

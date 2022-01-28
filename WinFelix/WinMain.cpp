@@ -9,7 +9,7 @@
 #include "version.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
-#include "BaseRenderer.hpp"
+#include "ISystemDriver.hpp"
 
 wchar_t gClassName[] = L"FelixWindowClass";
 
