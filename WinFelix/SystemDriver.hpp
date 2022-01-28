@@ -8,8 +8,12 @@ class UserInput;
 class SystemDriver : public ISystemDriver
 {
 public:
-  SystemDriver( HWND hWnd, std::filesystem::path const& iniPath );
+  SystemDriver();
+  void initialize( HWND hWnd );
+
   ~SystemDriver() override = default;
+
+  int eventLoop() override;
 
   std::shared_ptr<IBaseRenderer> baseRenderer() const override;
   std::shared_ptr<IExtendedRenderer> extendedRenderer() const override;
@@ -19,18 +23,23 @@ public:
   std::shared_ptr<IUserInput> userInput() const override;
   void updateRotation( ImageProperties::Rotation rotation ) override;
 
-  void registerDropFiles( std::function<void( std::filesystem::path )> ) override;
+  void registerDropFiles( std::function<void( std::filesystem::path )> dropFilesHandler ) override;
+  void registerUpdate( std::function<void()> updataHandler ) override;
 
 private:
   void handleFileDrop( HDROP hDrop );
 
 
 private:
+
+  friend std::shared_ptr<ISystemDriver> createSystemDriver( Manager& manager, std::wstring const& arg, int nCmdShow );
+
   HWND mhWnd;
   std::shared_ptr<IBaseRenderer> mBaseRenderer;
   std::shared_ptr<IExtendedRenderer> mExtendedRenderer;
   std::shared_ptr<UserInput> mIntputSource;
 
   std::function<void( std::filesystem::path )> mDropFilesHandler;
+  std::function<void()> mUpdateHandler;
 
 };

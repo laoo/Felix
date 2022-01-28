@@ -5,9 +5,144 @@
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 #include "UserInput.hpp"
+#include "version.hpp"
+#include "Manager.hpp"
 
-SystemDriver::SystemDriver( HWND hWnd, std::filesystem::path const& iniPath ) : mhWnd{ hWnd }, mIntputSource{ std::make_shared<UserInput>() }
+static constexpr wchar_t gClassName[] = L"FelixEmulatorWindowClass";
+
+LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
+  switch ( msg )
+  {
+  case WM_CREATE:
+  {
+    SystemDriver* systemDriver = reinterpret_cast<SystemDriver*>( reinterpret_cast<LPCREATESTRUCT>( lParam )->lpCreateParams );
+    assert( systemDriver );
+    try
+    {
+      systemDriver->initialize( hwnd );
+    }
+    catch ( std::exception const& ex )
+    {
+      MessageBoxA( nullptr, ex.what(), "Renderinit Error", MB_OK | MB_ICONERROR );
+      PostQuitMessage( 0 );
+    }
+    SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( systemDriver ) );
+    break;
+  }
+  default:
+    if ( SystemDriver* systemDriver = reinterpret_cast<SystemDriver*>( GetWindowLongPtr( hwnd, GWLP_USERDATA ) ) )
+    {
+      if ( systemDriver->wndProcHandler( hwnd, msg, wParam, lParam ) )
+        return 1;
+    }
+    return DefWindowProc( hwnd, msg, wParam, lParam );
+  }
+
+  return 0;
+}
+
+
+bool runOtherInstanceIfPresent( std::wstring const& arg )
+{
+  if ( auto hwnd = FindWindowW( gClassName, nullptr ) )
+  {
+    std::vector<wchar_t> buffer;
+    if ( !arg.empty() )
+    {
+      std::copy( arg.cbegin(), arg.cend(), std::back_inserter( buffer ) );
+    }
+    buffer.push_back( 0 );
+    buffer.push_back( 0 );
+
+    HGLOBAL hMem = GlobalAlloc( GHND, sizeof( DROPFILES ) + buffer.size() * sizeof( wchar_t ) );
+    BOOST_SCOPE_EXIT_ALL( = ) { GlobalFree( hMem ); };
+
+    if ( auto dropFiles = (DROPFILES*)GlobalLock( hMem ) )
+    {
+      BOOST_SCOPE_EXIT_ALL( = ) { GlobalUnlock( hMem ); };
+
+      dropFiles->pFiles = sizeof( DROPFILES );
+      dropFiles->pt = POINT{};
+      dropFiles->fNC = false;
+      dropFiles->fWide = true;
+      memcpy( &dropFiles[1], &buffer[0], buffer.size() * sizeof( wchar_t ) );
+      PostMessage( hwnd, WM_DROPFILES, (WPARAM)hMem, 0 );
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+std::shared_ptr<ISystemDriver> createSystemDriver( Manager& manager, std::wstring const& arg, int nCmdShow )
+{
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  if ( sysConfig->singleInstance )
+  {
+    if ( runOtherInstanceIfPresent( arg ) )
+    {
+      return {};
+    }
+  }
+
+  WNDCLASSEX wc{};
+
+  wc.cbSize = sizeof( WNDCLASSEX );
+  wc.style = 0;
+  wc.lpfnWndProc = WndProc;
+  wc.cbClsExtra = 0;
+  wc.cbWndExtra = 0;
+  wc.hInstance = (HINSTANCE)&__ImageBase;
+  wc.hIcon = LoadIcon( NULL, IDI_APPLICATION );
+  wc.hCursor = LoadCursor( NULL, IDC_ARROW );
+  wc.hbrBackground = (HBRUSH)( COLOR_WINDOW + 1 );
+  wc.lpszMenuName = NULL;
+  wc.lpszClassName = gClassName;
+  wc.hIconSm = LoadIcon( NULL, IDI_APPLICATION );
+
+  if ( !RegisterClassEx( &wc ) )
+  {
+    return {};
+  }
+
+  std::wstring name = L"Felix " + std::wstring{ version_string };
+
+  auto pSystemDriver = std::make_shared<SystemDriver>();
+
+  HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, sysConfig->mainWindow.x, sysConfig->mainWindow.y, sysConfig->mainWindow.width, sysConfig->mainWindow.height, nullptr, nullptr, wc.hInstance, pSystemDriver.get() );
+
+  if ( !hwnd )
+  {
+    return {};
+  }
+
+  ShowWindow( hwnd, nCmdShow );
+  UpdateWindow( hwnd );
+  DragAcceptFiles( hwnd, TRUE );
+
+  manager.initialize( pSystemDriver );
+
+  if ( pSystemDriver->mDropFilesHandler )
+  {
+    pSystemDriver->mDropFilesHandler( std::move( arg ) );
+  }
+
+  return pSystemDriver;
+}
+
+SystemDriver::SystemDriver() : mhWnd{}, mIntputSource{}
+{
+}
+
+void SystemDriver::initialize( HWND hWnd )
+{
+  mhWnd = hWnd;
+
+  auto iniPath = gConfigProvider.appDataFolder();
+
   try
   {
     std::tie( mBaseRenderer, mExtendedRenderer ) = DX11Renderer::create( hWnd, iniPath );
@@ -16,6 +151,31 @@ SystemDriver::SystemDriver( HWND hWnd, std::filesystem::path const& iniPath ) : 
   {
     std::tie( mBaseRenderer, mExtendedRenderer ) = DX9Renderer::create( hWnd, iniPath );
   }
+
+  mIntputSource = std::make_shared<UserInput>();
+}
+
+int SystemDriver::eventLoop()
+{
+  MSG msg{};
+
+  for ( ;; )
+  {
+    while ( PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE ) )
+    {
+      TranslateMessage( &msg );
+      DispatchMessage( &msg );
+
+      if ( msg.message == WM_QUIT )
+        return (int)msg.wParam;
+    }
+
+    update();
+
+    std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+  }
+
+  return 0;
 }
 
 std::shared_ptr<IBaseRenderer> SystemDriver::baseRenderer() const
@@ -87,6 +247,8 @@ void SystemDriver::quit()
 void SystemDriver::update()
 {
   mIntputSource->updateGamepad();
+  if ( mUpdateHandler )
+    mUpdateHandler();
 }
 
 std::shared_ptr<IUserInput> SystemDriver::userInput() const
@@ -100,9 +262,14 @@ void SystemDriver::updateRotation( ImageProperties::Rotation rotation )
   mBaseRenderer->setRotation( rotation );
 }
 
-void SystemDriver::registerDropFiles( std::function<void( std::filesystem::path )> handler )
+void SystemDriver::registerDropFiles( std::function<void( std::filesystem::path )> dropFilesHandler )
 {
-  mDropFilesHandler = std::move( handler );
+  mDropFilesHandler = std::move( dropFilesHandler );
+}
+
+void SystemDriver::registerUpdate( std::function<void()> updateHandler )
+{
+  mUpdateHandler = std::move( updateHandler );
 }
 
 void SystemDriver::handleFileDrop( HDROP hDrop )

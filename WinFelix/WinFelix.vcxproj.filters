@@ -15,7 +15,6 @@
     <ClCompile Include="LuaProxies.cpp" />
     <ClCompile Include="ScreenRenderingBuffer.cpp" />
     <ClCompile Include="ScreenGeometry.cpp" />
-    <ClCompile Include="BaseRenderer.cpp" />
     <ClCompile Include="DX9Renderer.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="VideoSink.cpp" />

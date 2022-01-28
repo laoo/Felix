@@ -98,17 +98,9 @@ Manager::Manager() : mUI{ *this },
 
 void Manager::update()
 {
-  mSystemDriver->update();
-
   if ( mDoReset )
     reset();
   mDoReset = false;
-}
-
-void Manager::doArg( std::wstring arg )
-{
-  mArg = std::filesystem::path{ std::move( arg ) };
-  reset();
 }
 
 void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
@@ -119,6 +111,7 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
   mExtendedRenderer = mSystemDriver->extendedRenderer();
 
   mSystemDriver->registerDropFiles( std::bind( &Manager::handleFileDrop, this, std::placeholders::_1 ) );
+  mSystemDriver->registerUpdate( std::bind( &Manager::update, this ) );
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )

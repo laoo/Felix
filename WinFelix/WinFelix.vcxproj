@@ -147,7 +147,6 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BaseRenderer.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="DX11Helpers.cpp" />

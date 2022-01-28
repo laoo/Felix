@@ -4,13 +4,12 @@
 class IUserInput;
 class IExtendedRenderer;
 class IBaseRenderer;
+class Manager;
 
 class ISystemDriver
 {
 public:
   virtual ~ISystemDriver() = default;
-
-  static std::shared_ptr<ISystemDriver> create( HWND hWnd, std::filesystem::path const& iniPath );
 
   virtual std::shared_ptr<IBaseRenderer> baseRenderer() const = 0;
   virtual std::shared_ptr<IExtendedRenderer> extendedRenderer() const = 0;
@@ -20,7 +19,11 @@ public:
   virtual std::shared_ptr<IUserInput> userInput() const = 0;
   virtual void updateRotation( ImageProperties::Rotation rotation ) = 0;
 
+  virtual int eventLoop() = 0;
+
   virtual void registerDropFiles( std::function<void( std::filesystem::path )> ) = 0;
+  virtual void registerUpdate( std::function<void()> ) = 0;
 
 };
 
+std::shared_ptr<ISystemDriver> createSystemDriver( Manager& manager, std::wstring const& arg, int nCmdShow );
