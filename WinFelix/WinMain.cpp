@@ -78,13 +78,23 @@ bool runOtherInstanceIfPresent( std::wstring const& name, std::wstring const& ar
       std::copy( arg.cbegin(), arg.cend(), std::back_inserter( buffer ) );
     }
     buffer.push_back( 0 );
+    buffer.push_back( 0 );
 
-    COPYDATASTRUCT cds;
-    cds.dwData = 0;
-    cds.cbData = (DWORD)buffer.size() * sizeof( wchar_t );
-    cds.lpData = buffer.data();
-    SendMessage( hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>( &cds ) );
-    SetForegroundWindow( hwnd );
+    HGLOBAL hMem = GlobalAlloc( GHND, sizeof( DROPFILES ) + buffer.size() * sizeof( wchar_t ) );
+    BOOST_SCOPE_EXIT_ALL( = ) { GlobalFree( hMem ); };
+
+    if ( auto dropFiles = (DROPFILES*)GlobalLock( hMem ) )
+    {
+      BOOST_SCOPE_EXIT_ALL( = ) { GlobalUnlock( hMem ); };
+
+      dropFiles->pFiles = sizeof( DROPFILES );
+      dropFiles->pt = POINT{};
+      dropFiles->fNC = false;
+      dropFiles->fWide = true;
+      memcpy( &dropFiles[1], &buffer[0], buffer.size() * sizeof( wchar_t ) );
+      PostMessage( hwnd, WM_DROPFILES, (WPARAM)hMem, 0 );
+    }
+
     return true;
   }
   

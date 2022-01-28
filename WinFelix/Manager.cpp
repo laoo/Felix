@@ -145,10 +145,8 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
     SetForegroundWindow( hWnd );
-    return 0;
-  case WM_COPYDATA:
     ShowWindow( hWnd, SW_RESTORE );
-    return handleCopyData( std::bit_cast<COPYDATASTRUCT const*>( lParam ) ) ? 1 : 0;
+    return 0;
   case WM_KEYDOWN:
   case WM_SYSKEYDOWN:
     if ( wParam < 256 )
@@ -553,22 +551,3 @@ void Manager::handleFileDrop( HDROP hDrop )
   mDoReset = true;
   reset();
 }
-
-bool Manager::handleCopyData( COPYDATASTRUCT const* copy )
-{
-  if ( copy )
-  {
-    std::span<wchar_t const> span{ (wchar_t const*)copy->lpData, copy->cbData / sizeof( wchar_t ) };
-
-    wchar_t const* ptr = span.data();
-    if ( size_t size = std::wcslen( ptr ) )
-    {
-      mArg = { ptr, size };
-      reset();
-      return true;
-    }
-  }
-
-  return false;
-}
-
