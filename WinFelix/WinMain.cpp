@@ -68,7 +68,7 @@ int loop( Manager & manager )
   return 0;
 }
 
-bool checkInstance( std::wstring const& name, std::wstring const& arg )
+bool runOtherInstanceIfPresent( std::wstring const& name, std::wstring const& arg )
 {
   if ( auto hwnd = FindWindowW( gClassName, name.c_str() ) )
   {
@@ -147,8 +147,13 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     auto sysConfig = gConfigProvider.sysConfig();
 
-    if ( gConfigProvider.sysConfig()->singleInstance && checkInstance( name, arg ) )
-      return 0;
+    if ( gConfigProvider.sysConfig()->singleInstance )
+    {
+      if ( runOtherInstanceIfPresent( name, arg ) )
+      {
+        return 0;
+      }
+    }
 
     HWND hwnd = CreateWindowEx( WS_EX_CLIENTEDGE, gClassName, name.c_str(), WS_OVERLAPPEDWINDOW, sysConfig->mainWindow.x, sysConfig->mainWindow.y, sysConfig->mainWindow.width, sysConfig->mainWindow.height, nullptr, nullptr, hInstance, &manager );
 
