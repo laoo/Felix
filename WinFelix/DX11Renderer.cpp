@@ -61,7 +61,7 @@ static ComPtr<ID3D11ComputeShader> gBoardCS;
 
 }
 
-DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mHexFont{}, mRefreshRate{}, mEncodingRenderer{}
+DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : BaseRenderer{ hWnd }, mRefreshRate{}, mEncodingRenderer{}
 {
   typedef HRESULT( WINAPI* LPD3D11CREATEDEVICE )( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, CONST D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
   static LPD3D11CREATEDEVICE s_DynamicD3D11CreateDevice = nullptr;
@@ -150,7 +150,6 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : 
   V_THROW( gD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
 
   gBoardFont.initialize();
-  mHexFont.initialize();
 
   mImgui = std::make_shared<WinImgui11>( mHWnd, gD3DDevice, gImmediateContext, iniPath );
 }
@@ -382,46 +381,6 @@ void DX11Renderer::BoardFont::initialize()
   D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
   V_THROW( gD3DDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
   V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
-}
-
-DX11Renderer::HexFont::HexFont() : srv{}
-{
-}
-
-void DX11Renderer::HexFont::initialize()
-{
-  std::array<D3D11_SUBRESOURCE_DATA, 256> initData;
-  std::vector<uint8_t> buf;
-  buf.resize( initData.size() * width * height );
-
-  for ( size_t i = 0; i < initData.size(); ++i )
-  {
-    uint8_t * charBuf = &buf[i * width * height];
-    size_t leftIdx = i >> 4;
-    size_t rightIdx = i & 0x0f;
-
-    for ( size_t y = 0; y < srcHeight; ++y )
-    {
-      uint8_t* rowBuf = &charBuf[( y + 2 ) * width];
-      std::copy_n( src( leftIdx, y ), srcWidth, rowBuf + 1 );
-      std::copy_n( src( rightIdx, y ), srcWidth, rowBuf + 8 );
-    }
-
-    auto& ini = initData[i];
-    ini.pSysMem = charBuf;
-    ini.SysMemPitch = width;
-    ini.SysMemSlicePitch = 0;
-  }
-
-  ComPtr<ID3D11Texture2D> tex;
-  D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( gD3DDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
-}
-
-uint8_t const* DX11Renderer::HexFont::src( size_t idx, size_t row )
-{
-  return &hex_6x12[idx * srcWidth * srcHeight + row * srcWidth];
 }
 
 DX11Renderer::Board::Board( int width, int height ) : width{}, height{}

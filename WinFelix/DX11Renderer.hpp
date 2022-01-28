@@ -107,22 +107,6 @@ private:
   };
 
 
-  struct HexFont
-  {
-    HexFont();
-    void initialize();
-
-    static constexpr int width = 16;
-    static constexpr int height = 16;
-    static constexpr int srcWidth = 6;
-    static constexpr int srcHeight = 12;
-
-    ComPtr<ID3D11ShaderResourceView> srv;
-
-  private:
-    static uint8_t const* src( size_t idx, size_t row );
-  } mHexFont;
-
   ComPtr<IDXGISwapChain>            mSwapChain;
   ComPtr<ID3D11Buffer>              mPosSizeCB;
   ComPtr<ID3D11UnorderedAccessView> mBackBufferUAV;
