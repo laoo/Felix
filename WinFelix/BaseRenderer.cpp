@@ -45,10 +45,6 @@ int64_t BaseRenderer::render( UI& ui )
   return result;
 }
 
-void BaseRenderer::setEncoder( std::shared_ptr<IEncoder> encoder )
-{
-}
-
 std::shared_ptr<IVideoSink> BaseRenderer::getVideoSink() const
 {
   return mVideoSink;

@@ -52,6 +52,7 @@ public:
   virtual std::shared_ptr<IScreenView> makeMainScreenView() = 0;
   virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView() = 0;
   virtual std::shared_ptr<IBoard> makeBoard( int width, int height ) = 0;
+  virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
 };
 
 
@@ -67,7 +68,6 @@ public:
   int64_t render( UI& ui );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
-  virtual void setEncoder( std::shared_ptr<IEncoder> encoder );
   virtual std::shared_ptr<IExtendedRenderer> extendedRenderer() = 0;
 
   std::shared_ptr<IVideoSink> getVideoSink() const;

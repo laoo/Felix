@@ -351,6 +351,9 @@ void Manager::processLua( std::filesystem::path const& path )
 
   mLua["Encoder"] = [this]( sol::table const& tab )
   {
+    if ( !mExtendedRenderer )
+      throw Ex{} << "Encoder not available";
+
     std::filesystem::path path;
     int vbitrate{}, abitrate{}, vscale{};
     if ( sol::optional<std::string> opt = tab["path"] )
@@ -383,7 +386,8 @@ void Manager::processLua( std::filesystem::path const& path )
     s_disposeEncoder = (PDISPOSE_ENCODER)GetProcAddress( mEncoderMod, "disposeEncoder" );
 
     mEncoder = std::shared_ptr<IEncoder>( s_createEncoder( path.string().c_str(), vbitrate, abitrate, SCREEN_WIDTH * vscale, SCREEN_HEIGHT * vscale ), s_disposeEncoder );
-    mRenderer->setEncoder( mEncoder );
+
+    mExtendedRenderer->setEncoder( mEncoder );
     mAudioOut->setEncoder( mEncoder );
   };
 
