@@ -23,6 +23,7 @@
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="EncodingRenderer.cpp" />
     <ClCompile Include="DX11Helpers.cpp" />
+    <ClCompile Include="SystemDriver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -67,6 +68,7 @@
     <ClInclude Include="Debugger.hpp" />
     <ClInclude Include="EncodingRenderer.hpp" />
     <ClInclude Include="DX11Helpers.hpp" />
+    <ClInclude Include="SystemDriver.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">

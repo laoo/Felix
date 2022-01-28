@@ -7,7 +7,7 @@
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
-DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : mHWnd{ hWnd }, mIniPath{ iniPath }, mVideoSink{ std::make_shared<VideoSink>() },
+DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag ) : mHWnd{ hWnd }, mIniPath{ iniPath }, mVideoSink{ std::make_shared<VideoSink>() },
   mD3D{}, mD3Device{}, mRect{}, mSource{}, mSourceWidth{}, mSourceHeight{}, mLastRenderTimePoint{}
 {
   LARGE_INTEGER l;
@@ -15,13 +15,15 @@ DX9Renderer::DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath ) : mH
   mLastRenderTimePoint = l.QuadPart;
 }
 
-DX9Renderer::~DX9Renderer()
+std::pair<std::shared_ptr<IBaseRenderer>, std::shared_ptr<IExtendedRenderer>> DX9Renderer::create( HWND hWnd, std::filesystem::path const& iniPath )
 {
+  std::shared_ptr<DX9Renderer> renderer = std::make_shared<DX9Renderer>( hWnd, iniPath, Tag{} );
+
+  return { std::dynamic_pointer_cast<IBaseRenderer>( renderer ), {} };
 }
 
-std::shared_ptr<IExtendedRenderer> DX9Renderer::extendedRenderer()
+DX9Renderer::~DX9Renderer()
 {
-  return {};
 }
 
 int64_t DX9Renderer::render( UI& ui )

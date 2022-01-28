@@ -2,7 +2,6 @@
 
 #include "ScriptDebugger.hpp"
 #include "Utility.hpp"
-#include "BaseRenderer.hpp"
 #include "UI.hpp"
 #include "Debugger.hpp"
 
@@ -19,6 +18,9 @@ class KeyNames;
 class ImageProperties;
 class ImageROM;
 struct ImGuiIO;
+class IBaseRenderer;
+class IExtendedRenderer;
+class ISystemDriver;
 
 class Manager
 {
@@ -30,7 +32,7 @@ public:
   void reset();
   void updateRotation();
   void doArg( std::wstring arg );
-  void initialize( HWND hWnd );
+  void initialize( std::shared_ptr<ISystemDriver> systemDriver );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
   void quit();
@@ -41,7 +43,6 @@ private:
   std::optional<InputFile> computeInputFile();
   void stopThreads();
   void handleFileDrop( HDROP hDrop );
-  bool handleCopyData( COPYDATASTRUCT const* copy );
 
   void updateDebugWindows();
   BoardRendering renderCPUWindow();
@@ -78,6 +79,7 @@ private:
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;
+  std::shared_ptr<ISystemDriver> mSystemDriver;
   std::shared_ptr<IBaseRenderer> mRenderer;
   std::shared_ptr<IExtendedRenderer> mExtendedRenderer;
   std::shared_ptr<WinAudioOut> mAudioOut;
@@ -92,6 +94,4 @@ private:
   std::filesystem::path mLogPath;
   std::mutex mMutex;
   int64_t mRenderingTime;
-  HWND mhWnd;
-
 };

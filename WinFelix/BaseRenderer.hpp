@@ -60,12 +60,23 @@ public:
   virtual ~IBaseRenderer() = default;
 
   virtual int64_t render( UI& ui ) = 0;
-  virtual std::shared_ptr<IExtendedRenderer> extendedRenderer() = 0;
   virtual void setRotation( ImageProperties::Rotation rotation ) = 0;
   virtual std::shared_ptr<IVideoSink> getVideoSink() = 0;
   virtual int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
 
 };
 
+class ISystemDriver
+{
+public:
+  virtual ~ISystemDriver() = default;
 
-std::shared_ptr<IBaseRenderer> createRenderer( HWND hWnd, std::filesystem::path const& iniPath );
+  static std::shared_ptr<ISystemDriver> create( HWND hWnd, std::filesystem::path const& iniPath );
+
+  virtual std::shared_ptr<IBaseRenderer> baseRenderer() const = 0;
+  virtual std::shared_ptr<IExtendedRenderer> extendedRenderer() const = 0;
+  virtual int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
+  virtual void quit() = 0;
+
+};
+

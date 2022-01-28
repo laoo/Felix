@@ -6,11 +6,14 @@ struct VideoSink;
 
 class DX9Renderer : public IBaseRenderer
 {
+  struct Tag{};
+
 public:
-  DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath );
+  DX9Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag );
+  static std::pair<std::shared_ptr<IBaseRenderer>, std::shared_ptr<IExtendedRenderer>> create( HWND hWnd, std::filesystem::path const& iniPath );
+
   ~DX9Renderer() override;
 
-  std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
   int64_t render( UI& ui ) override;
   void setRotation( ImageProperties::Rotation rotation ) override;
   std::shared_ptr<IVideoSink> getVideoSink() override;

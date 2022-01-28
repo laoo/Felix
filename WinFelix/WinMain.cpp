@@ -9,6 +9,7 @@
 #include "version.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
+#include "BaseRenderer.hpp"
 
 wchar_t gClassName[] = L"FelixWindowClass";
 
@@ -23,7 +24,7 @@ LRESULT CALLBACK WndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
     assert( manager );
     try
     {
-      manager->initialize( hwnd );
+      manager->initialize( ISystemDriver::create( hwnd, gConfigProvider.appDataFolder() ) );
     }
     catch ( std::exception const & ex )
     {

@@ -5,10 +5,13 @@ class WinImgui11;
 class EncodingRenderer;
 struct VideoSink;
 
-class DX11Renderer : public IBaseRenderer, public IExtendedRenderer, public std::enable_shared_from_this<DX11Renderer>
+class DX11Renderer : public IBaseRenderer, public IExtendedRenderer
 {
+  struct Tag{};
 public:
-  DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath );
+  DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag );
+  static std::pair<std::shared_ptr<IBaseRenderer>, std::shared_ptr<IExtendedRenderer>> create( HWND hWnd, std::filesystem::path const& iniPath );
+
   ~DX11Renderer() override;
 
   int64_t render( UI& ui ) override;
@@ -16,7 +19,6 @@ public:
   std::shared_ptr<IVideoSink> getVideoSink() override;
 
   void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
-  std::shared_ptr<IExtendedRenderer> extendedRenderer() override;
   std::shared_ptr<IBoard> makeBoard( int width, int height ) override;
 
   std::shared_ptr<IScreenView> makeMainScreenView() override;
