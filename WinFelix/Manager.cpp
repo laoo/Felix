@@ -122,6 +122,8 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();
   mExtendedRenderer = mSystemDriver->extendedRenderer();
+
+  mSystemDriver->registerDropFiles( std::bind( &Manager::handleFileDrop, this, std::placeholders::_1 ) );
 }
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -142,11 +144,6 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     return 0;
   case WM_DESTROY:
     PostQuitMessage( 0 );
-    return 0;
-  case WM_DROPFILES:
-    handleFileDrop( (HDROP)wParam );
-    SetForegroundWindow( hWnd );
-    ShowWindow( hWnd, SW_RESTORE );
     return 0;
   case WM_KEYDOWN:
   case WM_SYSKEYDOWN:
@@ -532,27 +529,9 @@ void Manager::stopThreads()
   mRenderThread = {};
 }
 
-void Manager::handleFileDrop( HDROP hDrop )
+void Manager::handleFileDrop( std::filesystem::path path )
 {
-#ifdef _WIN64
-  auto h = GlobalAlloc( GMEM_MOVEABLE, 0 );
-  uintptr_t hptr = reinterpret_cast<uintptr_t>( h );
-  GlobalFree( h );
-  uintptr_t hdropptr = reinterpret_cast<uintptr_t>( hDrop );
-  hDrop = reinterpret_cast<HDROP>( hptr & 0xffffffff00000000 | hdropptr & 0xffffffff );
-#endif
-
-  uint32_t cnt = DragQueryFile( hDrop, ~0, nullptr, 0 );
-
-  if ( cnt > 0 )
-  {
-    uint32_t size = DragQueryFile( hDrop, 0, nullptr, 0 );
-    std::wstring arg( size + 1, L'\0' );
-    DragQueryFile( hDrop, 0, arg.data(), size + 1 );
-    mArg = arg;
-  }
-
-  DragFinish( hDrop );
+  if ( !path.empty() )
+    mArg = path;
   mDoReset = true;
-  reset();
 }

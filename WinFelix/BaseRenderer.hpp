@@ -78,5 +78,7 @@ public:
   virtual int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
   virtual void quit() = 0;
 
+  virtual void registerDropFiles( std::function<void( std::filesystem::path )> ) = 0;
+
 };
 

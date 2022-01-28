@@ -15,9 +15,17 @@ public:
   int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
   void quit() override;
 
+  void registerDropFiles( std::function<void( std::filesystem::path )> ) override;
+
+private:
+  void handleFileDrop( HDROP hDrop );
+
 
 private:
   HWND mhWnd;
   std::shared_ptr<IBaseRenderer> mBaseRenderer;
   std::shared_ptr<IExtendedRenderer> mExtendedRenderer;
+  
+  std::function<void( std::filesystem::path )> mDropFilesHandler;
+
 };

@@ -42,7 +42,7 @@ private:
   void processLua( std::filesystem::path const& path );
   std::optional<InputFile> computeInputFile();
   void stopThreads();
-  void handleFileDrop( HDROP hDrop );
+  void handleFileDrop( std::filesystem::path path );
 
   void updateDebugWindows();
   BoardRendering renderCPUWindow();
