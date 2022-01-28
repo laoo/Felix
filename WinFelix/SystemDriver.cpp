@@ -262,6 +262,13 @@ void SystemDriver::updateRotation( ImageProperties::Rotation rotation )
   mBaseRenderer->setRotation( rotation );
 }
 
+void SystemDriver::setImageName( std::wstring const& name )
+{
+  std::wstring n = L"Felix " + std::wstring{ version_string } + L" " + name;
+
+  SetWindowText( mhWnd, n.c_str() );
+}
+
 void SystemDriver::registerDropFiles( std::function<void( std::filesystem::path )> dropFilesHandler )
 {
   mDropFilesHandler = std::move( dropFilesHandler );

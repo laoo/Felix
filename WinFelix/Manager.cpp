@@ -481,4 +481,6 @@ void Manager::handleFileDrop( std::filesystem::path path )
   if ( !path.empty() )
     mArg = path;
   mDoReset = true;
+
+  mSystemDriver->setImageName( path.filename().wstring() );
 }
