@@ -147,6 +147,7 @@ int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
     SetForegroundWindow( hWnd );
     return 0;
   case WM_COPYDATA:
+    ShowWindow( hWnd, SW_RESTORE );
     return handleCopyData( std::bit_cast<COPYDATASTRUCT const*>( lParam ) ) ? 1 : 0;
   case WM_KEYDOWN:
   case WM_SYSKEYDOWN:
