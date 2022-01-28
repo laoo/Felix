@@ -34,7 +34,7 @@ public:
   void doArg( std::wstring arg );
   void initialize( std::shared_ptr<ISystemDriver> systemDriver );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-
+  IUserInput & userInput() const;
   void quit();
 
 
@@ -88,7 +88,6 @@ private:
   std::unique_ptr<SymbolSource> mSymbols;
   std::shared_ptr<Core> mInstance;
   std::shared_ptr<ScriptDebuggerEscapes> mScriptDebuggerEscapes;
-  std::shared_ptr<UserInput> mIntputSource;
   std::shared_ptr<ImageProperties> mImageProperties;
   std::filesystem::path mArg;
   std::filesystem::path mLogPath;

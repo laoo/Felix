@@ -1,8 +1,10 @@
 #include "pch.hpp"
 #include "UserInput.hpp"
 #include "SysConfig.hpp"
+#include "ConfigProvider.hpp"
+#include "SysConfig.hpp"
 
-UserInput::UserInput( SysConfig const& cfg ) : mXInputDLL{}, mXInputGetCapabilities{}, mXInputGetState{}, mRotation{ ImageProperties::Rotation::NORMAL }, mMapping{}, mPressedCodes{}, mLastState{}, mGamepadPacket{}, mHasGamepad{}
+UserInput::UserInput() : mXInputDLL{}, mXInputGetCapabilities{}, mXInputGetState{}, mRotation{ ImageProperties::Rotation::NORMAL }, mMapping{}, mPressedCodes{}, mLastState{}, mGamepadPacket{}, mHasGamepad{}
 {
   const char* xinput_dll_names[] =
   {
@@ -24,15 +26,17 @@ UserInput::UserInput( SysConfig const& cfg ) : mXInputDLL{}, mXInputGetCapabilit
     }
   }
 
-  mMapping[KeyInput::OUTER] = cfg.keyMapping.outer;
-  mMapping[KeyInput::INNER] = cfg.keyMapping.inner;
-  mMapping[KeyInput::OPTION2] = cfg.keyMapping.option2;
-  mMapping[KeyInput::OPTION1] = cfg.keyMapping.option1;
-  mMapping[KeyInput::RIGHT] = cfg.keyMapping.right;
-  mMapping[KeyInput::LEFT] = cfg.keyMapping.left;
-  mMapping[KeyInput::DOWN] = cfg.keyMapping.down;
-  mMapping[KeyInput::UP] = cfg.keyMapping.up;
-  mMapping[KeyInput::PAUSE] = cfg.keyMapping.pause;
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  mMapping[KeyInput::OUTER] = sysConfig->keyMapping.outer;
+  mMapping[KeyInput::INNER] = sysConfig->keyMapping.inner;
+  mMapping[KeyInput::OPTION2] = sysConfig->keyMapping.option2;
+  mMapping[KeyInput::OPTION1] = sysConfig->keyMapping.option1;
+  mMapping[KeyInput::RIGHT] = sysConfig->keyMapping.right;
+  mMapping[KeyInput::LEFT] = sysConfig->keyMapping.left;
+  mMapping[KeyInput::DOWN] = sysConfig->keyMapping.down;
+  mMapping[KeyInput::UP] = sysConfig->keyMapping.up;
+  mMapping[KeyInput::PAUSE] = sysConfig->keyMapping.pause;
 
   recheckGamepad();
 }
@@ -41,19 +45,18 @@ UserInput::~UserInput()
 {
   if ( mXInputDLL )
     ::FreeLibrary( mXInputDLL );
-}
 
-void UserInput::serialize( SysConfig& cfg )
-{
-  cfg.keyMapping.outer = mMapping[KeyInput::OUTER];
-  cfg.keyMapping.inner = mMapping[KeyInput::INNER];
-  cfg.keyMapping.option2 = mMapping[KeyInput::OPTION2];
-  cfg.keyMapping.option1 = mMapping[KeyInput::OPTION1];
-  cfg.keyMapping.right = mMapping[KeyInput::RIGHT];
-  cfg.keyMapping.left = mMapping[KeyInput::LEFT];
-  cfg.keyMapping.down = mMapping[KeyInput::DOWN];
-  cfg.keyMapping.up = mMapping[KeyInput::UP];
-  cfg.keyMapping.pause = mMapping[KeyInput::PAUSE];
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  sysConfig->keyMapping.outer = mMapping[KeyInput::OUTER];
+  sysConfig->keyMapping.inner = mMapping[KeyInput::INNER];
+  sysConfig->keyMapping.option2 = mMapping[KeyInput::OPTION2];
+  sysConfig->keyMapping.option1 = mMapping[KeyInput::OPTION1];
+  sysConfig->keyMapping.right = mMapping[KeyInput::RIGHT];
+  sysConfig->keyMapping.left = mMapping[KeyInput::LEFT];
+  sysConfig->keyMapping.down = mMapping[KeyInput::DOWN];
+  sysConfig->keyMapping.up = mMapping[KeyInput::UP];
+  sysConfig->keyMapping.pause = mMapping[KeyInput::PAUSE];
 }
 
 void UserInput::keyDown( int code )

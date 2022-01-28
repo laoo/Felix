@@ -1,16 +1,15 @@
 #pragma once
 #include "IInputSource.hpp"
+#include "IUserInput.hpp"
 #include "ImageProperties.hpp"
 
 struct SysConfig;
 
-class UserInput : public IInputSource
+class UserInput : public IUserInput
 {
 public:
-  UserInput( SysConfig const& cfg );
+  UserInput();
   ~UserInput() override;
-
-  void serialize( SysConfig& cfg );
 
   void keyDown( int code );
   void keyUp( int code );
@@ -19,11 +18,9 @@ public:
 
   KeyInput getInput( bool leftHand ) const override;
 
-  int getVirtualCode( KeyInput::Key k );
-  void updateMapping( KeyInput::Key k, int code );
-
-
-  int firstKeyPressed() const;
+  int getVirtualCode( KeyInput::Key k ) override;
+  void updateMapping( KeyInput::Key k, int code ) override;
+  int firstKeyPressed() const override;
 
   void updateGamepad();
   void recheckGamepad();

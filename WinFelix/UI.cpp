@@ -62,7 +62,7 @@ bool UI::mainMenu( ImGuiIO& io )
     ImGui::Text( name );
     ImGui::SameLine( 60 );
 
-    if ( ImGui::Button( keyName( mManager.mIntputSource->getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
+    if ( ImGui::Button( keyName( mManager.userInput().getVirtualCode( k ) ), ImVec2( 100, 0 ) ) )
     {
       keyToConfigure = k;
       ImGui::OpenPopup( "Configure Key" );
@@ -607,9 +607,9 @@ void UI::configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure )
       static int code = 0;
       if ( code == 0 )
       {
-        code = mManager.mIntputSource->getVirtualCode( *keyToConfigure );
+        code = mManager.userInput().getVirtualCode( *keyToConfigure );
       }
-      if ( auto c = mManager.mIntputSource->firstKeyPressed() )
+      if ( auto c = mManager.userInput().firstKeyPressed() )
       {
         code = c;
       }
@@ -618,7 +618,7 @@ void UI::configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure )
       ImGui::TableNextColumn();
       if ( ImGui::Button( "OK", ImVec2( 60, 0 ) ) )
       {
-        mManager.mIntputSource->updateMapping( *keyToConfigure, code );
+        mManager.userInput().updateMapping( *keyToConfigure, code );
         keyToConfigure = std::nullopt;
         code = 0;
         ImGui::CloseCurrentPopup();

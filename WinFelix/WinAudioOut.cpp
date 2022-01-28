@@ -3,6 +3,8 @@
 #include "Core.hpp"
 #include "Log.hpp"
 #include "IEncoder.hpp"
+#include "ConfigProvider.hpp"
+#include "SysConfig.hpp"
 
 WinAudioOut::WinAudioOut( std::atomic<RunMode>& runMode ) : mRunMode{ runMode }, mWav{}, mNormalizer{ 1.0f / 32768.0f }
 {
@@ -67,6 +69,9 @@ WinAudioOut::WinAudioOut( std::atomic<RunMode>& runMode ) : mRunMode{ runMode },
   std::fill( mWindow.begin(), mWindow.end(), 0 );
 
   mAudioClient->Start();
+
+  auto sysConfig = gConfigProvider.sysConfig();
+  mute( sysConfig->audio.mute );
 }
 
 WinAudioOut::~WinAudioOut()
@@ -92,6 +97,9 @@ WinAudioOut::~WinAudioOut()
     wav_close( mWav );
     mWav = nullptr;
   }
+
+  auto sysConfig = gConfigProvider.sysConfig();
+  sysConfig->audio.mute = mute();
 }
 
 void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )

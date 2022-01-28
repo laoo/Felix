@@ -21,7 +21,7 @@
 #include "CPU.hpp"
 #include "DebugRAM.hpp"
 #include "BaseRenderer.hpp"
-
+#include "IInputSource.hpp"
 
 
 Manager::Manager() : mUI{ *this },
@@ -34,16 +34,12 @@ Manager::Manager() : mUI{ *this },
                      mAudioThread{},
                      mRenderingTime{},
                      mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
-                     mIntputSource{},
                      mImageProperties{},
                      mRenderer{}
 {
-  auto sysConfig = gConfigProvider.sysConfig();
-
   mDebugger( RunMode::RUN );
   mAudioOut = std::make_shared<WinAudioOut>( mDebugger.mRunMode );
   mComLynxWire = std::make_shared<ComLynxWire>();
-  mIntputSource = std::make_shared<UserInput>( *sysConfig );
 
   mRenderThread = std::thread{ [this]
   {
@@ -97,13 +93,11 @@ Manager::Manager() : mUI{ *this },
     std::terminate();
   }
   } };
-
-  mAudioOut->mute( sysConfig->audio.mute );
 }
 
 void Manager::update()
 {
-  mIntputSource->updateGamepad();
+  mSystemDriver->update();
 
   if ( mDoReset )
     reset();
@@ -128,58 +122,18 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
 
 int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-  RECT r;
-  switch ( msg )
-  {
-  case WM_CLOSE:
-    if ( GetWindowRect( hWnd, &r ) )
-    {
-      auto sysConfig = gConfigProvider.sysConfig();
-      sysConfig->mainWindow.x = r.left;
-      sysConfig->mainWindow.y = r.top;
-      sysConfig->mainWindow.width = r.right - r.left;
-      sysConfig->mainWindow.height = r.bottom - r.top;
-    }
-    DestroyWindow( hWnd );
-    return 0;
-  case WM_DESTROY:
-    PostQuitMessage( 0 );
-    return 0;
-  case WM_KEYDOWN:
-  case WM_SYSKEYDOWN:
-    if ( wParam < 256 )
-    {
-      mIntputSource->keyDown( (int)wParam );
-    }
-    return mSystemDriver->wndProcHandler( hWnd, msg, wParam, lParam );
-  case WM_KEYUP:
-  case WM_SYSKEYUP:
-    if ( wParam < 256 )
-    {
-      mIntputSource->keyUp( (int)wParam );
-    }
-    return mSystemDriver->wndProcHandler( hWnd, msg, wParam, lParam );
-  case WM_KILLFOCUS:
-    mIntputSource->lostFocus();
-    return mSystemDriver->wndProcHandler( hWnd, msg, wParam, lParam );
-  case WM_DEVICECHANGE:
-    if ( (UINT)wParam == DBT_DEVNODES_CHANGED )
-      mIntputSource->recheckGamepad();
-    return 0;
-  default:
-    assert( mSystemDriver );
-    return mSystemDriver->wndProcHandler( hWnd, msg, wParam, lParam );
-  }
+  assert( mSystemDriver );
+  return mSystemDriver->wndProcHandler( hWnd, msg, wParam, lParam );
+}
+
+IUserInput& Manager::userInput() const
+{
+  return *mSystemDriver->userInput();
 }
 
 Manager::~Manager()
 {
-  auto sysConfig = gConfigProvider.sysConfig();
-
-  mIntputSource->serialize( *gConfigProvider.sysConfig() );
   stopThreads();
-
-  sysConfig->audio.mute = mAudioOut->mute();
 }
 
 void Manager::quit()
@@ -481,7 +435,7 @@ void Manager::reset()
 
   if ( auto input = computeInputFile() )
   {
-    mInstance = std::make_shared<Core>( *mImageProperties, mComLynxWire, mRenderer->getVideoSink(), mIntputSource,
+    mInstance = std::make_shared<Core>( *mImageProperties, mComLynxWire, mRenderer->getVideoSink(), mSystemDriver->userInput(),
       *input, getOptionalBootROM(), mScriptDebuggerEscapes );
 
     updateRotation();
@@ -514,8 +468,7 @@ void Manager::reset()
 
 void Manager::updateRotation()
 {
-  mIntputSource->setRotation( mImageProperties->getRotation() );
-  mRenderer->setRotation( mImageProperties->getRotation() );
+  mSystemDriver->updateRotation( mImageProperties->getRotation() );
 }
 
 void Manager::stopThreads()
