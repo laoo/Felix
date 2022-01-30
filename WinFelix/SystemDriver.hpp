@@ -22,7 +22,8 @@ public:
   void update() override;
   std::shared_ptr<IUserInput> userInput() const override;
   void updateRotation( ImageProperties::Rotation rotation ) override;
-  void setImageName( std::wstring const& name ) override;
+  void setImageName( std::wstring name ) override;
+  void setPaused( bool paused ) override;
 
   void registerDropFiles( std::function<void( std::filesystem::path )> dropFilesHandler ) override;
   void registerUpdate( std::function<void()> updataHandler ) override;
@@ -43,4 +44,7 @@ private:
   std::function<void( std::filesystem::path )> mDropFilesHandler;
   std::function<void()> mUpdateHandler;
 
+  std::wstring mImageFileName{};
+  bool mPaused{};
+  bool mNewPaused{};
 };

@@ -18,7 +18,8 @@ public:
   virtual void update() = 0;
   virtual std::shared_ptr<IUserInput> userInput() const = 0;
   virtual void updateRotation( ImageProperties::Rotation rotation ) = 0;
-  virtual void setImageName( std::wstring const& name ) = 0;
+  virtual void setImageName( std::wstring name ) = 0;
+  virtual void setPaused( bool paused ) = 0;
 
   virtual int eventLoop() = 0;
 

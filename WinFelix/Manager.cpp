@@ -81,6 +81,7 @@ Manager::Manager() : mUI{ *this },
               mDebugger.mRunMode.store( RunMode::PAUSE );
             }
           }
+          mSystemDriver->setPaused( mDebugger.mRunMode.load() != RunMode::RUN );
           updateDebugWindows();
         }
         else

@@ -249,6 +249,18 @@ void SystemDriver::update()
   mIntputSource->updateGamepad();
   if ( mUpdateHandler )
     mUpdateHandler();
+
+  if ( mPaused != mNewPaused )
+  {
+    mPaused = mNewPaused;
+
+    std::wstring n = L"Felix " + std::wstring{ version_string } + L" " + mImageFileName;
+
+    if ( mPaused )
+      n += L" paused";
+
+    SetWindowText( mhWnd, n.c_str() );
+  }
 }
 
 std::shared_ptr<IUserInput> SystemDriver::userInput() const
@@ -262,11 +274,17 @@ void SystemDriver::updateRotation( ImageProperties::Rotation rotation )
   mBaseRenderer->setRotation( rotation );
 }
 
-void SystemDriver::setImageName( std::wstring const& name )
+void SystemDriver::setImageName( std::wstring name )
 {
-  std::wstring n = L"Felix " + std::wstring{ version_string } + L" " + name;
+  mImageFileName = std::move( name );
+  std::wstring n = L"Felix " + std::wstring{ version_string } + L" " + mImageFileName;
 
   SetWindowText( mhWnd, n.c_str() );
+}
+
+void SystemDriver::setPaused( bool paused )
+{
+  mNewPaused = paused;
 }
 
 void SystemDriver::registerDropFiles( std::function<void( std::filesystem::path )> dropFilesHandler )
@@ -298,6 +316,8 @@ void SystemDriver::handleFileDrop( HDROP hDrop )
     uint32_t size = DragQueryFile( hDrop, 0, nullptr, 0 );
     arg.resize( size + 1, L'\0' );
     DragQueryFile( hDrop, 0, arg.data(), size + 1 );
+    //removes null terminating character
+    arg.pop_back();
   }
 
   DragFinish( hDrop );
