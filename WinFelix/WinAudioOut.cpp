@@ -6,7 +6,7 @@
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 
-WinAudioOut::WinAudioOut( std::atomic<RunMode>& runMode ) : mRunMode{ runMode }, mWav{}, mNormalizer{ 1.0f / 32768.0f }
+WinAudioOut::WinAudioOut() : mWav{}, mNormalizer{ 1.0f / 32768.0f }
 {
   CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
@@ -173,12 +173,14 @@ int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t rende
   return baseResult;
 }
 
-void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTimeQPC )
+bool WinAudioOut::wait()
 {
   DWORD retval = WaitForSingleObject( mEvent, 100 );
-  if ( retval != WAIT_OBJECT_0 )
-    return;
+  return retval == WAIT_OBJECT_0;
+}
 
+CpuBreakType WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTimeQPC, RunMode runMode )
+{
   HRESULT hr;
   uint32_t padding{};
   hr = mAudioClient->GetCurrentPadding( &padding );
@@ -192,21 +194,16 @@ void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingT
     }
 
     if ( !instance )
-      return;
+      return CpuBreakType::NEXT;
 
     auto sps = correctedSPS( instance->globalSamplesEmittedPerFrame(), renderingTimeQPC );
 
-    auto cpuBreakType = instance->advanceAudio( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, mRunMode.load() );
-
-    if ( cpuBreakType != CpuBreakType::NEXT )
-    {
-      mRunMode.store( RunMode::PAUSE );
-    }
+    auto cpuBreakType = instance->advanceAudio( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, runMode );
 
     BYTE *pData;
     hr = mRenderClient->GetBuffer( framesAvailable, &pData );
     if ( FAILED( hr ) )
-      return;
+      return CpuBreakType::NEXT;
     float* pfData = reinterpret_cast<float*>( pData );
     for ( uint32_t i = 0; i < framesAvailable; ++i )
     {
@@ -221,7 +218,11 @@ void WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t renderingT
       wav_write( mWav, pfData, framesAvailable );
 
     hr = mRenderClient->ReleaseBuffer( framesAvailable, 0 );
+
+    return cpuBreakType;
   }
+
+  return CpuBreakType::NEXT;
 }
 
 

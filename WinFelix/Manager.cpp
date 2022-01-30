@@ -39,7 +39,7 @@ Manager::Manager() : mUI{ *this },
                      mRenderer{}
 {
   mDebugger( RunMode::RUN );
-  mAudioOut = std::make_shared<WinAudioOut>( mDebugger.mRunMode );
+  mAudioOut = std::make_shared<WinAudioOut>();
   mComLynxWire = std::make_shared<ComLynxWire>();
 
   mRenderThread = std::thread{ [this]
@@ -72,7 +72,15 @@ Manager::Manager() : mUI{ *this },
             std::scoped_lock<std::mutex> l{ mMutex };
             renderingTime = mRenderingTime;
           }
-          mAudioOut->fillBuffer( mInstance, renderingTime );
+          if ( mAudioOut->wait() )
+          {
+            auto runMode = mDebugger.mRunMode.load();
+            auto cpuBreakType = mAudioOut->fillBuffer( mInstance, renderingTime, runMode );
+            if ( cpuBreakType != CpuBreakType::NEXT )
+            {
+              mDebugger.mRunMode.store( RunMode::PAUSE );
+            }
+          }
           updateDebugWindows();
         }
         else
