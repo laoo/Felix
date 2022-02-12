@@ -9,6 +9,7 @@ class Core;
 class TimerCore;
 class AudioChannel;
 class DisplayGenerator;
+class VGMWriter;
 
 class Mikey
 {
@@ -83,6 +84,7 @@ public:
   void setDMAData( uint64_t tick, uint64_t data );
   void suzyDone();
   AudioSample sampleAudio() const;
+  void setVGMWriter( std::shared_ptr<VGMWriter> writer );
 
   void setIRQ( uint8_t mask );
   void resetIRQ( uint8_t mask );
@@ -103,6 +105,7 @@ private:
   std::array<int16_t, 4> mAttenuationRight;
 
   std::unique_ptr<DisplayGenerator> mDisplayGenerator;
+  std::shared_ptr<VGMWriter> mVGMWriter;
 
   ParallelPort mParallelPort;
 

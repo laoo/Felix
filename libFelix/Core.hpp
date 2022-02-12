@@ -20,6 +20,7 @@ class ComLynxWire;
 class TraceHelper;
 class ScriptDebuggerEscapes;
 class ScriptDebugger;
+class VGMWriter;
 struct CPUState;
 
 class Core
@@ -34,6 +35,7 @@ public:
   CpuBreakType run( RunMode runMode );
 
   void setLog( std::filesystem::path const & path );
+  void setVGMWriter( std::shared_ptr<VGMWriter> writer );
 
   void enterMonitor();
   int64_t globalSamplesEmittedPerFrame() const;

@@ -32,6 +32,7 @@
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="ImageProperties.cpp" />
     <ClCompile Include="CPUState.cpp" />
+    <ClCompile Include="VGMWriter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp" />
@@ -77,5 +78,6 @@
     <ClInclude Include="ScriptDebuggerEscapes.hpp" />
     <ClInclude Include="Encryption.hpp" />
     <ClInclude Include="ImageProperties.hpp" />
+    <ClInclude Include="VGMWriter.hpp" />
   </ItemGroup>
 </Project>

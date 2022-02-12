@@ -23,6 +23,7 @@
 #include "BaseRenderer.hpp"
 #include "IInputSource.hpp"
 #include "ISystemDriver.hpp"
+#include "VGMWriter.hpp"
 
 
 Manager::Manager() : mUI{ *this },
@@ -354,6 +355,16 @@ void Manager::processLua( std::filesystem::path const& path )
     else throw Ex{} << "path = \"path/to/file.wav\" required";
 
     mAudioOut->setWavOut( std::move( path ) );
+  };
+
+  mLua["vgmDump"] = [this]( sol::table const& tab )
+  {
+    if ( sol::optional<std::string> opt = tab["path"] )
+    {
+      if ( mInstance )
+        mInstance->setVGMWriter( std::make_shared<VGMWriter>( *opt ) );
+    }
+    else throw Ex{} << "path = \"path/to/file.vgm\" required";
   };
 
   mLua["traceCurrent"] = [this]()

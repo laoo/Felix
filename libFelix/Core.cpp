@@ -14,6 +14,8 @@
 #include "TraceHelper.hpp"
 #include "DebugRAM.hpp"
 #include "ScriptDebuggerEscapes.hpp"
+#include "VGMWriter.hpp"
+
 uint8_t* gDebugRAM;
 
 static constexpr uint64_t RESET_DURATION = 5 * 10;  //asserting RESET for 10 cycles to make sure none will miss it
@@ -104,6 +106,13 @@ void Core::setROM( std::shared_ptr<ImageROM const> bootROM )
 void Core::setLog( std::filesystem::path const & path )
 {
   mCpu->setLog( path );
+}
+
+void Core::setVGMWriter( std::shared_ptr<VGMWriter> writer )
+{
+  if ( writer )
+    writer->init( mCurrentTick );
+  mMikey->setVGMWriter( std::move( writer ) );
 }
 
 void Core::pulseReset( std::optional<uint16_t> resetAddress )

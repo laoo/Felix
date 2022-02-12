@@ -6,6 +6,7 @@
 #include "Cartridge.hpp"
 #include "CPU.hpp"
 #include "ComLynx.hpp"
+#include "VGMWriter.hpp"
 
 Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mCore{ core }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
   mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mAttenuationLeft{ 0x3c, 0x3c, 0x3c, 0x3c }, mAttenuationRight{ 0x3c, 0x3c, 0x3c, 0x3c }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( std::move( videoSink ) ) },
@@ -279,6 +280,9 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   }
   else if ( address < 0x40 )
   {
+    if ( mVGMWriter )
+      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
+
     switch ( address & 0x7 )
     {
     case AUDIO::VOLCNTRL:
@@ -302,30 +306,24 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   else switch ( address )
   {
   case ATTENREG0:
-    mAttenuation[0] = value;
-    mAttenuationLeft[0] = ( value & 0x0f ) << 2;
-    mAttenuationRight[0] = ( value & 0xf0 ) >> 2;
-    break;
   case ATTENREG1:
-    mAttenuation[1] = value;
-    mAttenuationLeft[1] = ( value & 0x0f ) << 2;
-    mAttenuationRight[1] = ( value & 0xf0 ) >> 2;
-    break;
   case ATTENREG2:
-    mAttenuation[2] = value;
-    mAttenuationLeft[2] = ( value & 0x0f ) << 2;
-    mAttenuationRight[2] = ( value & 0xf0 ) >> 2;
-    break;
   case ATTENREG3:
-    mAttenuation[3] = value;
-    mAttenuationLeft[3] = ( value & 0x0f ) << 2;
-    mAttenuationRight[3] = ( value & 0xf0 ) >> 2;
+    mAttenuation[address & 3] = value;
+    mAttenuationLeft[address & 3] = ( value & 0x0f ) << 2;
+    mAttenuationRight[address & 3] = ( value & 0xf0 ) >> 2;
+    if ( mVGMWriter )
+      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
     break;
   case MPAN:
     mPan = value;
+    if ( mVGMWriter )
+      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
     break;
   case MSTEREO:
     mStereo = value;
+    if ( mVGMWriter )
+      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
     break;
   case INTRST:
     resetIRQ( value );
@@ -473,6 +471,11 @@ AudioSample Mikey::sampleAudio() const
   }
 
   return { left, right };
+}
+
+void Mikey::setVGMWriter( std::shared_ptr<VGMWriter> writer )
+{
+  mVGMWriter = std::move( writer );
 }
 
 void Mikey::setIRQ( uint8_t mask )

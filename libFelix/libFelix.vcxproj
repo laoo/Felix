@@ -49,6 +49,7 @@
     <ClCompile Include="SymbolSource.cpp" />
     <ClCompile Include="TimerCore.cpp" />
     <ClCompile Include="Utility.cpp" />
+    <ClCompile Include="VGMWriter.cpp" />
     <ClCompile Include="VidOperator.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -94,6 +95,7 @@
     <ClInclude Include="SymbolSource.hpp" />
     <ClInclude Include="TimerCore.hpp" />
     <ClInclude Include="Utility.hpp" />
+    <ClInclude Include="VGMWriter.hpp" />
     <ClInclude Include="VidOperator.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
