@@ -241,7 +241,7 @@ void Core::executeSequencedAction( SequencedAction seqAction )
     }
     else
     {
-      mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio();
+      mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio( mCurrentTick );
       mGlobalSamplesEmitted += 1;
       enqueueSampling();
     }

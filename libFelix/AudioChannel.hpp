@@ -27,7 +27,12 @@ public:
   uint8_t getCounter( uint64_t tick );
   uint8_t getOther( uint64_t tick );
 
-  void trigger();
+  float sample( uint64_t tick ) const;
+
+  void trigger( uint64_t tick );
+
+private:
+  static float sampleHelper( uint32_t diff );
 
 private:
   struct AUD_CONTROL
@@ -49,12 +54,16 @@ private:
 
 private:
   TimerCore & mTimer;
+  uint64_t mChangeCycle;
 
   uint32_t mShiftRegisterBackup;
   uint32_t mShiftRegister;
   uint32_t mTapSelector;
+  uint32_t mParity;
   bool mEnableIntegrate;
+  bool mEven;
   int8_t mVolume;
-  int8_t mOutput;
+  float mOutput;
+  float mOldOutput;
 };
 

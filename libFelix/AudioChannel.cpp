@@ -3,7 +3,7 @@
 #include "TimerCore.hpp"
 #include "Utility.hpp"
 
-AudioChannel::AudioChannel( TimerCore & timer ) : mTimer{ timer }, mShiftRegisterBackup{}, mShiftRegister{}, mTapSelector{}, mEnableIntegrate{}, mVolume{}, mOutput{}
+AudioChannel::AudioChannel( TimerCore& timer ) : mTimer{ timer }, mChangeCycle{}, mShiftRegisterBackup{}, mShiftRegister{}, mTapSelector{}, mParity{ ~0u }, mEnableIntegrate{}, mVolume{}, mOutput{}, mOldOutput{}
 {
 }
 
@@ -21,7 +21,7 @@ SequencedAction AudioChannel::setFeedback( uint8_t value )
 
 SequencedAction AudioChannel::setOutput( uint8_t value )
 {
-  mOutput = value;
+  mOutput = (int8_t)value;
   return {};
 }
 
@@ -66,7 +66,7 @@ uint8_t AudioChannel::getFeedback()
 
 int8_t AudioChannel::getOutput()
 {
-  return mOutput;
+  return (int8_t)mOutput;
 }
 
 uint8_t AudioChannel::getShift()
@@ -100,20 +100,41 @@ uint8_t AudioChannel::getOther( uint64_t tick )
   return result | ( ( mShiftRegister & 0b1111'0000'0000 ) >> 4 );
 }
 
-void AudioChannel::trigger()
+float AudioChannel::sampleHelper( uint32_t diff )
+{
+ return 1.0f - ( std::powf( 0.99989f, (float)diff ) + diff / 700000.0f );
+}
+
+float AudioChannel::sample( uint64_t tick ) const
+{
+  return mOutput; // std::lerp( mOldOutput, mOutput, sampleHelper( (uint32_t)( tick - mChangeCycle ) ) );
+}
+
+void AudioChannel::trigger( uint64_t tick )
 {
   uint32_t xorGate = mTapSelector & mShiftRegister;
-  uint32_t parity = std::popcount( xorGate ) & 1;
-  uint32_t newShift = ( mShiftRegister << 1 ) | ( parity ^ 1 );
-  mShiftRegister = newShift;
-  
+  uint32_t parity = std::popcount( xorGate ) & 1 ^ 1;
+  mShiftRegister = ( mShiftRegister << 1 ) | parity;
+  int8_t vol = ( parity ? ~mVolume : mVolume );
+
+
   if ( mEnableIntegrate )
   {
-    int32_t temp = mOutput + ( ( newShift & 1 ) ? mVolume : ~mVolume );
-    mOutput = (int8_t)std::clamp( temp, (int32_t)std::numeric_limits<int8_t>::min(), (int32_t)std::numeric_limits<int8_t>::max() );
+    mOldOutput = mOutput;
+    float temp = mOldOutput + vol;
+    mOutput = std::clamp( temp, (float)std::numeric_limits<int8_t>::min(), (float)std::numeric_limits<int8_t>::max() );
   }
-  else
+
+  if ( parity != mParity )
   {
-    mOutput = ( newShift & 1 ) ? mVolume : ~mVolume;
+    if ( !mEnableIntegrate )
+    {
+      mOldOutput = sample( tick );
+      mOutput = vol;
+    }
+
+    mChangeCycle = tick;
+    mParity = parity;
   }
+
 }

@@ -91,22 +91,22 @@ Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoS
   } );  //timer 7 -> audio 0
   mTimers[0x8] = std::make_unique<TimerCore>( 0x8, [this]( uint64_t tick, bool unused )
   {
-    mAudioChannels[0x0]->trigger();
+    mAudioChannels[0x0]->trigger( tick );
     mTimers[0x9]->borrowIn( tick );
   } );  //audio 0 -> audio 1
   mTimers[0x9] = std::make_unique<TimerCore>( 0x9, [this]( uint64_t tick, bool unused )
   {
-    mAudioChannels[0x1]->trigger();
+    mAudioChannels[0x1]->trigger( tick );
     mTimers[0xa]->borrowIn( tick );
   } );  //audio 1 -> audio 2
   mTimers[0xa] = std::make_unique<TimerCore>( 0xa, [this]( uint64_t tick, bool unused )
   {
-    mAudioChannels[0x2]->trigger();
+    mAudioChannels[0x2]->trigger( tick );
     mTimers[0xb]->borrowIn( tick );
   } );  //audio 2 -> audio 3
   mTimers[0xb] = std::make_unique<TimerCore>( 0xb, [this]( uint64_t tick, bool unused )
   {
-    mAudioChannels[0x3]->trigger();
+    mAudioChannels[0x3]->trigger( tick );
     mTimers[0x0]->borrowIn( tick );
   } );  //audio 3 -> timer 1
 
@@ -282,6 +282,7 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   {
     if ( mVGMWriter )
       mVGMWriter->write( mAccessTick, (uint8_t)address, value );
+    int idx = ( address >> 3 ) & 3;
 
     switch ( address & 0x7 )
     {
@@ -310,8 +311,8 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   case ATTENREG2:
   case ATTENREG3:
     mAttenuation[address & 3] = value;
-    mAttenuationLeft[address & 3] = ( value & 0x0f ) << 2;
-    mAttenuationRight[address & 3] = ( value & 0xf0 ) >> 2;
+    mAttenuationRight[address & 3] = ( value & 0x0f ) << 2;
+    mAttenuationLeft[address & 3] = ( value & 0xf0 ) >> 2;
     if ( mVGMWriter )
       mVGMWriter->write( mAccessTick, (uint8_t)address, value );
     break;
@@ -449,24 +450,29 @@ void Mikey::suzyDone()
   mSuzyDone = true;
 }
 
-AudioSample Mikey::sampleAudio() const
+AudioSample Mikey::sampleAudio( uint64_t tick ) const
 {
   int16_t left{};
   int16_t right{};
-  std::pair<float, float> result{};
+  int16_t samples[4];
+
+  samples[0] = (int16_t)mAudioChannels[0]->sample( tick );
+  samples[1] = (int16_t)mAudioChannels[1]->sample( tick );
+  samples[2] = (int16_t)mAudioChannels[2]->sample( tick );
+  samples[3] = (int16_t)mAudioChannels[3]->sample( tick );
 
   for ( size_t i = 0; i < 4; ++i )
   {
     if ( ( mStereo & ( (uint8_t)0x01 << i ) ) == 0 )
     {
       const int attenuation = ( mPan & ( (uint8_t)0x01 << i ) ) != 0 ? mAttenuationLeft[i] : 0x3c;
-      left += mAudioChannels[i]->getOutput() * attenuation;
+      left += (int16_t)samples[i] * attenuation;
     }
 
     if ( ( mStereo & ( (uint8_t)0x10 << i ) ) == 0 )
     {
       const int attenuation = ( mPan & ( (uint8_t)0x01 << i ) ) != 0 ? mAttenuationRight[i] : 0x3c;
-      right += mAudioChannels[i]->getOutput() * attenuation;
+      right += (int16_t)samples[i] * attenuation;
     }
   }
 

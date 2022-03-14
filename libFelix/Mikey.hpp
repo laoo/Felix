@@ -83,7 +83,7 @@ public:
   SequencedAction fireTimer( uint64_t tick, uint32_t timer );
   void setDMAData( uint64_t tick, uint64_t data );
   void suzyDone();
-  AudioSample sampleAudio() const;
+  AudioSample sampleAudio( uint64_t tick ) const;
   void setVGMWriter( std::shared_ptr<VGMWriter> writer );
 
   void setIRQ( uint8_t mask );
