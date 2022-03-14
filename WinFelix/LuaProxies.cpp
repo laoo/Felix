@@ -191,6 +191,10 @@ sol::object CPUProxy::get( sol::stack_object key, sol::this_state L )
     {
       return sol::object( L, sol::in_place, manager.mInstance->debugState().y );
     }
+    if ( k == "pc" )
+    {
+      return sol::object( L, sol::in_place, manager.mInstance->debugState().pc );
+    }
   }
 
   return sol::object( L, sol::in_place, sol::lua_nil );
