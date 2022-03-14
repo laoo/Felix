@@ -333,9 +333,12 @@ CPU::Execute::~Execute()
 
 CPU::Execute CPU::execute()
 {
+  auto& state = mState;
+  mPreviousState = state;
+
   trace1();
 
-  auto & state = mState;
+
 
   for ( ;; )
   {
@@ -2115,6 +2118,7 @@ CPU::Execute CPU::execute()
     do
     {
       co_await fetchOpcode( state.pc );
+      mPreviousState = state;
       trace1();
       state.pc += 1;
     } while ( isHiccup() );
@@ -2126,22 +2130,22 @@ void CPU::trace1()
 {
   if ( mGlobalTrace )
   {
-    buf[3] = hexTab[mState.pch >> 4];
-    buf[4] = hexTab[mState.pch & 0x0f];
-    buf[5] = hexTab[mState.pcl >> 4];
-    buf[6] = hexTab[mState.pcl & 0x0f];
+    buf[3] = hexTab[mPreviousState.pch >> 4];
+    buf[4] = hexTab[mPreviousState.pch & 0x0f];
+    buf[5] = hexTab[mPreviousState.pcl >> 4];
+    buf[6] = hexTab[mPreviousState.pcl & 0x0f];
 
-    buf[10] = hexTab[mState.a >> 4];
-    buf[11] = hexTab[mState.a & 0x0f];
-    buf[15] = hexTab[mState.x >> 4];
-    buf[16] = hexTab[mState.x & 0x0f];
-    buf[20] = hexTab[mState.y >> 4];
-    buf[21] = hexTab[mState.y & 0x0f];
+    buf[10] = hexTab[mPreviousState.a >> 4];
+    buf[11] = hexTab[mPreviousState.a & 0x0f];
+    buf[15] = hexTab[mPreviousState.x >> 4];
+    buf[16] = hexTab[mPreviousState.x & 0x0f];
+    buf[20] = hexTab[mPreviousState.y >> 4];
+    buf[21] = hexTab[mPreviousState.y & 0x0f];
 
-    buf[26] = hexTab[mState.sl >> 4];
-    buf[27] = hexTab[mState.sl & 0x0f];
+    buf[26] = hexTab[mPreviousState.sl >> 4];
+    buf[27] = hexTab[mPreviousState.sl & 0x0f];
 
-    mState.printP( (char*)&buf[31] );
+    mPreviousState.printP( (char*)&buf[31] );
 
     off = 38;
   }
@@ -2195,7 +2199,7 @@ void CPU::enableHistory( int columns, int rows )
   mHistory.reset( new History( columns, rows, 0, std::vector<char>{} ) );
   mHistory->data.resize( columns * rows );
   mHistoryPresent.store( true );
-  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
+  setGlobalTrace();
 }
 
 void CPU::disableHistory()
@@ -2203,7 +2207,7 @@ void CPU::disableHistory()
   mHistoryPresent.store( false );
   std::scoped_lock<std::mutex> l{ mHistoryMutex };
   mHistory.reset();
-  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
+  setGlobalTrace();
 }
 
 void CPU::copyHistory( std::span<char> out )
@@ -3575,7 +3579,7 @@ void CPU::trace2()
     break;
   }
 
-  if ( mFtrace.good() )
+  if ( mFtrace.good() && ( mTrace || mTraceToggle ) )
   {
     mFtrace.write( buf.data(), off );
     mFtrace.put( '\n' );
@@ -3596,22 +3600,39 @@ void CPU::enableTrace()
 {
   mTraceHelper->enable( true );
   mTrace = true;
-  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
+  setGlobalTrace();
 }
 
 void CPU::disableTrace()
 {
   mTraceHelper->enable( false );
   mTrace = false;
-  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
+  setGlobalTrace();
 }
 
 void CPU::toggleTrace( bool on )
 {
   mTraceHelper->enable( on );
   mTraceToggle = on;
-  mGlobalTrace = mTrace || mTraceToggle || mHistoryPresent.load();
+  setGlobalTrace();
 }
+
+void CPU::setGlobalTrace()
+{
+  if ( mTrace || mTraceToggle || mHistoryPresent.load() )
+  {
+    if ( !mGlobalTrace )
+    {
+      mGlobalTrace = true;
+      trace1();
+    }
+  }
+  else
+  {
+    mGlobalTrace = false;
+  }
+}
+
 
 std::span<char> CPU::History::nextRow()
 {

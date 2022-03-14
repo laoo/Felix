@@ -87,6 +87,7 @@ public:
 private:
 
   CPUState mState;
+  CPUState mPreviousState;
 
   struct Execute : private NonCopyable
   {
@@ -187,6 +188,7 @@ private:
   void trace2();
   static void disasmOp( char * out, Opcode op, CPUState* state = nullptr );
   void disasmOpr( uint8_t const* ram, char * out, int & pc );
+  void setGlobalTrace();
 
 private:
 
