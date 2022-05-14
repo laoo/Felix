@@ -107,7 +107,7 @@ void EEPROM::tick( uint64_t tick, bool cs, bool audin )
     {
       if ( (bool)mEECoroutine )
       {
-        mTraceHelper->comment( "EEPROM: /CS." );
+        mTraceHelper->comment<"EEPROM: /CS.">( );
         mEECoroutine.reset();
       }
       io.cs = false;
@@ -117,7 +117,7 @@ void EEPROM::tick( uint64_t tick, bool cs, bool audin )
   {
     if ( io.busyUntil < tick )
     {
-      mTraceHelper->comment( "EEPROM: begin." );
+      mTraceHelper->comment<"EEPROM: begin.">();
       mEECoroutine = process();
       io.output = {};
     }
@@ -133,7 +133,7 @@ std::optional<bool> EEPROM::output( uint64_t tick ) const
   }
   else
   {
-    mTraceHelper->comment( "EEPROM: programming." );
+    mTraceHelper->comment<"EEPROM: programming.">();
     return false;
   }
 }
@@ -146,7 +146,7 @@ EEPROM::EECoroutine EEPROM::process()
     opcode <<= 1;
     int bit = co_await io;
     opcode |= bit;
-    mTraceHelper->comment( "EEPROM: fetch opcode bit {}={}.", mOpcodeBits - i - 1, bit );
+    mTraceHelper->comment<"EEPROM: fetch opcode bit {}={}.">( mOpcodeBits - i - 1, bit );
   }
 
   int cmd = opcode >> ( mOpcodeBits - 2 );
@@ -185,7 +185,7 @@ EEPROM::EECoroutine EEPROM::process()
       data <<= 1;
       int bit = co_await io;
       data |= bit;
-      mTraceHelper->comment( "EEPROM: fetch data bit {}={}.", dataBits - i - 1, bit );
+      mTraceHelper->comment<"EEPROM: fetch data bit {}={}.">( dataBits - i - 1, bit );
     }
     write( address, data );
     co_return true;
@@ -195,7 +195,7 @@ EEPROM::EECoroutine EEPROM::process()
     for ( int i = 0; i < dataBits; ++i )
     {
       int bit = ( data >> ( dataBits - i - 1 ) ) & 1;
-      mTraceHelper->comment( "EEPROM: emit data bit {}={}.", dataBits - i - 1, bit );
+      mTraceHelper->comment<"EEPROM: emit data bit {}={}.">( dataBits - i - 1, bit );
       co_yield bit;
     }
     break;
@@ -218,7 +218,7 @@ int EEPROM::read( int address ) const
       data = mData[address];
       data |= ( mData[address + 1] ) << 8;
     }
-    mTraceHelper->comment( "EEPROM: EXECUTE READ16 ${:x} from ${:x}.", data, address );
+    mTraceHelper->comment<"EEPROM: EXECUTE READ16 ${:x} from ${:x}.">( data, address );
     return data;
   }
   else
@@ -228,14 +228,14 @@ int EEPROM::read( int address ) const
     {
       data = mData[address];
     }
-    mTraceHelper->comment( "EEPROM: EXECUTE READ8 ${:x} from ${:x}.", data, address );
+    mTraceHelper->comment<"EEPROM: EXECUTE READ8 ${:x} from ${:x}.">( data, address );
     return data;
   }
 }
 
 void EEPROM::ewen()
 {
-  mTraceHelper->comment( "EEPROM: EXECUTE EWEN." );
+  mTraceHelper->comment<"EEPROM: EXECUTE EWEN.">();
   mWriteEnable = true;
 }
 
@@ -265,9 +265,9 @@ void EEPROM::write( int address, int data, bool erase )
         }
       }
       if ( erase )
-        mTraceHelper->comment( "EEPROM: EXECUTE ERASE16 ${:x}", address );
+        mTraceHelper->comment< "EEPROM: EXECUTE ERASE16 ${:x}" >( address );
       else
-        mTraceHelper->comment( "EEPROM: EXECUTE WRITE16 ${:x} to ${:x}.", data, address );
+        mTraceHelper->comment< "EEPROM: EXECUTE WRITE16 ${:x} to ${:x}." >( data, address );
     }
     else
     {
@@ -276,9 +276,9 @@ void EEPROM::write( int address, int data, bool erase )
         mData[address] = data & 0xff;
       }
       if ( erase )
-        mTraceHelper->comment( "EEPROM: EXECUTE ERASE8 ${:x}", address );
+        mTraceHelper->comment< "EEPROM: EXECUTE ERASE8 ${:x}" >( address );
       else
-        mTraceHelper->comment( "EEPROM: EXECUTE WRITE8 ${:x} to ${:x}.", data, address );
+        mTraceHelper->comment< "EEPROM: EXECUTE WRITE8 ${:x} to ${:x}." >( data, address );
     }
 
     startProgram( WRITE_TICKS );
@@ -289,16 +289,16 @@ void EEPROM::write( int address, int data, bool erase )
     {
       address <<= 1;
       if ( erase )
-        mTraceHelper->comment( "EEPROM: DISABLED ERASE16 ${:x}.", address );
+        mTraceHelper->comment< "EEPROM: DISABLED ERASE16 ${:x}." >( address );
       else
-        mTraceHelper->comment( "EEPROM: DISABLED WRITE16 ${:x} to ${:x}.", data, address );
+        mTraceHelper->comment< "EEPROM: DISABLED WRITE16 ${:x} to ${:x}." >( data, address );
     }
     else
     {
       if ( erase )
-        mTraceHelper->comment( "EEPROM: DISABLED ERASE8 ${:x}.", address );
+        mTraceHelper->comment< "EEPROM: DISABLED ERASE8 ${:x}." >( address );
       else
-        mTraceHelper->comment( "EEPROM: DISABLED WRITE8 ${:x} to ${:x}.", data, address );
+        mTraceHelper->comment< "EEPROM: DISABLED WRITE8 ${:x} to ${:x}." >( data, address );
     }
   }
 }
@@ -307,14 +307,14 @@ void EEPROM::eral()
 {
   if ( mWriteEnable )
   {
-    mTraceHelper->comment( "EEPROM: EXECUTE ERAL." );
+    mTraceHelper->comment< "EEPROM: EXECUTE ERAL." >();
     std::ranges::fill( mData, 0xff );
     mChanged = true;
     startProgram( ERAL_TICKS );
   }
   else
   {
-    mTraceHelper->comment( "EEPROM: DISABLED ERAL." );
+    mTraceHelper->comment< "EEPROM: DISABLED ERAL." >();
   }
 }
 
@@ -328,12 +328,12 @@ void EEPROM::wral( int data )
       uint16_t* end = (uint16_t*)( mData.data() + mData.size() );
 
       std::fill( begin, end, data & 0xffff );
-      mTraceHelper->comment( "EEPROM: EXECUTE WRAL16 ${:x}.", data );
+      mTraceHelper->comment< "EEPROM: EXECUTE WRAL16 ${:x}." >( data );
     }
     else
     {
       std::ranges::fill( mData, data & 0xff );
-      mTraceHelper->comment( "EEPROM: EXECUTE WRAL8 ${:x}.", data );
+      mTraceHelper->comment< "EEPROM: EXECUTE WRAL8 ${:x}." >( data );
     }
     mChanged = true;
     startProgram( WRAL_TICKS );
@@ -342,18 +342,18 @@ void EEPROM::wral( int data )
   {
     if ( mDataBits == 16 )
     {
-      mTraceHelper->comment( "EEPROM: DISABLED WRAL16 ${:x}.", data );
+      mTraceHelper->comment< "EEPROM: DISABLED WRAL16 ${:x}." >( data );
     }
     else
     {
-      mTraceHelper->comment( "EEPROM: DISABLED WRAL8 ${:x}.", data );
+      mTraceHelper->comment< "EEPROM: DISABLED WRAL8 ${:x}." >( data );
     }
   }
 }
 
 void EEPROM::ewds()
 {
-  mTraceHelper->comment( "EEPROM: EXECUTE EWDS." );
+  mTraceHelper->comment< "EEPROM: EXECUTE EWDS." >();
   mWriteEnable = false;
 }
 
@@ -364,6 +364,6 @@ void EEPROM::startProgram( uint64_t duration )
 }
 void EEPROM::EECoroutine::promise_type::return_value( std::optional<bool> opt )
 {
-  mEE.mTraceHelper->comment( "EEPROM: end." );
+  mEE.mTraceHelper->comment< "EEPROM: end." >();
   mEE.io.output = opt;
 }

@@ -83,7 +83,7 @@ void Cartridge::setCartAddressStrobe( bool value )
 
     mShiftRegister = ( ( oldShift << 1 ) | shiftBit ) & 0xff;
 
-    mTraceHelper->comment( "shift reg ${:02x} <- {} = ${:02x}.", oldShift, shiftBit, mShiftRegister );
+    mTraceHelper->comment<"shift reg ${:02x} <- {} = ${:02x}.">( oldShift, shiftBit, mShiftRegister );
   }
 
   mCurrentStrobe = value;
@@ -125,7 +125,7 @@ uint8_t Cartridge::peekRCART1( uint64_t tick )
 
 void Cartridge::pokeRCART0( uint64_t tick, uint8_t value )
 {
-  mTraceHelper->comment( "RCART0 poke ${:03x}.",  mCounter );
+  mTraceHelper->comment<"RCART0 poke ${:03x}.">(  mCounter );
   incrementCounter( tick );
 }
 
@@ -153,7 +153,7 @@ bool Cartridge::isCart1Inactive() const
 
 uint8_t Cartridge::peek( CartBank const & bank )
 {
-  mTraceHelper->comment( "Cart read from ${:02x}:${:03x}.", mShiftRegister, mCounter );
+  mTraceHelper->comment<"Cart read from ${:02x}:${:03x}.">( mShiftRegister, mCounter );
   return bank( mShiftRegister, mCounter );
 }
 

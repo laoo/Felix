@@ -1,5 +1,16 @@
 #pragma once
 
+//https://stackoverflow.com/questions/68675303/how-to-create-a-function-that-forwards-its-arguments-to-fmtformat-keeping-the
+template <std::size_t N>
+struct StaticString
+{
+  char str[N]{};
+  constexpr StaticString( const char( &s )[N] )
+  {
+    std::ranges::copy( s, str );
+  }
+};
+
 class TraceHelper
 {
 public:
@@ -9,8 +20,8 @@ public:
 
   void enable( bool cond );
 
-  template<typename FMT, typename... Args>
-  void comment( FMT const& fmt, Args const&... args )
+  template<StaticString fmt, typename... Args>
+  void comment( Args const&... args )
   {
     if ( !mEnabled || mCommentCursor >= mTraceComment.size() )
       return;
@@ -18,7 +29,7 @@ public:
     if ( mCommentCursor != 0 )
       mTraceComment[mCommentCursor++] = ' ';
 
-    auto [out,size] = std::format_to_n( mTraceComment.begin() + mCommentCursor, mTraceComment.size() - mCommentCursor, fmt, args... );
+    auto [out,size] = std::format_to_n( mTraceComment.begin() + mCommentCursor, mTraceComment.size() - mCommentCursor, fmt.str, args... );
     mCommentCursor = std::distance( mTraceComment.begin(), out );
   }
 

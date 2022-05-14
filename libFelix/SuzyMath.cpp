@@ -110,15 +110,14 @@ void SuzyMath::mul( uint64_t tick )
     uint32_t acc = valueJKLM + result;
     mMathWarning = mMathCarry = ( acc & 0x80000000 ) != ( valueJKLM & 0x80000000 );
     jklm( acc );
-
-    mTraceHelper->comment( "math: {} {:04x}*{:04x}={:08x}, acc = {:08x}", ( mSignMath ? 's' : 'u' ), valueAB, valueCD, result, (uint32_t)acc);
+    mTraceHelper->comment<"math: {} {:04x}*{:04x}={:08x}, acc = {:08x}">( mSignMath ? 's' : 'u', valueAB, valueCD, result, (uint32_t)acc );
 
     if ( mMathCarry )
-      mTraceHelper->comment( "carry" );
+      mTraceHelper->comment<"carry">();
   }
   else
   {
-    mTraceHelper->comment( "math: {:04x}*{:04x}={:08x}", valueAB, valueCD, result );
+    mTraceHelper->comment<"math: {:04x}*{:04x}={:08x}">( valueAB, valueCD, result );
   }
 }
 
@@ -143,11 +142,11 @@ void SuzyMath::div( uint64_t tick )
 
     if ( valueJKLM )
     {
-      mTraceHelper->comment( "math: {0:08x}/{1:04x}={2:04x} + {3:08x}/{1:04x}", valueEFGH, valueNP, valueABCD, valueJKLM );
+      mTraceHelper->comment<"math: {0:08x}/{1:04x}={2:04x} + {3:08x}/{1:04x}">( valueEFGH, valueNP, valueABCD, valueJKLM );
     }
     else
     {
-      mTraceHelper->comment( "math: {:08x}/{:04x}={:04x}", valueEFGH, valueNP, valueABCD );
+      mTraceHelper->comment<"math: {:08x}/{:04x}={:04x}">( valueEFGH, valueNP, valueABCD );
     }
   }
   else
