@@ -13,8 +13,7 @@ TimerCore::TimerCore( int number, std::function<void( uint64_t, bool )> trigger 
 SequencedAction TimerCore::setBackup( uint64_t tick, uint8_t backup )
 {
   mBackup = backup;
-  mValue = 0;
-  return computeAction( tick );
+  return {};
 }
 
 SequencedAction TimerCore::setControlA( uint64_t tick, uint8_t controlA )
@@ -29,6 +28,7 @@ SequencedAction TimerCore::setControlA( uint64_t tick, uint8_t controlA )
   if ( mResetDone )
     mTimerDone = false;
 
+  updateValue( tick );
   return computeAction( tick );
 }
 
@@ -45,7 +45,7 @@ SequencedAction TimerCore::setControlB( uint64_t tick, uint8_t controlB )
   mBorrowIn   = ( controlB & CONTROLB::BORROW_IN ) != 0;
   mBorrowOut  = ( controlB & CONTROLB::BORROW_OUT ) != 0;
 
-  return computeAction( tick );
+  return {};
 }
 
 uint8_t TimerCore::getBackup( uint64_t tick )
@@ -65,12 +65,17 @@ uint8_t TimerCore::getControlA( uint64_t tick )
 
 uint8_t TimerCore::getCount( uint64_t tick )
 {
+  updateValue( tick );
+  return mValue;
+}
+
+void TimerCore::updateValue( uint64_t tick )
+{
   if ( !mLinking )
   {
-      mValue = (uint8_t)(( mExpectedTick - tick) / ((1ull << mAudShift) * 16) - 1ull);
+    int64_t tmp = ( ( mExpectedTick - tick ) / ( ( 1ll << mAudShift ) * 16 ) - 1ll );
+    mValue = (uint8_t)( tmp >= 0 ? tmp : 0 );
   }
-
-  return mValue;
 }
 
 uint8_t TimerCore::getControlB( uint64_t tick )
@@ -91,54 +96,47 @@ SequencedAction TimerCore::fireAction( uint64_t tick )
   if ( tick != mExpectedTick )
     return {};
 
-  mTimerDone = true;
   mBorrowOutTick = tick;
-
   mTrigger( tick, mEnableInt );
-
+  mBaseTick = tick;
+  if ( mEnableReload )
+  {
+    mValue = mBackup;
+  }
   return computeAction( tick );
 }
 
 void TimerCore::borrowIn( uint64_t tick )
 {
-  mBorrowInTick = tick;
-  if ( !( mEnableCount && mLinking ) || ( mTimerDone && !mEnableReload ) )
+  if ( !( mEnableCount && mLinking ) )
     return;
+
+  mBorrowInTick = tick;
 
   if ( mValue > 0 )
   {
-    mLastClock = --mValue == 0;
+    mValue -= 1;
   }
   else
   {
-    if ( mLastClock )
-    {
-      mLastClock = false;
-      mTimerDone = true;
-      mTrigger( tick, mEnableInt );
-    }
+    mBorrowOutTick = tick;
+    mTrigger( tick, mEnableInt );
+    mBaseTick = tick;
     if ( mEnableReload )
     {
       mValue = mBackup;
     }
   }
-
 }
 
 SequencedAction TimerCore::computeAction( uint64_t tick )
 {
-  if ( !mEnableCount || mLinking || ( mTimerDone && !mEnableReload ) )
-    return {};
-
-  if ( mValue == 0 || mEnableReload )
+  if ( !mEnableCount || mLinking )
   {
-    mValue = mBackup;
+    mExpectedTick = 0;
+    return {};
   }
 
-  if ( mValue == 0 )
-    return {};
-
-  mBaseTick = tick;
   mExpectedTick = mBaseTick + ( 1ull + mValue ) * ( 1ull << mAudShift ) * 16;
 
   return { (Action)( ( int )Action::FIRE_TIMER0 + mNumber ), mExpectedTick };

@@ -22,6 +22,7 @@ public:
 
 private:
   SequencedAction computeAction( uint64_t tick );
+  void updateValue( uint64_t tick );
 
 private:
   struct CONTROLA
