@@ -17,7 +17,7 @@ private:
   static constexpr uint64_t MIKEY_CLOCK = 16000000;
   static constexpr uint64_t SAMPLE_RATE = 44100;
   static constexpr uint64_t MIKEY_CLOCK_OFFSET = 0xe4;
-  static constexpr char CMD_MIKEY = 0x4e;
+  static constexpr char CMD_MIKEY = 0x40;
   static constexpr char CMD_LONG_WAIT = 0x61;
   static constexpr char CMD_SHORT_WAIT = 0x70;
   static constexpr char CMD_END_OF_SOUND_DATA = 0x66;
@@ -29,7 +29,7 @@ private:
   {
     std::array<char const, 4> ident = { 0x56, 0x67, 0x6d, 0x20 };
     uint32_t EofOffset = 0;
-    uint32_t VersionNumber = 0x171;
+    uint32_t VersionNumber = 0x172;
     uint32_t SN76489_clock = 0;
     uint32_t YM2413_clock = 0;
     uint32_t GD3_offset = 0;
