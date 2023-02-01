@@ -21,7 +21,7 @@ public:
   void borrowIn( uint64_t tick );
 
 private:
-  SequencedAction computeAction( uint64_t tick );
+  SequencedAction computeAction();
   void updateValue( uint64_t tick );
 
 private:

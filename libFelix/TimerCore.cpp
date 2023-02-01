@@ -28,14 +28,15 @@ SequencedAction TimerCore::setControlA( uint64_t tick, uint8_t controlA )
   if ( mResetDone )
     mTimerDone = false;
 
-  updateValue( tick );
-  return computeAction( tick );
+  //updateValue( tick & ~0x0full); //TODO: investigate why it can't be here
+  return computeAction();
 }
 
 SequencedAction TimerCore::setCount( uint64_t tick, uint8_t value )
 {
   mValue = value;
-  return computeAction( tick );
+  mBaseTick = tick;
+  return computeAction();
 }
 
 SequencedAction TimerCore::setControlB( uint64_t tick, uint8_t controlB )
@@ -103,7 +104,7 @@ SequencedAction TimerCore::fireAction( uint64_t tick )
   {
     mValue = mBackup;
   }
-  return computeAction( tick );
+  return computeAction();
 }
 
 void TimerCore::borrowIn( uint64_t tick )
@@ -129,7 +130,7 @@ void TimerCore::borrowIn( uint64_t tick )
   }
 }
 
-SequencedAction TimerCore::computeAction( uint64_t tick )
+SequencedAction TimerCore::computeAction()
 {
   if ( !mEnableCount || mLinking )
   {
