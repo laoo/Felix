@@ -220,7 +220,7 @@ GameDrive::GDCoroutine GameDrive::process()
       }
       else
       {
-        blockCount = std::max( blockCount, 256ull );
+        blockCount = std::max( blockCount, (size_t)256 );
         size_t size = blockCount * blockSize;
 
         if ( fileOffset < finData.size() && fileOffset + size <= finData.size() )

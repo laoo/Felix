@@ -1,8 +1,6 @@
 #pragma once
 #include "Suzy.hpp"
 
-enum class Suzy::Sprite;
-
 class ColOperator
 {
 public:

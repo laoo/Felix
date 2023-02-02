@@ -67,29 +67,31 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
 
     if ( !suzy.mReusePalette )
     {
-      union
-      {
-        std::array<uint8_t, 8> arr;
-        struct
-        {
-          uint32_t p0;
-          uint32_t p1;
-        };
-      };
-
-      p0 = co_await suzyReadPal( scb.tmpadr );
-      scb.tmpadr += 4;
-      p1 = co_await suzyReadPal( scb.tmpadr );
+      uint32_t p0 = co_await suzyReadPal( scb.tmpadr );
       scb.tmpadr += 4;
 
       //TODO: implement bug:
       //The page break signal does not delay the end of the pen index palette loading.
-      for ( size_t i = 0; i < arr.size(); ++i )
-      {
-        uint8_t value = arr[i];
-        suzy.mPalette[2 * i] = (uint8_t)((value >> 4) & 0x0f);
-        suzy.mPalette[2 * i + 1] = (uint8_t)(value & 0x0f);
-      }
+      suzy.mPalette[0x0] = ( p0 >> ( 0 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0x1] = ( p0 >> ( 0 * 8 + 0 ) ) & 0x0f;
+      suzy.mPalette[0x2] = ( p0 >> ( 1 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0x3] = ( p0 >> ( 1 * 8 + 0 ) ) & 0x0f;
+      suzy.mPalette[0x4] = ( p0 >> ( 2 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0x5] = ( p0 >> ( 2 * 8 + 0 ) ) & 0x0f;
+      suzy.mPalette[0x6] = ( p0 >> ( 3 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0x7] = ( p0 >> ( 3 * 8 + 0 ) ) & 0x0f;
+
+      uint32_t p1 = co_await suzyReadPal( scb.tmpadr );
+      scb.tmpadr += 4;
+
+      suzy.mPalette[0x8] = ( p1 >> ( 0 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0x9] = ( p1 >> ( 0 * 8 + 0 ) ) & 0x0f;
+      suzy.mPalette[0xa] = ( p1 >> ( 1 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0xb] = ( p1 >> ( 1 * 8 + 0 ) ) & 0x0f;
+      suzy.mPalette[0xc] = ( p1 >> ( 2 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0xd] = ( p1 >> ( 2 * 8 + 0 ) ) & 0x0f;
+      suzy.mPalette[0xe] = ( p1 >> ( 3 * 8 + 4 ) ) & 0x0f;
+      suzy.mPalette[0xf] = ( p1 >> ( 3 * 8 + 0 ) ) & 0x0f;
     }
 
     bool disableCollisions = suzy.mNoCollide ||

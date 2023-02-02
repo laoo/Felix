@@ -102,7 +102,7 @@ uint8_t AudioChannel::getOther( uint64_t tick )
 
 float AudioChannel::sampleHelper( uint32_t diff )
 {
- return 1.0f - ( std::powf( 0.99989f, (float)diff ) + diff / 700000.0f );
+ return 1.0f - ( std::pow( 0.99989f, (float)diff ) + diff / 700000.0f );
 }
 
 float AudioChannel::sample( uint64_t tick ) const
