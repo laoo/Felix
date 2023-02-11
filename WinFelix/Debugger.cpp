@@ -13,12 +13,11 @@
 
 Debugger::Debugger() : mutex{},
                                 mDebugMode{},
-                                mVisualizeCPU{},
+                                visualizeCPU{},
                                 mVisualizeDisasm{},
                                 mVisualizeHistory{},
                                 mDebugModeOnBreak{},
                                 mNormalModeOnRun{},
-                                mCpuVisualizer{ CPU_WIDTH, CPU_HEIGHT },
                                 mDisasmVisualizer{ DISASM_WIDTH, DISASM_HEIGHT },
                                 mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
                                 mRunMode{ RunMode::RUN }
@@ -26,7 +25,7 @@ Debugger::Debugger() : mutex{},
   auto sysConfig = gConfigProvider.sysConfig();
 
   mDebugMode = sysConfig->debugMode;
-  mVisualizeCPU = sysConfig->visualizeCPU;
+  visualizeCPU = sysConfig->visualizeCPU;
   mVisualizeDisasm = sysConfig->visualizeDisasm;
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
@@ -43,7 +42,7 @@ Debugger::~Debugger()
   auto sysConfig = gConfigProvider.sysConfig();
 
   sysConfig->debugMode = mDebugMode;
-  sysConfig->visualizeCPU = mVisualizeCPU;
+  sysConfig->visualizeCPU = visualizeCPU;
   sysConfig->visualizeDisasm = mVisualizeDisasm;
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
@@ -80,11 +79,6 @@ bool Debugger::isDebugMode() const
   return mDebugMode;
 }
 
-bool Debugger::isCPUVisualized() const
-{
-  return mVisualizeCPU;
-}
-
 bool Debugger::isDisasmVisualized() const
 {
   return mVisualizeDisasm;
@@ -110,11 +104,6 @@ std::span<ScreenView> Debugger::screenViews()
   {
     return std::span<ScreenView>{ mScreenViews.data(), mScreenViews.size() };
   }
-}
-
-void Debugger::visualizeCPU( bool value )
-{
-  mVisualizeCPU = value;
 }
 
 void Debugger::visualizeDisasm( bool value )
@@ -191,11 +180,6 @@ void Debugger::togglePause()
   {
     ( *this )( RunMode::PAUSE );
   }
-}
-
-DebugWindow& Debugger::cpuVisualizer()
-{
-  return mCpuVisualizer;
 }
 
 DebugWindow& Debugger::disasmVisualizer()

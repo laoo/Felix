@@ -33,14 +33,12 @@ public:
 
   bool isPaused() const;
   bool isDebugMode() const;
-  bool isCPUVisualized() const;
   bool isDisasmVisualized() const;
   bool isHistoryVisualized() const;
   bool isBreakOnBrk() const;
 
   std::span<ScreenView> screenViews();
 
-  void visualizeCPU( bool value );
   void visualizeDisasm( bool value );
   void visualizeHistory( bool value );
   void debugMode( bool value );
@@ -54,19 +52,18 @@ public:
 
   void togglePause();
 
-  DebugWindow& cpuVisualizer();
   DebugWindow& disasmVisualizer();
   DebugWindow& historyVisualizer();
 
   mutable std::mutex mutex;
 
+  bool visualizeCPU;
+
 private:
   std::vector<ScreenView> mScreenViews;
-  DebugWindow mCpuVisualizer;
   DebugWindow mDisasmVisualizer;
   DebugWindow mHistoryVisualizer;
   bool mDebugMode;
-  bool mVisualizeCPU;
   bool mVisualizeDisasm;
   bool mVisualizeHistory;
   bool mDebugModeOnBreak;

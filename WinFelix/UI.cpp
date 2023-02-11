@@ -184,12 +184,12 @@ bool UI::mainMenu( ImGuiIO& io )
         }
         if ( ImGui::BeginMenu( "Debug Windows" ) )
         {
-          bool cpuWindow = mManager.mDebugger.isCPUVisualized();
+          bool cpuWindow = mManager.mDebugger.visualizeCPU;
           bool disasmWindow = mManager.mDebugger.isDisasmVisualized();
           bool historyWindow = mManager.mDebugger.isHistoryVisualized();
           if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
           {
-            mManager.mDebugger.visualizeCPU( cpuWindow );
+            mManager.mDebugger.visualizeCPU = cpuWindow;
           }
           if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
           {
@@ -308,7 +308,7 @@ bool UI::mainMenu( ImGuiIO& io )
     }
     if ( ImGui::IsKeyPressed( 'C' ) )
     {
-      mManager.mDebugger.visualizeCPU( !mManager.mDebugger.isCPUVisualized() );
+      mManager.mDebugger.visualizeCPU = !mManager.mDebugger.visualizeCPU;
     }
     if ( ImGui::IsKeyPressed( 'D' ) )
     {
@@ -407,7 +407,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
 
   std::unique_lock<std::mutex> l{ mManager.mDebugger.mutex };
 
-  auto cpuRendering = mManager.renderCPUWindow();
   auto disasmRendering = mManager.renderDisasmWindow();
   auto historyRendering = mManager.renderHistoryWindow();
   bool debugMode = mManager.mDebugger.isDebugMode();
@@ -416,10 +415,10 @@ void UI::drawDebugWindows( ImGuiIO& io )
   {
     ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
 
-    if ( cpuRendering.enabled )
+    if (mManager.mDebugger.visualizeCPU)
     {
-      ImGui::Begin( "CPU", &cpuRendering.enabled, ImGuiWindowFlags_AlwaysAutoResize );
-      ImGui::Image( cpuRendering.window, ImVec2{ cpuRendering.width, cpuRendering.height } );
+      ImGui::Begin("CPU", &mManager.mDebugger.visualizeCPU, ImGuiWindowFlags_AlwaysAutoResize);
+      mManager.mDebugWindows.cpuEditor.drawContents();
       ImGui::End();
     }
 
@@ -562,7 +561,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
 
     if ( ImGui::BeginPopupContextVoid() )
     {
-      ImGui::Checkbox( "CPU Window", &cpuRendering.enabled );
+      ImGui::Checkbox( "CPU Window", &mManager.mDebugger.visualizeCPU );
       ImGui::Checkbox( "Disassembly Window", &disasmRendering.enabled );
       if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
       {
@@ -581,8 +580,8 @@ void UI::drawDebugWindows( ImGuiIO& io )
       }
       ImGui::EndPopup();
     }
+ 
 
-    mManager.mDebugger.visualizeCPU( cpuRendering.enabled );
     mManager.mDebugger.visualizeDisasm( disasmRendering.enabled );
     mManager.mDebugger.visualizeHistory( historyRendering.enabled );
   }

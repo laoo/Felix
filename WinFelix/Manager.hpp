@@ -4,6 +4,8 @@
 #include "Utility.hpp"
 #include "UI.hpp"
 #include "Debugger.hpp"
+#include "CPUEditor.hpp"
+
 
 class WinAudioOut;
 class ComLynxWire;
@@ -44,7 +46,6 @@ private:
   void handleFileDrop( std::filesystem::path path );
 
   void updateDebugWindows();
-  BoardRendering renderCPUWindow();
   BoardRendering renderDisasmWindow();
   BoardRendering renderHistoryWindow();
   
@@ -57,6 +58,7 @@ private:
   friend struct SuzyProxy;
   friend struct CPUProxy;
   friend class UI;
+  friend class CPUEditor;
 
   bool mDoReset;
 
@@ -66,7 +68,7 @@ private:
   {
     std::shared_ptr<IScreenView> mainScreenView;
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
-    std::shared_ptr<IBoard> cpuBoard;
+    CPUEditor cpuEditor;
     std::shared_ptr<IBoard> disasmBoard;
     std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;

@@ -37,7 +37,8 @@ Manager::Manager() : mUI{ *this },
                      mRenderingTime{},
                      mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
                      mImageProperties{},
-                     mRenderer{}
+                     mRenderer{},
+                     mDebugWindows{}
 {
   mDebugger( RunMode::RUN );
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -116,6 +117,9 @@ void Manager::update()
 void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
 {
   assert( !mSystemDriver );
+
+  mDebugWindows.cpuEditor.setManager(this);
+
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();
   mExtendedRenderer = mSystemDriver->extendedRenderer();
@@ -180,22 +184,6 @@ void Manager::updateDebugWindows()
 
   auto& cpu = mInstance->debugCPU();
 
-  if ( mDebugger.isCPUVisualized() )
-  {
-    auto & cpuVis = mDebugger.cpuVisualizer();
-    cpu.printStatus( std::span<uint8_t, 3 * 14>( cpuVis.data.data(), cpuVis.data.size() ) );
-
-    if ( !mDebugWindows.cpuBoard )
-    {
-      mDebugWindows.cpuBoard = mExtendedRenderer->makeBoard( cpuVis.columns, cpuVis.rows );
-    }
-  }
-  else if ( mDebugWindows.cpuBoard )
-  {
-    mDebugWindows.cpuBoard.reset();
-  }
-
-
   if ( mDebugger.isDisasmVisualized() )
   {
     auto & disVis = mDebugger.disasmVisualizer();
@@ -224,20 +212,6 @@ void Manager::updateDebugWindows()
   else if ( !mDebugWindows.historyBoard )
   {
     mDebugWindows.historyBoard.reset();
-  }
-}
-
-BoardRendering Manager::renderCPUWindow()
-{
-  if ( mDebugger.isCPUVisualized() && mDebugWindows.cpuBoard )
-  {
-    auto win = mDebugger.cpuVisualizer();
-    auto tex = mDebugWindows.cpuBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
-    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
-  }
-  else
-  {
-    return { mDebugger.isCPUVisualized() };
   }
 }
 
