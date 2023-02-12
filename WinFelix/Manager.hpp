@@ -5,7 +5,7 @@
 #include "UI.hpp"
 #include "Debugger.hpp"
 #include "CPUEditor.hpp"
-#include "MemoryEditor.hpp"
+#include "MemEditor.hpp"
 
 
 class WinAudioOut;

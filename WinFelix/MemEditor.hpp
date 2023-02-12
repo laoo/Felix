@@ -15,10 +15,11 @@ public:
   void drawContents();
   bool enabled();
 
+  void writeChanges( uint16_t offset, ImU8 data );
+
 private:
   Manager* mManager;
   MemoryEditor mMemoryEditor;
 
-  bool isReadOnly();
-  void writeChanges( ImU8* data, size_t off, ImU8 d );
+  bool isReadOnly();  
 };

@@ -1,16 +1,18 @@
 #include "pch.hpp"
-#include "MemoryEditor.hpp"
+#include "MemEditor.hpp"
 #include "Manager.hpp"
 #include "Core.hpp"
 #include "Debugger.hpp"
 
-
+//TODO: get rid of the below global used for the write callback.
+MemEditor* gActiveMemEditor;
 
 MemEditor::MemEditor()
 {
+  gActiveMemEditor = this;
   mMemoryEditor.WriteFn = [] ( ImU8* data, size_t off, ImU8 d )
   {
-    
+    gActiveMemEditor->writeChanges( (uint16_t)off, d );
   };
 }
 
@@ -43,14 +45,12 @@ void MemEditor::drawContents()
 
   auto ram = mManager->mInstance->debugRAM();
 
+  mMemoryEditor.ReadOnly = isReadOnly();
+
   mMemoryEditor.DrawContents( (void*)ram, 0xFFFF );
 }
 
-void MemEditor::writeChanges( ImU8* data, size_t off, ImU8 d )
+void MemEditor::writeChanges( uint16_t offset, ImU8 data )
 {
-  do
-  {
-    mManager->mInstance->debugWriteRAM( (uint16_t)off, data[d] );
-    --d;
-  } while ( d != 0 );
+    mManager->mInstance->debugWriteRAM( offset, data );
 }
