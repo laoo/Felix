@@ -32,6 +32,18 @@ struct SysConfig
   bool visualizeCPU;
   bool visualizeDisasm;
   bool visualizeMemory;
+  struct MemoryOptions
+  {
+    bool  OptShowOptions = true;
+    bool  OptShowDataPreview;
+    bool  OptShowHexII;
+    bool  OptShowAscii;
+    bool  OptGreyOutZeroes;
+    bool  OptUpperCaseHex;
+    int   OptMidColsCount;
+    int   OptAddrDigitsCount;
+    float OptFooterExtraHeight;
+  } memoryOptions;
   bool visualizeHistory;
   bool debugModeOnBreak;
   bool normalModeOnRun;

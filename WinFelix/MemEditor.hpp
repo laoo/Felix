@@ -10,6 +10,7 @@ class MemEditor
 {
 public:
   MemEditor();
+  ~MemEditor();
 
   void setManager( Manager* manager );
   void drawContents();
