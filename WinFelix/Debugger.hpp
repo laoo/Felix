@@ -7,7 +7,7 @@ struct DebugWindow
 {
   DebugWindow( int columns, int rows ) : columns{ columns }, rows{ rows }
   {
-    data.resize( columns* rows );
+    data.resize( columns * rows );
   }
 
   int columns;

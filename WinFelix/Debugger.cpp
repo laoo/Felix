@@ -12,16 +12,16 @@
 #define HISTORY_HEIGHT 16
 
 Debugger::Debugger() : mutex{},
-                                mDebugMode{},
-                                visualizeCPU{},
-                                visualizeMemory{},
-                                mVisualizeDisasm{},
-                                mVisualizeHistory{},
-                                mDebugModeOnBreak{},
-                                mNormalModeOnRun{},
-                                mDisasmVisualizer{ DISASM_WIDTH, DISASM_HEIGHT },
-                                mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
-                                mRunMode{ RunMode::RUN }
+mDebugMode{},
+visualizeCPU{},
+visualizeMemory{},
+mVisualizeDisasm{},
+mVisualizeHistory{},
+mDebugModeOnBreak{},
+mNormalModeOnRun{},
+mDisasmVisualizer{ DISASM_WIDTH, DISASM_HEIGHT },
+mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
+mRunMode{ RunMode::RUN }
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
@@ -167,10 +167,10 @@ void Debugger::newScreenView()
 
 void Debugger::delScreenView( int id )
 {
-  std::erase_if( mScreenViews, [=]( auto const& sv )
-  {
-    return sv.id == id;
-  } );
+  std::erase_if( mScreenViews, [=] ( auto const& sv )
+    {
+      return sv.id == id;
+    } );
 }
 
 void Debugger::togglePause()

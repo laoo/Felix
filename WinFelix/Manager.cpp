@@ -27,18 +27,18 @@
 
 
 Manager::Manager() : mUI{ *this },
-                     mLua{},
-                     mDoReset{ false },
-                     mDebugger{},
-                     mProcessThreads{},
-                     mJoinThreads{},
-                     mRenderThread{},
-                     mAudioThread{},
-                     mRenderingTime{},
-                     mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
-                     mImageProperties{},
-                     mRenderer{},
-                     mDebugWindows{}
+mLua{},
+mDoReset{ false },
+mDebugger{},
+mProcessThreads{},
+mJoinThreads{},
+mRenderThread{},
+mAudioThread{},
+mRenderingTime{},
+mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
+mImageProperties{},
+mRenderer{},
+mDebugWindows{}
 {
   mDebugger( RunMode::RUN );
   mAudioOut = std::make_shared<WinAudioOut>();
@@ -118,8 +118,8 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
 {
   assert( !mSystemDriver );
 
-  mDebugWindows.cpuEditor.setManager(this);
-  mDebugWindows.memoryEditor.setManager(this);
+  mDebugWindows.cpuEditor.setManager( this );
+  mDebugWindows.memoryEditor.setManager( this );
 
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();
@@ -172,12 +172,12 @@ void Manager::updateDebugWindows()
   auto svs = mDebugger.screenViews();
   auto& csvs = mDebugWindows.customScreenViews;
   //removing elements in csvs that are not in svs 
-  auto ret = std::ranges::remove_if( csvs, [&]( int id ) { return std::ranges::find( svs, id, &ScreenView::id ) == svs.end(); }, []( auto const& p ) { return p.first; } );
+  auto ret = std::ranges::remove_if( csvs, [&] ( int id ) { return std::ranges::find( svs, id, &ScreenView::id ) == svs.end(); }, [] ( auto const& p ) { return p.first; } );
   csvs.erase( ret.begin(), ret.end() );
   //add missing elements to csvs that are in svs
   for ( auto const& sv : svs )
   {
-    if ( std::ranges::find( csvs, sv.id, []( auto const& p ) { return p.first; } ) == csvs.end() )
+    if ( std::ranges::find( csvs, sv.id, [] ( auto const& p ) { return p.first; } ) == csvs.end() )
     {
       csvs.emplace_back( sv.id, mExtendedRenderer->makeCustomScreenView() );
     }
@@ -187,7 +187,7 @@ void Manager::updateDebugWindows()
 
   if ( mDebugger.isDisasmVisualized() )
   {
-    auto & disVis = mDebugger.disasmVisualizer();
+    auto& disVis = mDebugger.disasmVisualizer();
     cpu.disassemblyFromPC( mInstance->debugRAM(), (char*)disVis.data.data(), disVis.columns, disVis.rows );
 
     if ( !mDebugWindows.disasmBoard )
@@ -202,7 +202,7 @@ void Manager::updateDebugWindows()
 
   if ( mDebugger.isHistoryVisualized() )
   {
-    auto & hisVis = mDebugger.historyVisualizer();
+    auto& hisVis = mDebugger.historyVisualizer();
     cpu.copyHistory( std::span<char>( (char*)hisVis.data.data(), hisVis.data.size() ) );
 
     if ( !mDebugWindows.historyBoard )
@@ -280,7 +280,7 @@ void Manager::processLua( std::filesystem::path const& path )
   mLua["suzy"] = std::make_unique<SuzyProxy>( *this );
   mLua["cpu"] = std::make_unique<CPUProxy>( *this );
 
-  mLua["Encoder"] = [this]( sol::table const& tab )
+  mLua["Encoder"] = [this] ( sol::table const& tab )
   {
     if ( !mExtendedRenderer )
       throw Ex{} << "Encoder not available";
@@ -322,7 +322,7 @@ void Manager::processLua( std::filesystem::path const& path )
     mAudioOut->setEncoder( mEncoder );
   };
 
-  mLua["WavOut"] = [this]( sol::table const& tab )
+  mLua["WavOut"] = [this] ( sol::table const& tab )
   {
     std::filesystem::path path;
     if ( sol::optional<std::string> opt = tab["path"] )
@@ -332,7 +332,7 @@ void Manager::processLua( std::filesystem::path const& path )
     mAudioOut->setWavOut( std::move( path ) );
   };
 
-  mLua["vgmDump"] = [this]( sol::table const& tab )
+  mLua["vgmDump"] = [this] ( sol::table const& tab )
   {
     if ( sol::optional<std::string> opt = tab["path"] )
     {
@@ -342,7 +342,7 @@ void Manager::processLua( std::filesystem::path const& path )
     else throw Ex{} << "path = \"path/to/file.vgm\" required";
   };
 
-  mLua["traceCurrent"] = [this]()
+  mLua["traceCurrent"] = [this] ()
   {
     if ( mInstance )
     {
@@ -350,14 +350,14 @@ void Manager::processLua( std::filesystem::path const& path )
     }
   };
 
-  mLua["traceOn"] = [this]()
+  mLua["traceOn"] = [this] ()
   {
     if ( mInstance )
     {
       mInstance->debugCPU().enableTrace();
     }
   };
-  mLua["traceOf"] = [this]()
+  mLua["traceOf"] = [this] ()
   {
     if ( mInstance )
     {
@@ -365,7 +365,7 @@ void Manager::processLua( std::filesystem::path const& path )
     }
   };
 
-  auto trap = [this]()
+  auto trap = [this] ()
   {
     if ( mInstance )
     {

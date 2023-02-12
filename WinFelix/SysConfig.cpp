@@ -54,7 +54,7 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "debugMode = " << ( debugMode ? "true;\n" : "false;\n" );
   fout << "visualizeCPU = " << ( visualizeCPU ? "true;\n" : "false;\n" );
   fout << "visualizeDisasm = " << ( visualizeDisasm ? "true;\n" : "false;\n" );
-  fout << "visualizeMemory = " << ( visualizeMemory ? "true;\n" : "false;\n");
+  fout << "visualizeMemory = " << ( visualizeMemory ? "true;\n" : "false;\n" );
   fout << "visualizeHistory = " << ( visualizeHistory ? "true;\n" : "false;\n" );
   fout << "debugModeOnBreak = " << ( debugModeOnBreak ? "true;\n" : "false;\n" );
   fout << "normalModeOnRun = " << ( normalModeOnRun ? "true;\n" : "false;\n" );
@@ -91,7 +91,7 @@ void SysConfig::load( sol::state const& lua )
   lastOpenDirectory = lua["lastOpenDirectory"].get_or<std::string>( {} );
   debugMode = lua["debugMode"].get_or( debugMode );
   visualizeCPU = lua["visualizeCPU"].get_or( visualizeCPU );
-  visualizeMemory = lua["visualizeMemory"].get_or(visualizeMemory);
+  visualizeMemory = lua["visualizeMemory"].get_or( visualizeMemory );
   visualizeDisasm = lua["visualizeDisasm"].get_or( visualizeDisasm );
   visualizeHistory = lua["visualizeHistory"].get_or( visualizeHistory );
   debugModeOnBreak = lua["debugModeOnBreak"].get_or( debugModeOnBreak );

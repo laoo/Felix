@@ -57,7 +57,7 @@ bool UI::mainMenu( ImGuiIO& io )
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
   static std::optional<KeyInput::Key> keyToConfigure;
 
-  auto configureKeyItem = [&]( char const* name, KeyInput::Key k )
+  auto configureKeyItem = [&] ( char const* name, KeyInput::Key k )
   {
     ImGui::Text( name );
     ImGui::SameLine( 60 );
@@ -196,9 +196,9 @@ bool UI::mainMenu( ImGuiIO& io )
           {
             mManager.mDebugger.visualizeDisasm( disasmWindow );
           }
-          if (ImGui::MenuItem("Memory Window", "Ctrl+N", &memoryWindow))
+          if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
           {
-              mManager.mDebugger.visualizeMemory = memoryWindow;
+            mManager.mDebugger.visualizeMemory = memoryWindow;
           }
           if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
           {
@@ -319,9 +319,9 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       mManager.mDebugger.visualizeDisasm( !mManager.mDebugger.isDisasmVisualized() );
     }
-    if (ImGui::IsKeyPressed('N'))
+    if ( ImGui::IsKeyPressed( 'N' ) )
     {
-        mManager.mDebugger.visualizeMemory = !mManager.mDebugger.visualizeMemory;
+      mManager.mDebugger.visualizeMemory = !mManager.mDebugger.visualizeMemory;
     }
     if ( ImGui::IsKeyPressed( 'H' ) )
     {
@@ -424,18 +424,18 @@ void UI::drawDebugWindows( ImGuiIO& io )
   {
     ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
 
-    if (mManager.mDebugger.visualizeCPU)
+    if ( mManager.mDebugger.visualizeCPU )
     {
-      ImGui::Begin("CPU", &mManager.mDebugger.visualizeCPU, ImGuiWindowFlags_AlwaysAutoResize);
+      ImGui::Begin( "CPU", &mManager.mDebugger.visualizeCPU, ImGuiWindowFlags_AlwaysAutoResize );
       mManager.mDebugWindows.cpuEditor.drawContents();
       ImGui::End();
     }
 
-    if (mManager.mDebugger.visualizeMemory)
+    if ( mManager.mDebugger.visualizeMemory )
     {
-        ImGui::Begin("Memory", &mManager.mDebugger.visualizeMemory, 0);
-        mManager.mDebugWindows.memoryEditor.drawContents();
-        ImGui::End();
+      ImGui::Begin( "Memory", &mManager.mDebugger.visualizeMemory, 0 );
+      mManager.mDebugWindows.memoryEditor.drawContents();
+      ImGui::End();
     }
 
     if ( disasmRendering.enabled )
@@ -552,7 +552,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       size.x = std::max( 0.0f, size.x - xpad );
       size.y = std::max( 0.0f, size.y - ypad );
 
-      auto it = std::ranges::find( mManager.mDebugWindows.customScreenViews, sv.id, []( auto const& p ) { return p.first; } );
+      auto it = std::ranges::find( mManager.mDebugWindows.customScreenViews, sv.id, [] ( auto const& p ) { return p.first; } );
       if ( it != mManager.mDebugWindows.customScreenViews.cend() )
       {
         if ( auto tex = it->second->render( data, palette ) )
@@ -579,7 +579,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       ImGui::Checkbox( "CPU Window", &mManager.mDebugger.visualizeCPU );
       ImGui::Checkbox( "Disassembly Window", &disasmRendering.enabled );
-      ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory);
+      ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory );
       if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
       {
         if ( historyRendering.enabled )
@@ -597,7 +597,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       }
       ImGui::EndPopup();
     }
- 
+
     mManager.mDebugger.visualizeDisasm( disasmRendering.enabled );
     mManager.mDebugger.visualizeHistory( historyRendering.enabled );
   }
