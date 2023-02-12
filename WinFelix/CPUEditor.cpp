@@ -32,18 +32,35 @@ bool CPUEditor::isReadOnly()
 void CPUEditor::drawRegister( const char* label, uint8_t reg, char* reg_buf )
 {
   snprintf( reg_buf, REG_TXT_LEN, "%02X", reg );
+  sprintf( mlabel_buf, "##%s", label );
 
   ImGui::AlignTextToFramePadding();
 
   ImGui::Text( label );
 
-  ImGui::SameLine();
+  ImGui::SameLine(LABEL_WIDTH);
   ImGui::SetNextItemWidth( ITEM_WIDTH );
-  ImGui::InputText( "##", reg_buf, REG_TXT_LEN,
-    ImGuiInputTextFlags_CharsHexadecimal |
-    ImGuiInputTextFlags_AutoSelectAll |
-    ( isReadOnly() ? ImGuiInputTextFlags_ReadOnly : 0 )
-  );
+
+  auto inputflag = ImGuiInputTextFlags_CharsHexadecimal | ( isReadOnly() ? ImGuiInputTextFlags_ReadOnly : 0 );
+
+  if ( ImGui::InputText( mlabel_buf, reg_buf, REG_TXT_LEN, inputflag, 0, (void*)label ) )
+  {
+    auto &state = mManager->mInstance->debugCPU().state();
+    uint8_t r = _2CHAR_TO_HEX( reg_buf );
+
+    if ( 0 == strcmp( label, "A") )
+    {
+      state.a = r;
+    }
+    else if ( 0 == strcmp( label, "X" ) )
+    {
+      state.x = r;
+    }
+    else if ( 0 == strcmp( label, "Y" ) )
+    {
+      state.y = r;
+    }    
+  }
 
   ImGui::SameLine( 2 * ITEM_WIDTH );
   ImGui::Text( BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY( reg ) );
@@ -58,28 +75,79 @@ void CPUEditor::drawRegister( const char* label, uint8_t reg, char* reg_buf )
 void CPUEditor::drawPS( const char* label, uint16_t ps, char* ps_buf )
 {
   snprintf( ps_buf, PS_TXT_LEN, "%04X", ps );
+  sprintf( mlabel_buf, "##%s", label );
 
   ImGui::AlignTextToFramePadding();
 
   ImGui::Text( label );
 
-  ImGui::SameLine();
+  ImGui::SameLine( LABEL_WIDTH );
   ImGui::SetNextItemWidth( ITEM_WIDTH );
-  ImGui::InputText( "##", ps_buf, PS_TXT_LEN,
-    ImGuiInputTextFlags_CharsHexadecimal |
-    ImGuiInputTextFlags_AutoSelectAll |
-    ( isReadOnly() ? ImGuiInputTextFlags_ReadOnly : 0 )
-  );
+
+  auto inputflag = ImGuiInputTextFlags_CharsHexadecimal | ( isReadOnly() ? ImGuiInputTextFlags_ReadOnly : 0 );
+
+  if ( ImGui::InputText( mlabel_buf, ps_buf, PS_TXT_LEN, inputflag ) )
+  {
+    auto &state = mManager->mInstance->debugCPU().state();
+    uint16_t v = _4CHAR_TO_HEX( ps_buf );
+
+    if ( 0 == strcmp( label, "S" ) )
+    {
+      state.s = v;
+    }
+    else if ( 0 == strcmp( label, "PC" ) )
+    {
+      state.pc = v;
+    }
+  }
 }
 
 void CPUEditor::drawFlag( const char* label, bool enabled, bool* b )
 {
+  sprintf( mlabel_buf, "##%s", label );
   *b = enabled;
   ImGui::AlignTextToFramePadding();
 
   ImGui::Text( label );
   ImGui::SameLine();
-  ImGui::Checkbox( "##", b );
+  ImGui::Checkbox( mlabel_buf, b );
+  if ( ImGui::IsItemClicked() )
+  {
+    auto &state = mManager->mInstance->debugCPU().state();
+    int mask;
+
+    if ( 0 == strcmp( label, "N" ) )
+    {
+      mask = CPUState::bitN;
+    }
+    else if ( 0 == strcmp( label, "V" ) )
+    {
+      mask = CPUState::bitV;
+    }
+    else  if ( 0 == strcmp( label, "D" ) )
+    {
+      mask = CPUState::bitD;
+    }
+    else  if ( 0 == strcmp( label, "I" ) )
+    {
+      mask = CPUState::bitI;
+    }
+    else  if ( 0 == strcmp( label, "Z" ) )
+    {
+      mask = CPUState::bitZ;
+    }
+    else  if ( 0 == strcmp( label, "C" ) )
+    {
+      mask = CPUState::bitC;
+    }
+    else
+    {
+      return;
+    }
+
+    auto p = state.getP();
+    state.setP( p & mask ? p & ~mask : p | mask );
+  }
 }
 
 void CPUEditor::drawContents()
@@ -95,7 +163,7 @@ void CPUEditor::drawContents()
   drawRegister( "X", state.x, mX );
   drawRegister( "Y", state.y, mY );
 
-  drawPS( "P", state.pc, mP );
+  drawPS( "PC", state.pc, mPC );
   drawPS( "S", state.s, mS );
 
   //NVss DIZC
