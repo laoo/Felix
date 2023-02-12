@@ -45,10 +45,13 @@ void FelixCPUEditor::drawRegister(const char* label, uint8_t reg, char* reg_buf)
         (isReadOnly() ? ImGuiInputTextFlags_ReadOnly : 0)
     );
 
-    ImGui::SameLine(2 * ITEM_WIDTH); 
+    ImGui::SameLine(2 * ITEM_WIDTH);
+    ImGui::Text(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(reg));
+
+    ImGui::SameLine(4 * ITEM_WIDTH); 
     ImGui::Text("%d", reg);
 
-    ImGui::SameLine(3 * ITEM_WIDTH); 
+    ImGui::SameLine(5 * ITEM_WIDTH); 
     ImGui::Text("%c", reg);
 }
 
