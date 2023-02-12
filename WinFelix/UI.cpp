@@ -185,6 +185,7 @@ bool UI::mainMenu( ImGuiIO& io )
         if ( ImGui::BeginMenu( "Debug Windows" ) )
         {
           bool cpuWindow = mManager.mDebugger.visualizeCPU;
+          bool memoryWindow = mManager.mDebugger.visualizeMemory;
           bool disasmWindow = mManager.mDebugger.isDisasmVisualized();
           bool historyWindow = mManager.mDebugger.isHistoryVisualized();
           if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
@@ -194,6 +195,10 @@ bool UI::mainMenu( ImGuiIO& io )
           if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
           {
             mManager.mDebugger.visualizeDisasm( disasmWindow );
+          }
+          if (ImGui::MenuItem("Memory Window", "Ctrl+N", &memoryWindow))
+          {
+              mManager.mDebugger.visualizeMemory = memoryWindow;
           }
           if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
           {
@@ -314,6 +319,10 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       mManager.mDebugger.visualizeDisasm( !mManager.mDebugger.isDisasmVisualized() );
     }
+    if (ImGui::IsKeyPressed('N'))
+    {
+        mManager.mDebugger.visualizeMemory = !mManager.mDebugger.visualizeMemory;
+    }
     if ( ImGui::IsKeyPressed( 'H' ) )
     {
       bool historyWindow = !mManager.mDebugger.isHistoryVisualized();
@@ -420,6 +429,13 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::Begin("CPU", &mManager.mDebugger.visualizeCPU, ImGuiWindowFlags_AlwaysAutoResize);
       mManager.mDebugWindows.cpuEditor.drawContents();
       ImGui::End();
+    }
+
+    if (mManager.mDebugger.visualizeMemory)
+    {
+        ImGui::Begin("Memory", &mManager.mDebugger.visualizeMemory, 0);
+        mManager.mDebugWindows.memoryEditor.drawContents();
+        ImGui::End();
     }
 
     if ( disasmRendering.enabled )
@@ -563,6 +579,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       ImGui::Checkbox( "CPU Window", &mManager.mDebugger.visualizeCPU );
       ImGui::Checkbox( "Disassembly Window", &disasmRendering.enabled );
+      ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory);
       if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
       {
         if ( historyRendering.enabled )
@@ -581,7 +598,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::EndPopup();
     }
  
-
     mManager.mDebugger.visualizeDisasm( disasmRendering.enabled );
     mManager.mDebugger.visualizeHistory( historyRendering.enabled );
   }

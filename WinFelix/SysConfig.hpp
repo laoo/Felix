@@ -31,6 +31,7 @@ struct SysConfig
   bool debugMode;
   bool visualizeCPU;
   bool visualizeDisasm;
+  bool visualizeMemory;
   bool visualizeHistory;
   bool debugModeOnBreak;
   bool normalModeOnRun;

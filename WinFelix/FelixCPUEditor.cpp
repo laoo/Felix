@@ -1,25 +1,25 @@
 #include "pch.hpp"
-#include "CPUEditor.hpp"
+#include "FelixCPUEditor.hpp"
 #include "Manager.hpp"
 #include "Core.hpp"
 #include "CPU.hpp"
 #include "CPUState.hpp"
 
-CPUEditor::CPUEditor()
+FelixCPUEditor::FelixCPUEditor()
 {
 }
 
-void CPUEditor::setManager(Manager* manager)
+void FelixCPUEditor::setManager(Manager* manager)
 {
     mManager = manager;
 }
 
-bool CPUEditor::enabled()
+bool FelixCPUEditor::enabled()
 {
     return mManager && mManager->mInstance && mManager->mDebugger.visualizeCPU;
 }
 
-bool CPUEditor::isReadOnly()
+bool FelixCPUEditor::isReadOnly()
 {
     if (!enabled())
     {
@@ -29,7 +29,7 @@ bool CPUEditor::isReadOnly()
     return !mManager->mDebugger.isPaused();
 }
 
-void CPUEditor::drawRegister(const char* label, uint8_t reg, char* reg_buf)
+void FelixCPUEditor::drawRegister(const char* label, uint8_t reg, char* reg_buf)
 {
     snprintf(reg_buf, REG_TXT_LEN, "%02X", reg);
     
@@ -52,7 +52,7 @@ void CPUEditor::drawRegister(const char* label, uint8_t reg, char* reg_buf)
     ImGui::Text("%c", reg);
 }
 
-void CPUEditor::drawPS(const char* label, uint16_t ps, char* ps_buf)
+void FelixCPUEditor::drawPS(const char* label, uint16_t ps, char* ps_buf)
 {
     snprintf(ps_buf, PS_TXT_LEN, "%04X", ps);
 
@@ -69,7 +69,7 @@ void CPUEditor::drawPS(const char* label, uint16_t ps, char* ps_buf)
     );
 }
 
-void CPUEditor::drawFlag(const char* label, bool enabled, bool* b)
+void FelixCPUEditor::drawFlag(const char* label, bool enabled, bool* b)
 {
     *b = enabled;
     ImGui::AlignTextToFramePadding();
@@ -79,14 +79,14 @@ void CPUEditor::drawFlag(const char* label, bool enabled, bool* b)
     ImGui::Checkbox("##", b);
 }
 
-void CPUEditor::drawContents()
+void FelixCPUEditor::drawContents()
 {
     if (!enabled())
     {
         return;
     }
 
-    auto& state = mManager->mInstance->debugCPU().state();
+    auto& state = mManager->mInstance->debugState();
 
     drawRegister("A", state.a, mA);
     drawRegister("X", state.x, mX);

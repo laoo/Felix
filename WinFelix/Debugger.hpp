@@ -58,6 +58,7 @@ public:
   mutable std::mutex mutex;
 
   bool visualizeCPU;
+  bool visualizeMemory;
 
 private:
   std::vector<ScreenView> mScreenViews;

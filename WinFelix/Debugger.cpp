@@ -14,6 +14,7 @@
 Debugger::Debugger() : mutex{},
                                 mDebugMode{},
                                 visualizeCPU{},
+                                visualizeMemory{},
                                 mVisualizeDisasm{},
                                 mVisualizeHistory{},
                                 mDebugModeOnBreak{},
@@ -26,6 +27,7 @@ Debugger::Debugger() : mutex{},
 
   mDebugMode = sysConfig->debugMode;
   visualizeCPU = sysConfig->visualizeCPU;
+  visualizeMemory = sysConfig->visualizeMemory;
   mVisualizeDisasm = sysConfig->visualizeDisasm;
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
@@ -43,6 +45,7 @@ Debugger::~Debugger()
 
   sysConfig->debugMode = mDebugMode;
   sysConfig->visualizeCPU = visualizeCPU;
+  sysConfig->visualizeMemory = visualizeMemory;
   sysConfig->visualizeDisasm = mVisualizeDisasm;
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;

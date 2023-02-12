@@ -84,7 +84,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH);$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;$(SolutionDir)libextern\imgui_club\imgui_memory_editor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ConfigProvider.cpp" />
+    <ClCompile Include="FelixCPUEditor.cpp" />
     <ClCompile Include="Debugger.cpp" />
     <ClCompile Include="DX11Helpers.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
@@ -156,6 +157,7 @@
     <ClCompile Include="KeyNames.cpp" />
     <ClCompile Include="LuaProxies.cpp" />
     <ClCompile Include="Manager.cpp" />
+    <ClCompile Include="FelixMemoryEditor.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -178,6 +180,7 @@
     <ClInclude Include="BaseRenderer.hpp" />
     <ClInclude Include="board.hxx" />
     <ClInclude Include="ConfigProvider.hpp" />
+    <ClInclude Include="FelixCPUEditor.hpp" />
     <ClInclude Include="Debugger.hpp" />
     <ClInclude Include="DX11Helpers.hpp" />
     <ClInclude Include="DX11Renderer.hpp" />
@@ -190,6 +193,7 @@
     <ClInclude Include="KeyNames.hpp" />
     <ClInclude Include="LuaProxies.hpp" />
     <ClInclude Include="Manager.hpp" />
+    <ClInclude Include="FelixMemoryEditor.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="pixel.hxx" />
     <ClInclude Include="renderer.hxx" />

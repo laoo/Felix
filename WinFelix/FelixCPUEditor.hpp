@@ -9,10 +9,10 @@
 
 class Manager;
 
-class CPUEditor
+class FelixCPUEditor
 {
 public:
-    CPUEditor();
+    FelixCPUEditor();
 
     void setManager(Manager* manager);
     void drawContents();

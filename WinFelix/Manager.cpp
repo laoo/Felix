@@ -119,6 +119,7 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
   assert( !mSystemDriver );
 
   mDebugWindows.cpuEditor.setManager(this);
+  mDebugWindows.memoryEditor.setManager(this);
 
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();

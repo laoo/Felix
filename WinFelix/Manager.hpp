@@ -4,7 +4,8 @@
 #include "Utility.hpp"
 #include "UI.hpp"
 #include "Debugger.hpp"
-#include "CPUEditor.hpp"
+#include "FelixCPUEditor.hpp"
+#include "FelixMemoryEditor.hpp"
 
 
 class WinAudioOut;
@@ -58,7 +59,8 @@ private:
   friend struct SuzyProxy;
   friend struct CPUProxy;
   friend class UI;
-  friend class CPUEditor;
+  friend class FelixCPUEditor;
+  friend class FelixMemoryEditor;
 
   bool mDoReset;
 
@@ -68,7 +70,8 @@ private:
   {
     std::shared_ptr<IScreenView> mainScreenView;
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
-    CPUEditor cpuEditor;
+    FelixCPUEditor cpuEditor;
+    FelixMemoryEditor memoryEditor;
     std::shared_ptr<IBoard> disasmBoard;
     std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
