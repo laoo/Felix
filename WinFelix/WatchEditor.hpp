@@ -36,6 +36,9 @@ public:
   void drawContents();
   bool enabled();
 
+  void deleteWatch( const char* label );
+  void addWatch( const char* label, const char* type, uint16_t addr );
+
 private:
   Manager* mManager;
   std::vector<WatchItem> mItems;
@@ -49,6 +52,11 @@ private:
 
   bool isReadOnly();
 
+  void deleteWatch( const WatchItem* item );
+  void deleteWatch( uint16_t id );
+  void addWatch( const char* label, ImGuiDataType type, const char* addr );
+  void addWatch( const char* label, ImGuiDataType type, uint16_t addr );
+  ImGuiDataType dataTypeGetType( const char* data_type );
   const char* dataTypeGetDesc( ImGuiDataType data_type ) const;
   size_t dataTypeGetSize( ImGuiDataType data_type ) const;
   void drawPreviewData( const ImU8* mem_data, size_t mem_size, ImGuiDataType data_type, DataFormat data_format, char* out_buf, size_t out_buf_size ) const;

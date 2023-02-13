@@ -366,6 +366,16 @@ void Manager::processLua( std::filesystem::path const& path )
     }
   };
 
+  mLua.set_function("add_watch", [this] (std::string label, uint16_t addr, std::string datatype )
+    {
+      mDebugWindows.watchEditor.addWatch( label.c_str(), datatype.c_str(), addr );
+    } );
+
+  mLua.set_function( "del_watch", [this] ( std::string label )
+    {
+      mDebugWindows.watchEditor.deleteWatch( label.c_str() );
+    } );
+
   auto trap = [this] ()
   {
     if ( mInstance )
@@ -387,7 +397,6 @@ void Manager::processLua( std::filesystem::path const& path )
   {
     mSymbols = std::make_unique<SymbolSource>( *opt );
   }
-
 }
 
 std::optional<InputFile> Manager::computeInputFile()

@@ -39,6 +39,19 @@ const char* WatchEditor::dataTypeGetDesc( ImGuiDataType data_type ) const
   return descs[data_type];
 }
 
+ImGuiDataType WatchEditor::dataTypeGetType( const char* data_type )
+{
+  for ( int i = 0; i < ImGuiDataType_COUNT; ++i )
+  {
+    auto t = dataTypeGetDesc( i );
+    if ( 0 == _stricmp( data_type, t ) )
+    {
+      return i;
+    }
+  }
+  return -1;  
+}
+
 size_t WatchEditor::dataTypeGetSize( ImGuiDataType data_type ) const
 {
   const size_t sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8, sizeof( float ), sizeof( double ) };
@@ -167,6 +180,75 @@ void WatchEditor::drawPreviewData( const ImU8* mem_data, size_t mem_size, ImGuiD
   IM_ASSERT( 0 ); // Shouldn't reach
 }
 
+void WatchEditor::deleteWatch( const char* label )
+{
+  mItems.erase( std::remove_if( mItems.begin(), mItems.end(), [label] ( WatchItem x ) { return 0 == strcmp( x.label, label ); } ), mItems.end() );
+}
+
+void WatchEditor::deleteWatch( uint16_t id )
+{
+  mItems.erase( std::remove_if( mItems.begin(), mItems.end(), [id] ( WatchItem x ) { return x.id == id; } ), mItems.end() );
+}
+
+void WatchEditor::deleteWatch( const WatchItem* item )
+{
+  mItems.erase( std::remove( mItems.begin(), mItems.end(), *item ), mItems.end() );
+}
+
+void WatchEditor::addWatch( const char* label, ImGuiDataType type, const char* addr )
+{
+  if ( strlen( addr ) != 4 )
+  {
+    return;
+  }
+
+  char addrbuf[4] = { };
+
+  for ( int i = 0; i < sizeof( addrbuf ); ++i )
+  {
+    int c = toupper( addr[i] );
+    if ( c < '0' || c > 'F' || ( c > '9' && c < 'A' ) )
+    {
+      return;
+    }
+    addrbuf[i] = c;
+  }
+
+  addWatch( label, type, _4CHAR_TO_HEX( addr ) );
+}
+
+void WatchEditor::addWatch( const char* label, ImGuiDataType type, uint16_t addr )
+{
+  if ( strlen( label ) <= 0 || addr > 0xffff)
+  {
+    return;
+  }
+
+  WatchItem item;
+
+  if ( !mItems.empty() )
+  {
+    item.id = mItems.back().id + 1;
+  }
+  item.type = type;
+  strncpy( item.label, label, 17 );
+  item.address = addr;
+
+  mItems.push_back( item );
+}
+
+void WatchEditor::addWatch( const char* label, const char* type, uint16_t addr )
+{
+  ImGuiDataType t = dataTypeGetType( type );
+
+  if ( t < 0 )
+  {
+    return;
+  }
+
+  addWatch( label, t, addr );
+}
+
 void WatchEditor::drawContents()
 {
   WatchItem item{ };
@@ -209,22 +291,13 @@ void WatchEditor::drawContents()
       return;
     }
 
-    WatchItem item;
-    
-    if ( !mItems.empty() )
-    {
-      item.id = mItems.back().id + 1;
-    }
-    item.type = mNewItemDataType;
-    strncpy( item.label, mNewItemLabelBuf, 17 );
-    item.address = _4CHAR_TO_HEX( mNewItemAddrBuf );
-
-    mItems.push_back( item );
+    addWatch( mNewItemLabelBuf, mNewItemDataType, mNewItemAddrBuf );
   }
 
-  ImGui::BeginTable( "##watchitems", 5, ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit );
+  ImGui::BeginTable( "##watchitems", 6, ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit );
   ImGui::TableSetupColumn( "Del" );
   ImGui::TableSetupColumn( "Label" );
+  ImGui::TableSetupColumn( "Addr" );
   ImGui::TableSetupColumn( "Hex" );
   ImGui::TableSetupColumn( "Dec" );
   ImGui::TableSetupColumn( "Bin" );
@@ -244,11 +317,15 @@ void WatchEditor::drawContents()
     ImGui::SetNextItemWidth( 15 );
     if ( ImGui::ColorButton( mLabelBuf, ImVec4(255, 0, 0, 0), ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoInputs ) )
     {
-      mItems.erase( std::remove( mItems.begin(), mItems.end(), item ), mItems.end() );
+      deleteWatch( &item );
     }
 
     ImGui::TableNextColumn();
     ImGui::Text( item.label );
+
+    ImGui::TableNextColumn();
+    snprintf( mDataOutputBuf, 7, "0x%04X", item.address );
+    ImGui::Text( mDataOutputBuf );
 
     ImGui::TableNextColumn();
     drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Hex, mDataOutputBuf, sizeof( mDataOutputBuf ) );
