@@ -185,6 +185,7 @@ bool UI::mainMenu( ImGuiIO& io )
         if ( ImGui::BeginMenu( "Debug Windows" ) )
         {
           bool cpuWindow = mManager.mDebugger.visualizeCPU;
+          bool watchWindow = mManager.mDebugger.visualizeWatch;
           bool memoryWindow = mManager.mDebugger.visualizeMemory;
           bool disasmWindow = mManager.mDebugger.isDisasmVisualized();
           bool historyWindow = mManager.mDebugger.isHistoryVisualized();
@@ -199,6 +200,10 @@ bool UI::mainMenu( ImGuiIO& io )
           if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
           {
             mManager.mDebugger.visualizeMemory = memoryWindow;
+          }
+          if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
+          {
+            mManager.mDebugger.visualizeWatch = watchWindow;
           }
           if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
           {
@@ -323,6 +328,10 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       mManager.mDebugger.visualizeMemory = !mManager.mDebugger.visualizeMemory;
     }
+    if ( ImGui::IsKeyPressed( 'W' ) )
+    {
+      mManager.mDebugger.visualizeWatch = !mManager.mDebugger.visualizeWatch;
+    }
     if ( ImGui::IsKeyPressed( 'H' ) )
     {
       bool historyWindow = !mManager.mDebugger.isHistoryVisualized();
@@ -435,6 +444,13 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       ImGui::Begin( "Memory", &mManager.mDebugger.visualizeMemory, 0 );
       mManager.mDebugWindows.memoryEditor.drawContents();
+      ImGui::End();
+    }
+
+    if ( mManager.mDebugger.visualizeWatch )
+    {
+      ImGui::Begin( "Watch", &mManager.mDebugger.visualizeWatch, 0 );
+      mManager.mDebugWindows.watchEditor.drawContents();
       ImGui::End();
     }
 

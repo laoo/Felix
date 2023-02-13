@@ -23,11 +23,19 @@
     <ClCompile Include="EncodingRenderer.cpp" />
     <ClCompile Include="DX11Helpers.cpp" />
     <ClCompile Include="SystemDriver.cpp" />
+    <ClCompile Include="CPUEditor.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include="MemEditor.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include="WatchEditor.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
     <ClInclude Include="pch.hpp" />
-    <ClInclude Include="version.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinImgui11.hpp" />
     <ClInclude Include="Ex.hpp" />
@@ -70,6 +78,19 @@
     <ClInclude Include="SystemDriver.hpp" />
     <ClInclude Include="IUserInput.hpp" />
     <ClInclude Include="ISystemDriver.hpp" />
+    <ClInclude Include="CPUEditor.hpp">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="version.hpp" />
+    <ClInclude Include="MemEditor.hpp">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="WatchEditor.hpp">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="Editors.hpp">
+      <Filter>Controls</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">

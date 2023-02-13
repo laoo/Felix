@@ -120,6 +120,7 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
 
   mDebugWindows.cpuEditor.setManager( this );
   mDebugWindows.memoryEditor.setManager( this );
+  mDebugWindows.watchEditor.setManager( this );
 
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();

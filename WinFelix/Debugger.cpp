@@ -28,6 +28,7 @@ mRunMode{ RunMode::RUN }
   mDebugMode = sysConfig->debugMode;
   visualizeCPU = sysConfig->visualizeCPU;
   visualizeMemory = sysConfig->visualizeMemory;
+  visualizeWatch = sysConfig->visualizeWatch;
   mVisualizeDisasm = sysConfig->visualizeDisasm;
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
@@ -46,6 +47,7 @@ Debugger::~Debugger()
   sysConfig->debugMode = mDebugMode;
   sysConfig->visualizeCPU = visualizeCPU;
   sysConfig->visualizeMemory = visualizeMemory;
+  sysConfig->visualizeWatch = visualizeWatch;
   sysConfig->visualizeDisasm = mVisualizeDisasm;
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;

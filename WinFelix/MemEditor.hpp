@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "Editors.hpp"
 #include <imgui.h>
 #include <imgui_memory_editor.h>
 

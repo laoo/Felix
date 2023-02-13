@@ -6,7 +6,7 @@
 #include "Debugger.hpp"
 #include "CPUEditor.hpp"
 #include "MemEditor.hpp"
-
+#include "WatchEditor.hpp"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -61,6 +61,7 @@ private:
   friend class UI;
   friend class CPUEditor;
   friend class MemEditor;
+  friend class WatchEditor;
 
   bool mDoReset;
 
@@ -72,6 +73,7 @@ private:
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
     CPUEditor cpuEditor;
     MemEditor memoryEditor;
+    WatchEditor watchEditor;
     std::shared_ptr<IBoard> disasmBoard;
     std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;

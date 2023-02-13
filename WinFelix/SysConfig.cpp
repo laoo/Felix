@@ -66,6 +66,7 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "\tOptAddrDigitsCount   = " << memoryOptions.OptAddrDigitsCount << ";\n";
   fout << "\tOptFooterExtraHeight = " << memoryOptions.OptFooterExtraHeight << ";\n";
   fout << "};\n";
+  fout << "visualizeWatch = " << ( visualizeWatch ? "true;\n" : "false;\n" );
   fout << "visualizeHistory = " << ( visualizeHistory ? "true;\n" : "false;\n" );
   fout << "debugModeOnBreak = " << ( debugModeOnBreak ? "true;\n" : "false;\n" );
   fout << "normalModeOnRun = " << ( normalModeOnRun ? "true;\n" : "false;\n" );
@@ -113,6 +114,7 @@ void SysConfig::load( sol::state const& lua )
   memoryOptions.OptAddrDigitsCount = lua["memoryOptions"]["OptAddrDigitsCount"].get_or( memoryOptions.OptAddrDigitsCount );
   memoryOptions.OptFooterExtraHeight = lua["memoryOptions"]["OptFooterExtraHeight"].get_or( memoryOptions.OptFooterExtraHeight );
   visualizeDisasm = lua["visualizeDisasm"].get_or( visualizeDisasm );
+  visualizeWatch= lua["visualizeWatch"].get_or( visualizeWatch);
   visualizeHistory = lua["visualizeHistory"].get_or( visualizeHistory );
   debugModeOnBreak = lua["debugModeOnBreak"].get_or( debugModeOnBreak );
   normalModeOnRun = lua["normalModeOnRun"].get_or( normalModeOnRun );

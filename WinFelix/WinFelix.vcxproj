@@ -170,6 +170,7 @@
     <ClCompile Include="UI.cpp" />
     <ClCompile Include="UserInput.cpp" />
     <ClCompile Include="VideoSink.cpp" />
+    <ClCompile Include="WatchEditor.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinImgui.cpp" />
     <ClCompile Include="WinImgui11.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="DX11Helpers.hpp" />
     <ClInclude Include="DX11Renderer.hpp" />
     <ClInclude Include="DX9Renderer.hpp" />
+    <ClInclude Include="Editors.hpp" />
     <ClInclude Include="EncodingRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="fonts.hpp" />
@@ -208,6 +210,7 @@
     <ClInclude Include="version.hpp" />
     <ClInclude Include="vertex.hxx" />
     <ClInclude Include="VideoSink.hpp" />
+    <ClInclude Include="WatchEditor.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui11.hpp" />

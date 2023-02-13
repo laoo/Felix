@@ -59,6 +59,7 @@ public:
 
   bool visualizeCPU;
   bool visualizeMemory;
+  bool visualizeWatch;
 
 private:
   std::vector<ScreenView> mScreenViews;

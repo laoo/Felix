@@ -44,6 +44,7 @@ struct SysConfig
     int   OptAddrDigitsCount;
     float OptFooterExtraHeight;
   } memoryOptions;
+  bool visualizeWatch;
   bool visualizeHistory;
   bool debugModeOnBreak;
   bool normalModeOnRun;
