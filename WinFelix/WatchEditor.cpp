@@ -19,7 +19,7 @@ void WatchEditor::setManager( Manager* manager )
 
 bool WatchEditor::enabled()
 {
-  return mManager && mManager->mInstance && mManager->mDebugger.visualizeCPU;
+  return mManager && mManager->mInstance && mManager->mDebugger.visualizeWatch;
 }
 
 bool WatchEditor::isReadOnly()
