@@ -17,6 +17,7 @@ public:
   TraceHelper();
   ~TraceHelper();
   char const * addressLabel( uint16_t address ) const;
+  void updateLabel( uint16_t address, const char* label );
 
   void enable( bool cond );
 

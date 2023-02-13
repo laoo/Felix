@@ -24,6 +24,7 @@
 #include "IInputSource.hpp"
 #include "ISystemDriver.hpp"
 #include "VGMWriter.hpp"
+#include "TraceHelper.hpp"
 
 
 Manager::Manager() : mUI{ *this },
@@ -374,6 +375,14 @@ void Manager::processLua( std::filesystem::path const& path )
   mLua.set_function( "del_watch", [this] ( std::string label )
     {
       mDebugWindows.watchEditor.deleteWatch( label.c_str() );
+    } );
+
+  mLua.set_function( "set_label", [this] ( uint16_t addr, std::string label )
+    {
+      if ( mInstance )
+      {
+        mInstance->getTraceHelper()->updateLabel( addr, label.c_str() );
+      }
     } );
 
   auto trap = [this] ()
