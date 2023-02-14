@@ -2824,7 +2824,8 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_3_44:
   {
     int zp = ram[pc++];
-    (void)da_sprintf(dst, "$%02x\t;[$%02x]=$%02x", zp, zp, ram[zp]);
+    char const* txt = mTraceHelper->addressLabel( zp );
+    (void)da_sprintf(dst, "%s\t;[%s]=$%02x", txt, txt, ram[zp]);
     break;
   }
   case Opcode::RZX_LDA:
@@ -2851,7 +2852,8 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   {
     int zp = ram[pc++];
     int addr = (zp + mState.x) & 0xff;
-    (void)da_sprintf(dst, "$%02x,x\t;[$%02x]=$%02x", zp, addr, ram[addr]);
+    char const* txt = mTraceHelper->addressLabel( zp );
+    (void)da_sprintf(dst, "%s,x\t;[$%02x]=$%02x", txt, addr, ram[addr]);
     break;
   }
   case Opcode::RZY_LDX:
@@ -2859,7 +2861,8 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   {
     int zp = ram[pc++];
     int addr = (zp + mState.y) & 0xff;
-    (void)da_sprintf(dst, "$%02x,y\t;[$%02x]=$%02x", zp, addr, ram[addr]);
+    char const* txt = mTraceHelper->addressLabel( zp );
+    (void)da_sprintf(dst, "%s,y\t;[$%02x]=$%02x", txt, addr, ram[addr]);
     break;
   }
   case Opcode::RIN_LDA:
