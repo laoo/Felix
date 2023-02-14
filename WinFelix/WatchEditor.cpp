@@ -301,7 +301,9 @@ void WatchEditor::drawContents()
   ImGui::TableSetupColumn( "Hex" );
   ImGui::TableSetupColumn( "Dec" );
   ImGui::TableSetupColumn( "Bin" );
+  ImGui::TableSetupScrollFreeze( 0, 1 );
   ImGui::TableHeadersRow();
+
   for ( const auto& item : mItems ) 
   {
     auto size = dataTypeGetSize( item.type );
