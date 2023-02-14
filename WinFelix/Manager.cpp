@@ -122,6 +122,7 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
   mDebugWindows.cpuEditor.setManager( this );
   mDebugWindows.memoryEditor.setManager( this );
   mDebugWindows.watchEditor.setManager( this );
+  mDebugWindows.disasmEditor.setManager( this );
 
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();
@@ -185,22 +186,7 @@ void Manager::updateDebugWindows()
     }
   }
 
-  auto& cpu = mInstance->debugCPU();
-
-  if ( mDebugger.isDisasmVisualized() )
-  {
-    auto& disVis = mDebugger.disasmVisualizer();
-    cpu.disassemblyFromPC( mInstance->debugRAM(), (char*)disVis.data.data(), disVis.columns, disVis.rows );
-
-    if ( !mDebugWindows.disasmBoard )
-    {
-      mDebugWindows.disasmBoard = mExtendedRenderer->makeBoard( disVis.columns, disVis.rows );
-    }
-  }
-  else if ( !mDebugWindows.disasmBoard )
-  {
-    mDebugWindows.disasmBoard.reset();
-  }
+  auto& cpu = mInstance->debugCPU();   
 
   if ( mDebugger.isHistoryVisualized() )
   {
@@ -215,20 +201,6 @@ void Manager::updateDebugWindows()
   else if ( !mDebugWindows.historyBoard )
   {
     mDebugWindows.historyBoard.reset();
-  }
-}
-
-BoardRendering Manager::renderDisasmWindow()
-{
-  if ( mDebugger.isDisasmVisualized() && mDebugWindows.disasmBoard )
-  {
-    auto win = mDebugger.disasmVisualizer();
-    auto tex = mDebugWindows.disasmBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
-    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
-  }
-  else
-  {
-    return { mDebugger.isDisasmVisualized() };
   }
 }
 

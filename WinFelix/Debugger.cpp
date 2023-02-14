@@ -15,11 +15,10 @@ Debugger::Debugger() : mutex{},
 mDebugMode{},
 visualizeCPU{},
 visualizeMemory{},
-mVisualizeDisasm{},
+visualizeDisasm{},
 mVisualizeHistory{},
 mDebugModeOnBreak{},
 mNormalModeOnRun{},
-mDisasmVisualizer{ DISASM_WIDTH, DISASM_HEIGHT },
 mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
 mRunMode{ RunMode::RUN }
 {
@@ -29,7 +28,7 @@ mRunMode{ RunMode::RUN }
   visualizeCPU = sysConfig->visualizeCPU;
   visualizeMemory = sysConfig->visualizeMemory;
   visualizeWatch = sysConfig->visualizeWatch;
-  mVisualizeDisasm = sysConfig->visualizeDisasm;
+  visualizeDisasm = sysConfig->visualizeDisasm;
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
   mNormalModeOnRun = sysConfig->normalModeOnRun;
@@ -48,7 +47,7 @@ Debugger::~Debugger()
   sysConfig->visualizeCPU = visualizeCPU;
   sysConfig->visualizeMemory = visualizeMemory;
   sysConfig->visualizeWatch = visualizeWatch;
-  sysConfig->visualizeDisasm = mVisualizeDisasm;
+  sysConfig->visualizeDisasm = visualizeDisasm;
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
   sysConfig->normalModeOnRun = mNormalModeOnRun;
@@ -84,11 +83,6 @@ bool Debugger::isDebugMode() const
   return mDebugMode;
 }
 
-bool Debugger::isDisasmVisualized() const
-{
-  return mVisualizeDisasm;
-}
-
 bool Debugger::isHistoryVisualized() const
 {
   return mVisualizeHistory;
@@ -109,11 +103,6 @@ std::span<ScreenView> Debugger::screenViews()
   {
     return std::span<ScreenView>{ mScreenViews.data(), mScreenViews.size() };
   }
-}
-
-void Debugger::visualizeDisasm( bool value )
-{
-  mVisualizeDisasm = value;
 }
 
 void Debugger::visualizeHistory( bool value )
@@ -185,11 +174,6 @@ void Debugger::togglePause()
   {
     ( *this )( RunMode::PAUSE );
   }
-}
-
-DebugWindow& Debugger::disasmVisualizer()
-{
-  return mDisasmVisualizer;
 }
 
 DebugWindow& Debugger::historyVisualizer()

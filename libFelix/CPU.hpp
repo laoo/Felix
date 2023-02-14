@@ -79,6 +79,8 @@ public:
   void disableTrace();
   void toggleTrace( bool on );
   void printStatus( std::span<uint8_t, 3 * 14> text );
+  static void disasmOp( char* out, Opcode op, CPUState* state = nullptr );
+  void disasmOpr( uint8_t const* ram, char* out, int& pc );
   void disassemblyFromPC( uint8_t const* ram, char * out, int columns, int rows );
   void enableHistory( int columns, int rows );
   void disableHistory();
@@ -186,8 +188,6 @@ private:
 
   void trace1();
   void trace2();
-  static void disasmOp( char * out, Opcode op, CPUState* state = nullptr );
-  void disasmOpr( uint8_t const* ram, char * out, int & pc );
   void setGlobalTrace();
 
 private:

@@ -187,7 +187,7 @@ bool UI::mainMenu( ImGuiIO& io )
           bool cpuWindow = mManager.mDebugger.visualizeCPU;
           bool watchWindow = mManager.mDebugger.visualizeWatch;
           bool memoryWindow = mManager.mDebugger.visualizeMemory;
-          bool disasmWindow = mManager.mDebugger.isDisasmVisualized();
+          bool disasmWindow = mManager.mDebugger.visualizeDisasm;
           bool historyWindow = mManager.mDebugger.isHistoryVisualized();
           if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
           {
@@ -195,7 +195,7 @@ bool UI::mainMenu( ImGuiIO& io )
           }
           if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
           {
-            mManager.mDebugger.visualizeDisasm( disasmWindow );
+            mManager.mDebugger.visualizeDisasm = disasmWindow;
           }
           if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
           {
@@ -322,7 +322,7 @@ bool UI::mainMenu( ImGuiIO& io )
     }
     if ( ImGui::IsKeyPressed( 'D' ) )
     {
-      mManager.mDebugger.visualizeDisasm( !mManager.mDebugger.isDisasmVisualized() );
+      mManager.mDebugger.visualizeDisasm = !mManager.mDebugger.visualizeDisasm;
     }
     if ( ImGui::IsKeyPressed( 'N' ) )
     {
@@ -425,7 +425,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
 
   std::unique_lock<std::mutex> l{ mManager.mDebugger.mutex };
 
-  auto disasmRendering = mManager.renderDisasmWindow();
   auto historyRendering = mManager.renderHistoryWindow();
   bool debugMode = mManager.mDebugger.isDebugMode();
 
@@ -442,22 +441,22 @@ void UI::drawDebugWindows( ImGuiIO& io )
 
     if ( mManager.mDebugger.visualizeMemory )
     {
-      ImGui::Begin( "Memory", &mManager.mDebugger.visualizeMemory, 0 );
+      ImGui::Begin( "Memory", &mManager.mDebugger.visualizeMemory, ImGuiWindowFlags_None );
       mManager.mDebugWindows.memoryEditor.drawContents();
       ImGui::End();
     }
 
     if ( mManager.mDebugger.visualizeWatch )
     {
-      ImGui::Begin( "Watch", &mManager.mDebugger.visualizeWatch, 0 );
+      ImGui::Begin( "Watch", &mManager.mDebugger.visualizeWatch, ImGuiWindowFlags_None );
       mManager.mDebugWindows.watchEditor.drawContents();
       ImGui::End();
     }
 
-    if ( disasmRendering.enabled )
+    if ( mManager.mDebugger.visualizeDisasm )
     {
-      ImGui::Begin( "Disassembly", &disasmRendering.enabled, ImGuiWindowFlags_AlwaysAutoResize );
-      ImGui::Image( disasmRendering.window, ImVec2{ disasmRendering.width, disasmRendering.height } );
+      ImGui::Begin( "Disassembly", &mManager.mDebugger.visualizeDisasm, ImGuiWindowFlags_None );
+      mManager.mDebugWindows.disasmEditor.drawContents();
       ImGui::End();
     }
 
@@ -594,7 +593,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
     if ( ImGui::BeginPopupContextVoid() )
     {
       ImGui::Checkbox( "CPU Window", &mManager.mDebugger.visualizeCPU );
-      ImGui::Checkbox( "Disassembly Window", &disasmRendering.enabled );
+      ImGui::Checkbox( "Disassembly Window", &mManager.mDebugger.visualizeDisasm );
       ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory );
       if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
       {
@@ -614,7 +613,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::EndPopup();
     }
 
-    mManager.mDebugger.visualizeDisasm( disasmRendering.enabled );
     mManager.mDebugger.visualizeHistory( historyRendering.enabled );
   }
 }

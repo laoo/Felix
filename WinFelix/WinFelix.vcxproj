@@ -150,6 +150,7 @@
     <ClCompile Include="ConfigProvider.cpp" />
     <ClCompile Include="CPUEditor.cpp" />
     <ClCompile Include="Debugger.cpp" />
+    <ClCompile Include="DisasmEditor.cpp" />
     <ClCompile Include="DX11Helpers.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="DX9Renderer.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="ConfigProvider.hpp" />
     <ClInclude Include="CPUEditor.hpp" />
     <ClInclude Include="Debugger.hpp" />
+    <ClInclude Include="DisasmEditor.h" />
     <ClInclude Include="DX11Helpers.hpp" />
     <ClInclude Include="DX11Renderer.hpp" />
     <ClInclude Include="DX9Renderer.hpp" />

@@ -33,13 +33,11 @@ public:
 
   bool isPaused() const;
   bool isDebugMode() const;
-  bool isDisasmVisualized() const;
   bool isHistoryVisualized() const;
   bool isBreakOnBrk() const;
 
   std::span<ScreenView> screenViews();
 
-  void visualizeDisasm( bool value );
   void visualizeHistory( bool value );
   void debugMode( bool value );
   bool debugModeOnBreak() const;
@@ -60,13 +58,12 @@ public:
   bool visualizeCPU;
   bool visualizeMemory;
   bool visualizeWatch;
+  bool visualizeDisasm;
 
 private:
   std::vector<ScreenView> mScreenViews;
-  DebugWindow mDisasmVisualizer;
   DebugWindow mHistoryVisualizer;
-  bool mDebugMode;
-  bool mVisualizeDisasm;
+  bool mDebugMode;  
   bool mVisualizeHistory;
   bool mDebugModeOnBreak;
   bool mNormalModeOnRun;

@@ -7,6 +7,7 @@
 #include "CPUEditor.hpp"
 #include "MemEditor.hpp"
 #include "WatchEditor.hpp"
+#include "DisasmEditor.h"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -47,7 +48,6 @@ private:
   void handleFileDrop( std::filesystem::path path );
 
   void updateDebugWindows();
-  BoardRendering renderDisasmWindow();
   BoardRendering renderHistoryWindow();
   
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
@@ -62,6 +62,7 @@ private:
   friend class CPUEditor;
   friend class MemEditor;
   friend class WatchEditor;
+  friend class DisasmEditor;
 
   bool mDoReset;
 
@@ -74,7 +75,7 @@ private:
     CPUEditor cpuEditor;
     MemEditor memoryEditor;
     WatchEditor watchEditor;
-    std::shared_ptr<IBoard> disasmBoard;
+    DisasmEditor disasmEditor;
     std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
 

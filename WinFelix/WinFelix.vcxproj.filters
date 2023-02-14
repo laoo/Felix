@@ -32,6 +32,9 @@
     <ClCompile Include="WatchEditor.cpp">
       <Filter>Controls</Filter>
     </ClCompile>
+    <ClCompile Include="DisasmEditor.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -89,6 +92,9 @@
       <Filter>Controls</Filter>
     </ClInclude>
     <ClInclude Include="Editors.hpp">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="DisasmEditor.h">
       <Filter>Controls</Filter>
     </ClInclude>
   </ItemGroup>
