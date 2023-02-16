@@ -186,6 +186,7 @@ bool UI::mainMenu( ImGuiIO& io )
         {
           bool cpuWindow = mManager.mDebugger.visualizeCPU;
           bool watchWindow = mManager.mDebugger.visualizeWatch;
+          bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
           bool memoryWindow = mManager.mDebugger.visualizeMemory;
           bool disasmWindow = mManager.mDebugger.visualizeDisasm;
           bool historyWindow = mManager.mDebugger.isHistoryVisualized();
@@ -204,6 +205,10 @@ bool UI::mainMenu( ImGuiIO& io )
           if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
           {
             mManager.mDebugger.visualizeWatch = watchWindow;
+          }
+          if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
+          {
+            mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
           }
           if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
           {
@@ -332,6 +337,10 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       mManager.mDebugger.visualizeWatch = !mManager.mDebugger.visualizeWatch;
     }
+    if ( ImGui::IsKeyPressed( 'B' ) )
+    {
+      mManager.mDebugger.visualizeBreakpoint = !mManager.mDebugger.visualizeBreakpoint;
+    }
     if ( ImGui::IsKeyPressed( 'H' ) )
     {
       bool historyWindow = !mManager.mDebugger.isHistoryVisualized();
@@ -450,6 +459,13 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       ImGui::Begin( "Watch", &mManager.mDebugger.visualizeWatch, ImGuiWindowFlags_None );
       mManager.mDebugWindows.watchEditor.drawContents();
+      ImGui::End();
+    }
+
+    if ( mManager.mDebugger.visualizeBreakpoint )
+    {
+      ImGui::Begin( "Breakpoint", &mManager.mDebugger.visualizeBreakpoint, ImGuiWindowFlags_None );
+      mManager.mDebugWindows.breakpointEditor.drawContents();
       ImGui::End();
     }
 

@@ -294,53 +294,56 @@ void WatchEditor::drawContents()
     addWatch( mNewItemLabelBuf, mNewItemDataType, mNewItemAddrBuf );
   }
 
-  ImGui::BeginTable( "##watchitems", 6, ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit );
-  ImGui::TableSetupColumn( "Del" );
-  ImGui::TableSetupColumn( "Label" );
-  ImGui::TableSetupColumn( "Addr" );
-  ImGui::TableSetupColumn( "Hex" );
-  ImGui::TableSetupColumn( "Dec" );
-  ImGui::TableSetupColumn( "Bin" );
-  ImGui::TableSetupScrollFreeze( 0, 1 );
-  ImGui::TableHeadersRow();
+  ImGui::Separator();
 
-  for ( const auto& item : mItems ) 
+  if ( ImGui::BeginTable( "##watchitems", 6, ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit ) )
   {
-    auto size = dataTypeGetSize( item.type );
+    ImGui::TableSetupColumn( "Del" );
+    ImGui::TableSetupColumn( "Label" );
+    ImGui::TableSetupColumn( "Address" );
+    ImGui::TableSetupColumn( "Hex" );
+    ImGui::TableSetupColumn( "Dec" );
+    ImGui::TableSetupColumn( "Bin" );
+    ImGui::TableSetupScrollFreeze( 0, 1 );
+    ImGui::TableHeadersRow();
 
-    do
+    for ( const auto& item : mItems ) 
     {
-      --size;
-      mDataBuf[size] = mManager->mInstance->debugReadRAM( item.address + (uint16_t)size );
-    } while ( size > 0 );
+      auto size = dataTypeGetSize( item.type );
 
-    sprintf( mLabelBuf, "##wi%d", item.id );
-    ImGui::TableNextColumn();
-    ImGui::SetNextItemWidth( 15 );
-    if ( ImGui::ColorButton( mLabelBuf, ImVec4(255, 0, 0, 0), ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoInputs ) )
-    {
-      deleteWatch( &item );
-    }
+      do
+      {
+        --size;
+        mDataBuf[size] = mManager->mInstance->debugReadRAM( item.address + (uint16_t)size );
+      } while ( size > 0 );
 
-    ImGui::TableNextColumn();
-    ImGui::Text( item.label );
+      sprintf( mLabelBuf, "##wi%d", item.id );
+      ImGui::TableNextColumn();
+      ImGui::SetNextItemWidth( 15 );
+      if ( ImGui::ColorButton( mLabelBuf, ImVec4(255, 0, 0, 0), ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoInputs ) )
+      {
+        deleteWatch( &item );
+      }
 
-    ImGui::TableNextColumn();
-    snprintf( mDataOutputBuf, 7, "0x%04X", item.address );
-    ImGui::Text( mDataOutputBuf );
+      ImGui::TableNextColumn();
+      ImGui::Text( item.label );
 
-    ImGui::TableNextColumn();
-    drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Hex, mDataOutputBuf, sizeof( mDataOutputBuf ) );
-    ImGui::Text( mDataOutputBuf );
+      ImGui::TableNextColumn();
+      snprintf( mDataOutputBuf, 7, "0x%04X", item.address );
+      ImGui::Text( mDataOutputBuf );
+
+      ImGui::TableNextColumn();
+      drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Hex, mDataOutputBuf, sizeof( mDataOutputBuf ) );
+      ImGui::Text( mDataOutputBuf );
     
-    ImGui::TableNextColumn();
-    drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Dec, mDataOutputBuf, sizeof( mDataOutputBuf ) );
-    ImGui::Text( mDataOutputBuf );
+      ImGui::TableNextColumn();
+      drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Dec, mDataOutputBuf, sizeof( mDataOutputBuf ) );
+      ImGui::Text( mDataOutputBuf );
 
-    ImGui::TableNextColumn();
-    drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Bin, mDataOutputBuf, sizeof( mDataOutputBuf ) );
-    ImGui::Text( mDataOutputBuf );
+      ImGui::TableNextColumn();
+      drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Bin, mDataOutputBuf, sizeof( mDataOutputBuf ) );
+      ImGui::Text( mDataOutputBuf );
+    }
+    ImGui::EndTable();
   }
-  ImGui::EndTable();
-
 }

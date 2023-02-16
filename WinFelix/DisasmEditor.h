@@ -24,9 +24,16 @@ public:
 private:
 
   Manager* mManager;
-  uint16_t mPC;
-  uint16_t mTablePC;
+  int mPC;
+  int mTablePC;
+  bool mFollowPC;
+  bool mShowLabelsInAddrCol;
 
   bool isReadOnly();
+
+  void drawTable();
+  void drawOptions();
+  void scrollUp();
+  void scrollDown();
 };
 

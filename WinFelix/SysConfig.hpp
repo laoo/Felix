@@ -31,6 +31,11 @@ struct SysConfig
   bool debugMode;
   bool visualizeCPU;
   bool visualizeDisasm;
+  struct DisasmyOptions
+  {
+    bool  FollowPC = true;
+    bool  ShowLabelsInAddrCol = true;
+  } disasmOptions;
   bool visualizeMemory;
   struct MemoryOptions
   {
@@ -45,6 +50,7 @@ struct SysConfig
     float OptFooterExtraHeight;
   } memoryOptions;
   bool visualizeWatch;
+  bool visualizeBreakpoint;
   bool visualizeHistory;
   bool debugModeOnBreak;
   bool normalModeOnRun;

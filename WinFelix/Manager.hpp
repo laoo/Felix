@@ -8,6 +8,7 @@
 #include "MemEditor.hpp"
 #include "WatchEditor.hpp"
 #include "DisasmEditor.h"
+#include "BreakpointEditor.hpp"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -63,6 +64,7 @@ private:
   friend class MemEditor;
   friend class WatchEditor;
   friend class DisasmEditor;
+  friend class BreakpointEditor;
 
   bool mDoReset;
 
@@ -76,6 +78,7 @@ private:
     MemEditor memoryEditor;
     WatchEditor watchEditor;
     DisasmEditor disasmEditor;
+    BreakpointEditor breakpointEditor;
     std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
 
