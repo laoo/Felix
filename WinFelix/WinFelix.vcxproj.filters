@@ -35,6 +35,9 @@
     <ClCompile Include="DisasmEditor.cpp">
       <Filter>Controls</Filter>
     </ClCompile>
+    <ClCompile Include="BreakpointEditor.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manager.hpp" />
@@ -97,6 +100,9 @@
     <ClInclude Include="DisasmEditor.h">
       <Filter>Controls</Filter>
     </ClInclude>
+    <ClInclude Include="BreakpointEditor.hpp">
+      <Filter>Controls</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">
@@ -121,6 +127,9 @@
   <ItemGroup>
     <Filter Include="shaders">
       <UniqueIdentifier>{14853794-850f-480b-9628-c9d4cd45b5b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls">
+      <UniqueIdentifier>{9b240cfd-3565-44ec-84fe-c856f33237d7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
