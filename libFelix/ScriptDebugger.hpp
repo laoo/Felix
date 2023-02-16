@@ -19,6 +19,11 @@ class ScriptDebugger
       auto temp = mT1->trap( core, address, orgValue );
       return mT2->trap( core, address, temp );
     }
+
+    Kind getKind() const override
+    {
+      return mT1->getKind() | mT2->getKind();
+    }
   };
 
 public:
