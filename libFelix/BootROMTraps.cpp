@@ -24,6 +24,11 @@ public:
     //jumps to clear handler which address is held in two next bytes after reset hander address
     return (uint8_t)Opcode::JMA_JMP;
   }
+
+  Kind getKind() const override
+  {
+    return ROM_HLE;
+  }
 };
 
 class DecryptTrap : public IMemoryAccessTrap
@@ -70,6 +75,11 @@ public:
     //jumps to 0x200 held in two next bytes after trap hander address
     return (uint8_t)Opcode::JMA_JMP;
   }
+
+  Kind getKind() const override
+  {
+    return ROM_HLE;
+  }
 };
 
 class ClearTrap : public IMemoryAccessTrap
@@ -99,6 +109,11 @@ public:
     //jumps to decrypt handler which address is held in two next bytes after clear hander address
     return (uint8_t)Opcode::JMA_JMP;
   }
+
+  Kind getKind() const override
+  {
+    return ROM_HLE;
+  }
 };
 
 class ShiftTrap : public IMemoryAccessTrap
@@ -120,6 +135,11 @@ public:
     }
     //shift handler returns to caller
     return (uint8_t)Opcode::RTS_RTS;
+  }
+
+  Kind getKind() const override
+  {
+    return ROM_HLE;
   }
 };
 

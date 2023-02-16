@@ -164,7 +164,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libextern\fmt\include\;$(SolutionDir)libextern\multiprecision\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
@@ -184,7 +184,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libextern\fmt\include\;$(SolutionDir)libextern\multiprecision\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
@@ -205,7 +205,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libextern\fmt\include\;$(SolutionDir)libextern\multiprecision\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <WholeProgramOptimization>false</WholeProgramOptimization>

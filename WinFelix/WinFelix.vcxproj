@@ -84,7 +84,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -107,7 +107,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -133,7 +133,7 @@
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <Optimization>MaxSpeed</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(BOOST_PATH)include;$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -192,6 +192,7 @@
     <ClInclude Include="Manager.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="pixel.hxx" />
+    <ClInclude Include="rational.hpp" />
     <ClInclude Include="renderer.hxx" />
     <ClInclude Include="renderer2.hxx" />
     <ClInclude Include="rendererYUV.hxx" />

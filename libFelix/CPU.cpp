@@ -3287,7 +3287,7 @@ void CPU::trace2()
   case Opcode::RIN_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "({:02x})\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "({:02x})\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
     }
     else
     {
@@ -3297,7 +3297,7 @@ void CPU::trace2()
   case Opcode::WIN_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "({:02x})\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "({:02x})\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
     }
     else
     {
@@ -3313,7 +3313,7 @@ void CPU::trace2()
   case Opcode::RIX_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "({:02x},x)\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "({:02x},x)\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), mState.m1, *comment ) - buf.data();
     }
     else
     {
@@ -3323,7 +3323,7 @@ void CPU::trace2()
   case Opcode::WIX_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "({:02x},x)\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "({:02x},x)\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.t ), *comment ) - buf.data();
     }
     else
     {
@@ -3339,7 +3339,7 @@ void CPU::trace2()
   case Opcode::RIY_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "({:02x}),y\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "({:02x}),y\t;[{}]={:02x}\t{}", mState.fa, mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
     }
     else
     {
@@ -3349,7 +3349,7 @@ void CPU::trace2()
   case Opcode::WIY_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "({:02x}),y\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "({:02x}),y\t;[{}]\t{}", mState.fa, mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
     }
     else
     {
@@ -3370,7 +3370,7 @@ void CPU::trace2()
   case Opcode::RAB_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{}\t;={:02x}\t{}", mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{}\t;={:02x}\t{}", mTraceHelper->addressLabel( mState.ea ), mState.m1, *comment ) - buf.data();
     }
     else
     {
@@ -3387,7 +3387,7 @@ void CPU::trace2()
   case Opcode::MAB_TSB:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{}\t;={:02x}->{:02x}\t{}", mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{}\t;={:02x}->{:02x}\t{}", mTraceHelper->addressLabel( mState.ea ), mState.m1, mState.m2, *comment ) - buf.data();
     }
     else
     {
@@ -3400,7 +3400,7 @@ void CPU::trace2()
   case Opcode::WAB_STZ:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{}\t;{}", mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{}\t;{}", mTraceHelper->addressLabel( mState.ea ), *comment ) - buf.data();
     }
     else
     {
@@ -3425,7 +3425,7 @@ void CPU::trace2()
   case Opcode::RAX_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{:04x},x\t;[{}]={:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{:04x},x\t;[{}]={:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
     }
     else
     {
@@ -3440,7 +3440,7 @@ void CPU::trace2()
   case Opcode::MAX_ROR:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{:04x},x\t;[{}]={:02x}->{:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, mState.m2, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{:04x},x\t;[{}]={:02x}->{:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, mState.m2, *comment ) - buf.data();
     }
     else
     {
@@ -3451,7 +3451,7 @@ void CPU::trace2()
   case Opcode::WAX_STZ:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{:04x},x\t;[{}]\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{:04x},x\t;[{}]\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
     }
     else
     {
@@ -3468,7 +3468,7 @@ void CPU::trace2()
   case Opcode::RAY_SBC:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{:04x},y\t;[{}]={:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{:04x},y\t;[{}]={:02x}\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), mState.m1, *comment ) - buf.data();
     }
     else
     {
@@ -3478,7 +3478,7 @@ void CPU::trace2()
   case Opcode::WAY_STA:
     if ( comment )
     {
-      off = std::format_to( buf.data() + off, "{:04x},y\t;[{}]\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
+      off = fmt::format_to( buf.data() + off, "{:04x},y\t;[{}]\t{}", mState.ea, mTraceHelper->addressLabel( mState.fa ), *comment ) - buf.data();
     }
     else
     {

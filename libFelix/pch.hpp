@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <bit>
 #include <cassert>
 #include <chrono>
@@ -9,7 +10,6 @@
 #include <coroutine>
 #include <cstdint>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <functional>
 #include <limits>
@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <vector>
 
+#define BOOST_MP_STANDALONE
 #include <boost/multiprecision/cpp_int.hpp>
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
+#define FMT_HEADER_ONLY
+#include <fmt/core.h>

@@ -7,7 +7,7 @@
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 
-EncodingRenderer::EncodingRenderer( std::shared_ptr<IEncoder> encoder, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext, boost::rational<int32_t> refreshRate ) :
+EncodingRenderer::EncodingRenderer( std::shared_ptr<IEncoder> encoder, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext, rational::Ratio<int32_t> refreshRate ) :
   mEncoder{ std::move( encoder ) }, mD3DDevice{ std::move( pD3DDevice ) }, mImmediateContext{ std::move( pImmediateContext ) }, mCb{}, mRefreshRate{ refreshRate }
 {
   mCb.vscale = mEncoder->width() / SCREEN_WIDTH;
@@ -80,7 +80,7 @@ void EncodingRenderer::renderEncoding( ID3D11ShaderResourceView* srv )
 
   if ( !mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch ) )
   {
-    mEncoder->startEncoding( mRefreshRate.numerator(), mRefreshRate.denominator() );
+    mEncoder->startEncoding( mRefreshRate.numer, mRefreshRate.denom );
     mEncoder->writeFrame( (uint8_t const*)resY.pData, resY.RowPitch, (uint8_t const*)resU.pData, resU.RowPitch, (uint8_t const*)resV.pData, resV.RowPitch );
   }
 
