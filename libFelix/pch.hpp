@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <vector>
 
+#define BOOST_MP_STANDALONE
 #include <boost/multiprecision/cpp_int.hpp>
 #define FMT_HEADER_ONLY
 #include <fmt/core.h>

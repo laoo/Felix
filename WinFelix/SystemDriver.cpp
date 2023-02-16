@@ -56,20 +56,19 @@ bool runOtherInstanceIfPresent( std::wstring const& arg )
     buffer.push_back( 0 );
 
     HGLOBAL hMem = GlobalAlloc( GHND, sizeof( DROPFILES ) + buffer.size() * sizeof( wchar_t ) );
-    BOOST_SCOPE_EXIT_ALL( = ) { GlobalFree( hMem ); };
 
     if ( auto dropFiles = (DROPFILES*)GlobalLock( hMem ) )
     {
-      BOOST_SCOPE_EXIT_ALL( = ) { GlobalUnlock( hMem ); };
-
       dropFiles->pFiles = sizeof( DROPFILES );
       dropFiles->pt = POINT{};
       dropFiles->fNC = false;
       dropFiles->fWide = true;
       memcpy( &dropFiles[1], &buffer[0], buffer.size() * sizeof( wchar_t ) );
       PostMessage( hwnd, WM_DROPFILES, (WPARAM)hMem, 0 );
+      GlobalUnlock( hMem );
     }
 
+    GlobalFree( hMem );
     return true;
   }
 

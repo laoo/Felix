@@ -120,9 +120,9 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag
 
   DXGI_MODE_DESC md;
   V_THROW( pIDXGIOutput->FindClosestMatchingMode( &sd.BufferDesc, &md, gD3DDevice.Get() ) );
-  mRefreshRate = { md.RefreshRate.Numerator, md.RefreshRate.Denominator };
+  mRefreshRate = rational::Ratio<int32_t>{ (int)md.RefreshRate.Numerator, (int)md.RefreshRate.Denominator };
 
-  L_INFO << "Refresh Rate: " << mRefreshRate << " = " << ( (double)mRefreshRate.numerator() / (double)mRefreshRate.denominator() );
+  L_INFO << "Refresh Rate: " << mRefreshRate.numer << '/' << mRefreshRate.denom << " = " << (float)mRefreshRate;
 
   V_THROW( gD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, gRendererCS.ReleaseAndGetAddressOf() ) );
   V_THROW( gD3DDevice->CreateComputeShader( g_Renderer2, sizeof g_Renderer2, nullptr, gRenderer2CS.ReleaseAndGetAddressOf() ) );
