@@ -57,7 +57,8 @@ public:
   uint16_t debugVidBas() const;
   uint16_t debugCollBas() const;
   std::span<uint8_t const, 32> debugPalette() const;
-
+  std::shared_ptr<TraceHelper> getTraceHelper() const;
+  std::shared_ptr<ScriptDebugger> getScriptDebugger() const;
 
 private:
 
@@ -103,8 +104,7 @@ private:
   void requestDisplayDMA( uint64_t tick, uint16_t address );
   void runSuzy();
   Cartridge & getCartridge();
-  void newLine( int rowNr );
-  std::shared_ptr<TraceHelper> getTraceHelper() const;
+  void newLine( int rowNr );  
   uint64_t fetchRAMTiming( uint16_t address );
   uint64_t fetchROMTiming( uint16_t address );
   uint64_t readTiming( uint16_t address );

@@ -4,6 +4,11 @@
 #include "Utility.hpp"
 #include "UI.hpp"
 #include "Debugger.hpp"
+#include "CPUEditor.hpp"
+#include "MemEditor.hpp"
+#include "WatchEditor.hpp"
+#include "DisasmEditor.h"
+#include "BreakpointEditor.hpp"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -44,8 +49,6 @@ private:
   void handleFileDrop( std::filesystem::path path );
 
   void updateDebugWindows();
-  BoardRendering renderCPUWindow();
-  BoardRendering renderDisasmWindow();
   BoardRendering renderHistoryWindow();
   
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
@@ -57,6 +60,11 @@ private:
   friend struct SuzyProxy;
   friend struct CPUProxy;
   friend class UI;
+  friend class CPUEditor;
+  friend class MemEditor;
+  friend class WatchEditor;
+  friend class DisasmEditor;
+  friend class BreakpointEditor;
 
   bool mDoReset;
 
@@ -66,8 +74,11 @@ private:
   {
     std::shared_ptr<IScreenView> mainScreenView;
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
-    std::shared_ptr<IBoard> cpuBoard;
-    std::shared_ptr<IBoard> disasmBoard;
+    CPUEditor cpuEditor;
+    MemEditor memoryEditor;
+    WatchEditor watchEditor;
+    DisasmEditor disasmEditor;
+    BreakpointEditor breakpointEditor;
     std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
 

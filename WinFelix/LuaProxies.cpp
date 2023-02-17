@@ -31,8 +31,6 @@ void TrapProxy::set( TrapProxy& proxy, int idx, sol::function fun )
   }
 }
 
-
-
 sol::object RamProxy::get( sol::stack_object key, sol::this_state L )
 {
   if ( auto optIdx = key.as<sol::optional<int>>() )
