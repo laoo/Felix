@@ -30,7 +30,7 @@ public:
     if ( mCommentCursor != 0 )
       mTraceComment[mCommentCursor++] = ' ';
 
-    auto [out,size] = std::format_to_n( mTraceComment.begin() + mCommentCursor, mTraceComment.size() - mCommentCursor, fmt.str, args... );
+    auto [out,size] = fmt::format_to_n( mTraceComment.begin() + mCommentCursor, mTraceComment.size() - mCommentCursor, fmt.str, args... );
     mCommentCursor = std::distance( mTraceComment.begin(), out );
   }
 

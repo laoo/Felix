@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseRenderer.hpp"
+#include "rational.hpp"
 
 class WinImgui11;
 class EncodingRenderer;
@@ -122,7 +123,7 @@ private:
   ComPtr<ID3D11Texture2D>           mSource;
   ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
 
-  boost::rational<int32_t>          mRefreshRate;
+  rational::Ratio<int32_t>          mRefreshRate;
   std::shared_ptr<EncodingRenderer> mEncodingRenderer;
   std::shared_ptr<VideoSink>        mVideoSink;
   mutable std::mutex                mDebugViewMutex;

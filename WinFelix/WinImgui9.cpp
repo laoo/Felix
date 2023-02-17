@@ -165,16 +165,7 @@ void WinImgui9::renderDrawData( ImDrawData* draw_data )
     CUSTOMVERTEX* vtx_dst;
     ImDrawIdx* idx_dst;
     V_THROW( mVB->Lock( 0, (UINT)( draw_data->TotalVtxCount * sizeof( CUSTOMVERTEX ) ), (void**)&vtx_dst, D3DLOCK_DISCARD ) );
-    BOOST_SCOPE_EXIT_ALL( this )
-    {
-      mVB->Unlock();
-    };
-
     V_THROW( mIB->Lock( 0, (UINT)( draw_data->TotalIdxCount * sizeof( ImDrawIdx ) ), (void**)&idx_dst, D3DLOCK_DISCARD ) );
-    BOOST_SCOPE_EXIT_ALL( this )
-    {
-      mIB->Unlock();
-    };
 
     // Copy and convert all vertices into a single contiguous buffer, convert colors to DX9 default format.
     // FIXME-OPT: This is a minor waste of resource, the ideal is to use imconfig.h and
@@ -198,6 +189,8 @@ void WinImgui9::renderDrawData( ImDrawData* draw_data )
       memcpy( idx_dst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof( ImDrawIdx ) );
       idx_dst += cmd_list->IdxBuffer.Size;
     }
+    mIB->Unlock();
+    mVB->Unlock();
   }
   md3dDevice->SetStreamSource( 0, mVB.Get(), 0, sizeof( CUSTOMVERTEX ) );
   md3dDevice->SetIndices( mIB.Get() );

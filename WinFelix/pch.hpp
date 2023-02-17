@@ -24,9 +24,6 @@
 #include <vector>
 #include <unordered_map>
 
-#include <boost/rational.hpp>
-#include <boost/scope_exit.hpp>
-
 #ifdef _WIN32
 #define NOMINMAX
 #include <Windows.h>

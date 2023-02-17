@@ -10,11 +10,11 @@ template<typename Type, int I> requires requires
 }
 constexpr VidOperator::MemOp stateFun()
 {
-  static constexpr int pixel = ( I & 0b111100 ) >> 2;  //pixel value
-  static constexpr bool edge = ( I & 0b000010 ) != 0;  //first pixel
-  static constexpr bool even = ( I & 0b000001 ) != 0;  //right nibble
+  constexpr int pixel = ( I & 0b111100 ) >> 2;  //pixel value
+  constexpr bool edge = ( I & 0b000010 ) != 0;  //first pixel
+  constexpr bool even = ( I & 0b000001 ) != 0;  //right nibble
  
-  static constexpr int value = even ? pixel : pixel << 4;
+  constexpr int value = even ? pixel : pixel << 4;
  
   if constexpr ( Type::eor )
   {
@@ -22,7 +22,7 @@ constexpr VidOperator::MemOp stateFun()
   }
   else
   {
-    static constexpr bool opaque = Type::opaque( pixel );
+    constexpr bool opaque = Type::opaque( pixel );
     if constexpr ( opaque )
     {
       if constexpr ( edge )

@@ -1,11 +1,13 @@
 #pragma once
 
+#include "rational.hpp"
+
 class IEncoder;
 
 class EncodingRenderer
 {
 public:
-  EncodingRenderer( std::shared_ptr<IEncoder> encoder, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext, boost::rational<int32_t> refreshRate );
+  EncodingRenderer( std::shared_ptr<IEncoder> encoder, ComPtr<ID3D11Device> pD3DDevice, ComPtr<ID3D11DeviceContext> pImmediateContext, rational::Ratio<int32_t> refreshRate );
 
   void renderEncoding( ID3D11ShaderResourceView* srv );
 
@@ -32,7 +34,7 @@ private:
     uint32_t padding2;
     uint32_t padding3;
   } mCb;
-  boost::rational<int32_t> mRefreshRate;
+  rational::Ratio<int32_t> mRefreshRate;
 
 
 };

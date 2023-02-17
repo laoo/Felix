@@ -18,14 +18,12 @@ std::wstring getCommandArg()
   int argCount;
 
   szArgList = CommandLineToArgvW( GetCommandLine(), &argCount );
-  BOOST_SCOPE_EXIT_ALL( = )
-  {
-    LocalFree( szArgList );
-  };
 
   if ( szArgList != NULL && argCount > 1 )
   {
-    return std::wstring{ szArgList[1] };
+    std::wstring result{ szArgList[1] };
+    LocalFree( szArgList );
+    return result;
   }
 
   return {};

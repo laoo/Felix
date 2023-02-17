@@ -18,6 +18,11 @@ void TrapProxy::set( TrapProxy& proxy, int idx, sol::function fun )
     {
       return fun( orgValue, address );
     }
+
+    Kind getKind() const override
+    {
+      return LUA;
+    }
   };
 
   if ( idx >= 0 && idx < 65536 )

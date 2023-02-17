@@ -25,7 +25,8 @@ SymbolSource::~SymbolSource()
 
 std::optional<uint16_t> SymbolSource::symbol( std::string const& name ) const
 {
-  auto upper = boost::algorithm::to_upper_copy( name );
+  std::string upper;
+  std::transform( name.cbegin(), name.cend(), std::back_inserter( upper ), []( std::string::value_type c ) { return std::toupper( c ); } );
   auto it = std::ranges::find( mSymbols, upper, &Symbol::name );
 
   return it != mSymbols.cend() ? it->value : std::optional<uint16_t>{};
