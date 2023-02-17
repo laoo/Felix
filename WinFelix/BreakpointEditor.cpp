@@ -152,7 +152,7 @@ void BreakpointEditor::drawContents()
 
   ImGui::SameLine();
   ImGui::SetNextItemWidth( 50 );
-  if ( ImGui::Button( "Add" ) )
+  if ( !isReadOnly() && ImGui::Button( "Add" ) )
   {
     if ( strlen( mNewItemAddrBuf ) <= 0 || isReadOnly() )
     {
