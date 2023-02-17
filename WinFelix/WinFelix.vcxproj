@@ -26,7 +26,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -84,7 +84,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_PATH);$(SolutionDir)libextern\imgui;$(SolutionDir)libFelix;$(SolutionDir)libextern\sol2\include\;$(SolutionDir)libextern\lua\;$(SolutionDir)Encoder\API;$(SolutionDir)libextern\libwav\include;$(SolutionDir)libextern\imgui-filebrowser;$(SolutionDir)libextern\imgui_club\imgui_memory_editor;$(SolutionDir)libextern\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -147,8 +147,11 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BreakpointEditor.cpp" />
     <ClCompile Include="ConfigProvider.cpp" />
+    <ClCompile Include="CPUEditor.cpp" />
     <ClCompile Include="Debugger.cpp" />
+    <ClCompile Include="DisasmEditor.cpp" />
     <ClCompile Include="DX11Helpers.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="DX9Renderer.cpp" />
@@ -156,6 +159,7 @@
     <ClCompile Include="KeyNames.cpp" />
     <ClCompile Include="LuaProxies.cpp" />
     <ClCompile Include="Manager.cpp" />
+    <ClCompile Include="MemEditor.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -168,6 +172,7 @@
     <ClCompile Include="UI.cpp" />
     <ClCompile Include="UserInput.cpp" />
     <ClCompile Include="VideoSink.cpp" />
+    <ClCompile Include="WatchEditor.cpp" />
     <ClCompile Include="WinAudioOut.cpp" />
     <ClCompile Include="WinImgui.cpp" />
     <ClCompile Include="WinImgui11.cpp" />
@@ -177,11 +182,15 @@
   <ItemGroup>
     <ClInclude Include="BaseRenderer.hpp" />
     <ClInclude Include="board.hxx" />
+    <ClInclude Include="BreakpointEditor.hpp" />
     <ClInclude Include="ConfigProvider.hpp" />
+    <ClInclude Include="CPUEditor.hpp" />
     <ClInclude Include="Debugger.hpp" />
+    <ClInclude Include="DisasmEditor.h" />
     <ClInclude Include="DX11Helpers.hpp" />
     <ClInclude Include="DX11Renderer.hpp" />
     <ClInclude Include="DX9Renderer.hpp" />
+    <ClInclude Include="Editors.hpp" />
     <ClInclude Include="EncodingRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="fonts.hpp" />
@@ -190,6 +199,7 @@
     <ClInclude Include="KeyNames.hpp" />
     <ClInclude Include="LuaProxies.hpp" />
     <ClInclude Include="Manager.hpp" />
+    <ClInclude Include="MemEditor.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="pixel.hxx" />
     <ClInclude Include="rational.hpp" />
@@ -205,6 +215,7 @@
     <ClInclude Include="version.hpp" />
     <ClInclude Include="vertex.hxx" />
     <ClInclude Include="VideoSink.hpp" />
+    <ClInclude Include="WatchEditor.hpp" />
     <ClInclude Include="WinAudioOut.hpp" />
     <ClInclude Include="WinImgui.hpp" />
     <ClInclude Include="WinImgui11.hpp" />

@@ -28,6 +28,44 @@ TraceHelper::~TraceHelper()
 {
 }
 
+void TraceHelper::updateLabel( uint16_t address, const char* label )
+{
+  if ( address > 0xffff )
+  {
+    return;
+  }
+
+  auto labelLen = strlen( label );
+  if ( labelLen <= 0 || labelLen > LABEL_SIZE_LIMIT )
+  {
+    return;
+  }
+
+  auto currPos = mLabels[address];
+
+  std::vector<char>::iterator iterFirst = mData.begin() + currPos;
+  auto iterLast = iterFirst;
+
+  while ( *iterLast != 0 )
+  {
+    iterLast += 1;
+    labelLen--;
+  }
+
+  mData.erase( iterFirst, iterLast );
+  
+  iterFirst = mData.begin() + currPos;
+  for ( int i = 0; i < strlen( label ); ++i )
+  {
+    iterFirst = mData.insert( iterFirst, label[i]) + 1;
+  }
+  
+  do 
+  {
+    mLabels[++address] += labelLen;
+  } while ( address < 0xffff );
+}
+
 char const * TraceHelper::addressLabel( uint16_t address ) const
 {
   return mData.data() + mLabels[address];

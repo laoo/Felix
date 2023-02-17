@@ -541,6 +541,11 @@ std::shared_ptr<TraceHelper> Core::getTraceHelper() const
   return mTraceHelper;
 }
 
+std::shared_ptr<ScriptDebugger> Core::getScriptDebugger() const
+{
+  return mScriptDebugger;
+}
+
 uint64_t Core::fetchRAMTiming( uint16_t address )
 {
   uint32_t page = ( address >> 8 );
