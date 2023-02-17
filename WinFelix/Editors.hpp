@@ -16,4 +16,3 @@
 
 #define CHAR_TO_HEX(c) ((c >= 'A')? (c - 'A' + 10): (c - '0'))
 #define _2CHAR_TO_HEX(buf) ( (CHAR_TO_HEX(buf[0]) << 4 ) | CHAR_TO_HEX(buf[1]) )
-#define _4CHAR_TO_HEX(buf) ( (_2CHAR_TO_HEX(buf) << 8 ) | _2CHAR_TO_HEX((buf+2)) )

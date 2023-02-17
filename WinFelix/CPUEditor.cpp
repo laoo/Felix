@@ -89,7 +89,9 @@ void CPUEditor::drawPS( const char* label, uint16_t ps, char* ps_buf )
   if ( ImGui::InputText( mlabel_buf, ps_buf, PS_TXT_LEN, inputflag ) )
   {
     auto &state = mManager->mInstance->debugCPU().state();
-    uint16_t v = _4CHAR_TO_HEX( ps_buf );
+
+    int v;
+    sscanf( ps_buf, "%04X", &v );
 
     if ( 0 == strcmp( label, "S" ) )
     {

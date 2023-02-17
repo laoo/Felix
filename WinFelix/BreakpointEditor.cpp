@@ -89,24 +89,9 @@ void BreakpointEditor::deleteBreakpoint( const BreakpointItem* item )
 
 void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, const char* addr )
 {
-  if ( strlen( addr ) != 4 )
-  {
-    return;
-  }
-
-  char addrbuf[4] = { };
-
-  for ( int i = 0; i < sizeof( addrbuf ); ++i )
-  {
-    int c = toupper( addr[i] );
-    if ( c < '0' || c > 'F' || ( c > '9' && c < 'A' ) )
-    {
-      return;
-    }
-    addrbuf[i] = c;
-  }
-
-  addBreakpoint( type, _4CHAR_TO_HEX( addr ) );
+  int v;
+  sscanf( addr, "%04X", &v );
+  addBreakpoint( type, v );
 }
 
 void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, uint16_t addr )
@@ -169,7 +154,7 @@ void BreakpointEditor::drawContents()
   ImGui::SetNextItemWidth( 50 );
   if ( ImGui::Button( "Add" ) )
   {
-    if ( strlen( mNewItemAddrBuf ) != 4 || isReadOnly() )
+    if ( strlen( mNewItemAddrBuf ) <= 0 || isReadOnly() )
     {
       return;
     }

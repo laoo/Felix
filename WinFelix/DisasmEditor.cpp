@@ -186,7 +186,7 @@ void DisasmEditor::drawOptions()
   ImGui::SetNextItemWidth( 40 );
   if ( ImGui::InputText( "##disasmtableaddr", addrbuf, 5, ( mFollowPC ? ImGuiInputTextFlags_ReadOnly : 0 ) | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue ) )
   {
-    mTablePC = _4CHAR_TO_HEX( addrbuf );
+    sscanf( addrbuf, "%04X", &mTablePC );
   }
 }
 

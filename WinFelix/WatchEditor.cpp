@@ -196,25 +196,10 @@ void WatchEditor::deleteWatch( const WatchItem* item )
 }
 
 void WatchEditor::addWatch( const char* label, ImGuiDataType type, const char* addr )
-{
-  if ( strlen( addr ) != 4 )
-  {
-    return;
-  }
-
-  char addrbuf[4] = { };
-
-  for ( int i = 0; i < sizeof( addrbuf ); ++i )
-  {
-    int c = toupper( addr[i] );
-    if ( c < '0' || c > 'F' || ( c > '9' && c < 'A' ) )
-    {
-      return;
-    }
-    addrbuf[i] = c;
-  }
-
-  addWatch( label, type, _4CHAR_TO_HEX( addr ) );
+{  
+  int a;
+  sscanf( addr, "%04X", &a );
+  addWatch( label, type, a );
 }
 
 void WatchEditor::addWatch( const char* label, ImGuiDataType type, uint16_t addr )
@@ -289,7 +274,7 @@ void WatchEditor::drawContents()
   ImGui::SetNextItemWidth( 50 );
   if ( ImGui::Button( "Add" ) )
   {
-    if ( strlen( mNewItemLabelBuf ) <= 0 || strlen( mNewItemAddrBuf ) != 4 || isReadOnly() )
+    if ( strlen( mNewItemLabelBuf ) <= 0 || isReadOnly() )
     {    
       return;
     }
