@@ -123,6 +123,7 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
   mDebugWindows.memoryEditor.setManager( this );
   mDebugWindows.watchEditor.setManager( this );
   mDebugWindows.disasmEditor.setManager( this );
+  mDebugWindows.breakpointEditor.setManager( this );
 
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();
@@ -361,7 +362,7 @@ void Manager::processLua( std::filesystem::path const& path )
   {
     if ( mInstance )
     {
-      mInstance->debugCPU().breakFromLua();
+      mInstance->debugCPU().breakFromTrap();
     }
   };
 

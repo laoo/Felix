@@ -15,6 +15,11 @@ BreakpointEditor::~BreakpointEditor()
 void BreakpointEditor::setManager( Manager* manager )
 {
   mManager = manager;
+
+  if ( enabled() )
+  {
+    initializeExistingTraps();
+  }
 }
 
 bool BreakpointEditor::enabled()
@@ -32,12 +37,57 @@ bool BreakpointEditor::isReadOnly()
   return !mManager->mDebugger.isPaused();
 }
 
+bool BreakpointEditor::hasBreapoint( uint16_t address )
+{
+  return std::any_of( mItems.begin(), mItems.end(), [address] ( BreakpointItem i ) { return i.address == address; } );
+}
+
+void BreakpointEditor::toggleBreapoint( uint16_t address )
+{
+  if ( hasBreapoint( address ) )
+  {
+    deleteBreakpoint( address );
+  }
+  else
+  {
+    addBreakpoint( ScriptDebugger::Type::RAM_EXECUTE, address );
+  }
+}
+
+void BreakpointEditor::initializeExistingTraps()
+{
+  auto traps = mManager->mInstance->getScriptDebugger()->getTraps( IMemoryAccessTrap::UI );
+
+  for ( auto trap : traps )
+  {
+    BreakpointItem item;
+
+    item.type = std::get<0>( trap );
+    item.address = std::get<1>( trap );
+
+    mItems.push_back( item );
+  }
+}
+
+void BreakpointEditor::deleteBreakpoint( uint16_t address )
+{
+  auto iter = std::find_if( mItems.begin(), mItems.end(), [address] ( BreakpointItem item ) { return item.address == address && item.type == ScriptDebugger::Type::RAM_EXECUTE; } );
+
+  if ( iter == mItems.end() )
+  {
+    return;
+  }
+
+  deleteBreakpoint( &(*iter) );
+}
+
 void BreakpointEditor::deleteBreakpoint( const BreakpointItem* item )
 {
   mItems.erase( std::remove( mItems.begin(), mItems.end(), *item ), mItems.end() );
+  mManager->mInstance->getScriptDebugger()->deleteTrap( item->type, item->address );
 }
 
-void BreakpointEditor::addBreakpoint( BreakpointType type, const char* addr )
+void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, const char* addr )
 {
   if ( strlen( addr ) != 4 )
   {
@@ -59,7 +109,7 @@ void BreakpointEditor::addBreakpoint( BreakpointType type, const char* addr )
   addBreakpoint( type, _4CHAR_TO_HEX( addr ) );
 }
 
-void BreakpointEditor::addBreakpoint( BreakpointType type, uint16_t addr )
+void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, uint16_t addr )
 {
   if ( addr > 0xffff )
   {
@@ -75,20 +125,23 @@ void BreakpointEditor::addBreakpoint( BreakpointType type, uint16_t addr )
   item.type = type;
   item.address = addr;
 
+  auto trap = std::make_shared<UIBreakpointTrap>();
+
+  mManager->mInstance->getScriptDebugger()->addTrap( item.type, item.address, trap);
   mItems.push_back( item );
 }
 
-const char* BreakpointEditor::breakpointTypeGetDesc( BreakpointType type ) const
+const char* BreakpointEditor::breakpointTypeGetDesc( ScriptDebugger::Type type ) const
 {
-  const char* descs[] = { "Exec", "Read", "Write" };
-  IM_ASSERT( type >= 0 && type < BreakpointType_COUNT );
-  return descs[type];
+  const char* descs[] = { "RAM read", "RAM Write", "RAM Execute", "ROM Read", "ROM Write", "ROM Execute", "Mikey Read", "Mikey Write", "Suzy Read", "Suzy Write" };
+  IM_ASSERT( (int)type >= 0 && type < ScriptDebugger::Type::MAPCTL_READ );
+  return descs[(int)type];
 }
 
 void BreakpointEditor::drawContents()
 {
   WatchItem item{ };
-  char idBuf[10]{ };
+  char buffer[50]{ };
 
   ImGui::AlignTextToFramePadding();
 
@@ -103,12 +156,12 @@ void BreakpointEditor::drawContents()
   ImGui::Text( "Type" );
 
   ImGui::SameLine();
-  ImGui::SetNextItemWidth( 70 );
+  ImGui::SetNextItemWidth( 100 );
   if ( ImGui::BeginCombo( "##breakPointtype", breakpointTypeGetDesc( mNewItemBreakpointType ), ImGuiComboFlags_HeightLargest ) )
   {
-    for ( int n = 0; n < BreakpointType_COUNT; n++ )
-      if ( ImGui::Selectable( breakpointTypeGetDesc( (BreakpointType)n ), mNewItemBreakpointType == n ) )
-        mNewItemBreakpointType = (BreakpointType)n;
+    for ( int n = 0; n < (int)ScriptDebugger::Type::MAPCTL_READ; n++ )
+      if ( ImGui::Selectable( breakpointTypeGetDesc( (ScriptDebugger::Type)n ), (int)mNewItemBreakpointType == n ) )
+        mNewItemBreakpointType = (ScriptDebugger::Type)n;
     ImGui::EndCombo();
   }
 
@@ -138,19 +191,18 @@ void BreakpointEditor::drawContents()
     {
       ImGui::TableNextColumn();
       ImGui::SetNextItemWidth( 15 );
-      sprintf( idBuf, "##bi%d", item.id );
-      if ( ImGui::ColorButton( idBuf, ImVec4( 255, 0, 0, 0 ), ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoInputs ) )
+      sprintf( buffer, "##bi%d", item.id );
+      if ( ImGui::ColorButton( buffer, ImVec4( 255, 0, 0, 0 ), ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoInputs ) )
       {
         deleteBreakpoint( &item );
       }
 
       ImGui::TableNextColumn();
-      //snprintf( mDataOutputBuf, 7, "0x%04X", item.address );
-      ImGui::Text( "mDataOutputBuf" );
+      snprintf( buffer, 7, "$%04X", item.address );
+      ImGui::Text( buffer );
 
       ImGui::TableNextColumn();
-      //drawPreviewData( mDataBuf, sizeof( mDataBuf ), item.type, DataFormat_Hex, mDataOutputBuf, sizeof( mDataOutputBuf ) );
-      ImGui::Text( "mDataOutputBuf" );
+      ImGui::Text( breakpointTypeGetDesc( item.type ) );
     }
     ImGui::EndTable();
   }

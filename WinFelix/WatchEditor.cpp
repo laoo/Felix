@@ -251,6 +251,9 @@ void WatchEditor::addWatch( const char* label, const char* type, uint16_t addr )
 
 void WatchEditor::drawContents()
 {
+  ImU8 mDataBuf[8];
+  char mDataOutputBuf[8 * 8];
+  char mLabelBuf[10];
   WatchItem item{ };
 
   ImGui::AlignTextToFramePadding();
@@ -329,7 +332,7 @@ void WatchEditor::drawContents()
       ImGui::Text( item.label );
 
       ImGui::TableNextColumn();
-      snprintf( mDataOutputBuf, 7, "0x%04X", item.address );
+      snprintf( mDataOutputBuf, 7, "$%04X", item.address );
       ImGui::Text( mDataOutputBuf );
 
       ImGui::TableNextColumn();

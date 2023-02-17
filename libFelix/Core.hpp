@@ -58,6 +58,7 @@ public:
   uint16_t debugCollBas() const;
   std::span<uint8_t const, 32> debugPalette() const;
   std::shared_ptr<TraceHelper> getTraceHelper() const;
+  std::shared_ptr<ScriptDebugger> getScriptDebugger() const;
 
 private:
 

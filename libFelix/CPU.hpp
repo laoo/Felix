@@ -65,8 +65,8 @@ public:
   void breakOnStepOver();
   //triggers a break if CPU goes out from a subroutine in a response to RunMode::STEP_OUT
   void breakOnStepOut();
-  //triggers a break originated from lua script on next instruction boundary
-  void breakFromLua();
+  //triggers a break originated from a trap on next instruction boundary
+  void breakFromTrap();
   //clears any step triggers previously set
   void clearBreak();
 

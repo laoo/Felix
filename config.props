@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <APP_NAME>Felix</APP_NAME>
+    <BOOST_PATH>D:\boost_1_81_0\</BOOST_PATH>
   </PropertyGroup>
   <PropertyGroup>
     <OutDir>$(SolutionDir)out\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>

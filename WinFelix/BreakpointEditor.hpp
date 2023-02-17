@@ -1,21 +1,33 @@
 #pragma once
 
 #include "Editors.hpp"
+#include "ScriptDebugger.hpp"
+#include "Core.hpp"
+#include "CPU.hpp"
 
 class Manager;
 
-enum BreakpointType
+struct UIBreakpointTrap : public IMemoryAccessTrap
 {
-  BreakpointType_Exec = 0,
-  BreakpointType_Read = 1,
-  BreakpointType_Write = 2,
-  BreakpointType_COUNT
+  UIBreakpointTrap() {}
+  ~UIBreakpointTrap() override = default;
+
+  virtual uint8_t trap( Core& core, uint16_t address, uint8_t orgValue ) override
+  {
+    core.debugCPU().breakFromTrap();
+    return orgValue;
+  }
+
+  Kind getKind() const override
+  {
+    return UI;
+  }
 };
 
 typedef struct BreakpointItem
 {
   uint32_t id = 0;
-  BreakpointType type = BreakpointType_Exec;
+  ScriptDebugger::Type type;
   uint16_t address = 0;
 
   bool operator==( const BreakpointItem& b )
@@ -34,19 +46,23 @@ public:
   void setManager( Manager* manager );
   void drawContents();
   bool enabled();
+  bool hasBreapoint( uint16_t address );
+  void toggleBreapoint( uint16_t address );
 
 private:
   Manager* mManager;
   std::vector<BreakpointItem> mItems;
 
   char mNewItemAddrBuf[6];
-  BreakpointType mNewItemBreakpointType;
+  ScriptDebugger::Type mNewItemBreakpointType;
 
   bool isReadOnly();
 
+  void initializeExistingTraps();
+  void deleteBreakpoint( uint16_t address );
   void deleteBreakpoint( const BreakpointItem* item );
-  void addBreakpoint( BreakpointType type, const char* addr );
-  void addBreakpoint( BreakpointType type, uint16_t addr );
-  const char* breakpointTypeGetDesc( BreakpointType type ) const;
+  void addBreakpoint( ScriptDebugger::Type type, const char* addr );
+  void addBreakpoint( ScriptDebugger::Type type, uint16_t addr );
+  const char* breakpointTypeGetDesc( ScriptDebugger::Type type ) const;
 };
 

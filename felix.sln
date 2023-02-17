@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30011.22
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinFelix", "WinFelix\WinFelix.vcxproj", "{89CB9A2E-8DFA-4B43-9063-3DA1AA917B47}"
 EndProject
@@ -11,9 +11,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFelix", "libFelix\libFel
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sol", "sol", "{500C37F9-B7EF-41AA-BF69-59E417608FD5}"
 	ProjectSection(SolutionItems) = preProject
+		sol2\include\sol\assert.hpp = sol2\include\sol\assert.hpp
 		sol2\include\sol\as_args.hpp = sol2\include\sol\as_args.hpp
 		sol2\include\sol\as_returns.hpp = sol2\include\sol\as_returns.hpp
-		sol2\include\sol\assert.hpp = sol2\include\sol\assert.hpp
 		sol2\include\sol\base_traits.hpp = sol2\include\sol\base_traits.hpp
 		sol2\include\sol\bind_traits.hpp = sol2\include\sol\bind_traits.hpp
 		sol2\include\sol\bytecode.hpp = sol2\include\sol\bytecode.hpp
@@ -39,8 +39,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sol", "sol", "{500C37F9-B7E
 		sol2\include\sol\function_types_stateful.hpp = sol2\include\sol\function_types_stateful.hpp
 		sol2\include\sol\function_types_stateless.hpp = sol2\include\sol\function_types_stateless.hpp
 		sol2\include\sol\function_types_templated.hpp = sol2\include\sol\function_types_templated.hpp
-		sol2\include\sol\in_place.hpp = sol2\include\sol\in_place.hpp
 		sol2\include\sol\inheritance.hpp = sol2\include\sol\inheritance.hpp
+		sol2\include\sol\in_place.hpp = sol2\include\sol\in_place.hpp
 		sol2\include\sol\load_result.hpp = sol2\include\sol\load_result.hpp
 		sol2\include\sol\lua_table.hpp = sol2\include\sol\lua_table.hpp
 		sol2\include\sol\lua_value.hpp = sol2\include\sol\lua_value.hpp
@@ -252,9 +252,9 @@ Global
 		{D0242ABD-A0BF-4500-AC25-5D3DE0359BCA} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 		{121B3D6E-B957-40FA-B554-8FDD1FBA17CF} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 		{9EA01067-B994-4BBE-B340-E626EE249427} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
-		{C84F75A3-3571-4A26-9C2F-B0BE678A3397} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 		{30B7E2A2-7CB5-4570-8486-A3BD91C4EF97} = {01B87F5A-7A71-4C3B-9578-B8F939BF4438}
 		{EAFB887E-6E11-4A26-9736-A45724FF2CAC} = {01B87F5A-7A71-4C3B-9578-B8F939BF4438}
+		{82539D78-80C7-4D8E-88AB-E5E40F4C9535} = {85D85B3A-D982-4C06-B878-3266FD86B0C5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3B5A8028-FB31-42B8-8779-5CE2F6957369}

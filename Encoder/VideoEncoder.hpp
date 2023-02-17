@@ -21,6 +21,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
+#include <libavcodec/avcodec.h>
 
 #ifdef __cplusplus
 }

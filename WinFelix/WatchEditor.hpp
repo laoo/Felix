@@ -46,9 +46,6 @@ private:
   char mNewItemLabelBuf[17];
   char mNewItemAddrBuf[6];
   ImGuiDataType mNewItemDataType;
-  ImU8 mDataBuf[8];
-  char mDataOutputBuf[8 * 8];
-  char mLabelBuf[10];
 
   bool isReadOnly();
 

@@ -273,9 +273,9 @@ void CPU::breakOnStepOut()
     mStackBreakCondition = mState.s;
 }
 
-void CPU::breakFromLua()
+void CPU::breakFromTrap()
 {
-  mReq.cpuBreakType = CpuBreakType::LUA_BREAK;
+  mReq.cpuBreakType = CpuBreakType::TRAP_BREAK;
 }
 
 void CPU::clearBreak()
