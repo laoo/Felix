@@ -83,8 +83,8 @@ void BreakpointEditor::deleteBreakpoint( uint16_t address )
 
 void BreakpointEditor::deleteBreakpoint( const BreakpointItem* item )
 {
-  mItems.erase( std::remove( mItems.begin(), mItems.end(), *item ), mItems.end() );
   mManager->mInstance->getScriptDebugger()->deleteTrap( item->type, item->address );
+  mItems.erase( std::remove( mItems.begin(), mItems.end(), *item ), mItems.end() );
 }
 
 void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, const char* addr )
