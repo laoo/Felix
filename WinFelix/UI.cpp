@@ -79,29 +79,29 @@ bool UI::mainMenu( ImGuiIO& io )
   bool resetIssued = false;
   bool debugMode = mManager.mDebugger.isDebugMode();
 
-  if ( ImGui::IsKeyPressed( VK_F3 ) )
+  if ( ImGui::IsKeyPressed( ImGuiKey_F3 ) )
   {
     resetIssued = true;
   }
 
-  if ( ImGui::IsKeyPressed( VK_F4 ) && mManager.mExtendedRenderer )
+  if ( ImGui::IsKeyPressed( ImGuiKey_F4 ) && mManager.mExtendedRenderer )
   {
     debugMode = !debugMode;
   }
 
-  if ( ImGui::IsKeyPressed( VK_F5 ) )
+  if ( ImGui::IsKeyPressed( ImGuiKey_F5 ) )
   {
     pauseRunIssued = true;
   }
-  else if ( ImGui::IsKeyPressed( VK_F6 ) )
+  else if ( ImGui::IsKeyPressed( ImGuiKey_F6 ) )
   {
     stepInIssued = true;
   }
-  else if ( ImGui::IsKeyPressed( VK_F7 ) )
+  else if ( ImGui::IsKeyPressed( ImGuiKey_F7 ) )
   {
     stepOverIssued = true;
   }
-  else if ( ImGui::IsKeyPressed( VK_F8 ) )
+  else if ( ImGui::IsKeyPressed( ImGuiKey_F8 ) )
   {
     stepOutIssued = true;
   }
@@ -317,31 +317,31 @@ bool UI::mainMenu( ImGuiIO& io )
 
   if ( io.KeyCtrl )
   {
-    if ( ImGui::IsKeyPressed( 'P' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_P ) )
     {
       modalWindow = ModalWindow::PROPERTIES;
     }
-    if ( ImGui::IsKeyPressed( 'C' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_C ) )
     {
       mManager.mDebugger.visualizeCPU = !mManager.mDebugger.visualizeCPU;
     }
-    if ( ImGui::IsKeyPressed( 'D' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_D ) )
     {
       mManager.mDebugger.visualizeDisasm = !mManager.mDebugger.visualizeDisasm;
     }
-    if ( ImGui::IsKeyPressed( 'N' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_N ) )
     {
       mManager.mDebugger.visualizeMemory = !mManager.mDebugger.visualizeMemory;
     }
-    if ( ImGui::IsKeyPressed( 'W' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_W ) )
     {
       mManager.mDebugger.visualizeWatch = !mManager.mDebugger.visualizeWatch;
     }
-    if ( ImGui::IsKeyPressed( 'B' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_B ) )
     {
       mManager.mDebugger.visualizeBreakpoint = !mManager.mDebugger.visualizeBreakpoint;
     }
-    if ( ImGui::IsKeyPressed( 'H' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_H ) )
     {
       bool historyWindow = !mManager.mDebugger.isHistoryVisualized();
       if ( historyWindow )
@@ -355,11 +355,11 @@ bool UI::mainMenu( ImGuiIO& io )
         mManager.mDebugger.visualizeHistory( false );
       }
     }
-    if ( ImGui::IsKeyPressed( 'S' ) && mManager.mDebugger.isDebugMode() )
+    if ( ImGui::IsKeyPressed( ImGuiKey_S ) && mManager.mDebugger.isDebugMode() )
     {
       mManager.mDebugger.newScreenView();
     }
-    if ( ImGui::IsKeyPressed( 'M' ) )
+    if ( ImGui::IsKeyPressed( ImGuiKey_M ) )
     {
       mManager.mAudioOut->mute( !mManager.mAudioOut->mute() );
     }
