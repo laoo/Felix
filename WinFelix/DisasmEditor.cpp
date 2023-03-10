@@ -66,7 +66,7 @@ void DisasmEditor::drawTable()
   auto opColor = IM_COL32( 126, 88, 137, 255 );
   auto tableSize = ImGui::GetWindowSize();
   tableSize.y -= ImGuiStyleVar_CellPadding * 3;
-  int itemCount = (tableSize.y / ImGuiStyleVar_CellPadding) + 1;
+  int itemCount = (int)(tableSize.y / (float)ImGuiStyleVar_CellPadding) + 1;
   uint8_t oprLength = 0;
   int prevPC;
 
@@ -170,7 +170,7 @@ void DisasmEditor::drawOptions()
 {
   char addrbuf[5]{};
 
-  ImGui::SetCursorPosY( ImGui::GetWindowHeight() - ImGuiStyleVar_CellPadding - 10 );
+  ImGui::SetCursorPosY( ImGui::GetWindowHeight() - (int)ImGuiStyleVar_CellPadding - 10 );
   ImGui::Separator();
   if ( ImGui::Button( "Options" ) )
   {
