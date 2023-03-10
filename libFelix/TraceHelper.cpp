@@ -62,7 +62,7 @@ void TraceHelper::updateLabel( uint16_t address, const char* label )
   
   do 
   {
-    mLabels[++address] += labelLen;
+    mLabels[++address] += (uint32_t)labelLen;
   } while ( address < 0xffff );
 }
 
