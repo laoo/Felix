@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fmt/format.h"
+
 //https://stackoverflow.com/questions/68675303/how-to-create-a-function-that-forwards-its-arguments-to-fmtformat-keeping-the
 template <std::size_t N>
 struct StaticString
@@ -17,6 +19,7 @@ public:
   TraceHelper();
   ~TraceHelper();
   char const * addressLabel( uint16_t address ) const;
+  void updateLabel( uint16_t address, const char* label );
 
   void enable( bool cond );
 

@@ -31,8 +31,8 @@ enum class CpuBreakType
   STEP_OUT,
   //CPU break on brk instruction
   BRK_INSTRUCTION,
-  //lua break
-  LUA_BREAK
+  //trap break
+  TRAP_BREAK
 };
 
 enum class RunMode

@@ -273,9 +273,9 @@ void CPU::breakOnStepOut()
     mStackBreakCondition = mState.s;
 }
 
-void CPU::breakFromLua()
+void CPU::breakFromTrap()
 {
-  mReq.cpuBreakType = CpuBreakType::LUA_BREAK;
+  mReq.cpuBreakType = CpuBreakType::TRAP_BREAK;
 }
 
 void CPU::clearBreak()
@@ -2216,8 +2216,9 @@ void CPU::copyHistory( std::span<char> out )
     mHistory->copy( out );
 }
 
-void CPU::disasmOp( char * out, Opcode op, CPUState* state )
+bool CPU::disasmOp( char * out, Opcode op, CPUState* state )
 {
+  bool defined = true;
   out[4] = ' '; /* Hack for history */
 
   switch ( op )
@@ -2652,6 +2653,8 @@ void CPU::disasmOp( char * out, Opcode op, CPUState* state )
     *(uint32_t*)out = l4( "ply " );
     break;
   case Opcode::IMP_NOP:
+    *(uint32_t*)out = l4( "nop " );
+    break;
   case Opcode::UND_1_03:
   case Opcode::UND_1_13:
   case Opcode::UND_1_23:
@@ -2685,6 +2688,7 @@ void CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::UND_1_eb:
   case Opcode::UND_1_fb:
     *(uint32_t*)out = l4( "nop " );
+    defined = false;
     break;
   case Opcode::UND_2_02:
   case Opcode::UND_2_22:
@@ -2701,16 +2705,20 @@ void CPU::disasmOp( char * out, Opcode op, CPUState* state )
   case Opcode::UND_4_fc:
   case Opcode::UND_8_5c:
     *(uint32_t*)out = l4( "nop " );
+    defined = false;
     break;
   default:
     break;
   }
+
+  return defined;
 }
 
-void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
+uint8_t CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
 {
   Opcode op = (Opcode)ram[pc++];
   char *dst = out;
+  uint8_t intialPC = pc;
 
   switch ( op )
   {
@@ -2824,7 +2832,8 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_3_44:
   {
     int zp = ram[pc++];
-    (void)da_sprintf(dst, "$%02x\t;[$%02x]=$%02x", zp, zp, ram[zp]);
+    char const* txt = mTraceHelper->addressLabel( zp );
+    (void)da_sprintf(dst, "%s\t;[%s]=$%02x", txt, txt, ram[zp]);
     break;
   }
   case Opcode::RZX_LDA:
@@ -2851,7 +2860,8 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   {
     int zp = ram[pc++];
     int addr = (zp + mState.x) & 0xff;
-    (void)da_sprintf(dst, "$%02x,x\t;[$%02x]=$%02x", zp, addr, ram[addr]);
+    char const* txt = mTraceHelper->addressLabel( zp );
+    (void)da_sprintf(dst, "%s,x\t;[$%02x]=$%02x", txt, addr, ram[addr]);
     break;
   }
   case Opcode::RZY_LDX:
@@ -2859,7 +2869,8 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   {
     int zp = ram[pc++];
     int addr = (zp + mState.y) & 0xff;
-    (void)da_sprintf(dst, "$%02x,y\t;[$%02x]=$%02x", zp, addr, ram[addr]);
+    char const* txt = mTraceHelper->addressLabel( zp );
+    (void)da_sprintf(dst, "%s,y\t;[$%02x]=$%02x", txt, addr, ram[addr]);
     break;
   }
   case Opcode::RIN_LDA:
@@ -3095,6 +3106,11 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::IMM_ORA:
   case Opcode::IMM_ADC:
   case Opcode::IMM_SBC:
+  {
+    int data = ram[pc++];
+    (void)da_sprintf( dst, "#$%02x", data );
+    break;
+  }
   case Opcode::UND_2_02:
   case Opcode::UND_2_22:
   case Opcode::UND_2_42:
@@ -3103,11 +3119,7 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
   case Opcode::BRK_BRK:
-  {
-    int data = ram[pc++];
-    (void)da_sprintf(dst, "#$%02x", data);
     break;
-  }
   case Opcode::BRL_BCC:
   case Opcode::BRL_BCS:
   case Opcode::BRL_BEQ:
@@ -3151,6 +3163,8 @@ void CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   default:
     break;
   }
+
+  return pc - intialPC;
 }
 
 void CPU::trace2()

@@ -12,22 +12,24 @@
 #define HISTORY_HEIGHT 16
 
 Debugger::Debugger() : mutex{},
-                                mDebugMode{},
-                                mVisualizeCPU{},
-                                mVisualizeDisasm{},
-                                mVisualizeHistory{},
-                                mDebugModeOnBreak{},
-                                mNormalModeOnRun{},
-                                mCpuVisualizer{ CPU_WIDTH, CPU_HEIGHT },
-                                mDisasmVisualizer{ DISASM_WIDTH, DISASM_HEIGHT },
-                                mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
-                                mRunMode{ RunMode::RUN }
+mDebugMode{},
+visualizeCPU{},
+visualizeMemory{},
+visualizeDisasm{},
+mVisualizeHistory{},
+mDebugModeOnBreak{},
+mNormalModeOnRun{},
+mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
+mRunMode{ RunMode::RUN }
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
   mDebugMode = sysConfig->debugMode;
-  mVisualizeCPU = sysConfig->visualizeCPU;
-  mVisualizeDisasm = sysConfig->visualizeDisasm;
+  visualizeCPU = sysConfig->visualizeCPU;
+  visualizeMemory = sysConfig->visualizeMemory;
+  visualizeWatch = sysConfig->visualizeWatch;
+  visualizeBreakpoint = sysConfig->visualizeBreakpoint;
+  visualizeDisasm = sysConfig->visualizeDisasm;
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
   mNormalModeOnRun = sysConfig->normalModeOnRun;
@@ -43,8 +45,11 @@ Debugger::~Debugger()
   auto sysConfig = gConfigProvider.sysConfig();
 
   sysConfig->debugMode = mDebugMode;
-  sysConfig->visualizeCPU = mVisualizeCPU;
-  sysConfig->visualizeDisasm = mVisualizeDisasm;
+  sysConfig->visualizeCPU = visualizeCPU;
+  sysConfig->visualizeMemory = visualizeMemory;
+  sysConfig->visualizeWatch = visualizeWatch;
+  sysConfig->visualizeBreakpoint = visualizeBreakpoint;
+  sysConfig->visualizeDisasm = visualizeDisasm;
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
   sysConfig->normalModeOnRun = mNormalModeOnRun;
@@ -80,16 +85,6 @@ bool Debugger::isDebugMode() const
   return mDebugMode;
 }
 
-bool Debugger::isCPUVisualized() const
-{
-  return mVisualizeCPU;
-}
-
-bool Debugger::isDisasmVisualized() const
-{
-  return mVisualizeDisasm;
-}
-
 bool Debugger::isHistoryVisualized() const
 {
   return mVisualizeHistory;
@@ -110,16 +105,6 @@ std::span<ScreenView> Debugger::screenViews()
   {
     return std::span<ScreenView>{ mScreenViews.data(), mScreenViews.size() };
   }
-}
-
-void Debugger::visualizeCPU( bool value )
-{
-  mVisualizeCPU = value;
-}
-
-void Debugger::visualizeDisasm( bool value )
-{
-  mVisualizeDisasm = value;
 }
 
 void Debugger::visualizeHistory( bool value )
@@ -175,10 +160,10 @@ void Debugger::newScreenView()
 
 void Debugger::delScreenView( int id )
 {
-  std::erase_if( mScreenViews, [=]( auto const& sv )
-  {
-    return sv.id == id;
-  } );
+  std::erase_if( mScreenViews, [=] ( auto const& sv )
+    {
+      return sv.id == id;
+    } );
 }
 
 void Debugger::togglePause()
@@ -191,16 +176,6 @@ void Debugger::togglePause()
   {
     ( *this )( RunMode::PAUSE );
   }
-}
-
-DebugWindow& Debugger::cpuVisualizer()
-{
-  return mCpuVisualizer;
-}
-
-DebugWindow& Debugger::disasmVisualizer()
-{
-  return mDisasmVisualizer;
 }
 
 DebugWindow& Debugger::historyVisualizer()
