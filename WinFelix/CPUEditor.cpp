@@ -29,10 +29,13 @@ bool CPUEditor::isReadOnly()
   return !mManager->mDebugger.isPaused();
 }
 
-void CPUEditor::drawRegister( const char* label, uint8_t reg, char* reg_buf )
+void CPUEditor::drawRegister( const char* label, uint8_t reg )
 {
-  snprintf( reg_buf, REG_TXT_LEN, "%02X", reg );
-  sprintf( mlabel_buf, "##%s", label );
+  std::array<char, 3> regBuf{};
+  std::array<char, 10> labelbuf{};
+
+  sprintf( regBuf.data(), "%02x", reg );
+  sprintf( labelbuf.data(), "##%s", label );
 
   ImGui::AlignTextToFramePadding();
 
@@ -41,12 +44,12 @@ void CPUEditor::drawRegister( const char* label, uint8_t reg, char* reg_buf )
   ImGui::SameLine(LABEL_WIDTH);
   ImGui::SetNextItemWidth( ITEM_WIDTH );
 
-  auto inputflag = ImGuiInputTextFlags_CharsHexadecimal | ( isReadOnly() ? ImGuiInputTextFlags_ReadOnly : 0 );
-
-  if ( ImGui::InputText( mlabel_buf, reg_buf, REG_TXT_LEN, inputflag, 0, (void*)label ) )
+  ImGui::BeginDisabled( isReadOnly() );
+  if ( ImGui::InputText( labelbuf.data(), regBuf.data(), regBuf.size(), ImGuiInputTextFlags_CharsHexadecimal, 0, (void*)label ) )
   {
+    int r;
+    std::from_chars( regBuf.data(), regBuf.data() + regBuf.size(), r, 16 );
     auto &state = mManager->mInstance->debugCPU().state();
-    uint8_t r = _2CHAR_TO_HEX( reg_buf );
 
     if ( 0 == strcmp( label, "A") )
     {
@@ -61,9 +64,23 @@ void CPUEditor::drawRegister( const char* label, uint8_t reg, char* reg_buf )
       state.y = r;
     }    
   }
+  ImGui::EndDisabled();
 
   ImGui::SameLine( 2 * ITEM_WIDTH );
-  ImGui::Text( BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY( reg ) );
+
+  std::array<char, 9> charsBuf{};
+
+  auto tcr = std::to_chars( charsBuf.data(), charsBuf.data() + charsBuf.size(), reg, 2 );
+  //to_chars strips leading zeroes
+  if ( std::distance( charsBuf.data(), tcr.ptr ) < 8 )
+  {
+    for ( int i = 7; i >= 0; --i )
+    {
+      charsBuf[i] = --tcr.ptr >= charsBuf.data() ? *tcr.ptr : '0';
+    }
+  }
+
+  ImGui::Text( charsBuf.data() );
 
   ImGui::SameLine( 4 * ITEM_WIDTH );
   ImGui::Text( "%d", reg );
@@ -72,10 +89,12 @@ void CPUEditor::drawRegister( const char* label, uint8_t reg, char* reg_buf )
   ImGui::Text( "%c", reg );
 }
 
-void CPUEditor::drawPS( const char* label, uint16_t ps, char* ps_buf )
+void CPUEditor::drawPS( const char* label, uint16_t ps )
 {
-  snprintf( ps_buf, PS_TXT_LEN, "%04X", ps );
-  sprintf( mlabel_buf, "##%s", label );
+  std::array<char, 5> regBuf{};
+  std::array<char, 10> labelbuf{};
+  sprintf( regBuf.data(), "%04x", ps );
+  sprintf( labelbuf.data(), "##%s", label );
 
   ImGui::AlignTextToFramePadding();
 
@@ -84,35 +103,37 @@ void CPUEditor::drawPS( const char* label, uint16_t ps, char* ps_buf )
   ImGui::SameLine( LABEL_WIDTH );
   ImGui::SetNextItemWidth( ITEM_WIDTH );
 
-  auto inputflag = ImGuiInputTextFlags_CharsHexadecimal | ( isReadOnly() ? ImGuiInputTextFlags_ReadOnly : 0 );
-
-  if ( ImGui::InputText( mlabel_buf, ps_buf, PS_TXT_LEN, inputflag ) )
+  ImGui::BeginDisabled( isReadOnly() );
+  if ( ImGui::InputText( labelbuf.data(), regBuf.data(), regBuf.size(), ImGuiInputTextFlags_CharsHexadecimal ) )
   {
-    auto &state = mManager->mInstance->debugCPU().state();
-
     int v;
-    sscanf( ps_buf, "%04X", &v );
+    std::from_chars( regBuf.data(), regBuf.data() + regBuf.size(), v, 16 );
+
+    auto &state = mManager->mInstance->debugCPU().state();
 
     if ( 0 == strcmp( label, "S" ) )
     {
-      state.s = v;
+      state.s = ( v & 0xff ) | 0x0100;
     }
     else if ( 0 == strcmp( label, "PC" ) )
     {
       state.pc = v;
     }
   }
+  ImGui::EndDisabled();
 }
 
 void CPUEditor::drawFlag( const char* label, bool enabled, bool* b )
 {
-  sprintf( mlabel_buf, "##%s", label );
+  std::array<char, 10> labelbuf{};
+
+  sprintf( labelbuf.data(), "##%s", label );
   *b = enabled;
   ImGui::AlignTextToFramePadding();
 
   ImGui::Text( label );
   ImGui::SameLine();
-  ImGui::Checkbox( mlabel_buf, b );
+  ImGui::Checkbox( labelbuf.data(), b );
   if ( ImGui::IsItemClicked() )
   {
     auto &state = mManager->mInstance->debugCPU().state();
@@ -161,20 +182,22 @@ void CPUEditor::drawContents()
 
   auto& state = mManager->mInstance->debugState();
 
-  drawRegister( "A", state.a, mA );
-  drawRegister( "X", state.x, mX );
-  drawRegister( "Y", state.y, mY );
+  drawRegister( "A", state.a );
+  drawRegister( "X", state.x );
+  drawRegister( "Y", state.y );
 
-  drawPS( "PC", state.pc, mPC );
-  drawPS( "S", state.s, mS );
+  drawPS( "PC", state.pc );
+  drawPS( "S", state.s );
 
   //NVss DIZC
   auto p = state.getP();
+  ImGui::BeginDisabled( isReadOnly() );
   drawFlag( "N", p & CPUState::bitN, &mN );
   ImGui::SameLine(); drawFlag( "V", p & CPUState::bitV, &mV );
   ImGui::SameLine(); drawFlag( "D", p & CPUState::bitD, &mD );
   ImGui::SameLine(); drawFlag( "I", p & CPUState::bitI, &mI );
   ImGui::SameLine(); drawFlag( "Z", p & CPUState::bitZ, &mZ );
   ImGui::SameLine(); drawFlag( "C", p & CPUState::bitC, &mC );
+  ImGui::EndDisabled();
 
 }
