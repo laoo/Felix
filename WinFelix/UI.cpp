@@ -432,7 +432,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
 {
   assert( mManager.mExtendedRenderer );
 
-  std::unique_lock<std::mutex> l{ mManager.mDebugger.mutex };
+  std::unique_lock<std::mutex> l = mManager.mDebugger.lockMutex();
 
   auto historyRendering = mManager.renderHistoryWindow();
   bool debugMode = mManager.mDebugger.isDebugMode();

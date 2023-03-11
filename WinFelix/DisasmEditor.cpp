@@ -187,7 +187,7 @@ void DisasmEditor::drawOptions()
   ImGui::SameLine();
   ImGui::BeginDisabled( mFollowPC );
   ImGui::SetNextItemWidth( 40 );
-  if ( ImGui::InputText( "##disasmtableaddr", addrbuf.data(), addrbuf.size(), ( mFollowPC ? ImGuiInputTextFlags_ReadOnly : 0 ) | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue ) )
+  if ( ImGui::InputText( "##disasmtableaddr", addrbuf.data(), addrbuf.size(), ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue ) )
   {
     std::from_chars( addrbuf.data(), addrbuf.data() + addrbuf.size(), mTablePC, 16 );
   }

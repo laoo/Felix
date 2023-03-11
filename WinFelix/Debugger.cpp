@@ -11,7 +11,7 @@
 #define HISTORY_WIDTH  64
 #define HISTORY_HEIGHT 16
 
-Debugger::Debugger() : mutex{},
+Debugger::Debugger() : mMutex{},
 mDebugMode{},
 visualizeCPU{},
 visualizeMemory{},
@@ -181,4 +181,9 @@ void Debugger::togglePause()
 DebugWindow& Debugger::historyVisualizer()
 {
   return mHistoryVisualizer;
+}
+
+std::unique_lock<std::mutex> Debugger::lockMutex() const
+{
+  return std::unique_lock<std::mutex>{ mMutex };
 }

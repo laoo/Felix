@@ -166,7 +166,7 @@ void Manager::updateDebugWindows()
     return;
   }
 
-  std::unique_lock<std::mutex> l{ mDebugger.mutex };
+  std::unique_lock<std::mutex> l = mDebugger.lockMutex();
 
   if ( !mDebugWindows.mainScreenView )
   {
@@ -187,7 +187,7 @@ void Manager::updateDebugWindows()
     }
   }
 
-  auto& cpu = mInstance->debugCPU();   
+  auto& cpu = mInstance->debugCPU();
 
   if ( mDebugger.isHistoryVisualized() )
   {
@@ -409,7 +409,7 @@ std::shared_ptr<ImageROM const> Manager::getOptionalBootROM()
 
 void Manager::reset()
 {
-  std::unique_lock<std::mutex> l{ mDebugger.mutex };
+  std::unique_lock<std::mutex> l = mDebugger.lockMutex();
   mProcessThreads.store( false );
   //TODO wait for threads to stop.
   mInstance.reset();
