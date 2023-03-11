@@ -4,22 +4,22 @@
 std::shared_ptr<SysConfig> SysConfig::load( std::filesystem::path path )
 {
   sol::state lua;
-  auto result{ std::make_shared<SysConfig>() };
 
   path /= "SysConfig.lua";
 
   try
   {
     if ( std::filesystem::exists( path ) )
+    {
       lua.script_file( path.string() );
-
-    result->load( lua );
+      return std::make_shared<SysConfig>( lua );
+    }
   }
   catch ( ... )
   {
   }
 
-  return result;
+  return std::make_shared<SysConfig>();
 }
 
 void SysConfig::serialize( std::filesystem::path path )
@@ -55,8 +55,9 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "visualizeCPU = " << ( visualizeCPU ? "true;\n" : "false;\n" );
   fout << "visualizeDisasm = " << ( visualizeDisasm ? "true;\n" : "false;\n" );
   fout << "disasmOptions = {\n";
-  fout << "\tFollowPC              = " << ( disasmOptions.FollowPC ? "true;\n" : "false;\n" );
+  fout << "\tFollowPC              = " << ( disasmOptions.followPC ? "true;\n" : "false;\n" );
   fout << "\tShowLabelsInAddrCol   = " << ( disasmOptions.ShowLabelsInAddrCol ? "true;\n" : "false;\n" );
+  fout << "\ttablePC               = " << disasmOptions.tablePC << ";\n";
   fout << "};\n";
   fout << "visualizeMemory = " << ( visualizeMemory ? "true;\n" : "false;\n" );
   fout << "memoryOptions = {\n";
@@ -87,7 +88,11 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "};\n";
 }
 
-void SysConfig::load( sol::state const& lua )
+SysConfig::SysConfig()
+{
+}
+
+SysConfig::SysConfig( sol::state const& lua )
 {
   mainWindow.x = lua["mainWindow"]["x"].get_or( mainWindow.x );
   mainWindow.y = lua["mainWindow"]["y"].get_or( mainWindow.y );
@@ -119,8 +124,9 @@ void SysConfig::load( sol::state const& lua )
   memoryOptions.OptAddrDigitsCount = lua["memoryOptions"]["OptAddrDigitsCount"].get_or( memoryOptions.OptAddrDigitsCount );
   memoryOptions.OptFooterExtraHeight = lua["memoryOptions"]["OptFooterExtraHeight"].get_or( memoryOptions.OptFooterExtraHeight );
   visualizeDisasm = lua["visualizeDisasm"].get_or( visualizeDisasm );
-  disasmOptions.FollowPC = lua["disasmOptions"]["FollowPC"].get_or( disasmOptions.FollowPC );
+  disasmOptions.followPC = lua["disasmOptions"]["FollowPC"].get_or( disasmOptions.followPC );
   disasmOptions.ShowLabelsInAddrCol = lua["disasmOptions"]["ShowLabelsInAddrCol"].get_or( disasmOptions.ShowLabelsInAddrCol );
+  disasmOptions.tablePC = lua["disasmOptions"]["tablePC"].get_or( disasmOptions.tablePC );
   visualizeWatch= lua["visualizeWatch"].get_or( visualizeWatch);
   visualizeBreakpoint = lua["visualizeBreakpoint"].get_or( visualizeBreakpoint );
   visualizeHistory = lua["visualizeHistory"].get_or( visualizeHistory );

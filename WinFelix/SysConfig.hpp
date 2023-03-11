@@ -28,49 +28,52 @@ struct SysConfig
     int outer = 'X';
   } keyMapping;
   std::filesystem::path lastOpenDirectory{};
-  bool debugMode;
-  bool visualizeCPU;
-  bool visualizeDisasm;
+  bool debugMode{};
+  bool visualizeCPU{};
+  bool visualizeDisasm{};
   struct DisasmyOptions
   {
-    bool  FollowPC = true;
+    bool  followPC = true;
     bool  ShowLabelsInAddrCol = true;
+    int   tablePC = 0x200;
+
   } disasmOptions;
-  bool visualizeMemory;
+  bool visualizeMemory{};
   struct MemoryOptions
   {
     bool  OptShowOptions = true;
-    bool  OptShowDataPreview;
-    bool  OptShowHexII;
-    bool  OptShowAscii;
-    bool  OptGreyOutZeroes;
-    bool  OptUpperCaseHex;
-    int   OptMidColsCount;
-    int   OptAddrDigitsCount;
-    float OptFooterExtraHeight;
+    bool  OptShowDataPreview{};
+    bool  OptShowHexII{};
+    bool  OptShowAscii{};
+    bool  OptGreyOutZeroes{};
+    bool  OptUpperCaseHex{};
+    int   OptMidColsCount{};
+    int   OptAddrDigitsCount{};
+    float OptFooterExtraHeight{};
   } memoryOptions;
-  bool visualizeWatch;
-  bool visualizeBreakpoint;
-  bool visualizeHistory;
-  bool debugModeOnBreak;
-  bool normalModeOnRun;
-  bool breakOnBrk;
+  bool visualizeWatch{};
+  bool visualizeBreakpoint{};
+  bool visualizeHistory{};
+  bool debugModeOnBreak{};
+  bool normalModeOnRun{};
+  bool breakOnBrk{};
   struct ScreenView
   {
-    int id;
-    int type;
-    int customAddress;
-    int safePalette;
+    int id{};
+    int type{};
+    int customAddress{};
+    int safePalette{};
   };
   std::vector<ScreenView> screenViews;
   struct Audio
   {
-    bool mute;
+    bool mute{};
   } audio;
 
-  static std::shared_ptr<SysConfig> load( std::filesystem::path path );
+  SysConfig();
+  SysConfig( sol::state const& lua );
+
   void serialize( std::filesystem::path path );
 
-private:
-  void load( sol::state const& lua );
+  static std::shared_ptr<SysConfig> load( std::filesystem::path path );
 };

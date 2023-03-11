@@ -13,7 +13,8 @@ DisasmEditor::DisasmEditor() : mPC{ 0 }, mFollowPC { 0 }
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
-  mFollowPC = sysConfig->disasmOptions.FollowPC;
+  mFollowPC = sysConfig->disasmOptions.followPC;
+  mTablePC = sysConfig->disasmOptions.tablePC + 1;
   mShowLabelsInAddrCol = sysConfig->disasmOptions.ShowLabelsInAddrCol;
 }
 
@@ -21,8 +22,9 @@ DisasmEditor::~DisasmEditor()
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
-  sysConfig->disasmOptions.FollowPC = mFollowPC;
+  sysConfig->disasmOptions.followPC = mFollowPC;
   sysConfig->disasmOptions.ShowLabelsInAddrCol = mShowLabelsInAddrCol;
+  sysConfig->disasmOptions.tablePC = mFollowPC ? 0x200 : mTablePC;
 }
 
 void DisasmEditor::setManager( Manager* manager )
