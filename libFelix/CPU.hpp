@@ -17,10 +17,7 @@ public:
   static constexpr uint16_t IRQ_VECTOR = 0xfffe;
 
 
-  struct Request
-#ifdef _MSC_VER
-    : private NonCopyable //workaround for gcc bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99575
-#endif
+  struct Request : private NonCopyable //won't compile on gcc https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99575
   {
     enum class Type : uint8_t
     {
@@ -36,10 +33,7 @@ public:
     Type type;
   };
 
-  struct Response
-#ifdef _MSC_VER
-    : private NonCopyable //workaround for gcc bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99575
-#endif
+  struct Response : private NonCopyable //won't compile on gcc https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99575
   {
     Response( CPUState & state ) : state{ state }, interrupt{}, value{} {}
     CPUState & state;
