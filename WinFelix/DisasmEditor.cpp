@@ -185,11 +185,13 @@ void DisasmEditor::drawOptions()
     ImGui::EndPopup();
   }
   ImGui::SameLine();
+  ImGui::BeginDisabled( mFollowPC );
   ImGui::SetNextItemWidth( 40 );
   if ( ImGui::InputText( "##disasmtableaddr", addrbuf, 5, ( mFollowPC ? ImGuiInputTextFlags_ReadOnly : 0 ) | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue ) )
   {
     sscanf( addrbuf, "%04X", &mTablePC );
   }
+  ImGui::EndDisabled();
 }
 
 void DisasmEditor::scrollUp()
