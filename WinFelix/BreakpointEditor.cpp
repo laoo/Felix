@@ -36,14 +36,23 @@ bool BreakpointEditor::isReadOnly()
   return !mManager->mDebugger.isPaused();
 }
 
-bool BreakpointEditor::hasBreapoint( uint16_t address )
+bool BreakpointEditor::hasBreapoint( uint16_t address, bool& enabled )
 {
-  return std::any_of( mItems.begin(), mItems.end(), [address] ( BreakpointItem i ) { return i.address == address; } );
+  auto bp = std::find_if( mItems.begin(), mItems.end(), [address] ( BreakpointItem i ) { return i.address == address; } );
+
+  if (bp == mItems.end())
+  {
+    return false;
+  }
+  
+  enabled = bp->enabled;
+  return true;
 }
 
 void BreakpointEditor::toggleBreapoint( uint16_t address )
 {
-  if ( hasBreapoint( address ) )
+  bool enabled;
+  if ( hasBreapoint( address, enabled ) )
   {
     deleteBreakpoint( address );
   }
@@ -57,7 +66,7 @@ void BreakpointEditor::initializeExistingTraps()
 {
   auto traps = mManager->mInstance->getScriptDebugger()->getTraps( IMemoryAccessTrap::UI );
 
-  for ( auto trap : traps )
+  for ( auto& trap : traps )
   {
     BreakpointItem item;
 
@@ -86,6 +95,21 @@ void BreakpointEditor::deleteBreakpoint( const BreakpointItem* item )
   mItems.erase( std::remove( mItems.begin(), mItems.end(), *item ), mItems.end() );
 }
 
+void BreakpointEditor::toggleEnableBreakpoint( BreakpointItem* item )
+{
+  if ( item->enabled )
+  {
+    item->enabled = false;
+    mManager->mInstance->getScriptDebugger()->deleteTrap( item->type, item->address );
+  }
+  else
+  {
+    item->enabled = true;
+    auto trap = std::make_shared<UIBreakpointTrap>();
+    mManager->mInstance->getScriptDebugger()->addTrap( item->type, item->address, trap );
+  }
+}
+
 void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, const char* addr )
 {
   int v;
@@ -106,6 +130,7 @@ void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, uint16_t addr )
   {
     item.id = mItems.back().id + 1;
   }
+  item.enabled = true;
   item.type = type;
   item.address = addr;
 
@@ -117,8 +142,12 @@ void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, uint16_t addr )
 
 void BreakpointEditor::coreHasBeenReset()
 {
-  for (auto item : mItems)
+  for (auto& item : mItems)
   {
+    if (!item.enabled)
+    {
+      continue;
+    }
     auto trap = std::make_shared<UIBreakpointTrap>();
     mManager->mInstance->getScriptDebugger()->addTrap( item.type, item.address, trap );
   }
@@ -172,15 +201,16 @@ void BreakpointEditor::drawContents()
 
   ImGui::Separator();
 
-  if ( ImGui::BeginTable( "##bpitems", 3, ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit ) )
+  if ( ImGui::BeginTable( "##bpitems", 4, ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit ) )
   {
     ImGui::TableSetupColumn( "Del" );
+    ImGui::TableSetupColumn( "E/D" );
     ImGui::TableSetupColumn( "Address" );
     ImGui::TableSetupColumn( "Type" );
     ImGui::TableSetupScrollFreeze( 0, 1 );
     ImGui::TableHeadersRow();
 
-    for ( const auto& item : mItems )
+    for ( auto& item : mItems )
     {
       ImGui::TableNextColumn();
       ImGui::SetNextItemWidth( 15 );
@@ -188,6 +218,18 @@ void BreakpointEditor::drawContents()
       if ( ImGui::ColorButton( buffer, ImVec4( 255, 0, 0, 0 ), ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoInputs ) )
       {
         deleteBreakpoint( &item );
+      }
+
+      ImGui::TableNextColumn();
+      ImGui::SetNextItemWidth( 15 );
+      sprintf( buffer, "##eni%d", item.id );
+      if (ImGui::ColorButton( buffer, ImVec4( 255, 0, item.enabled ? 0 : 255, 0 ), ImGuiColorEditFlags_NoInputs ))
+      {
+        toggleEnableBreakpoint( &item );
+      }
+      if (ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ))
+      {
+        ImGui::SetTooltip( item.enabled ? "Enabled" : "Disabled" );
       }
 
       ImGui::TableNextColumn();

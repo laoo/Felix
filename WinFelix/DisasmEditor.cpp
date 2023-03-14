@@ -107,9 +107,11 @@ void DisasmEditor::drawTable()
       bpEdit = std::static_pointer_cast<BreakpointEditor>(breakpointctrls.front().editor);
     }
 
-    if ( bpEdit && bpEdit->hasBreapoint( workingPc ) )
+    bool enabled;
+
+    if ( bpEdit && bpEdit->hasBreapoint( workingPc, enabled ) )
     {
-      ImGui::TableSetBgColor( ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32( ImVec4( 255, 0, 0, 255 ) ) );
+      ImGui::TableSetBgColor( ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32( ImVec4( 255, 0, enabled ? 0 : 255, 255 ) ) );
     }
     else if ( workingPc == mPC )
     {
