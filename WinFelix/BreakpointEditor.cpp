@@ -1,10 +1,9 @@
 #include "pch.hpp"
 #include "BreakpointEditor.hpp"
 #include "Manager.hpp"
-#include "Core.hpp"
 #include "Debugger.hpp"
 
-BreakpointEditor::BreakpointEditor()
+BreakpointEditor::BreakpointEditor() : mNewItemBreakpointType{ ScriptDebugger::Type::RAM_EXECUTE }, mNewItemAddrBuf{}
 {
 }
 
@@ -24,7 +23,7 @@ void BreakpointEditor::setManager( Manager* manager )
 
 bool BreakpointEditor::enabled()
 {
-  return mManager && mManager->mInstance && mManager->mDebugger.visualizeBreakpoint;
+  return mManager && mManager->mInstance;
 }
 
 bool BreakpointEditor::isReadOnly()

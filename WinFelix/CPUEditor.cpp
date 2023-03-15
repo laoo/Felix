@@ -9,14 +9,9 @@ CPUEditor::CPUEditor()
 {
 }
 
-void CPUEditor::setManager( Manager* manager )
-{
-  mManager = manager;
-}
-
 bool CPUEditor::enabled()
 {
-  return mManager && mManager->mInstance && mManager->mDebugger.visualizeCPU;
+  return mManager && mManager->mInstance;
 }
 
 bool CPUEditor::isReadOnly()
@@ -41,7 +36,7 @@ void CPUEditor::drawRegister( const char* label, uint8_t reg )
 
   ImGui::Text( label );
 
-  ImGui::SameLine(LABEL_WIDTH);
+  ImGui::SameLine( LABEL_WIDTH );
   ImGui::SetNextItemWidth( ITEM_WIDTH );
 
   ImGui::BeginDisabled( isReadOnly() );
@@ -199,5 +194,8 @@ void CPUEditor::drawContents()
   ImGui::SameLine(); drawFlag( "Z", p & CPUState::bitZ, &mZ );
   ImGui::SameLine(); drawFlag( "C", p & CPUState::bitC, &mC );
   ImGui::EndDisabled();
-
 }
+
+void CPUEditor::coreHasBeenReset()
+{
+};

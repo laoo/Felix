@@ -4,11 +4,8 @@
 #include "Utility.hpp"
 #include "UI.hpp"
 #include "Debugger.hpp"
-#include "CPUEditor.hpp"
-#include "MemEditor.hpp"
+#include "Editors.hpp"
 #include "WatchEditor.hpp"
-#include "DisasmEditor.h"
-#include "BreakpointEditor.hpp"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -40,7 +37,6 @@ public:
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
   IUserInput & userInput() const;
   void quit();
-
 
 private:
   void processLua( std::filesystem::path const& path );
@@ -74,11 +70,6 @@ private:
   {
     std::shared_ptr<IScreenView> mainScreenView;
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
-    CPUEditor cpuEditor;
-    MemEditor memoryEditor;
-    WatchEditor watchEditor;
-    DisasmEditor disasmEditor;
-    BreakpointEditor breakpointEditor;
     std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
 

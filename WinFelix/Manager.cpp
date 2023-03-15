@@ -119,15 +119,10 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
 {
   assert( !mSystemDriver );
 
-  mDebugWindows.cpuEditor.setManager( this );
-  mDebugWindows.memoryEditor.setManager( this );
-  mDebugWindows.watchEditor.setManager( this );
-  mDebugWindows.disasmEditor.setManager( this );
-  mDebugWindows.breakpointEditor.setManager( this );
-
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->baseRenderer();
   mExtendedRenderer = mSystemDriver->extendedRenderer();
+  mDebugger.initialize( this );
 
   mSystemDriver->registerDropFiles( std::bind( &Manager::handleFileDrop, this, std::placeholders::_1 ) );
   mSystemDriver->registerUpdate( std::bind( &Manager::update, this ) );
@@ -342,12 +337,21 @@ void Manager::processLua( std::filesystem::path const& path )
 
   mLua.set_function("add_watch", [this] (std::string label, uint16_t addr, std::string datatype )
     {
-      mDebugWindows.watchEditor.addWatch( label.c_str(), datatype.c_str(), addr );
+      auto watches = mDebugger.getDebugControls( IEditor::EditorType::Watch );
+      if ( watches.empty() )
+      {
+        mDebugger.addDebugControl( IEditor::EditorType::Watch, this );
+        watches = mDebugger.getDebugControls( IEditor::EditorType::Watch );
+      }
+      std::static_pointer_cast<WatchEditor>(watches.front().editor)->addWatch(label.c_str(), datatype.c_str(), addr);
     } );
 
   mLua.set_function( "del_watch", [this] ( std::string label )
     {
-      mDebugWindows.watchEditor.deleteWatch( label.c_str() );
+      for ( DebugControl e : mDebugger.getDebugControls( IEditor::EditorType::Watch ) )
+      {
+        std::static_pointer_cast<WatchEditor>(e.editor)->deleteWatch( label.c_str() );
+      }      
     } );
 
   mLua.set_function( "set_label", [this] ( uint16_t addr, std::string label )
@@ -440,6 +444,11 @@ void Manager::reset()
     {
       mInstance->debugCPU().disableHistory();
     }
+  }
+
+  for (DebugControl c : mDebugger.getDebugControls() )
+  {
+    c.editor->coreHasBeenReset();
   }
 
   mProcessThreads.store( true );

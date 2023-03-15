@@ -6,20 +6,19 @@
 
 class Manager;
 
-class MemEditor
+class MemEditor : public IEditor
 {
 public:
   MemEditor();
-  ~MemEditor();
+  ~MemEditor() override;
 
-  void setManager( Manager* manager );
-  void drawContents();
-  bool enabled();
+  void drawContents() override;
+  bool enabled() override;
+  void coreHasBeenReset() override;
 
   void writeChanges( uint16_t offset, ImU8 data );
 
 private:
-  Manager* mManager;
   MemoryEditor mMemoryEditor;
 
   bool isReadOnly();  

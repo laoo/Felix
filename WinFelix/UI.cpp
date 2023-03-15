@@ -11,6 +11,7 @@
 #include "Core.hpp"
 #include "CPU.hpp"
 #include "SysConfig.hpp"
+#include "Editors.hpp"
 
 UI::UI( Manager& manager ) :
   mManager{ manager },
@@ -184,32 +185,26 @@ bool UI::mainMenu( ImGuiIO& io )
         }
         if ( ImGui::BeginMenu( "Debug Windows" ) )
         {
-          bool cpuWindow = mManager.mDebugger.visualizeCPU;
-          bool watchWindow = mManager.mDebugger.visualizeWatch;
-          bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
-          bool memoryWindow = mManager.mDebugger.visualizeMemory;
-          bool disasmWindow = mManager.mDebugger.visualizeDisasm;
+          for (auto& def : EditorDefinitions)
+          {
+            bool any = mManager.mDebugger.getDebugControls( def.type ).size() > 0;
+            bool cancreate = def.allowMultipleInstances || !any;
+
+            if (ImGui::MenuItem( def.label, def.shortcut, any ))
+            {
+              if (cancreate)
+              {
+                mManager.mDebugger.addDebugControl( def.type, &mManager );
+              }
+              else
+              {
+                mManager.mDebugger.deleteDebugControl( def.label );
+              }
+            }
+          }
+
           bool historyWindow = mManager.mDebugger.isHistoryVisualized();
-          if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
-          {
-            mManager.mDebugger.visualizeCPU = cpuWindow;
-          }
-          if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
-          {
-            mManager.mDebugger.visualizeDisasm = disasmWindow;
-          }
-          if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
-          {
-            mManager.mDebugger.visualizeMemory = memoryWindow;
-          }
-          if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
-          {
-            mManager.mDebugger.visualizeWatch = watchWindow;
-          }
-          if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
-          {
-            mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
-          }
+
           if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
           {
             if ( historyWindow )
@@ -321,26 +316,25 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       modalWindow = ModalWindow::PROPERTIES;
     }
-    if ( ImGui::IsKeyPressed( ImGuiKey_C ) )
+
+    for (auto& def : EditorDefinitions)
     {
-      mManager.mDebugger.visualizeCPU = !mManager.mDebugger.visualizeCPU;
+      if ( ImGui::IsKeyPressed( def.imGuiKey ) )
+      {
+        bool any = mManager.mDebugger.getDebugControls( def.type ).size() > 0;
+        bool cancreate = def.allowMultipleInstances || !any;
+
+        if (cancreate)
+        {
+          mManager.mDebugger.addDebugControl( def.type, &mManager );
+        }
+        else
+        {
+          mManager.mDebugger.deleteDebugControl( def.label );
+        }
+      }
     }
-    if ( ImGui::IsKeyPressed( ImGuiKey_D ) )
-    {
-      mManager.mDebugger.visualizeDisasm = !mManager.mDebugger.visualizeDisasm;
-    }
-    if ( ImGui::IsKeyPressed( ImGuiKey_N ) )
-    {
-      mManager.mDebugger.visualizeMemory = !mManager.mDebugger.visualizeMemory;
-    }
-    if ( ImGui::IsKeyPressed( ImGuiKey_W ) )
-    {
-      mManager.mDebugger.visualizeWatch = !mManager.mDebugger.visualizeWatch;
-    }
-    if ( ImGui::IsKeyPressed( ImGuiKey_B ) )
-    {
-      mManager.mDebugger.visualizeBreakpoint = !mManager.mDebugger.visualizeBreakpoint;
-    }
+
     if ( ImGui::IsKeyPressed( ImGuiKey_H ) )
     {
       bool historyWindow = !mManager.mDebugger.isHistoryVisualized();
@@ -441,39 +435,16 @@ void UI::drawDebugWindows( ImGuiIO& io )
   {
     ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
 
-    if ( mManager.mDebugger.visualizeCPU )
+    for (auto& e : mManager.mDebugger.getDebugControls())
     {
-      ImGui::Begin( "CPU", &mManager.mDebugger.visualizeCPU, ImGuiWindowFlags_AlwaysAutoResize );
-      mManager.mDebugWindows.cpuEditor.drawContents();
+      bool open = true;
+      ImGui::Begin( e.label.c_str(), &open, ImGuiWindowFlags_None);
+      e.editor->drawContents();
       ImGui::End();
-    }
-
-    if ( mManager.mDebugger.visualizeMemory )
-    {
-      ImGui::Begin( "Memory", &mManager.mDebugger.visualizeMemory, ImGuiWindowFlags_None );
-      mManager.mDebugWindows.memoryEditor.drawContents();
-      ImGui::End();
-    }
-
-    if ( mManager.mDebugger.visualizeWatch )
-    {
-      ImGui::Begin( "Watch", &mManager.mDebugger.visualizeWatch, ImGuiWindowFlags_None );
-      mManager.mDebugWindows.watchEditor.drawContents();
-      ImGui::End();
-    }
-
-    if ( mManager.mDebugger.visualizeBreakpoint )
-    {
-      ImGui::Begin( "Breakpoint", &mManager.mDebugger.visualizeBreakpoint, ImGuiWindowFlags_None );
-      mManager.mDebugWindows.breakpointEditor.drawContents();
-      ImGui::End();
-    }
-
-    if ( mManager.mDebugger.visualizeDisasm )
-    {
-      ImGui::Begin( "Disassembly", &mManager.mDebugger.visualizeDisasm, ImGuiWindowFlags_None );
-      mManager.mDebugWindows.disasmEditor.drawContents();
-      ImGui::End();
+      if (!open)
+      {
+        mManager.mDebugger.deleteDebugControl( e.label );
+      }
     }
 
     if ( historyRendering.enabled )
@@ -608,9 +579,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
 
     if ( ImGui::BeginPopupContextVoid() )
     {
-      ImGui::Checkbox( "CPU Window", &mManager.mDebugger.visualizeCPU );
-      ImGui::Checkbox( "Disassembly Window", &mManager.mDebugger.visualizeDisasm );
-      ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory );
       if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
       {
         if ( historyRendering.enabled )

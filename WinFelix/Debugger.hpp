@@ -2,6 +2,7 @@
 
 #include "Utility.hpp"
 #include "BaseRenderer.hpp"
+#include "Editors.hpp"
 
 struct DebugWindow
 {
@@ -23,11 +24,20 @@ struct ScreenView
   bool safePalette;
 };
 
+struct DebugControl
+{
+  IEditor::EditorType type { IEditor::EditorType::EditorType_MAX };
+  std::string label{};
+  std::shared_ptr<IEditor> editor{};
+};
+
 class Debugger
 {
 public:
   Debugger();
   ~Debugger();
+
+  void initialize( Manager* manager );
 
   void operator()( RunMode mode );
 
@@ -47,6 +57,10 @@ public:
   void breakOnBrk( bool value );
   void newScreenView();
   void delScreenView( int id );
+  void addDebugControl( IEditor::EditorType type, Manager *manager, bool initialize = false );
+  void deleteDebugControl( std::string label );
+  std::vector<DebugControl> getDebugControls( IEditor::EditorType type );
+  std::vector<DebugControl> getDebugControls();
 
   void togglePause();
 
@@ -54,13 +68,8 @@ public:
 
   std::unique_lock<std::mutex> lockMutex() const;
 
-  bool visualizeCPU;
-  bool visualizeMemory;
-  bool visualizeWatch;
-  bool visualizeBreakpoint;
-  bool visualizeDisasm;
-
 private:
+  std::vector<DebugControl> mVisualizedEditors;
   mutable std::mutex mMutex;
   std::vector<ScreenView> mScreenViews;
   DebugWindow mHistoryVisualizer;

@@ -37,20 +37,21 @@ typedef struct BreakpointItem
 
 } BreakpointItem;
 
-class BreakpointEditor
+class BreakpointEditor: public IEditor
 {
 public:
   BreakpointEditor();
-  ~BreakpointEditor();
+  ~BreakpointEditor() override;
 
-  void setManager( Manager* manager );
-  void drawContents();
-  bool enabled();
+  void setManager( Manager* manager ) override;
+  void drawContents() override;
+  bool enabled() override;
   bool hasBreapoint( uint16_t address );
   void toggleBreapoint( uint16_t address );
 
+  void coreHasBeenReset() override;
+
 private:
-  Manager* mManager;
   std::vector<BreakpointItem> mItems;
 
   char mNewItemAddrBuf[6];

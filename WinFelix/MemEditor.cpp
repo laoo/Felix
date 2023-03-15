@@ -1,8 +1,8 @@
 #include "pch.hpp"
 #include "MemEditor.hpp"
 #include "Manager.hpp"
-#include "Core.hpp"
 #include "Debugger.hpp"
+#include "Core.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 
@@ -45,14 +45,9 @@ MemEditor::~MemEditor()
   sysConfig->memoryOptions.OptUpperCaseHex = mMemoryEditor.OptUpperCaseHex;
 }
 
-void MemEditor::setManager( Manager* manager )
-{
-  mManager = manager;
-}
-
 bool MemEditor::enabled()
 {
-  return mManager && mManager->mInstance && mManager->mDebugger.visualizeMemory;
+  return mManager && mManager->mInstance;
 }
 
 bool MemEditor::isReadOnly()
@@ -83,3 +78,7 @@ void MemEditor::writeChanges( uint16_t offset, ImU8 data )
 {
     mManager->mInstance->debugWriteRAM( offset, data );
 }
+
+void MemEditor::coreHasBeenReset()
+{
+};
