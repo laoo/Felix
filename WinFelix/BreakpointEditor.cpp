@@ -115,6 +115,15 @@ void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, uint16_t addr )
   mItems.push_back( item );
 }
 
+void BreakpointEditor::coreHasBeenReset()
+{
+  for (auto item : mItems)
+  {
+    auto trap = std::make_shared<UIBreakpointTrap>();
+    mManager->mInstance->getScriptDebugger()->addTrap( item.type, item.address, trap );
+  }
+}
+
 const char* BreakpointEditor::breakpointTypeGetDesc( ScriptDebugger::Type type ) const
 {
   const char* descs[] = { "RAM read", "RAM Write", "RAM Execute", "ROM Read", "ROM Write", "ROM Execute", "Mikey Read", "Mikey Write", "Suzy Read", "Suzy Write" };
