@@ -209,6 +209,11 @@ void WatchEditor::addWatch( const char* label, ImGuiDataType type, uint16_t addr
     return;
   }
 
+  if (std::any_of( mItems.begin(), mItems.end(), [type, addr]( const WatchItem i ) { return i.address == addr && i.type == type; } ))
+  {    
+    return;
+  }
+
   WatchItem item;
 
   if ( !mItems.empty() )
