@@ -20,9 +20,6 @@
 [submodule "libextern/vga-text-mode-fonts"]
 	path = libextern/vga-text-mode-fonts
 	url = https://github.com/viler-int10h/vga-text-mode-fonts.git
-[submodule "libextern/imgui_club"]
-	path = libextern/imgui_club
-	url = https://github.com/ocornut/imgui_club.git
 [submodule "libextern/fmt"]
 	path = libextern/fmt
 	url = https://github.com/fmtlib/fmt.git

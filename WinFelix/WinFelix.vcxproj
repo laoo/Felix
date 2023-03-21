@@ -194,6 +194,7 @@
     <ClInclude Include="EncodingRenderer.hpp" />
     <ClInclude Include="Ex.hpp" />
     <ClInclude Include="fonts.hpp" />
+    <ClInclude Include="imgui_memory_editor.h" />
     <ClInclude Include="ISystemDriver.hpp" />
     <ClInclude Include="IUserInput.hpp" />
     <ClInclude Include="KeyNames.hpp" />

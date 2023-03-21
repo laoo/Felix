@@ -5,16 +5,20 @@
 #include "Core.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
-
-//TODO: get rid of the below global used for the write callback.
-MemEditor* gActiveMemEditor;
+#include "Log.hpp"
 
 MemEditor::MemEditor()
 {
-  gActiveMemEditor = this;
-  mMemoryEditor.WriteFn = [] ( ImU8* data, size_t off, ImU8 d )
+  mMemoryEditor.HandlersContext = this;
+
+  mMemoryEditor.WriteFn = []( ImU8* data, size_t off, ImU8 d, void* context )
   {
-    gActiveMemEditor->writeChanges( (uint16_t)off, d );
+    ((MemEditor*)context)->writeChanges( (uint16_t)off, d );
+  };
+
+  mMemoryEditor.ReadFn = [] ( const ImU8* data, size_t off, void* context )
+  {
+    return ((MemEditor*)context)->readMem( (uint16_t)off );
   };
 
   auto sysConfig = gConfigProvider.sysConfig();
@@ -60,6 +64,42 @@ bool MemEditor::isReadOnly()
   return !mManager->mDebugger.isPaused();
 }
 
+uint16_t MemEditor::bankUpperBound( MemEditorBank access )
+{
+  uint16_t bounds[] = { 0xFFFF, 0x1FF, 0xFF, 0xFF };
+  IM_ASSERT( access >= MemEditorBank_MIN && access < MemEditorBank_MAX );
+  return bounds[access];
+}
+
+const char* MemEditor::bankLabel( MemEditorBank access )
+{
+  const char* descs[] = { "RAM", "ROM", "Suzy", "Mikey"  };
+  IM_ASSERT( access >= MemEditorBank_MIN && access < MemEditorBank_MAX );
+  return descs[access];
+}
+
+void MemEditor::drawBankButton( MemEditorBank bank )
+{
+  bool pushed = false;
+
+  if (mMemBank == bank )
+  {
+    ImGui::PushStyleColor( ImGuiCol_Button, ImGui::GetColorU32( ImGuiCol_ButtonHovered ) );
+    pushed = true;
+  }
+
+  if ( ImGui::Button( bankLabel( bank ), ImVec2( 60, 19 ) ) )
+  {
+    mMemBank = bank;
+    mBankUppberBound = bankUpperBound( bank ) + 1;
+  }
+
+  if ( pushed )
+  {
+    ImGui::PopStyleColor();
+  }
+}
+
 void MemEditor::drawContents()
 {
   if ( !enabled() )
@@ -67,16 +107,50 @@ void MemEditor::drawContents()
     return;
   }
 
-  auto ram = mManager->mInstance->debugRAM();
+  for ( int a = MemEditorBank_MIN; a < MemEditorBank_MAX; ++a )
+  {
+    ImGui::SameLine();
+    drawBankButton( (MemEditorBank)a );
+  }
 
   mMemoryEditor.ReadOnly = isReadOnly();
-
-  mMemoryEditor.DrawContents( (void*)ram, 0xFFFF );
+  mMemoryEditor.DrawContents( nullptr, mBankUppberBound );
 }
 
 void MemEditor::writeChanges( uint16_t offset, ImU8 data )
 {
+  switch (mMemBank)
+  {
+  case MemEditorBank_RAM:
     mManager->mInstance->debugWriteRAM( offset, data );
+    break;
+  case MemEditorBank_Mikey:
+    mManager->mInstance->debugWriteMikey( offset, data );
+    break;
+  case MemEditorBank_Suzy:
+    mManager->mInstance->debugWriteSuzy( offset, data );
+    break;
+  default:
+    L_ERROR << "MemEditor: Can't write to bank: " << mMemBank;
+    break;
+  }
+}
+
+ImU8 MemEditor::readMem( uint16_t offset )
+{
+  switch (mMemBank)
+  {
+  case MemEditorBank_RAM:
+    return mManager->mInstance->debugReadRAM( offset );
+  case MemEditorBank_ROM:
+    return mManager->mInstance->debugReadROM( offset );
+  case MemEditorBank_Mikey:
+    return mManager->mInstance->debugReadMikey( offset );
+  case MemEditorBank_Suzy:
+    return mManager->mInstance->debugReadSuzy( offset );
+  default:
+    return 0;
+  }
 }
 
 void MemEditor::coreHasBeenReset()

@@ -104,6 +104,9 @@
     <ClInclude Include="BreakpointEditor.hpp">
       <Filter>Controls</Filter>
     </ClInclude>
+    <ClInclude Include="imgui_memory_editor.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="board.csh">
