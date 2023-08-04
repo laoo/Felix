@@ -131,7 +131,7 @@ int main( int argc, char** argv )
     }
     else
     {
-      ss << "static constexpr auto version_string = L\"" << sm.str( 1 ) << "." << sm.str( 2 ) << "." << sm.str( 3 ) << " (" << sm.str( 4 ) << "-" << sm.str( 5 ) << ")\"" << ";" << std::endl;
+      ss << "static constexpr auto version_string = L\"" << sm.str( 1 ) << "." << sm.str( 2 ) << "." << sm.str( 3 ) << " (" << sm.str( 4 ) << "-" << sm.str( 5 ) << ") (BS42 fork)\"" << ";" << std::endl;
     }
     newString = ss.str();
   }

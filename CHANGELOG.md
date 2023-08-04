@@ -1,3 +1,10 @@
+## 0.5.1 BS42
+
+ - add Ctrl-O for "open"
+ - add Ctrl-R to re-open last file
+ - add support to ignore "brk #$42" even if Break on BRK is off
+ - move RAM Execute breakpoint to the top
+
 ## 0.5.0
 
 - Introducing simple GUI

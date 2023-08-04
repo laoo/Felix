@@ -15,7 +15,7 @@
 UI::UI( Manager& manager ) :
   mManager{ manager },
   mOpenMenu{},
-  mFileBrowser{ std::make_unique<ImGui::FileBrowser>() }
+  mFileBrowser{ std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_EnterNewFilename) }
 {
 }
 
@@ -114,7 +114,7 @@ bool UI::mainMenu( ImGuiIO& io )
     if ( ImGui::BeginMenu( "File" ) )
     {
       openMenu = true;
-      if ( ImGui::MenuItem( "Open" ) )
+      if ( ImGui::MenuItem( "Open", "Ctrl+O"))
       {
         mFileBrowser->SetTitle( "Open Cartridge image file" );
         mFileBrowser->SetTypeFilters( { ".lnx", ".lyx", ".o" } );
@@ -124,6 +124,10 @@ bool UI::mainMenu( ImGuiIO& io )
         }
         mFileBrowser->Open();
         fileBrowserAction = FileBrowserAction::OPEN_CARTRIDGE;
+      }
+      if (ImGui::MenuItem("Re-Open", "Ctrl+R"))
+      {
+          mManager.mDoReset = true;
       }
       if ( ImGui::MenuItem( "Exit", "Alt+F4" ) )
       {
@@ -317,6 +321,23 @@ bool UI::mainMenu( ImGuiIO& io )
 
   if ( io.KeyCtrl )
   {
+      if (ImGui::IsKeyPressed(ImGuiKey_R))
+      {     
+          mManager.mDoReset = true;
+      }
+     if (ImGui::IsKeyPressed(ImGuiKey_O))
+     {
+        mFileBrowser->SetTitle("Open Cartridge image file");
+        mFileBrowser->SetTypeFilters({ ".lnx", ".lyx", ".o" });
+        if (auto openPath = gConfigProvider.sysConfig()->lastOpenDirectory; !openPath.empty())
+        {
+            mFileBrowser->SetPwd(gConfigProvider.sysConfig()->lastOpenDirectory);
+        }
+        mFileBrowser->SetInputName(mManager.mArg.filename().generic_string());
+
+        mFileBrowser->Open();
+        fileBrowserAction = FileBrowserAction::OPEN_CARTRIDGE;
+     }
     if ( ImGui::IsKeyPressed( ImGuiKey_P ) )
     {
       modalWindow = ModalWindow::PROPERTIES;

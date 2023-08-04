@@ -30,9 +30,9 @@ public:
 
   enum class Type : uint16_t
   {
+    RAM_EXECUTE,
     RAM_READ,
     RAM_WRITE,
-    RAM_EXECUTE,
     ROM_READ,
     ROM_WRITE,
     ROM_EXECUTE,

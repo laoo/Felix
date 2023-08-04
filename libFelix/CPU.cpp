@@ -1973,6 +1973,12 @@ CPU::Execute CPU::execute()
             mReq.cpuBreakType = CpuBreakType::BRK_INSTRUCTION;
             break;
           }
+          // "brk #$42" will be ignored
+          if (state.ea == 0x42)
+          {
+              mReq.cpuBreakType = CpuBreakType::NONE;
+              break;
+          }
         }
         co_await write( state.s, state.pch );
         state.sl--;
