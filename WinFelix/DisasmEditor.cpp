@@ -65,6 +65,7 @@ void DisasmEditor::drawTable()
   char buf[100];
   auto& cpu = mManager->mInstance->debugCPU();
   auto ram = mManager->mInstance->debugRAM();
+  auto rom = mManager->mInstance->debugROM();
   auto opColor = IM_COL32( 126, 88, 137, 255 );
   auto tableSize = ImGui::GetWindowSize();
   tableSize.y -= ImGuiStyleVar_CellPadding * 3;
@@ -132,19 +133,33 @@ void DisasmEditor::drawTable()
       mManager->mDebugWindows.breakpointEditor.toggleBreapoint( workingPc );
     }
 
-    memset( buf, 0, 50 );
+    memset( buf, 0, sizeof(buf) );
     prevPC = workingPc;
-    cpu.disasmOp( buf, (Opcode)ram[workingPc] );
-    oprLength = cpu.disasmOpr( ram, (char*)buf+20, workingPc );
-
-    ImGui::TableNextColumn();
-    const uint8_t* ram = mManager->mInstance->debugRAM();
-    sprintf( buf+10, "%02X", ram[prevPC++]);
-    for (uint8_t i = 0; i < oprLength; ++i )
-    {
-      sprintf( buf + 12 + i * 3, " %02X", ram[prevPC++] );
+    if ( workingPc >= 0xfe00) {
+        int rompc = workingPc - 0xfe00;
+        prevPC = rompc;
+        cpu.disasmOp(buf, (Opcode)rom[rompc]);
+        oprLength = cpu.disasmOpr(rom, (char*)buf + 20, rompc);
+        ImGui::TableNextColumn();
+        sprintf(buf + 10, "%02X", rom[prevPC++]);
+        for (uint8_t i = 0; i < oprLength; ++i)
+        {
+            sprintf(buf + 12 + i * 3, " %02X", rom[prevPC++]);
+        }
+        workingPc = rompc + 0xfe00;
     }
+    else {
+        cpu.disasmOp(buf, (Opcode)ram[workingPc]);
+        oprLength = cpu.disasmOpr(ram, (char*)buf + 20, workingPc);
+        ImGui::TableNextColumn();
+        sprintf(buf + 10, "%02X", ram[prevPC++]);
+        for (uint8_t i = 0; i < oprLength; ++i)
+        {
+            sprintf(buf + 12 + i * 3, " %02X", ram[prevPC++]);
+        }
 
+    }
+    
     ImGui::Text( buf + 10 );
 
     ImGui::TableNextColumn();

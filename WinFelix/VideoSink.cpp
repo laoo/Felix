@@ -19,9 +19,11 @@ void VideoSink::newFrame( uint64_t tick, uint8_t hbackup )
   mActiveFrame = std::make_shared<ScreenRenderingBuffer>();
 }
 
-void VideoSink::newRow( uint64_t tick, int row )
+void VideoSink::newRow(uint64_t tick, int row)
 {
-  mActiveFrame->newRow( row );
+    if (mActiveFrame) {
+    mActiveFrame->newRow(row);
+}
 }
 
 void VideoSink::updatePalette( uint16_t reg, uint8_t value )
