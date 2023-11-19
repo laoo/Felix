@@ -1973,6 +1973,12 @@ CPU::Execute CPU::execute()
             mReq.cpuBreakType = CpuBreakType::BRK_INSTRUCTION;
             break;
           }
+          // "brk #$42" will be ignored
+          if (state.ea == 0x42)
+          {
+              mReq.cpuBreakType = CpuBreakType::NONE;
+              break;
+          }
         }
         co_await write( state.s, state.pch );
         state.sl--;
@@ -3106,6 +3112,7 @@ uint8_t CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::IMM_ORA:
   case Opcode::IMM_ADC:
   case Opcode::IMM_SBC:
+  case Opcode::BRK_BRK:
   {
     int data = ram[pc++];
     (void)da_sprintf( dst, "#$%02x", data );
@@ -3118,7 +3125,6 @@ uint8_t CPU::disasmOpr( uint8_t const* ram, char* out, int & pc )
   case Opcode::UND_2_82:
   case Opcode::UND_2_C2:
   case Opcode::UND_2_E2:
-  case Opcode::BRK_BRK:
     break;
   case Opcode::BRL_BCC:
   case Opcode::BRL_BCS:

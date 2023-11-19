@@ -53,6 +53,7 @@ public:
   CPUState& debugState();
   CPU& debugCPU();
   uint8_t const* debugRAM();
+  uint8_t const* debugROM();
   uint16_t debugDispAdr() const;
   uint16_t debugVidBas() const;
   uint16_t debugCollBas() const;

@@ -118,7 +118,7 @@ void BreakpointEditor::addBreakpoint( ScriptDebugger::Type type, uint16_t addr )
 
 const char* BreakpointEditor::breakpointTypeGetDesc( ScriptDebugger::Type type ) const
 {
-  const char* descs[] = { "RAM read", "RAM Write", "RAM Execute", "ROM Read", "ROM Write", "ROM Execute", "Mikey Read", "Mikey Write", "Suzy Read", "Suzy Write" };
+  const char* descs[] = { "RAM Execute", "RAM read", "RAM Write", "ROM Read", "ROM Write", "ROM Execute", "Mikey Read", "Mikey Write", "Suzy Read", "Suzy Write" };
   IM_ASSERT( (int)type >= 0 && type < ScriptDebugger::Type::MAPCTL_READ );
   return descs[(int)type];
 }
@@ -158,7 +158,7 @@ void BreakpointEditor::drawContents()
     {
       return;
     }
-
+    
     addBreakpoint( mNewItemBreakpointType, mNewItemAddrBuf );
   }
 

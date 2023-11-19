@@ -844,6 +844,10 @@ uint8_t const* Core::debugRAM()
 {
   return &mRAM[0];
 }
+uint8_t const* Core::debugROM()
+{
+  return &mROM[0];
+}
 
 uint16_t Core::debugDispAdr() const
 {
