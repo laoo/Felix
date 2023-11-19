@@ -1,3 +1,7 @@
+## 0.5.2 BS42
+
+ - Fix disassembly of BRK
+
 ## 0.5.1 BS42
 
  - add Ctrl-O for "open"
