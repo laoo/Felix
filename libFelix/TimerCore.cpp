@@ -29,6 +29,7 @@ SequencedAction TimerCore::setControlA( uint64_t tick, uint8_t controlA )
     mTimerDone = false;
 
   //updateValue( tick & ~0x0full); //TODO: investigate why it can't be here
+  mBaseTick = tick;
   return computeAction();
 }
 
