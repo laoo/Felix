@@ -340,6 +340,14 @@ void Manager::processLua( std::filesystem::path const& path )
     }
   };
 
+  mLua["traceNextCount"] = [this]( int value )
+  {
+    if ( mInstance )
+    {
+      mInstance->debugCPU().traceNextCount( value );
+    }
+  };
+
   mLua.set_function("add_watch", [this] (std::string label, uint16_t addr, std::string datatype )
     {
       mDebugWindows.watchEditor.addWatch( label.c_str(), datatype.c_str(), addr );

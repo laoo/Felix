@@ -233,7 +233,7 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{ CPUState::reset() }, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceToggle{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, mHistory{}, mHistoryPresent{}, off{},
+CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{ CPUState::reset() }, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceNextCount{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, mHistory{}, mHistoryPresent{}, off{},
   mPostponedStepOut{}, mStackBreakCondition{ 0xffff }, mBreakOnBrk{ false }
 {
   static constexpr char prototype[] = "PC:ffff A:ff X:ff Y:ff S:1ff P=NVDIZC ";
@@ -3599,13 +3599,19 @@ void CPU::trace2()
     break;
   }
 
-  if ( mFtrace.good() && ( mTrace || mTraceToggle ) )
+  if ( mFtrace.good() && ( mTrace || mTraceNextCount ) )
   {
     mFtrace.write( buf.data(), off );
     mFtrace.put( '\n' );
   }
 
-  toggleTrace( false );
+  if ( mTraceNextCount )
+  {
+    if ( --mTraceNextCount == 0 )
+    {
+      toggleTrace( false );
+    }
+  }
 
   std::scoped_lock<std::mutex> l{ mHistoryMutex };
   if ( mHistoryPresent.load() )
@@ -3633,13 +3639,21 @@ void CPU::disableTrace()
 void CPU::toggleTrace( bool on )
 {
   mTraceHelper->enable( on );
-  mTraceToggle = on;
+  mTraceNextCount = on ? 1 : 0;
   setGlobalTrace();
 }
 
+void CPU::traceNextCount( int count )
+{
+  mTraceHelper->enable( count > 0 );
+  mTraceNextCount = count;
+  setGlobalTrace();
+}
+
+
 void CPU::setGlobalTrace()
 {
-  if ( mTrace || mTraceToggle || mHistoryPresent.load() )
+  if ( mTrace || mTraceNextCount || mHistoryPresent.load() )
   {
     if ( !mGlobalTrace )
     {

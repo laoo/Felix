@@ -78,6 +78,7 @@ public:
   void enableTrace();
   void disableTrace();
   void toggleTrace( bool on );
+  void traceNextCount( int count );
   void printStatus( std::span<uint8_t, 3 * 14> text );
   static bool disasmOp( char* out, Opcode op, CPUState* state = nullptr );
   uint8_t disasmOpr( uint8_t const* ram, char* out, int& pc );
@@ -115,7 +116,7 @@ private:
   Request mReq;
   Response mRes;
   bool mTrace;
-  bool mTraceToggle;
+  int mTraceNextCount;
   bool mGlobalTrace;
   std::ofstream mFtrace;
   std::shared_ptr<TraceHelper> mTraceHelper;
