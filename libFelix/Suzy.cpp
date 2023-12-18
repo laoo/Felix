@@ -67,7 +67,7 @@ uint8_t Suzy::read( uint16_t address )
   case VOFF:
     return mSCB.voff.l;
   case VOFF + 1:
-    return mSCB.hoff.h;
+    return mSCB.voff.h;
   case VIDBAS:
     return mSCB.vidbas.l;
   case VIDBAS + 1:
