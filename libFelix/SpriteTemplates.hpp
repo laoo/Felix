@@ -79,7 +79,7 @@ struct SuzySprite<Suzy::Sprite::BSHADOW>
 
   static constexpr bool colliding( int pixel )
   {
-    return pixel != 0xe && pixel != 0;
+    return pixel != 0xe && pixel != 0x0;
   }
 };
 
@@ -103,7 +103,7 @@ struct SuzySprite<Suzy::Sprite::BOUNDARY>
 
   static constexpr bool colliding( int pixel )
   {
-    return pixel != 0;
+    return pixel != 0x0;
   }
 };
 
@@ -128,7 +128,7 @@ struct SuzySprite<Suzy::Sprite::NORMAL>
 
   static constexpr bool colliding( int pixel )
   {
-    return pixel != 0;
+    return pixel != 0x0;
   }
 };
 
@@ -175,7 +175,7 @@ struct SuzySprite<Suzy::Sprite::XOR>
 
   static constexpr bool colliding( int pixel )
   {
-    return pixel != 0xe && pixel != 0;
+    return pixel != 0xe && pixel != 0x0;
   }
 };
 
@@ -199,6 +199,6 @@ struct SuzySprite<Suzy::Sprite::SHADOW>
 
   static constexpr bool colliding( int pixel )
   {
-    return pixel != 0xe && pixel != 0;
+    return pixel != 0xe && pixel != 0x0;
   }
 };
