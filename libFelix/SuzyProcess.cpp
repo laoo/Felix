@@ -95,7 +95,7 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
     }
 
     bool disableCollisions = suzy.mNoCollide ||
-      ( ( suzy.mSprColl & Suzy::SPRCOLL::NO_COLLIDE ) == 1 ) ||
+      ( ( suzy.mSprColl & Suzy::SPRCOLL::NO_COLLIDE ) == Suzy::SPRCOLL::NO_COLLIDE ) ||
       ( suzy.mSpriteType == Suzy::Sprite::BACKNONCOLL ) ||
       ( suzy.mSpriteType == Suzy::Sprite::NONCOLL );
     bool everon = false;
