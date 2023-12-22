@@ -50,7 +50,7 @@ EEPROM::EEPROM( std::filesystem::path imagePath, int eeType, bool is16Bit, std::
 
   if ( std::filesystem::exists( mImagePath ) )
   {
-    auto size = std::min( std::filesystem::file_size( mImagePath ), mData.size() );
+    auto size = std::min( (size_t)std::filesystem::file_size( mImagePath ), mData.size() );
     std::ifstream fin{ mImagePath, std::ios::binary };
     fin.read( (char*)mData.data(), size );
     mChanged = false;
@@ -213,7 +213,7 @@ int EEPROM::read( int address ) const
   {
     int data = 0xffff;
     address <<= 1;
-    if ( address < mData.size() )
+    if ( address < ( int )mData.size() )
     {
       data = mData[address];
       data |= ( mData[address + 1] ) << 8;
@@ -224,7 +224,7 @@ int EEPROM::read( int address ) const
   else
   {
     int data = 0xff;
-    if ( address < mData.size() )
+    if ( address < ( int )mData.size() )
     {
       data = mData[address];
     }
@@ -251,7 +251,7 @@ void EEPROM::write( int address, int data, bool erase )
     if ( mDataBits == 16 )
     {
       address <<= 1;
-      if ( address < mData.size() )
+      if ( address < ( int )mData.size() )
       {
         if ( mData[address] != ( data & 0xff ) )
         {
@@ -271,7 +271,7 @@ void EEPROM::write( int address, int data, bool erase )
     }
     else
     {
-      if ( address < mData.size() )
+      if ( address < ( int )mData.size() )
       {
         mData[address] = data & 0xff;
       }

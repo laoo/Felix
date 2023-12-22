@@ -107,7 +107,11 @@ std::shared_ptr<ISystemDriver> createSystemDriver( Manager& manager, std::wstrin
     return {};
   }
 
-  std::wstring name = L"Felix " + std::wstring{ version_string };
+#ifdef FELIX86
+  std::wstring name = L"Felix32 " + std::wstring{ version_string };
+#else
+std::wstring name = L"Felix " + std::wstring{ version_string };
+#endif
 
   auto pSystemDriver = std::make_shared<SystemDriver>();
 
@@ -253,7 +257,11 @@ void SystemDriver::update()
   {
     mPaused = mNewPaused;
 
+#ifdef FELIX86
+    std::wstring n = L"Felix32 " + std::wstring{ version_string } + L" " + mImageFileName;
+#else
     std::wstring n = L"Felix " + std::wstring{ version_string } + L" " + mImageFileName;
+#endif
 
     if ( mPaused )
       n += L" paused";
