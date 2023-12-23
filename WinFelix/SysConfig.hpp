@@ -29,16 +29,21 @@ struct SysConfig
   } keyMapping;
   std::filesystem::path lastOpenDirectory{};
   bool debugMode{};
-  bool visualizeCPU{};
-  bool visualizeDisasm{};
-  struct DisasmyOptions
+  struct DebugOptions
   {
-    bool  followPC = true;
-    bool  ShowLabelsInAddrCol = true;
-    int   tablePC = 0x200;
+    int visualizeBreakCount = 0;
+    int visualizeCPUCount = 0;
+    int visualizeDisasmCount = 0;
+    int visualizeMemCount = 0;
+    int visualizeWatchCount = 0;
+    struct DisasmyOptions
+    {
+      bool  followPC = true;
+      bool  ShowLabelsInAddrCol = true;
+      int   tablePC = 0x200;
 
-  } disasmOptions;
-  bool visualizeMemory{};
+    } disasmOptions;
+  } debugOptions;
   struct MemoryOptions
   {
     bool  OptShowOptions = true;
@@ -51,8 +56,6 @@ struct SysConfig
     int   OptAddrDigitsCount{};
     float OptFooterExtraHeight{};
   } memoryOptions;
-  bool visualizeWatch{};
-  bool visualizeBreakpoint{};
   bool visualizeHistory{};
   bool debugModeOnBreak{};
   bool normalModeOnRun{};

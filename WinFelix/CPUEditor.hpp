@@ -4,18 +4,18 @@
 
 class Manager;
 
-class CPUEditor
+class CPUEditor : public IEditor
 {
 public:
   CPUEditor();
 
-  void setManager( Manager* manager );
-  void drawContents();
-  bool enabled();
+  void drawContents() override;
+  bool enabled() override;
+
+  void coreHasBeenReset() override;
 
 private:
 
-  Manager* mManager;
   bool mN = { false };
   bool mV = { false };
   bool mD = { false };

@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "DisasmEditor.h"
 #include "Manager.hpp"
+#include "Debugger.hpp"
 #include "Core.hpp"
 #include "CPU.hpp"
 #include "CPUState.hpp"
@@ -13,28 +14,23 @@ DisasmEditor::DisasmEditor() : mPC{ 0 }, mFollowPC { 0 }
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
-  mFollowPC = sysConfig->disasmOptions.followPC;
-  mTablePC = sysConfig->disasmOptions.tablePC + 1;
-  mShowLabelsInAddrCol = sysConfig->disasmOptions.ShowLabelsInAddrCol;
+  mFollowPC = sysConfig->debugOptions.disasmOptions.followPC;
+  mTablePC = sysConfig->debugOptions.disasmOptions.tablePC + 1;
+  mShowLabelsInAddrCol = sysConfig->debugOptions.disasmOptions.ShowLabelsInAddrCol;
 }
 
 DisasmEditor::~DisasmEditor()
 {
   auto sysConfig = gConfigProvider.sysConfig();
 
-  sysConfig->disasmOptions.followPC = mFollowPC;
-  sysConfig->disasmOptions.ShowLabelsInAddrCol = mShowLabelsInAddrCol;
-  sysConfig->disasmOptions.tablePC = mFollowPC ? 0x200 : mTablePC;
-}
-
-void DisasmEditor::setManager( Manager* manager )
-{
-  mManager = manager;
+  sysConfig->debugOptions.disasmOptions.followPC = mFollowPC;
+  sysConfig->debugOptions.disasmOptions.ShowLabelsInAddrCol = mShowLabelsInAddrCol;
+  sysConfig->debugOptions.disasmOptions.tablePC = mFollowPC ? 0x200 : mTablePC;
 }
 
 bool DisasmEditor::enabled()
 {
-  return mManager && mManager->mInstance && mManager->mDebugger.visualizeDisasm && mManager->mInstance->tick() > 0;
+  return mManager && mManager->mInstance && mManager->mInstance->tick() > 0;
 }
 
 bool DisasmEditor::isReadOnly()
@@ -103,9 +99,20 @@ void DisasmEditor::drawTable()
   {
     ImGui::TableNextRow();
 
-    if ( mManager->mDebugWindows.breakpointEditor.hasBreapoint( workingPc ) )
+    auto breakpointctrls = mManager->mDebugger.getDebugControls( IEditor::Breakpoint );
+
+    std::shared_ptr<BreakpointEditor> bpEdit{};
+
+    if (breakpointctrls.size() > 0 )
     {
-      ImGui::TableSetBgColor( ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32( ImVec4( 255, 0, 0, 255 ) ) );
+      bpEdit = std::static_pointer_cast<BreakpointEditor>(breakpointctrls.front().editor);
+    }
+
+    bool enabled;
+
+    if ( bpEdit && bpEdit->hasBreapoint( workingPc, enabled ) )
+    {
+      ImGui::TableSetBgColor( ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32( ImVec4( 255, 0, enabled ? 0 : 255, 255 ) ) );
     }
     else if ( workingPc == mPC )
     {
@@ -128,9 +135,16 @@ void DisasmEditor::drawTable()
       sprintf( buf, "$%04X", (uint16_t)workingPc );
       ImGui::Text( buf );
     }
+
     if ( ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked( 0 ) )
     {
-      mManager->mDebugWindows.breakpointEditor.toggleBreapoint( workingPc );
+      if ( !bpEdit )
+      {
+        mManager->mDebugger.addDebugControl( IEditor::Breakpoint, mManager );
+        breakpointctrls = mManager->mDebugger.getDebugControls( IEditor::Breakpoint );
+      }
+
+      std::static_pointer_cast<BreakpointEditor>(breakpointctrls.front().editor)->toggleBreapoint(workingPc);
     }
 
     memset( buf, 0, sizeof(buf) );
@@ -258,4 +272,8 @@ void DisasmEditor::scrollDown()
   
   cpu.disasmOp( buf, (Opcode)ram[mTablePC] );
   cpu.disasmOpr( ram, (char*)buf, mTablePC );
+}
+
+void DisasmEditor::coreHasBeenReset()
+{
 }

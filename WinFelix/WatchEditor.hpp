@@ -7,7 +7,7 @@ class Manager;
 typedef struct WatchItem
 {
   uint32_t id = 0;
-  char label[17];
+  char label[17]{};
   ImGuiDataType type = ImGuiDataType_U8;
   uint16_t address = 0;
 
@@ -26,21 +26,20 @@ enum DataFormat
   DataFormat_COUNT
 };
 
-class WatchEditor
+class WatchEditor : public IEditor
 {
 public:
   WatchEditor();
-  ~WatchEditor();
+  ~WatchEditor() override;
 
-  void setManager( Manager* manager );
-  void drawContents();
-  bool enabled();
+  void drawContents() override;
+  bool enabled() override;
+  void coreHasBeenReset() override;
 
   void deleteWatch( const char* label );
   void addWatch( const char* label, const char* type, uint16_t addr );
 
 private:
-  Manager* mManager;
   std::vector<WatchItem> mItems;
 
   char mNewItemLabelBuf[17];

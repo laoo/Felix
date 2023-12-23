@@ -29,6 +29,7 @@ typedef struct BreakpointItem
   uint32_t id = 0;
   ScriptDebugger::Type type;
   uint16_t address = 0;
+  bool enabled = true;
 
   bool operator==( const BreakpointItem& b )
   {
@@ -37,20 +38,21 @@ typedef struct BreakpointItem
 
 } BreakpointItem;
 
-class BreakpointEditor
+class BreakpointEditor: public IEditor
 {
 public:
   BreakpointEditor();
-  ~BreakpointEditor();
+  ~BreakpointEditor() override;
 
-  void setManager( Manager* manager );
-  void drawContents();
-  bool enabled();
-  bool hasBreapoint( uint16_t address );
+  void setManager( Manager* manager ) override;
+  void drawContents() override;
+  bool enabled() override;
+  bool hasBreapoint( uint16_t address, bool& enabled );
   void toggleBreapoint( uint16_t address );
 
+  void coreHasBeenReset() override;
+
 private:
-  Manager* mManager;
   std::vector<BreakpointItem> mItems;
 
   char mNewItemAddrBuf[6];
@@ -61,6 +63,7 @@ private:
   void initializeExistingTraps();
   void deleteBreakpoint( uint16_t address );
   void deleteBreakpoint( const BreakpointItem* item );
+  void toggleEnableBreakpoint( BreakpointItem* item );
   void addBreakpoint( ScriptDebugger::Type type, const char* addr );
   void addBreakpoint( ScriptDebugger::Type type, uint16_t addr );
   const char* breakpointTypeGetDesc( ScriptDebugger::Type type ) const;

@@ -1,5 +1,10 @@
 #include "pch.hpp"
 #include "Debugger.hpp"
+#include "BreakpointEditor.hpp"
+#include "CPUEditor.hpp"
+#include "DisasmEditor.h"
+#include "MemEditor.hpp"
+#include "WatchEditor.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 
@@ -13,9 +18,7 @@
 
 Debugger::Debugger() : mMutex{},
 mDebugMode{},
-visualizeCPU{},
-visualizeMemory{},
-visualizeDisasm{},
+mVisualizedEditors{},
 mVisualizeHistory{},
 mDebugModeOnBreak{},
 mNormalModeOnRun{},
@@ -25,11 +28,6 @@ mRunMode{ RunMode::RUN }
   auto sysConfig = gConfigProvider.sysConfig();
 
   mDebugMode = sysConfig->debugMode;
-  visualizeCPU = sysConfig->visualizeCPU;
-  visualizeMemory = sysConfig->visualizeMemory;
-  visualizeWatch = sysConfig->visualizeWatch;
-  visualizeBreakpoint = sysConfig->visualizeBreakpoint;
-  visualizeDisasm = sysConfig->visualizeDisasm;
   mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
   mNormalModeOnRun = sysConfig->normalModeOnRun;
@@ -45,11 +43,6 @@ Debugger::~Debugger()
   auto sysConfig = gConfigProvider.sysConfig();
 
   sysConfig->debugMode = mDebugMode;
-  sysConfig->visualizeCPU = visualizeCPU;
-  sysConfig->visualizeMemory = visualizeMemory;
-  sysConfig->visualizeWatch = visualizeWatch;
-  sysConfig->visualizeBreakpoint = visualizeBreakpoint;
-  sysConfig->visualizeDisasm = visualizeDisasm;
   sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
   sysConfig->normalModeOnRun = mNormalModeOnRun;
@@ -58,6 +51,32 @@ Debugger::~Debugger()
   for ( auto const& sv : mScreenViews )
   {
     sysConfig->screenViews.emplace_back( sv.id, (int)sv.type, (int)sv.customAddress, sv.safePalette );
+  }
+}
+
+void Debugger::initialize( Manager* manager )
+{
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  for ( int i = 0; i < sysConfig->debugOptions.visualizeBreakCount; ++i )
+  {
+    addDebugControl( IEditor::Breakpoint, manager, true );
+  }
+  for (int i = 0; i < sysConfig->debugOptions.visualizeCPUCount; ++i)
+  {
+    addDebugControl( IEditor::CPU, manager, true );
+  }
+  for (int i = 0; i < sysConfig->debugOptions.visualizeDisasmCount; ++i)
+  {
+    addDebugControl( IEditor::Disasm, manager, true );
+  }
+  for (int i = 0; i < sysConfig->debugOptions.visualizeMemCount; ++i)
+  {
+    addDebugControl( IEditor::Memory, manager, true );
+  }
+  for (int i = 0; i < sysConfig->debugOptions.visualizeWatchCount; ++i)
+  {
+    addDebugControl( IEditor::Watch, manager, true );
   }
 }
 
@@ -186,4 +205,113 @@ DebugWindow& Debugger::historyVisualizer()
 std::unique_lock<std::mutex> Debugger::lockMutex() const
 {
   return std::unique_lock<std::mutex>{ mMutex };
+}
+
+void Debugger::addDebugControl( IEditor::EditorType type, Manager *manager, bool initialize )
+{
+  DebugControl ctrl;
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  switch (type)
+  {
+  case IEditor::EditorType::Breakpoint:
+    ctrl.editor = std::static_pointer_cast<IEditor>(std::make_shared<BreakpointEditor>());
+    if (!initialize)
+    {
+      sysConfig->debugOptions.visualizeBreakCount++;
+    }
+    break;
+  case IEditor::EditorType::CPU:
+    ctrl.editor = std::static_pointer_cast<IEditor>(std::make_shared<CPUEditor>());
+    if (!initialize)
+    {
+      sysConfig->debugOptions.visualizeCPUCount++;
+    }
+    break;
+  case IEditor::EditorType::Disasm:
+    ctrl.editor = std::static_pointer_cast<IEditor>(std::make_shared<DisasmEditor>());
+    if (!initialize)
+    {
+      sysConfig->debugOptions.visualizeDisasmCount++;
+    }
+    break;
+  case IEditor::EditorType::Memory:
+    ctrl.editor = std::static_pointer_cast<IEditor>(std::make_shared<MemEditor>());
+    if (!initialize)
+    {
+      sysConfig->debugOptions.visualizeMemCount++;
+    }
+    break;
+  case IEditor::EditorType::Watch:
+    ctrl.editor = std::static_pointer_cast<IEditor>(std::make_shared<WatchEditor>());
+    if (!initialize)
+    {
+      sysConfig->debugOptions.visualizeWatchCount++;
+    }
+    break;
+  }
+
+  ctrl.type = type;
+  ctrl.label = EditorDefinitions[type].label;
+  ctrl.editor->setManager( manager );
+
+  int count = (int)getDebugControls( type ).size();
+
+  if (count > 0)
+  {
+    ctrl.label += " " + std::to_string(count + 1);
+  }
+
+  mVisualizedEditors.push_back( ctrl );
+}
+
+void Debugger::deleteDebugControl( std::string label )
+{
+  auto found = std::find_if( mVisualizedEditors.begin(), mVisualizedEditors.end(), [label]( DebugControl ed ) { return label == ed.label; } );
+
+  if (found == mVisualizedEditors.end())
+  {
+    return;
+  }
+    
+  auto sysConfig = gConfigProvider.sysConfig();
+
+  switch (found->type)
+  {
+  case IEditor::EditorType::Breakpoint:
+    sysConfig->debugOptions.visualizeBreakCount--;
+    break;
+  case IEditor::EditorType::CPU:
+    sysConfig->debugOptions.visualizeCPUCount--;
+    break;
+  case IEditor::EditorType::Disasm:
+    sysConfig->debugOptions.visualizeDisasmCount--;
+    break;
+  case IEditor::EditorType::Memory:
+    sysConfig->debugOptions.visualizeMemCount--;
+    break;
+  case IEditor::EditorType::Watch:
+    sysConfig->debugOptions.visualizeWatchCount--;
+    break;
+  }
+
+  std::erase_if( mVisualizedEditors, [label]( DebugControl ed ) { return label == ed.label; } );
+}
+
+std::vector<DebugControl> Debugger::getDebugControls( IEditor::EditorType type )
+{
+  std::vector<DebugControl> results{};
+
+  std::copy_if( 
+    mVisualizedEditors.begin(), mVisualizedEditors.end(), 
+    std::back_inserter ( results ),
+    [type]( const DebugControl ed ) { return type == ed.type; } );
+
+  return results;
+}
+
+std::vector<DebugControl> Debugger::getDebugControls()
+{
+  std::vector<DebugControl> results{ mVisualizedEditors };
+  return results;
 }

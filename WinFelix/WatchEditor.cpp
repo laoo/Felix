@@ -1,10 +1,10 @@
 #include "pch.hpp"
 #include "WatchEditor.hpp"
 #include "Manager.hpp"
-#include "Core.hpp"
 #include "Debugger.hpp"
+#include "Core.hpp"
 
-WatchEditor::WatchEditor()
+WatchEditor::WatchEditor() : mNewItemDataType{ ImGuiDataType_U8 }, mNewItemAddrBuf{}, mNewItemLabelBuf{}
 {
 }
 
@@ -12,14 +12,9 @@ WatchEditor::~WatchEditor()
 {
 }
 
-void WatchEditor::setManager( Manager* manager )
-{
-  mManager = manager;
-}
-
 bool WatchEditor::enabled()
 {
-  return mManager && mManager->mInstance && mManager->mDebugger.visualizeWatch;
+  return mManager && mManager->mInstance;
 }
 
 bool WatchEditor::isReadOnly()
@@ -209,6 +204,11 @@ void WatchEditor::addWatch( const char* label, ImGuiDataType type, uint16_t addr
     return;
   }
 
+  if (std::any_of( mItems.begin(), mItems.end(), [type, addr]( const WatchItem i ) { return i.address == addr && i.type == type; } ))
+  {    
+    return;
+  }
+
   WatchItem item;
 
   if ( !mItems.empty() )
@@ -334,4 +334,8 @@ void WatchEditor::drawContents()
     }
     ImGui::EndTable();
   }
+}
+
+void WatchEditor::coreHasBeenReset()
+{
 }
