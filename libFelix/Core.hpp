@@ -35,7 +35,8 @@ public:
   CpuBreakType run( RunMode runMode );
 
   void setLog( std::filesystem::path const & path );
-  void setVGMWriter( std::shared_ptr<VGMWriter> writer );
+  void setVGMWriter( std::filesystem::path const& path );
+  bool isVGMWriter() const;
 
   void enterMonitor();
   int64_t globalSamplesEmittedPerFrame() const;

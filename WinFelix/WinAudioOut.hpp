@@ -17,6 +17,7 @@ public:
   bool wait();
   CpuBreakType fillBuffer( std::shared_ptr<Core> instance, int64_t renderingTime, RunMode runMode );
   void setWavOut( std::filesystem::path path );
+  bool isWavOut() const;
   void mute( bool value );
   bool mute() const;
 

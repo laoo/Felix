@@ -85,6 +85,7 @@ public:
   void suzyDone();
   AudioSample sampleAudio( uint64_t tick ) const;
   void setVGMWriter( std::shared_ptr<VGMWriter> writer );
+  bool isVGMWriter() const;
 
   void setIRQ( uint8_t mask );
   void resetIRQ( uint8_t mask );

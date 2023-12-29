@@ -484,6 +484,11 @@ void Mikey::setVGMWriter( std::shared_ptr<VGMWriter> writer )
   mVGMWriter = std::move( writer );
 }
 
+bool Mikey::isVGMWriter() const
+{
+  return (bool)mVGMWriter;
+}
+
 void Mikey::setIRQ( uint8_t mask )
 {
   mIRQ |= mask;

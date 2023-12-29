@@ -44,7 +44,9 @@ bool UI::mainMenu( ImGuiIO& io )
   {
     NONE,
     OPEN_CARTRIDGE,
-    OPEN_BOOTROM
+    OPEN_BOOTROM,
+    OPEN_WAVE,
+    OPEN_VGM
   };
 
   enum class ModalWindow
@@ -154,6 +156,38 @@ bool UI::mainMenu( ImGuiIO& io )
       {
         mManager.mAudioOut->mute( mute );
       }
+      bool wavOut = mManager.mAudioOut->isWavOut();
+      if ( ImGui::MenuItem( "Wav Out", nullptr, &wavOut ) )
+      {
+        if ( wavOut )
+        {
+          mFileBrowser->SetTitle( "Save audio to wav file" );
+          mFileBrowser->SetTypeFilters( { ".wav", ".*" } );
+          mFileBrowser->Open();
+          fileBrowserAction = FileBrowserAction::OPEN_WAVE;
+        }
+        else
+        {
+          mManager.mAudioOut->setWavOut( std::filesystem::path{} );
+        }
+      }
+      ImGui::BeginDisabled( !( bool )mManager.mInstance );
+      bool vgmOut = mManager.mInstance ? mManager.mInstance->isVGMWriter() : false;
+      if ( ImGui::MenuItem( "VGM Out", nullptr, &vgmOut ) )
+      {
+        if ( vgmOut )
+        {
+          mFileBrowser->SetTitle( "Save VGM 1.72" );
+          mFileBrowser->SetTypeFilters( { ".vgm", ".*" } );
+          mFileBrowser->Open();
+          fileBrowserAction = FileBrowserAction::OPEN_VGM;
+        }
+        else
+        {
+          mManager.mInstance->setVGMWriter( {} );
+        }
+      }
+      ImGui::EndDisabled();
       ImGui::EndMenu();
     }
     if ( mManager.mExtendedRenderer )
@@ -440,6 +474,12 @@ bool UI::mainMenu( ImGuiIO& io )
       break;
     case OPEN_BOOTROM:
       sysConfig->bootROM.path = mFileBrowser->GetSelected();
+      break;
+    case OPEN_WAVE:
+      mManager.mAudioOut->setWavOut( mFileBrowser->GetSelected() );
+      break;
+    case OPEN_VGM:
+      mManager.mInstance->setVGMWriter( mFileBrowser->GetSelected() );
       break;
     }
     mFileBrowser->ClearSelected();

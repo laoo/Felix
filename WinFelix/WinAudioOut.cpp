@@ -109,6 +109,16 @@ void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )
 
 void WinAudioOut::setWavOut( std::filesystem::path path )
 {
+  if ( path.empty() )
+  {
+    if ( mWav )
+    {
+      wav_close( mWav );
+      mWav = nullptr;
+    }
+    return;
+  }
+
   mWav = wav_open( path.string().c_str(), WAV_OPEN_WRITE );
   if ( wav_err()->code != WAV_OK )
   {
@@ -125,6 +135,11 @@ void WinAudioOut::setWavOut( std::filesystem::path path )
   wav_set_num_channels( mWav, mMixFormat->nChannels );
   wav_set_sample_rate( mWav, mMixFormat->nSamplesPerSec );
   wav_set_sample_size( mWav, sizeof(float) );
+}
+
+bool WinAudioOut::isWavOut() const
+{
+  return mWav ? true : false;
 }
 
 void WinAudioOut::mute( bool value )

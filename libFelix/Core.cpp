@@ -108,11 +108,17 @@ void Core::setLog( std::filesystem::path const & path )
   mCpu->setLog( path );
 }
 
-void Core::setVGMWriter( std::shared_ptr<VGMWriter> writer )
+void Core::setVGMWriter( std::filesystem::path const& path )
 {
+  auto writer = std::unique_ptr<VGMWriter>( path.empty() ? nullptr : new VGMWriter{ path } );
   if ( writer )
     writer->init( mCurrentTick );
   mMikey->setVGMWriter( std::move( writer ) );
+}
+
+bool Core::isVGMWriter() const
+{
+  return mMikey->isVGMWriter();
 }
 
 void Core::pulseReset( std::optional<uint16_t> resetAddress )

@@ -312,7 +312,7 @@ void Manager::processLua( std::filesystem::path const& path )
     if ( sol::optional<std::string> opt = tab["path"] )
     {
       if ( mInstance )
-        mInstance->setVGMWriter( std::make_shared<VGMWriter>( *opt ) );
+        mInstance->setVGMWriter( *opt );
     }
     else throw Ex{} << "path = \"path/to/file.vgm\" required";
   };
