@@ -22,16 +22,6 @@ public:
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
   int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
-  struct BoardFont
-  {
-    BoardFont();
-    void initialize();
-
-    int width;
-    int height;
-    ComPtr<ID3D11ShaderResourceView> srv;
-  };
-
 private:
   class ScreenView;
 

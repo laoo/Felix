@@ -6,8 +6,6 @@
 #include "ScreenRenderingBuffer.hpp"
 #include "WinImgui11.hpp"
 #include "Manager.hpp"
-#include "IEncoder.hpp"
-#include "fonts.hpp"
 #include "VideoSink.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
@@ -47,8 +45,6 @@ struct CBPosSize
   int32_t size;
   uint32_t padding;
 };
-
-DX11Renderer::BoardFont gBoardFont;
 
 static ComPtr<ID3D11Device>        gD3DDevice;
 static ComPtr<ID3D11DeviceContext> gImmediateContext;
@@ -147,8 +143,6 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag
   D3D11_SUBRESOURCE_DATA data{ buf.data(), desc.Width * sizeof( uint32_t ), 0 };
   gD3DDevice->CreateTexture2D( &desc, &data, mSource.ReleaseAndGetAddressOf() );
   V_THROW( gD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
-
-  gBoardFont.initialize();
 
   mImgui = std::make_shared<WinImgui11>( mHWnd, gD3DDevice, gImmediateContext, iniPath );
 }
@@ -374,31 +368,6 @@ std::shared_ptr<IScreenView> DX11Renderer::makeMainScreenView()
 std::shared_ptr<ICustomScreenView> DX11Renderer::makeCustomScreenView()
 {
   return std::make_shared<CustomScreenView>();
-}
-
-DX11Renderer::BoardFont::BoardFont() : width{}, height{}, srv{}
-{
-}
-
-void DX11Renderer::BoardFont::initialize()
-{
-  width = 8;
-  height = 16;
-
-  std::array<D3D11_SUBRESOURCE_DATA, 256> initData;
-
-  for ( size_t i = 0; i < initData.size(); ++i )
-  {
-    auto& ini = initData[i];
-    ini.pSysMem = font_SWISSBX2 + i * height * width;
-    ini.SysMemPitch = width;
-    ini.SysMemSlicePitch = 0;
-  }
-
-  ComPtr<ID3D11Texture2D> tex;
-  D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( gD3DDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
 }
 
 DX11Renderer::ScreenView::ScreenView()

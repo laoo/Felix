@@ -18,7 +18,6 @@ add_executable( Felix WIN32
   WinFelix/DX9Renderer.cpp
   WinFelix/DX9Renderer.hpp
   WinFelix/Ex.hpp
-  WinFelix/fonts.hpp
   WinFelix/ISystemDriver.hpp
   WinFelix/IUserInput.hpp
   WinFelix/KeyNames.cpp
