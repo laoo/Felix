@@ -71,7 +71,6 @@ private:
 
   struct DebugWindows
   {
-    std::shared_ptr<IScreenView> mainScreenView;
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
     CPUEditor cpuEditor;
     MemEditor memoryEditor;

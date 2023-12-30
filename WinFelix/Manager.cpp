@@ -154,22 +154,13 @@ void Manager::quit()
 
 void Manager::updateDebugWindows()
 {
-
   if ( !mInstance )
     return;
 
   if ( !mDebugger.isDebugMode() )
-  {
-    mDebugWindows.mainScreenView.reset();
     return;
-  }
 
   std::unique_lock<std::mutex> l = mDebugger.lockMutex();
-
-  if ( !mDebugWindows.mainScreenView )
-  {
-    mDebugWindows.mainScreenView = mRenderer->makeMainScreenView();
-  }
 
   auto svs = mDebugger.screenViews();
   auto& csvs = mDebugWindows.customScreenViews;

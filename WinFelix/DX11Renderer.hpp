@@ -18,49 +18,21 @@ public:
   void setRotation( ImageProperties::Rotation rotation ) override;
   std::shared_ptr<IVideoSink> getVideoSink() override;
 
-  std::shared_ptr<IScreenView> makeMainScreenView() override;
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
   int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
 private:
-  class ScreenView;
 
   void internalRender( UI& ui );
   bool resizeOutput();
   void updateSourceFromNextFrame();
   void renderGui( UI& ui );
   void renderScreenView( ScreenGeometry const& geometry, ID3D11ShaderResourceView* sourceSRV, ID3D11UnorderedAccessView* target );
-  bool mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView );
   int sizing( RECT& rect );
 
 private:
 
-  class ScreenView : public IScreenView
-  {
-  public:
-    ScreenView();
-    ~ScreenView() override = default;
-
-    void rotate( ImageProperties::Rotation rotation );
-    void resize( int width, int height ) override;
-    void* getTexture() override;
-    ScreenGeometry const& getGeometry() const;
-    ID3D11UnorderedAccessView* getUAV();
-    bool geometryChanged() const;
-
-  protected:
-    void updateBuffers();
-
-  protected:
-    ScreenGeometry mGeometry = {};
-    ComPtr<ID3D11ShaderResourceView> mSrv = {};
-
-  private:
-    ComPtr<ID3D11UnorderedAccessView> mUav = {};
-    bool mGeometryChanged = {};
-  };
-
-  class CustomScreenView : public ScreenView, public ICustomScreenView
+  class CustomScreenView : public ICustomScreenView
   {
   public:
     CustomScreenView();
@@ -68,13 +40,25 @@ private:
     void resize( int width, int height ) override;
 
     void* render( std::span<uint8_t const> data, std::span<uint8_t const> palette ) override;
+    void rotate( ImageProperties::Rotation rotation );
+    void* getTexture() override;
+    ScreenGeometry const& getGeometry() const;
+    ID3D11UnorderedAccessView* getUAV();
+    bool geometryChanged() const;
 
   private:
+    void updateBuffers();
+
+  private:
+    ScreenGeometry                    mGeometry = {};
+    ComPtr<ID3D11ShaderResourceView>  mSrv = {};
+    ComPtr<ID3D11UnorderedAccessView> mUav = {};
     ComPtr<ID3D11Texture2D>           mSource;
     ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
     ComPtr<ID3D11Texture1D>           mPalette;
     ComPtr<ID3D11ShaderResourceView>  mPaletteSRV;
     ComPtr<ID3D11Buffer>              mPosSizeCB;
+    bool mGeometryChanged = {};
   };
 
   HWND mHWnd;
@@ -92,7 +76,6 @@ private:
   rational::Ratio<int32_t>          mRefreshRate;
   std::shared_ptr<VideoSink>        mVideoSink;
   mutable std::mutex                mDebugViewMutex;
-  std::weak_ptr<ScreenView>         mMainScreenView;
   int64_t                           mLastRenderTimePoint;
 };
 

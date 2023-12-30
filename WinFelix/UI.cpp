@@ -501,25 +501,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::End();
     }
 
-    if ( auto mainScreenView = mManager.mDebugWindows.mainScreenView )
-    {
-      static const float xpad = 4.0f;
-      static const float ypad = 4.0f + 19.0f;
-      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ SCREEN_WIDTH + xpad, SCREEN_HEIGHT + ypad } );
-
-      ImGui::Begin( "Rendering", &debugMode, ImGuiWindowFlags_NoCollapse );
-      auto size = ImGui::GetWindowSize();
-      size.x = std::max( 0.0f, size.x - xpad );
-      size.y = std::max( 0.0f, size.y - ypad );
-      if ( auto tex = mainScreenView->getTexture() )
-      {
-        ImGui::Image( tex, size );
-      }
-      ImGui::End();
-      ImGui::PopStyleVar();
-      mainScreenView->resize( (int)size.x, (int)size.y );
-    }
-
     std::vector<int> removedIds;
     for ( auto& sv : mManager.mDebugger.screenViews() )
     {

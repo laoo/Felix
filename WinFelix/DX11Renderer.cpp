@@ -174,31 +174,11 @@ int64_t DX11Renderer::render( UI& ui )
 void DX11Renderer::setRotation( ImageProperties::Rotation rotation )
 {
   mRotation = rotation;
-  if ( auto mainScreenView = mMainScreenView.lock() )
-  {
-    mainScreenView->rotate( mRotation );
-  }
 }
 
 std::shared_ptr<IVideoSink> DX11Renderer::getVideoSink()
 {
   return mVideoSink;
-}
-
-bool DX11Renderer::mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView )
-{
-  if ( mainScreenView )
-  {
-    if ( auto uav = mainScreenView->getUAV() )
-    {
-      UINT v[4] = { 255, 255, 255, 255 };
-      gImmediateContext->ClearUnorderedAccessViewUint( uav, v );
-      renderScreenView( mainScreenView->getGeometry(), mSourceSRV.Get(), uav );
-      return true;
-    }
-  }
-
-  return false;
 }
 
 int DX11Renderer::sizing( RECT& rect )
@@ -241,10 +221,7 @@ void DX11Renderer::internalRender( UI& ui )
   UINT v[4] = { 255, 255, 255, 255 };
   gImmediateContext->ClearUnorderedAccessViewUint( mBackBufferUAV.Get(), v );
 
-  if ( !mainScreenViewDebugRendering( mMainScreenView.lock() ) )
-  {
-    renderScreenView( mScreenGeometry, mSourceSRV.Get(), mBackBufferUAV.Get() );
-  }
+  renderScreenView( mScreenGeometry, mSourceSRV.Get(), mBackBufferUAV.Get() );
 
   renderGui( ui );
 }
@@ -350,51 +327,32 @@ void DX11Renderer::renderScreenView( ScreenGeometry const& geometry, ID3D11Shade
   gImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 }
 
-std::shared_ptr<IScreenView> DX11Renderer::makeMainScreenView()
-{
-  if ( auto view = mMainScreenView.lock() )
-  {
-    return view;
-  }
-  else
-  {
-    auto ptr = std::make_shared<ScreenView>();
-    ptr->rotate( mRotation );
-    mMainScreenView = ptr;
-    return ptr;
-  }
-}
-
 std::shared_ptr<ICustomScreenView> DX11Renderer::makeCustomScreenView()
 {
   return std::make_shared<CustomScreenView>();
 }
 
-DX11Renderer::ScreenView::ScreenView()
-{
-}
-
-void DX11Renderer::ScreenView::rotate( ImageProperties::Rotation rotation )
+void DX11Renderer::CustomScreenView::rotate( ImageProperties::Rotation rotation )
 {
   mGeometryChanged |= mGeometry.update( mGeometry.windowWidth(), mGeometry.windowHeight(), rotation );
 }
 
-void DX11Renderer::ScreenView::resize( int width, int height )
+void DX11Renderer::CustomScreenView::resize( int width, int height )
 {
   mGeometryChanged |= mGeometry.update( width, height, mGeometry.rotation() );
 }
 
-void* DX11Renderer::ScreenView::getTexture()
+void* DX11Renderer::CustomScreenView::getTexture()
 {
   return mSrv.Get();
 }
 
-ScreenGeometry const& DX11Renderer::ScreenView::getGeometry() const
+ScreenGeometry const& DX11Renderer::CustomScreenView::getGeometry() const
 {
   return mGeometry;
 }
 
-ID3D11UnorderedAccessView* DX11Renderer::ScreenView::getUAV()
+ID3D11UnorderedAccessView* DX11Renderer::CustomScreenView::getUAV()
 {
   if ( mGeometryChanged )
     updateBuffers();
@@ -402,7 +360,7 @@ ID3D11UnorderedAccessView* DX11Renderer::ScreenView::getUAV()
   return mUav.Get();
 }
 
-void DX11Renderer::ScreenView::updateBuffers()
+void DX11Renderer::CustomScreenView::updateBuffers()
 {
   assert( mGeometryChanged );
 
@@ -427,12 +385,12 @@ void DX11Renderer::ScreenView::updateBuffers()
   mGeometryChanged = false;
 }
 
-bool DX11Renderer::ScreenView::geometryChanged() const
+bool DX11Renderer::CustomScreenView::geometryChanged() const
 {
   return mGeometryChanged;
 }
 
-DX11Renderer::CustomScreenView::CustomScreenView() : ScreenView{}
+DX11Renderer::CustomScreenView::CustomScreenView()
 {
   D3D11_TEXTURE2D_DESC descsrc{ SCREEN_WIDTH / 2, SCREEN_HEIGHT, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
   gD3DDevice->CreateTexture2D( &descsrc, nullptr, mSource.ReleaseAndGetAddressOf() );
@@ -447,11 +405,6 @@ DX11Renderer::CustomScreenView::CustomScreenView() : ScreenView{}
   bd.Usage = D3D11_USAGE_DEFAULT;
   bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   V_THROW( gD3DDevice->CreateBuffer( &bd, NULL, mPosSizeCB.ReleaseAndGetAddressOf() ) );
-}
-
-void DX11Renderer::CustomScreenView::resize( int width, int height )
-{
-  ScreenView::resize( width, height );
 }
 
 void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std::span<uint8_t const> palette )
