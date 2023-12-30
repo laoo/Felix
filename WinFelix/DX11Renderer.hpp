@@ -3,7 +3,6 @@
 #include "rational.hpp"
 
 class WinImgui11;
-class EncodingRenderer;
 struct VideoSink;
 
 class DX11Renderer : public IBaseRenderer, public IExtendedRenderer
@@ -19,7 +18,6 @@ public:
   void setRotation( ImageProperties::Rotation rotation ) override;
   std::shared_ptr<IVideoSink> getVideoSink() override;
 
-  void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
   std::shared_ptr<IBoard> makeBoard( int width, int height ) override;
 
   std::shared_ptr<IScreenView> makeMainScreenView() override;
@@ -124,7 +122,6 @@ private:
   ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
 
   rational::Ratio<int32_t>          mRefreshRate;
-  std::shared_ptr<EncodingRenderer> mEncodingRenderer;
   std::shared_ptr<VideoSink>        mVideoSink;
   mutable std::mutex                mDebugViewMutex;
   std::weak_ptr<ScreenView>         mMainScreenView;

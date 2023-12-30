@@ -3,7 +3,6 @@
 #include "ScreenGeometry.hpp"
 
 class UI;
-class IEncoder;
 class IUserInput;
 struct IVideoSink;
 
@@ -50,7 +49,6 @@ public:
   virtual std::shared_ptr<IScreenView> makeMainScreenView() = 0;
   virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView() = 0;
   virtual std::shared_ptr<IBoard> makeBoard( int width, int height ) = 0;
-  virtual void setEncoder( std::shared_ptr<IEncoder> encoder ) = 0;
 };
 
 

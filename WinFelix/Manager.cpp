@@ -254,48 +254,6 @@ void Manager::processLua( std::filesystem::path const& path )
   mLua["suzy"] = std::make_unique<SuzyProxy>( *this );
   mLua["cpu"] = std::make_unique<CPUProxy>( *this );
 
-  mLua["Encoder"] = [this] ( sol::table const& tab )
-  {
-    if ( !mExtendedRenderer )
-      throw Ex{} << "Encoder not available";
-
-    std::filesystem::path path;
-    int vbitrate{}, abitrate{}, vscale{};
-    if ( sol::optional<std::string> opt = tab["path"] )
-      path = *opt;
-    else throw Ex{} << "path = \"path/to/file.mp4\" required";
-
-    if ( sol::optional<int> opt = tab["video_bitrate"] )
-      vbitrate = *opt;
-    else throw Ex{} << "video_bitrate required";
-
-    if ( sol::optional<int> opt = tab["audio_bitrate"] )
-      abitrate = *opt;
-    else throw Ex{} << "audio_bitrate required";
-
-    if ( sol::optional<int> opt = tab["video_scale"] )
-      vscale = *opt;
-    else throw Ex{} << "video_scale required";
-
-    if ( vscale % 2 == 1 )
-      throw Ex{} << "video_scale must be even number";
-
-    static PCREATE_ENCODER s_createEncoder = nullptr;
-    static PDISPOSE_ENCODER s_disposeEncoder = nullptr;
-
-    mEncoderMod = ::LoadLibrary( L"Encoder.dll" );
-    if ( mEncoderMod == nullptr )
-      throw Ex{} << "Encoder.dll not found";
-
-    s_createEncoder = (PCREATE_ENCODER)GetProcAddress( mEncoderMod, "createEncoder" );
-    s_disposeEncoder = (PDISPOSE_ENCODER)GetProcAddress( mEncoderMod, "disposeEncoder" );
-
-    mEncoder = std::shared_ptr<IEncoder>( s_createEncoder( path.string().c_str(), vbitrate, abitrate, SCREEN_WIDTH * vscale, SCREEN_HEIGHT * vscale ), s_disposeEncoder );
-
-    mExtendedRenderer->setEncoder( mEncoder );
-    mAudioOut->setEncoder( mEncoder );
-  };
-
   mLua["WavOut"] = [this] ( sol::table const& tab )
   {
     std::filesystem::path path;

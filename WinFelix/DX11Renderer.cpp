@@ -10,7 +10,6 @@
 #include "IEncoder.hpp"
 #include "fonts.hpp"
 #include "VideoSink.hpp"
-#include "EncodingRenderer.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 #define V_RETURN_FALSE(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { return false; } }
@@ -60,7 +59,7 @@ static ComPtr<ID3D11ComputeShader> gBoardCS;
 
 }
 
-DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag ) : mHWnd{ hWnd }, mRefreshRate{}, mEncodingRenderer{}, mVideoSink{ std::make_shared<VideoSink>() }, mLastRenderTimePoint{}
+DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag ) : mHWnd{ hWnd }, mRefreshRate{}, mVideoSink{ std::make_shared<VideoSink>() }, mLastRenderTimePoint{}
 {
   LARGE_INTEGER l;
   QueryPerformanceCounter( &l );
@@ -195,11 +194,6 @@ std::shared_ptr<IVideoSink> DX11Renderer::getVideoSink()
   return mVideoSink;
 }
 
-void DX11Renderer::setEncoder( std::shared_ptr<IEncoder> encoder )
-{
-  mEncodingRenderer = std::make_shared<EncodingRenderer>( std::move( encoder ), gD3DDevice, gImmediateContext, mRefreshRate );
-}
-
 std::shared_ptr<IBoard> DX11Renderer::makeBoard( int width, int height )
 {
   return std::make_shared<Board>( width, height );
@@ -264,11 +258,6 @@ void DX11Renderer::internalRender( UI& ui )
   if ( !mainScreenViewDebugRendering( mMainScreenView.lock() ) )
   {
     renderScreenView( mScreenGeometry, mSourceSRV.Get(), mBackBufferUAV.Get() );
-  }
-
-  if ( mEncodingRenderer )
-  {
-    mEncodingRenderer->renderEncoding( mSourceSRV.Get() );
   }
 
   renderGui( ui );
