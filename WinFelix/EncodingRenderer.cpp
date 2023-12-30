@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "EncodingRenderer.hpp"
 #include "IEncoder.hpp"
 #include "rendererYUV.hxx"

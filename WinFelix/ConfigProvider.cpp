@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 

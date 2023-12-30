@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "VGMWriter.hpp"
 
 VGMWriter::VGMWriter( std::filesystem::path path ) : mHeader{}, mFout { path, std::ios::binary }, mLastTick{}

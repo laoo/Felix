@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "GameDrive.hpp"
 #include "CartBank.hpp"
 #include "ImageProperties.hpp"

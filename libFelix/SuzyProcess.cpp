@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "SuzyProcess.hpp"
 #include "VidOperator.hpp"
 #include "ColOperator.hpp"

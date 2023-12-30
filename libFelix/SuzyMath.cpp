@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "SuzyMath.hpp"
 #include "TraceHelper.hpp"
 #include "Utility.hpp"

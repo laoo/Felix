@@ -9,6 +9,7 @@
 #include "WatchEditor.hpp"
 #include "DisasmEditor.h"
 #include "BreakpointEditor.hpp"
+#include "sol/sol.hpp"
 
 class WinAudioOut;
 class ComLynxWire;

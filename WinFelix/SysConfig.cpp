@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "SysConfig.hpp"
 
 std::shared_ptr<SysConfig> SysConfig::load( std::filesystem::path path )

@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "DX9Renderer.hpp"
 #include "ScreenRenderingBuffer.hpp"
 #include "WinImgui9.hpp"

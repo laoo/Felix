@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ScreenRenderingBuffer.hpp"
 
 ScreenRenderingBuffer::ScreenRenderingBuffer() : mCurrentRow{}

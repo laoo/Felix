@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "WinImgui9.hpp"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }

@@ -1,5 +1,4 @@
-﻿#include "pch.hpp"
-#include "DX11Renderer.hpp"
+﻿#include "DX11Renderer.hpp"
 #include "DX11Helpers.hpp"
 #include "Log.hpp"
 #include "renderer.hxx"

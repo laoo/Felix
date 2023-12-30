@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "DisplayGenerator.hpp"
 #include "IVideoSink.hpp"
 #include "Log.hpp"

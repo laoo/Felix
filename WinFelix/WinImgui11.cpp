@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "WinImgui11.hpp"
 #include "vertex.hxx"
 #include "pixel.hxx"

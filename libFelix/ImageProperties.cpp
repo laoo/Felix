@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ImageProperties.hpp"
 
 ImageProperties::ImageProperties( std::filesystem::path const& path ) : mPath{ path }, mCartridgeName{}, mMamufacturerName{}, mRotation{}, mEEPROM{}, mBankProps{}, mAUDInUsed{}

@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "LuaProxies.hpp"
 #include "ScriptDebuggerEscapes.hpp"
 #include "Manager.hpp"

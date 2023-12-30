@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "Mikey.hpp"
 #include "TimerCore.hpp"
 #include "AudioChannel.hpp"

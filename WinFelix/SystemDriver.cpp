@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "SystemDriver.hpp"
 #include "DX9Renderer.hpp"
 #include "DX11Renderer.hpp"

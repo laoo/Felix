@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "SymbolSource.hpp"
 
 SymbolSource::SymbolSource( std::filesystem::path const& labPath ) : mSymbols{}

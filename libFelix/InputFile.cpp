@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "InputFile.hpp"
 #include "ImageBS93.hpp"
 #include "ImageCart.hpp"

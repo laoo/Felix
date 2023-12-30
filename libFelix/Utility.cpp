@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "Utility.hpp"
 
 std::vector<uint8_t> readFile( std::filesystem::path const& path )

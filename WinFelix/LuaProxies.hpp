@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ScriptDebugger.hpp"
+#include "sol/sol.hpp"
 
 class Manager;
 

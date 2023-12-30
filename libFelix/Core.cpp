@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "Core.hpp"
 #include "CPU.hpp"
 #include "Cartridge.hpp"

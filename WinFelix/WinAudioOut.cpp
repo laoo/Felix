@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "WinAudioOut.hpp"
 #include "Core.hpp"
 #include "Log.hpp"

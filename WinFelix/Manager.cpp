@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "Manager.hpp"
 #include "InputFile.hpp"
 #include "WinImgui.hpp"

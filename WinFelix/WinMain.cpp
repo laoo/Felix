@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "Core.hpp"
 #include "IInputSource.hpp"
 #include "Log.hpp"

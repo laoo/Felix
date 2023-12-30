@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ImageROM.hpp"
 #include "Utility.hpp"
 
