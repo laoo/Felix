@@ -1,8 +1,7 @@
 #pragma once
 #include "ISystemDriver.hpp"
 
-class IBaseRenderer;
-class IExtendedRenderer;
+class IRenderer;
 class UserInput;
 
 class SystemDriver : public ISystemDriver
@@ -15,8 +14,7 @@ public:
 
   int eventLoop() override;
 
-  std::shared_ptr<IBaseRenderer> baseRenderer() const override;
-  std::shared_ptr<IExtendedRenderer> extendedRenderer() const override;
+  std::shared_ptr<IRenderer> renderer() const override;
   int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
   void quit() override;
   void update() override;
@@ -37,8 +35,7 @@ private:
   friend std::shared_ptr<ISystemDriver> createSystemDriver( Manager& manager, std::wstring const& arg, int nCmdShow );
 
   HWND mhWnd;
-  std::shared_ptr<IBaseRenderer> mBaseRenderer;
-  std::shared_ptr<IExtendedRenderer> mExtendedRenderer;
+  std::shared_ptr<IRenderer> mRenderer;
   std::shared_ptr<UserInput> mIntputSource;
 
   std::function<void( std::filesystem::path )> mDropFilesHandler;

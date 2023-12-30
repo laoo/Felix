@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Utility.hpp"
-#include "BaseRenderer.hpp"
+#include "Renderer.hpp"
 
 struct ScreenView
 {

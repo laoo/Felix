@@ -1,16 +1,16 @@
 #pragma once
-#include "BaseRenderer.hpp"
+#include "Renderer.hpp"
 #include "rational.hpp"
 
 class WinImgui11;
 struct VideoSink;
 
-class DX11Renderer : public IBaseRenderer, public IExtendedRenderer
+class DX11Renderer : public IRenderer
 {
   struct Tag{};
 public:
   DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag );
-  static std::pair<std::shared_ptr<IBaseRenderer>, std::shared_ptr<IExtendedRenderer>> create( HWND hWnd, std::filesystem::path const& iniPath );
+  static std::shared_ptr<IRenderer> create( HWND hWnd, std::filesystem::path const& iniPath );
 
   ~DX11Renderer() override;
 

@@ -147,11 +147,11 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag
   mImgui = std::make_shared<WinImgui11>( mHWnd, gD3DDevice, gImmediateContext, iniPath );
 }
 
-std::pair<std::shared_ptr<IBaseRenderer>, std::shared_ptr<IExtendedRenderer>> DX11Renderer::create( HWND hWnd, std::filesystem::path const& iniPath )
+std::shared_ptr<IRenderer> DX11Renderer::create( HWND hWnd, std::filesystem::path const& iniPath )
 {
   std::shared_ptr<DX11Renderer> renderer = std::make_shared<DX11Renderer>( hWnd, iniPath, Tag{} );
 
-  return { std::dynamic_pointer_cast<IBaseRenderer>( renderer ), std::dynamic_pointer_cast<IExtendedRenderer>( renderer ) };
+  return renderer;
 }
 
 DX11Renderer::~DX11Renderer()

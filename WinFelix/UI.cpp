@@ -33,8 +33,7 @@ void UI::drawGui( int left, int top, int right, int bottom )
     mOpenMenu = mainMenu( io );
   }
 
-  if ( mManager.mExtendedRenderer )
-    drawDebugWindows( io );
+  drawDebugWindows( io );
 }
 
 bool UI::mainMenu( ImGuiIO& io )
@@ -85,7 +84,7 @@ bool UI::mainMenu( ImGuiIO& io )
     resetIssued = true;
   }
 
-  if ( ImGui::IsKeyPressed( ImGuiKey_F4 ) && mManager.mExtendedRenderer )
+  if ( ImGui::IsKeyPressed( ImGuiKey_F4 ) )
   {
     debugMode = !debugMode;
   }
@@ -189,96 +188,93 @@ bool UI::mainMenu( ImGuiIO& io )
       ImGui::EndDisabled();
       ImGui::EndMenu();
     }
-    if ( mManager.mExtendedRenderer )
+    ImGui::BeginDisabled( !(bool)mManager.mInstance );
+    if ( ImGui::BeginMenu( "Debug" ) )
     {
-      ImGui::BeginDisabled( !(bool)mManager.mInstance );
-      if ( ImGui::BeginMenu( "Debug" ) )
+      openMenu = true;
+
+      if ( ImGui::MenuItem( "Reset", "F3" ) )
       {
-        openMenu = true;
+        resetIssued = true;
+      }
 
-        if ( ImGui::MenuItem( "Reset", "F3" ) )
-        {
-          resetIssued = true;
-        }
+      ImGui::MenuItem( "Debug Mode", "F4", &debugMode );
 
-        ImGui::MenuItem( "Debug Mode", "F4", &debugMode );
+      if ( ImGui::MenuItem( mManager.mDebugger.isPaused() ? "Run" : "Break", "F5" ) )
+      {
+        pauseRunIssued = true;
+      }
+      if ( ImGui::MenuItem( "Step In", "F6" ) )
+      {
+        stepInIssued = true;
+      }
+      if ( ImGui::MenuItem( "Step Over", "F7" ) )
+      {
+        stepOverIssued = true;
+      }
+      if ( ImGui::MenuItem( "Step Out", "F8" ) )
+      {
+        stepOutIssued = true;
+      }
+      if ( ImGui::BeginMenu( "Debug Windows" ) )
+      {
+        bool cpuWindow = mManager.mDebugger.visualizeCPU;
+        bool watchWindow = mManager.mDebugger.visualizeWatch;
+        bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
+        bool memoryWindow = mManager.mDebugger.visualizeMemory;
+        bool disasmWindow = mManager.mDebugger.visualizeDisasm;
+        if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
+        {
+          mManager.mDebugger.visualizeCPU = cpuWindow;
+        }
+        if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
+        {
+          mManager.mDebugger.visualizeDisasm = disasmWindow;
+        }
+        if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
+        {
+          mManager.mDebugger.visualizeMemory = memoryWindow;
+        }
+        if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
+        {
+          mManager.mDebugger.visualizeWatch = watchWindow;
+        }
+        if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
+        {
+          mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
+        }
+        ImGui::BeginDisabled( !mManager.mDebugger.isDebugMode() );
+        if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
+        {
+          mManager.mDebugger.newScreenView();
+        }
+        ImGui::EndDisabled();
+        ImGui::EndMenu();
+      }
+      if ( ImGui::BeginMenu( "Options" ) )
+      {
+        bool breakOnBrk = mManager.mDebugger.isBreakOnBrk();
+        bool debugModeOnBreak = mManager.mDebugger.debugModeOnBreak();
+        bool normalModeOnRun = mManager.mDebugger.normalModeOnRun();
 
-        if ( ImGui::MenuItem( mManager.mDebugger.isPaused() ? "Run" : "Break", "F5" ) )
+        if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
         {
-          pauseRunIssued = true;
+          mManager.mDebugger.breakOnBrk( breakOnBrk );
+          mManager.mInstance->debugCPU().breakOnBrk( breakOnBrk );
         }
-        if ( ImGui::MenuItem( "Step In", "F6" ) )
+        if ( ImGui::MenuItem( "Debug mode on break", nullptr, &debugModeOnBreak ) )
         {
-          stepInIssued = true;
+          mManager.mDebugger.debugModeOnBreak( debugModeOnBreak );
         }
-        if ( ImGui::MenuItem( "Step Over", "F7" ) )
+        if ( ImGui::MenuItem( "Normal mode on run", nullptr, &normalModeOnRun ) )
         {
-          stepOverIssued = true;
-        }
-        if ( ImGui::MenuItem( "Step Out", "F8" ) )
-        {
-          stepOutIssued = true;
-        }
-        if ( ImGui::BeginMenu( "Debug Windows" ) )
-        {
-          bool cpuWindow = mManager.mDebugger.visualizeCPU;
-          bool watchWindow = mManager.mDebugger.visualizeWatch;
-          bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
-          bool memoryWindow = mManager.mDebugger.visualizeMemory;
-          bool disasmWindow = mManager.mDebugger.visualizeDisasm;
-          if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
-          {
-            mManager.mDebugger.visualizeCPU = cpuWindow;
-          }
-          if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
-          {
-            mManager.mDebugger.visualizeDisasm = disasmWindow;
-          }
-          if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
-          {
-            mManager.mDebugger.visualizeMemory = memoryWindow;
-          }
-          if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
-          {
-            mManager.mDebugger.visualizeWatch = watchWindow;
-          }
-          if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
-          {
-            mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
-          }
-          ImGui::BeginDisabled( !mManager.mDebugger.isDebugMode() );
-          if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
-          {
-            mManager.mDebugger.newScreenView();
-          }
-          ImGui::EndDisabled();
-          ImGui::EndMenu();
-        }
-        if ( ImGui::BeginMenu( "Options" ) )
-        {
-          bool breakOnBrk = mManager.mDebugger.isBreakOnBrk();
-          bool debugModeOnBreak = mManager.mDebugger.debugModeOnBreak();
-          bool normalModeOnRun = mManager.mDebugger.normalModeOnRun();
-
-          if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
-          {
-            mManager.mDebugger.breakOnBrk( breakOnBrk );
-            mManager.mInstance->debugCPU().breakOnBrk( breakOnBrk );
-          }
-          if ( ImGui::MenuItem( "Debug mode on break", nullptr, &debugModeOnBreak ) )
-          {
-            mManager.mDebugger.debugModeOnBreak( debugModeOnBreak );
-          }
-          if ( ImGui::MenuItem( "Normal mode on run", nullptr, &normalModeOnRun ) )
-          {
-            mManager.mDebugger.normalModeOnRun( normalModeOnRun );
-          }
-          ImGui::EndMenu();
+          mManager.mDebugger.normalModeOnRun( normalModeOnRun );
         }
         ImGui::EndMenu();
       }
-      ImGui::EndDisabled();
+      ImGui::EndMenu();
     }
+    ImGui::EndDisabled();
     if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
@@ -462,8 +458,6 @@ bool UI::mainMenu( ImGuiIO& io )
 
 void UI::drawDebugWindows( ImGuiIO& io )
 {
-  assert( mManager.mExtendedRenderer );
-
   std::unique_lock<std::mutex> l = mManager.mDebugger.lockMutex();
 
   bool debugMode = mManager.mDebugger.isDebugMode();

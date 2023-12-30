@@ -2,8 +2,7 @@
 #include "ImageProperties.hpp"
 
 class IUserInput;
-class IExtendedRenderer;
-class IBaseRenderer;
+class IRenderer;
 class Manager;
 
 class ISystemDriver
@@ -11,8 +10,7 @@ class ISystemDriver
 public:
   virtual ~ISystemDriver() = default;
 
-  virtual std::shared_ptr<IBaseRenderer> baseRenderer() const = 0;
-  virtual std::shared_ptr<IExtendedRenderer> extendedRenderer() const = 0;
+  virtual std::shared_ptr<IRenderer> renderer() const = 0;
   virtual int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
   virtual void quit() = 0;
   virtual void update() = 0;

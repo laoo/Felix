@@ -32,25 +32,17 @@ public:
   virtual void* render( std::span<uint8_t const> data, std::span<uint8_t const> palette ) = 0;
 };
 
-class IExtendedRenderer
-{
-public:
-  virtual ~IExtendedRenderer() = default;
-
-  virtual std::shared_ptr<IScreenView> makeMainScreenView() = 0;
-  virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView() = 0;
-};
-
-
-class IBaseRenderer
+class IRenderer
 {
 public:
 
-  virtual ~IBaseRenderer() = default;
+  virtual ~IRenderer() = default;
 
   virtual int64_t render( UI& ui ) = 0;
   virtual void setRotation( ImageProperties::Rotation rotation ) = 0;
   virtual std::shared_ptr<IVideoSink> getVideoSink() = 0;
   virtual int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
 
+  virtual std::shared_ptr<IScreenView> makeMainScreenView() = 0;
+  virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView() = 0;
 };

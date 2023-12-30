@@ -19,7 +19,7 @@
 #include "LuaProxies.hpp"
 #include "CPU.hpp"
 #include "DebugRAM.hpp"
-#include "BaseRenderer.hpp"
+#include "Renderer.hpp"
 #include "IInputSource.hpp"
 #include "ISystemDriver.hpp"
 #include "VGMWriter.hpp"
@@ -125,8 +125,7 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
   mDebugWindows.breakpointEditor.setManager( this );
 
   mSystemDriver = std::move( systemDriver );
-  mRenderer = mSystemDriver->baseRenderer();
-  mExtendedRenderer = mSystemDriver->extendedRenderer();
+  mRenderer = mSystemDriver->renderer();
 
   mSystemDriver->registerDropFiles( std::bind( &Manager::handleFileDrop, this, std::placeholders::_1 ) );
   mSystemDriver->registerUpdate( std::bind( &Manager::update, this ) );
@@ -156,7 +155,7 @@ void Manager::quit()
 void Manager::updateDebugWindows()
 {
 
-  if ( !mInstance || !mExtendedRenderer )
+  if ( !mInstance )
     return;
 
   if ( !mDebugger.isDebugMode() )
@@ -169,7 +168,7 @@ void Manager::updateDebugWindows()
 
   if ( !mDebugWindows.mainScreenView )
   {
-    mDebugWindows.mainScreenView = mExtendedRenderer->makeMainScreenView();
+    mDebugWindows.mainScreenView = mRenderer->makeMainScreenView();
   }
 
   auto svs = mDebugger.screenViews();
@@ -182,7 +181,7 @@ void Manager::updateDebugWindows()
   {
     if ( std::ranges::find( csvs, sv.id, [] ( auto const& p ) { return p.first; } ) == csvs.end() )
     {
-      csvs.emplace_back( sv.id, mExtendedRenderer->makeCustomScreenView() );
+      csvs.emplace_back( sv.id, mRenderer->makeCustomScreenView() );
     }
   }
 

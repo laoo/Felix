@@ -5,7 +5,6 @@ project ( Felix )
 set( CMAKE_CXX_STANDARD 20 )
 
 add_executable( Felix WIN32
-  WinFelix/BaseRenderer.hpp
   WinFelix/ConfigProvider.cpp
   WinFelix/ConfigProvider.hpp
   WinFelix/CPUEditor.cpp
@@ -15,8 +14,6 @@ add_executable( Felix WIN32
   WinFelix/DX11Helpers.hpp
   WinFelix/DX11Renderer.cpp
   WinFelix/DX11Renderer.hpp
-  WinFelix/DX9Renderer.cpp
-  WinFelix/DX9Renderer.hpp
   WinFelix/Ex.hpp
   WinFelix/ISystemDriver.hpp
   WinFelix/IUserInput.hpp
@@ -27,6 +24,7 @@ add_executable( Felix WIN32
   WinFelix/Manager.cpp
   WinFelix/Manager.hpp
   WinFelix/rational.hpp
+  WinFelix/Renderer.hpp
   WinFelix/ScreenGeometry.cpp
   WinFelix/ScreenGeometry.hpp
   WinFelix/ScreenRenderingBuffer.cpp
@@ -47,8 +45,6 @@ add_executable( Felix WIN32
   WinFelix/WinImgui.hpp
   WinFelix/WinImgui11.cpp
   WinFelix/WinImgui11.hpp
-  WinFelix/WinImgui9.cpp
-  WinFelix/WinImgui9.hpp
   WinFelix/WinMain.cpp
 
   WinFelix/BreakpointEditor.cpp
