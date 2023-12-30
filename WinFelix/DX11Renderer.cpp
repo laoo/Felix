@@ -2,7 +2,6 @@
 #include "DX11Helpers.hpp"
 #include "Log.hpp"
 #include "renderer.hxx"
-#include "renderer2.hxx"
 #include "ScreenRenderingBuffer.hpp"
 #include "WinImgui11.hpp"
 #include "Manager.hpp"
@@ -48,7 +47,6 @@ struct CBPosSize
 
 static ComPtr<ID3D11Device>        gD3DDevice;
 static ComPtr<ID3D11DeviceContext> gImmediateContext;
-static ComPtr<ID3D11ComputeShader> gRenderer2CS;
 static ComPtr<ID3D11ComputeShader> gRendererCS;
 
 }
@@ -117,7 +115,6 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag
   L_INFO << "Refresh Rate: " << mRefreshRate.numer << '/' << mRefreshRate.denom << " = " << (float)mRefreshRate;
 
   V_THROW( gD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, gRendererCS.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateComputeShader( g_Renderer2, sizeof g_Renderer2, nullptr, gRenderer2CS.ReleaseAndGetAddressOf() ) );
 
   D3D11_BUFFER_DESC bd = {};
   bd.ByteWidth = sizeof( CBPosSize );
@@ -392,13 +389,9 @@ bool DX11Renderer::CustomScreenView::geometryChanged() const
 
 DX11Renderer::CustomScreenView::CustomScreenView()
 {
-  D3D11_TEXTURE2D_DESC descsrc{ SCREEN_WIDTH / 2, SCREEN_HEIGHT, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
+  D3D11_TEXTURE2D_DESC descsrc{ SCREEN_WIDTH, SCREEN_HEIGHT, 1, 1, DXGI_FORMAT_B8G8R8A8_UNORM, { 1, 0 }, D3D11_USAGE_DYNAMIC, D3D11_BIND_SHADER_RESOURCE, D3D11_CPU_ACCESS_WRITE, 0 };
   gD3DDevice->CreateTexture2D( &descsrc, nullptr, mSource.ReleaseAndGetAddressOf() );
   V_THROW( gD3DDevice->CreateShaderResourceView( mSource.Get(), NULL, mSourceSRV.ReleaseAndGetAddressOf() ) );
-
-  D3D11_TEXTURE1D_DESC descpal{ 16, 1, 1, DXGI_FORMAT_B8G8R8A8_UNORM, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( gD3DDevice->CreateTexture1D( &descpal, nullptr, mPalette.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateShaderResourceView( mPalette.Get(), NULL, mPaletteSRV.ReleaseAndGetAddressOf() ) );
 
   D3D11_BUFFER_DESC bd = {};
   bd.ByteWidth = sizeof( CBPosSize );
@@ -421,7 +414,7 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
 
   if ( palette.size() != 32 )
   {
-    gImmediateContext->UpdateSubresource( mPalette.Get(), 0, nullptr, gSafePalette.data(), 16 * 4, 0 );
+    std::copy_n( gSafePalette.begin(), 16, mPalette.begin() );
   }
   else
   {
@@ -438,13 +431,28 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
       value.b = ( palette[i + 16] & 0xf0 );
       value.b |= value.r >> 4;
 
-      pal[i] = std::bit_cast<uint32_t>( value );
+      mPalette[i] = std::bit_cast<uint32_t>( value );
     }
-
-    gImmediateContext->UpdateSubresource( mPalette.Get(), 0, nullptr, pal, 16 * 4, 0 );
   }
 
-  gImmediateContext->UpdateSubresource( mSource.Get(), 0, nullptr, data.data(), 80, 0 );
+  {
+    D3D11_MAPPED_SUBRESOURCE d3dmap;
+    gImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+
+    for ( int y = 0; y < 102; ++y )
+    {
+      uint32_t* dst = (uint32_t*)( (uint8_t*)d3dmap.pData + y * d3dmap.RowPitch );
+      uint8_t const* src = data.data() + y * 80;
+      for ( uint8_t const* limit = src + 80; src < limit; ++src )
+      {
+        *dst++ = mPalette[*src>>4];
+        *dst++ = mPalette[*src&0x0f];
+      }
+    }
+
+    gImmediateContext->Unmap( mSource.Get(), 0 );
+
+  }
 
   CBPosSize cbPosSize{
     mGeometry.rotx1(), mGeometry.rotx2(),
@@ -455,9 +463,9 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
 
   gImmediateContext->UpdateSubresource( mPosSizeCB.Get(), 0, NULL, &cbPosSize, 0, 0 );
   gImmediateContext->CSSetConstantBuffers( 0, 1, mPosSizeCB.GetAddressOf() );
-  gImmediateContext->CSSetShader( gRenderer2CS.Get(), nullptr, 0 );
+  gImmediateContext->CSSetShader( gRendererCS.Get(), nullptr, 0 );
   UAVGuard ug{ gImmediateContext, rawUAV };
-  SRVGuard sg{ gImmediateContext, { mSourceSRV.Get(), mPaletteSRV.Get() } };
+  SRVGuard sg{ gImmediateContext, mSourceSRV.Get() };
   gImmediateContext->Dispatch( SCREEN_WIDTH / 32, SCREEN_HEIGHT / 2, 1 );
 
   return mSrv.Get();

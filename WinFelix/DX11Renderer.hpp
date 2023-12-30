@@ -55,9 +55,8 @@ private:
     ComPtr<ID3D11UnorderedAccessView> mUav = {};
     ComPtr<ID3D11Texture2D>           mSource;
     ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
-    ComPtr<ID3D11Texture1D>           mPalette;
-    ComPtr<ID3D11ShaderResourceView>  mPaletteSRV;
     ComPtr<ID3D11Buffer>              mPosSizeCB;
+    std::array<uint32_t, 16>          mPalette;
     bool mGeometryChanged = {};
   };
 
