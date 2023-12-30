@@ -50,7 +50,6 @@ private:
   void handleFileDrop( std::filesystem::path path );
 
   void updateDebugWindows();
-  BoardRendering renderHistoryWindow();
   
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
 private:
@@ -80,7 +79,6 @@ private:
     WatchEditor watchEditor;
     DisasmEditor disasmEditor;
     BreakpointEditor breakpointEditor;
-    std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
 
   UI mUI;

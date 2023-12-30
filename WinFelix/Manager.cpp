@@ -187,35 +187,6 @@ void Manager::updateDebugWindows()
   }
 
   auto& cpu = mInstance->debugCPU();
-
-  if ( mDebugger.isHistoryVisualized() )
-  {
-    auto& hisVis = mDebugger.historyVisualizer();
-    cpu.copyHistory( std::span<char>( (char*)hisVis.data.data(), hisVis.data.size() ) );
-
-    if ( !mDebugWindows.historyBoard )
-    {
-      mDebugWindows.historyBoard = mExtendedRenderer->makeBoard( hisVis.columns, hisVis.rows );
-    }
-  }
-  else if ( !mDebugWindows.historyBoard )
-  {
-    mDebugWindows.historyBoard.reset();
-  }
-}
-
-BoardRendering Manager::renderHistoryWindow()
-{
-  if ( mDebugger.isHistoryVisualized() && mDebugWindows.historyBoard )
-  {
-    auto win = mDebugger.historyVisualizer();
-    auto tex = mDebugWindows.historyBoard->render( std::span<uint8_t const>{ win.data.data(), win.data.size() } );
-    return { true, tex, 8.0f * win.columns , 16.0f * win.rows };
-  }
-  else
-  {
-    return { mDebugger.isHistoryVisualized() };
-  }
 }
 
 void Manager::processLua( std::filesystem::path const& path )
@@ -397,14 +368,6 @@ void Manager::reset()
   if ( mInstance )
   {
     mInstance->debugCPU().breakOnBrk( mDebugger.isBreakOnBrk() );
-    if ( mDebugger.isHistoryVisualized() )
-    {
-      mInstance->debugCPU().enableHistory( mDebugger.historyVisualizer().columns, mDebugger.historyVisualizer().rows );
-    }
-    else
-    {
-      mInstance->debugCPU().disableHistory();
-    }
   }
 
   mProcessThreads.store( true );

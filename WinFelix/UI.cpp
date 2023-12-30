@@ -226,7 +226,6 @@ bool UI::mainMenu( ImGuiIO& io )
           bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
           bool memoryWindow = mManager.mDebugger.visualizeMemory;
           bool disasmWindow = mManager.mDebugger.visualizeDisasm;
-          bool historyWindow = mManager.mDebugger.isHistoryVisualized();
           if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
           {
             mManager.mDebugger.visualizeCPU = cpuWindow;
@@ -246,19 +245,6 @@ bool UI::mainMenu( ImGuiIO& io )
           if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
           {
             mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
-          }
-          if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
-          {
-            if ( historyWindow )
-            {
-              mManager.mInstance->debugCPU().enableHistory( mManager.mDebugger.historyVisualizer().columns, mManager.mDebugger.historyVisualizer().rows );
-              mManager.mDebugger.visualizeHistory( true );
-            }
-            else
-            {
-              mManager.mInstance->debugCPU().disableHistory();
-              mManager.mDebugger.visualizeHistory( false );
-            }
           }
           ImGui::BeginDisabled( !mManager.mDebugger.isDebugMode() );
           if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
@@ -395,20 +381,6 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       mManager.mDebugger.visualizeBreakpoint = !mManager.mDebugger.visualizeBreakpoint;
     }
-    if ( ImGui::IsKeyPressed( ImGuiKey_H ) )
-    {
-      bool historyWindow = !mManager.mDebugger.isHistoryVisualized();
-      if ( historyWindow )
-      {
-        mManager.mInstance->debugCPU().enableHistory( mManager.mDebugger.historyVisualizer().columns, mManager.mDebugger.historyVisualizer().rows );
-        mManager.mDebugger.visualizeHistory( true );
-      }
-      else
-      {
-        mManager.mInstance->debugCPU().disableHistory();
-        mManager.mDebugger.visualizeHistory( false );
-      }
-    }
     if ( ImGui::IsKeyPressed( ImGuiKey_S ) && mManager.mDebugger.isDebugMode() )
     {
       mManager.mDebugger.newScreenView();
@@ -494,7 +466,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
 
   std::unique_lock<std::mutex> l = mManager.mDebugger.lockMutex();
 
-  auto historyRendering = mManager.renderHistoryWindow();
   bool debugMode = mManager.mDebugger.isDebugMode();
 
   if ( debugMode )
@@ -533,13 +504,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       ImGui::Begin( "Disassembly", &mManager.mDebugger.visualizeDisasm, ImGuiWindowFlags_None );
       mManager.mDebugWindows.disasmEditor.drawContents();
-      ImGui::End();
-    }
-
-    if ( historyRendering.enabled )
-    {
-      ImGui::Begin( "History", &historyRendering.enabled, ImGuiWindowFlags_AlwaysAutoResize );
-      ImGui::Image( historyRendering.window, ImVec2{ historyRendering.width, historyRendering.height } );
       ImGui::End();
     }
 
@@ -671,25 +635,12 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::Checkbox( "CPU Window", &mManager.mDebugger.visualizeCPU );
       ImGui::Checkbox( "Disassembly Window", &mManager.mDebugger.visualizeDisasm );
       ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory );
-      if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
-      {
-        if ( historyRendering.enabled )
-        {
-          mManager.mInstance->debugCPU().enableHistory( mManager.mDebugger.historyVisualizer().columns, mManager.mDebugger.historyVisualizer().rows );
-        }
-        else
-        {
-          mManager.mInstance->debugCPU().disableHistory();
-        }
-      }
       if ( ImGui::Selectable( "New Screen View" ) )
       {
         mManager.mDebugger.newScreenView();
       }
       ImGui::EndPopup();
     }
-
-    mManager.mDebugger.visualizeHistory( historyRendering.enabled );
   }
 }
 

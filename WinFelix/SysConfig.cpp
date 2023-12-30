@@ -72,7 +72,6 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "};\n";
   fout << "visualizeWatch = " << ( visualizeWatch ? "true;\n" : "false;\n" );
   fout << "visualizeBreakpoint = " << ( visualizeBreakpoint ? "true;\n" : "false;\n" );
-  fout << "visualizeHistory = " << ( visualizeHistory ? "true;\n" : "false;\n" );
   fout << "debugModeOnBreak = " << ( debugModeOnBreak ? "true;\n" : "false;\n" );
   fout << "normalModeOnRun = " << ( normalModeOnRun ? "true;\n" : "false;\n" );
   fout << "breakOnBrk = " << ( breakOnBrk ? "true;\n" : "false;\n" );
@@ -128,7 +127,6 @@ SysConfig::SysConfig( sol::state const& lua )
   disasmOptions.tablePC = lua["disasmOptions"]["tablePC"].get_or( disasmOptions.tablePC );
   visualizeWatch= lua["visualizeWatch"].get_or( visualizeWatch);
   visualizeBreakpoint = lua["visualizeBreakpoint"].get_or( visualizeBreakpoint );
-  visualizeHistory = lua["visualizeHistory"].get_or( visualizeHistory );
   debugModeOnBreak = lua["debugModeOnBreak"].get_or( debugModeOnBreak );
   normalModeOnRun = lua["normalModeOnRun"].get_or( normalModeOnRun );
   breakOnBrk = lua["breakOnBrk"].get_or( breakOnBrk );

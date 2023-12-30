@@ -18,8 +18,6 @@ public:
   void setRotation( ImageProperties::Rotation rotation ) override;
   std::shared_ptr<IVideoSink> getVideoSink() override;
 
-  std::shared_ptr<IBoard> makeBoard( int width, int height ) override;
-
   std::shared_ptr<IScreenView> makeMainScreenView() override;
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
   int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
@@ -87,26 +85,6 @@ private:
     ComPtr<ID3D11Texture1D>           mPalette;
     ComPtr<ID3D11ShaderResourceView>  mPaletteSRV;
     ComPtr<ID3D11Buffer>              mPosSizeCB;
-  };
-
-
-  class Board : public IBoard
-  {
-  public:
-    Board( int width, int height );
-    ~Board() override = default;
-
-    void* render( std::span<uint8_t const> data ) override;
-    void resize( int width, int height ) override;
-
-    int width;
-    int height;
-    ComPtr<ID3D11Texture2D> mSrc;
-    ComPtr<ID3D11ShaderResourceView> mSrcSRV;
-    ComPtr<ID3D11UnorderedAccessView> mUav;
-    ComPtr<ID3D11ShaderResourceView> mSrv;
-
-
   };
 
   HWND mHWnd;

@@ -3,18 +3,6 @@
 #include "Utility.hpp"
 #include "BaseRenderer.hpp"
 
-struct DebugWindow
-{
-  DebugWindow( int columns, int rows ) : columns{ columns }, rows{ rows }
-  {
-    data.resize( columns * rows );
-  }
-
-  int columns;
-  int rows;
-  std::vector<uint8_t> data;
-};
-
 struct ScreenView
 {
   int id;
@@ -33,12 +21,10 @@ public:
 
   bool isPaused() const;
   bool isDebugMode() const;
-  bool isHistoryVisualized() const;
   bool isBreakOnBrk() const;
 
   std::span<ScreenView> screenViews();
 
-  void visualizeHistory( bool value );
   void debugMode( bool value );
   bool debugModeOnBreak() const;
   void debugModeOnBreak( bool value );
@@ -49,8 +35,6 @@ public:
   void delScreenView( int id );
 
   void togglePause();
-
-  DebugWindow& historyVisualizer();
 
   std::unique_lock<std::mutex> lockMutex() const;
 
@@ -63,9 +47,7 @@ public:
 private:
   mutable std::mutex mMutex;
   std::vector<ScreenView> mScreenViews;
-  DebugWindow mHistoryVisualizer;
   bool mDebugMode;  
-  bool mVisualizeHistory;
   bool mDebugModeOnBreak;
   bool mNormalModeOnRun;
   bool mBreakOnBrk;

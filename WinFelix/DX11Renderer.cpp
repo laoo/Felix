@@ -3,7 +3,6 @@
 #include "Log.hpp"
 #include "renderer.hxx"
 #include "renderer2.hxx"
-#include "board.hxx"
 #include "ScreenRenderingBuffer.hpp"
 #include "WinImgui11.hpp"
 #include "Manager.hpp"
@@ -55,7 +54,6 @@ static ComPtr<ID3D11Device>        gD3DDevice;
 static ComPtr<ID3D11DeviceContext> gImmediateContext;
 static ComPtr<ID3D11ComputeShader> gRenderer2CS;
 static ComPtr<ID3D11ComputeShader> gRendererCS;
-static ComPtr<ID3D11ComputeShader> gBoardCS;
 
 }
 
@@ -124,7 +122,6 @@ DX11Renderer::DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag
 
   V_THROW( gD3DDevice->CreateComputeShader( g_Renderer, sizeof g_Renderer, nullptr, gRendererCS.ReleaseAndGetAddressOf() ) );
   V_THROW( gD3DDevice->CreateComputeShader( g_Renderer2, sizeof g_Renderer2, nullptr, gRenderer2CS.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateComputeShader( g_Board, sizeof g_Board, nullptr, gBoardCS.ReleaseAndGetAddressOf() ) );
 
   D3D11_BUFFER_DESC bd = {};
   bd.ByteWidth = sizeof( CBPosSize );
@@ -192,11 +189,6 @@ void DX11Renderer::setRotation( ImageProperties::Rotation rotation )
 std::shared_ptr<IVideoSink> DX11Renderer::getVideoSink()
 {
   return mVideoSink;
-}
-
-std::shared_ptr<IBoard> DX11Renderer::makeBoard( int width, int height )
-{
-  return std::make_shared<Board>( width, height );
 }
 
 bool DX11Renderer::mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView )
@@ -384,18 +376,6 @@ std::shared_ptr<ICustomScreenView> DX11Renderer::makeCustomScreenView()
   return std::make_shared<CustomScreenView>();
 }
 
-void* DX11Renderer::Board::render(  std::span<uint8_t const> data )
-{
-  gImmediateContext->UpdateSubresource( mSrc.Get(), 0, NULL, data.data(), (uint32_t)width, 0 );
-  std::array<ID3D11ShaderResourceView* const, 2> srv{ gBoardFont.srv.Get(), mSrcSRV.Get() };
-  gImmediateContext->CSSetShader( gBoardCS.Get(), nullptr, 0 );
-  SRVGuard sg{ gImmediateContext, { gBoardFont.srv.Get(), mSrcSRV.Get() } };
-  UAVGuard ug{ gImmediateContext, mUav.Get() };
-  gImmediateContext->Dispatch( width, height, 1 );
-
-  return mSrv.Get();
-}
-
 DX11Renderer::BoardFont::BoardFont() : width{}, height{}, srv{}
 {
 }
@@ -419,42 +399,6 @@ void DX11Renderer::BoardFont::initialize()
   D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)width, (uint32_t)height, 1, (uint32_t)initData.size(), DXGI_FORMAT_R8_UNORM, { 1, 0 }, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
   V_THROW( gD3DDevice->CreateTexture2D( &descsrc, initData.data(), tex.ReleaseAndGetAddressOf() ) );
   V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, srv.ReleaseAndGetAddressOf() ) );
-}
-
-DX11Renderer::Board::Board( int width, int height ) : width{}, height{}
-{
-  resize( width, height );
-}
-
-void DX11Renderer::Board::resize( int w, int h )
-{
-  if ( w == width && h == height )
-    return;
-
-  width = w;
-  height = h;
-
-  D3D11_TEXTURE2D_DESC desc{
-    (uint32_t)( w * gBoardFont.width ),
-    (uint32_t)( h * gBoardFont.height ),
-    1,
-    1,
-    DXGI_FORMAT_R8G8B8A8_UNORM,
-    { 1, 0 },
-    D3D11_USAGE_DEFAULT,
-    D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
-    0,
-    0
-  };
-
-  ComPtr<ID3D11Texture2D> tex;
-  V_THROW( gD3DDevice->CreateTexture2D( &desc, nullptr, tex.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateShaderResourceView( tex.Get(), NULL, mSrv.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateUnorderedAccessView( tex.Get(), NULL, mUav.ReleaseAndGetAddressOf() ) );
-
-  D3D11_TEXTURE2D_DESC descsrc{ (uint32_t)w, (uint32_t)h, 1, 1, DXGI_FORMAT_R8_UINT, { 1, 0 }, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0 };
-  V_THROW( gD3DDevice->CreateTexture2D( &descsrc, nullptr, mSrc.ReleaseAndGetAddressOf() ) );
-  V_THROW( gD3DDevice->CreateShaderResourceView( mSrc.Get(), NULL, mSrcSRV.ReleaseAndGetAddressOf() ) );
 }
 
 DX11Renderer::ScreenView::ScreenView()

@@ -232,7 +232,7 @@ CPUState & CPU::state()
   return mState;
 }
 
-CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{ CPUState::reset() }, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceNextCount{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, mHistory{}, mHistoryPresent{}, off{},
+CPU::CPU( std::shared_ptr<TraceHelper> traceHelper ) : mState{ CPUState::reset() }, mEx{ execute() }, mReq{}, mRes{ mState }, mTrace{}, mTraceNextCount{}, mGlobalTrace{}, mFtrace{}, mTraceHelper{ std::move( traceHelper ) }, off{},
   mPostponedStepOut{}, mStackBreakCondition{ 0xffff }, mBreakOnBrk{ false }
 {
   static constexpr char prototype[] = "PC:ffff A:ff X:ff Y:ff S:1ff P=NVDIZC ";
@@ -2198,29 +2198,6 @@ void CPU::disassemblyFromPC( uint8_t const* ram, char* out, int columns, int row
   }
 }
 
-void CPU::enableHistory( int columns, int rows )
-{
-  std::scoped_lock<std::mutex> l{ mHistoryMutex };
-  mHistory.reset( new History( columns, rows, 0, std::vector<char>{} ) );
-  mHistory->data.resize( columns * rows );
-  mHistoryPresent.store( true );
-  setGlobalTrace();
-}
-
-void CPU::disableHistory()
-{
-  mHistoryPresent.store( false );
-  std::scoped_lock<std::mutex> l{ mHistoryMutex };
-  mHistory.reset();
-  setGlobalTrace();
-}
-
-void CPU::copyHistory( std::span<char> out )
-{
-  if ( mHistoryPresent.load() )
-    mHistory->copy( out );
-}
-
 bool CPU::disasmOp( char * out, Opcode op, CPUState* state )
 {
   bool defined = true;
@@ -3611,14 +3588,6 @@ void CPU::trace2()
       toggleTrace( false );
     }
   }
-
-  std::scoped_lock<std::mutex> l{ mHistoryMutex };
-  if ( mHistoryPresent.load() )
-  {
-    auto row = mHistory->nextRow();
-    auto it = std::copy_n( buf.cbegin(), (std::min)( row.size(), (size_t)off ), row.begin() );
-    std::fill( it, row.end(), ' ' );
-  }
 }
 
 void CPU::enableTrace()
@@ -3652,7 +3621,7 @@ void CPU::traceNextCount( int count )
 
 void CPU::setGlobalTrace()
 {
-  if ( mTrace || mTraceNextCount || mHistoryPresent.load() )
+  if ( mTrace || mTraceNextCount )
   {
     if ( !mGlobalTrace )
     {
@@ -3664,25 +3633,4 @@ void CPU::setGlobalTrace()
   {
     mGlobalTrace = false;
   }
-}
-
-
-std::span<char> CPU::History::nextRow()
-{
-  std::span<char> result = std::span<char>{ data.data() + cursor * columns, (size_t)columns };
-  cursor = ( cursor + 1 ) % rows;
-
-  return result;
-}
-
-void CPU::History::copy( std::span<char> out )
-{
-  int cur = cursor;
-  size_t i = 0;
-
-  do
-  {
-    std::copy_n( data.data() + cur * columns, columns, out.data() + i * columns );
-    cur = ( cur + 1 ) % rows;
-  } while ( ++i < rows );
 }

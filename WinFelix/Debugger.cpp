@@ -7,18 +7,14 @@
 #define DISASM_HEIGHT  16
 #define CPU_WIDTH      14
 #define CPU_HEIGHT      3
-#define HISTORY_WIDTH  64
-#define HISTORY_HEIGHT 16
 
 Debugger::Debugger() : mMutex{},
 mDebugMode{},
 visualizeCPU{},
 visualizeMemory{},
 visualizeDisasm{},
-mVisualizeHistory{},
 mDebugModeOnBreak{},
 mNormalModeOnRun{},
-mHistoryVisualizer{ HISTORY_WIDTH, HISTORY_HEIGHT },
 mRunMode{ RunMode::RUN }
 {
   auto sysConfig = gConfigProvider.sysConfig();
@@ -29,7 +25,6 @@ mRunMode{ RunMode::RUN }
   visualizeWatch = sysConfig->visualizeWatch;
   visualizeBreakpoint = sysConfig->visualizeBreakpoint;
   visualizeDisasm = sysConfig->visualizeDisasm;
-  mVisualizeHistory = sysConfig->visualizeHistory;
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
   mNormalModeOnRun = sysConfig->normalModeOnRun;
   mBreakOnBrk = sysConfig->breakOnBrk;
@@ -49,7 +44,6 @@ Debugger::~Debugger()
   sysConfig->visualizeWatch = visualizeWatch;
   sysConfig->visualizeBreakpoint = visualizeBreakpoint;
   sysConfig->visualizeDisasm = visualizeDisasm;
-  sysConfig->visualizeHistory = mVisualizeHistory;
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
   sysConfig->normalModeOnRun = mNormalModeOnRun;
   sysConfig->breakOnBrk = mBreakOnBrk;
@@ -84,11 +78,6 @@ bool Debugger::isDebugMode() const
   return mDebugMode;
 }
 
-bool Debugger::isHistoryVisualized() const
-{
-  return mVisualizeHistory;
-}
-
 bool Debugger::isBreakOnBrk() const
 {
   return mBreakOnBrk;
@@ -104,11 +93,6 @@ std::span<ScreenView> Debugger::screenViews()
   {
     return std::span<ScreenView>{ mScreenViews.data(), mScreenViews.size() };
   }
-}
-
-void Debugger::visualizeHistory( bool value )
-{
-  mVisualizeHistory = value;
 }
 
 void Debugger::debugMode( bool value )
@@ -175,11 +159,6 @@ void Debugger::togglePause()
   {
     ( *this )( RunMode::PAUSE );
   }
-}
-
-DebugWindow& Debugger::historyVisualizer()
-{
-  return mHistoryVisualizer;
 }
 
 std::unique_lock<std::mutex> Debugger::lockMutex() const

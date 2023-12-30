@@ -63,11 +63,9 @@ add_executable( Felix WIN32
   WinFelix/WatchEditor.cpp
   WinFelix/WatchEditor.hpp
 
-  WinFelix/board.hxx
   WinFelix/pixel.hxx
   WinFelix/renderer.hxx
   WinFelix/renderer2.hxx
-  WinFelix/rendererYUV.hxx
   WinFelix/vertex.hxx
 
   libFelix/ActionQueue.cpp
