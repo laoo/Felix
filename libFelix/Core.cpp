@@ -28,7 +28,7 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mTraceHelper{ std::make_shared<TraceHelper>() }, mCpu{ std::make_shared<CPU>( mTraceHelper ) },
   mCartridge{ std::make_shared<Cartridge>( imageProperties, std::shared_ptr<ImageCart>{}, mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
-  mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
+  mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}
 {
   gDebugRAM = &mRAM[0];
 
@@ -240,14 +240,13 @@ void Core::executeSequencedAction( SequencedAction seqAction )
     mCpu->desertInterrupt( CPUState::I_RESET );
     break;
   case Action::SAMPLE_AUDIO:
+    mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio( mCurrentTick );
     if ( mSamplesEmitted >= mOutputSamples.size() )
     {
       mCpu->breakNext();
     }
     else
     {
-      mOutputSamples[mSamplesEmitted++] = mMikey->sampleAudio( mCurrentTick );
-      mGlobalSamplesEmitted += 1;
       enqueueSampling();
     }
     break;
@@ -520,11 +519,6 @@ void Core::enterMonitor()
 {
 }
 
-int64_t Core::globalSamplesEmittedPerFrame() const
-{
-  return mGlobalSamplesEmittedPerFrame;
-}
-
 Cartridge & Core::getCartridge()
 {
   assert( mCartridge );
@@ -533,12 +527,6 @@ Cartridge & Core::getCartridge()
 
 void Core::newLine( int rowNr )
 {
-
-  if ( rowNr == 0 )
-  {
-    mGlobalSamplesEmittedPerFrame = mGlobalSamplesEmitted - mGlobalSamplesEmittedSnapshot;
-    mGlobalSamplesEmittedSnapshot = mGlobalSamplesEmitted;
-  }
 }
 
 std::shared_ptr<TraceHelper> Core::getTraceHelper() const

@@ -44,6 +44,8 @@ WinAudioOut::WinAudioOut() : mWav{}, mNormalizer{ 1.0f / 32768.0f }
   if ( FAILED( hr ) )
     throw std::exception{};
 
+  mSamplesBuffer.resize( mBufferSize );
+
   hr = mAudioClient->GetService( __uuidof( IAudioRenderClient ), reinterpret_cast<void **>( mRenderClient.ReleaseAndGetAddressOf() ) );
   if ( FAILED( hr ) )
     throw std::exception{};
@@ -64,8 +66,6 @@ WinAudioOut::WinAudioOut() : mWav{}, mNormalizer{ 1.0f / 32768.0f }
   mTimeToSamples = (double)frequency / (double)(l.QuadPart * mMixFormat->nBlockAlign);
 
   mSamplesDelta = mSamplesDeltaDelta = 0;
-
-  std::fill( mWindow.begin(), mWindow.end(), 0 );
 
   mAudioClient->Start();
 
@@ -151,42 +151,6 @@ bool WinAudioOut::mute() const
   return mNormalizer == 0;
 }
 
-int32_t WinAudioOut::correctedSPS( int64_t samplesEmittedPerFrame, int64_t renderingTimeQPC )
-{
-  int baseResult = mMixFormat->nSamplesPerSec;
-
-  if ( samplesEmittedPerFrame == 0 )
-    return baseResult;
-
-  if ( renderingTimeQPC == 0 )
-    return baseResult;
-
-  auto samplesPerRenderingTimeR = renderingTimeQPC * mTimeToSamples;
-  auto samplesPerRenderingTimeI = (int32_t)std::round( samplesPerRenderingTimeR );
-
-  auto newDelta = samplesPerRenderingTimeI - (int32_t)samplesEmittedPerFrame;
-  mSamplesDeltaDelta = newDelta - mSamplesDelta;
-  mSamplesDelta = newDelta;
-
-  int sum = 0;
-  for ( size_t i = 0; i < mWindow.size() - 1; ++i )
-  {
-    sum += mWindow[i];
-    mWindow[i] = mWindow[i + 1];
-  }
-  sum += mWindow.back();
-
-  int avg = sum / (int)mWindow.size();
-
-  mWindow.back() = samplesPerRenderingTimeI;
-
-  double ratio = (double)avg / samplesEmittedPerFrame;
-
-  //L_DEBUG << "SPF: " << samplesEmittedPerFrame << "\t\tSPR: " << samplesPerRenderingTimeI << "\t\tavg: " << avg << "\t" << ratio;
-
-  return baseResult;
-}
-
 bool WinAudioOut::wait()
 {
   DWORD retval = WaitForSingleObject( mEvent, 100 );
@@ -202,17 +166,10 @@ CpuBreakType WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t re
 
   if ( framesAvailable > 0 )
   {
-    if ( mSamplesBuffer.size() < framesAvailable )
-    {
-      mSamplesBuffer.resize( framesAvailable );
-    }
-
     if ( !instance )
       return CpuBreakType::NEXT;
 
-    auto sps = correctedSPS( instance->globalSamplesEmittedPerFrame(), renderingTimeQPC );
-
-    auto cpuBreakType = instance->advanceAudio( sps, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, runMode );
+    auto cpuBreakType = instance->advanceAudio( mMixFormat->nSamplesPerSec, std::span<AudioSample>{ mSamplesBuffer.data(), framesAvailable }, runMode );
 
     BYTE *pData;
     hr = mRenderClient->GetBuffer( framesAvailable, &pData );

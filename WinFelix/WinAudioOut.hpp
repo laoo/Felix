@@ -23,8 +23,6 @@ public:
 
 private:
 
-  int correctedSPS( int64_t samplesEmittedPerFrame, int64_t renderingTimeQPC );
-
   ComPtr<IMMDevice> mDevice;
   ComPtr<IAudioClient> mAudioClient;
   ComPtr<IAudioClock> mAudioClock;
@@ -41,8 +39,6 @@ private:
   WAVEFORMATEX * mMixFormat;
   int32_t mSamplesDelta;
   int32_t mSamplesDeltaDelta;
-
-  std::array<int, 32> mWindow;
 
   float mNormalizer;
 };
