@@ -1,10 +1,8 @@
 #include "VideoSink.hpp"
 #include "ScreenRenderingBuffer.hpp"
 
-void VideoSink::newFrame( uint64_t tick, uint8_t hbackup )
+void VideoSink::newFrame()
 {
-  mFrameTicks = tick - mBeginTick;
-  mBeginTick = tick;
   if ( mActiveFrame )
   {
     std::scoped_lock<std::mutex> lock( mQueueMutex );
@@ -18,11 +16,12 @@ void VideoSink::newFrame( uint64_t tick, uint8_t hbackup )
   mActiveFrame = std::make_shared<ScreenRenderingBuffer>();
 }
 
-void VideoSink::newRow(uint64_t tick, int row)
+void VideoSink::newRow( int row )
 {
-    if (mActiveFrame) {
-    mActiveFrame->newRow(row);
-}
+  if ( mActiveFrame )
+  {
+    mActiveFrame->newRow( row );
+  }
 }
 
 void VideoSink::updatePalette( uint16_t reg, uint8_t value )
@@ -101,7 +100,7 @@ void VideoSink::updateColorReg( uint8_t reg, uint8_t value )
   }
 }
 
-VideoSink::VideoSink() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}, mBeginTick{}, mLastTick{}, mFrameTicks{ ~0ull }
+VideoSink::VideoSink() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}
 {
   for ( uint32_t i = 0; i < 256; ++i )
   {

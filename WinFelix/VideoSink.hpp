@@ -25,13 +25,10 @@ struct VideoSink : public IVideoSink
   std::shared_ptr<ScreenRenderingBuffer> mActiveFrame;
   std::queue<std::shared_ptr<ScreenRenderingBuffer>> mFinishedFrames;
   mutable std::mutex mQueueMutex;
-  uint64_t mBeginTick;
-  uint64_t mLastTick;
-  uint64_t mFrameTicks;
 
   void updatePalette( uint16_t reg, uint8_t value );
-  void newFrame( uint64_t tick, uint8_t hbackup ) override;
-  void newRow( uint64_t tick, int row ) override;
+  void newFrame() override;
+  void newRow( int row ) override;
   void emitScreenData( std::span<uint8_t const> data ) override;
   void updateColorReg( uint8_t reg, uint8_t value ) override;
   std::shared_ptr<ScreenRenderingBuffer> pullNextFrame();

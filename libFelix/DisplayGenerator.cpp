@@ -22,12 +22,12 @@ void DisplayGenerator::setPBKUP( uint8_t value )
 }
 
 
-void DisplayGenerator::firstHblank( uint64_t tick, uint8_t hbackup )
+void DisplayGenerator::vblank( uint64_t tick )
 {
   flushDisplay( tick );
   mEmitedScreenBytes = 0;
   mDMAIteration = 0;
-  mVideoSink->newFrame( tick, hbackup );
+  mVideoSink->newFrame();
   mRowStartTick = std::numeric_limits<uint64_t>::max();
 }
 
@@ -37,7 +37,7 @@ DisplayGenerator::DMARequest DisplayGenerator::hblank( uint64_t tick, int row )
   mEmitedScreenBytes = 0;
   mDMAIteration = 0;
   mDisplayRow = 101 - row;
-  mVideoSink->newRow( tick, row );
+  mVideoSink->newRow( row );
   if ( mDisplayRow >= 0 && mDMAOffset >= 0 )
   {
     mRowStartTick = tick + mDMAOffset;
@@ -74,11 +74,6 @@ void DisplayGenerator::updatePalette( uint64_t tick, uint8_t reg, uint8_t value 
 void DisplayGenerator::updateDispAddr( uint64_t tick, uint16_t dispAdr )
 {
   mDispAdr = dispAdr;
-}
-
-void DisplayGenerator::vblank( uint64_t tick )
-{
-  flushDisplay( tick );
 }
 
 bool DisplayGenerator::flushDisplay( uint64_t tick )
