@@ -391,7 +391,7 @@ bool UI::mainMenu( ImGuiIO& io )
 
   if ( resetIssued )
   {
-    mManager.reset();
+    mManager.mDoReset = true;
     mManager.mDebugger( RunMode::PAUSE );
   }
   if ( stepOutIssued )
@@ -458,7 +458,7 @@ bool UI::mainMenu( ImGuiIO& io )
 
 void UI::drawDebugWindows( ImGuiIO& io )
 {
-  std::unique_lock<std::mutex> l = mManager.mDebugger.lockMutex();
+  std::unique_lock<std::mutex> l{ mManager.mDebugger.lockMutex() };
 
   bool debugMode = mManager.mDebugger.isDebugMode();
 

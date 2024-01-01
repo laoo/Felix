@@ -34,7 +34,7 @@ public:
   ~Manager();
 
   void update();
-  void reset();
+  void machineReset();
   void updateRotation();
   void initialize( std::shared_ptr<ISystemDriver> systemDriver );
   int win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
@@ -83,6 +83,7 @@ private:
   sol::state mLua;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
+  std::atomic_int mThreadsWaiting;
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;

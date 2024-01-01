@@ -32,6 +32,7 @@ mDoReset{ false },
 mDebugger{},
 mProcessThreads{},
 mJoinThreads{},
+mThreadsWaiting{},
 mRenderThread{},
 mAudioThread{},
 mRenderingTime{},
@@ -56,7 +57,13 @@ mDebugWindows{}
       }
       else
       {
-        std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+        mThreadsWaiting.fetch_add( 1 );
+        do
+        {
+          std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+        }
+        while ( !mProcessThreads.load() );
+        mThreadsWaiting.fetch_sub( 1 );
       }
     }
   } };
@@ -88,7 +95,13 @@ mDebugWindows{}
         }
         else
         {
-          std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+          mThreadsWaiting.fetch_add( 1 );
+          do
+          {
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+          }
+          while ( !mProcessThreads.load() );
+          mThreadsWaiting.fetch_sub( 1 );
         }
       }
     }
@@ -110,7 +123,7 @@ mDebugWindows{}
 void Manager::update()
 {
   if ( mDoReset )
-    reset();
+    machineReset();
   mDoReset = false;
 }
 
@@ -160,7 +173,7 @@ void Manager::updateDebugWindows()
   if ( !mDebugger.isDebugMode() )
     return;
 
-  std::unique_lock<std::mutex> l = mDebugger.lockMutex();
+  std::unique_lock<std::mutex> l{ mDebugger.lockMutex() };
 
   auto svs = mDebugger.screenViews();
   auto& csvs = mDebugWindows.customScreenViews;
@@ -333,11 +346,14 @@ std::shared_ptr<ImageROM const> Manager::getOptionalBootROM()
   return {};
 }
 
-void Manager::reset()
+void Manager::machineReset()
 {
-  std::unique_lock<std::mutex> l = mDebugger.lockMutex();
   mProcessThreads.store( false );
-  //TODO wait for threads to stop.
+  while ( mThreadsWaiting.load() != 2 )
+  {
+    std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+  }
+  std::unique_lock<std::mutex> l{ mDebugger.lockMutex() };
   mInstance.reset();
 
   if ( auto input = computeInputFile() )
