@@ -76,25 +76,22 @@ void DisplayGenerator::updateDispAddr( uint64_t tick, uint16_t dispAdr )
   mDispAdr = dispAdr;
 }
 
-bool DisplayGenerator::flushDisplay( uint64_t tick )
+void DisplayGenerator::flushDisplay( uint64_t tick )
 {
   if ( !mDMAEnable )
-    return false;
+    return;
 
   if ( tick <= mRowStartTick )
-    return false;
+    return;
 
   uint32_t limit = (std::min)( 80u, ( uint32_t )( tick - mRowStartTick ) / ( ( uint32_t )TICKS_PER_BYTE ) );
 
-  uint8_t const* lineData = reinterpret_cast<uint8_t const*>( mDMAData.data() );
-
-  bool const result = limit == 80 && mEmitedScreenBytes < 80;
-  size_t bytesToEmit = limit - mEmitedScreenBytes;
-  //NOTICE - pixels are processed in byte pairs, so in this implementation it is not possible to alter color register between nibbles of a screen byte
-  mVideoSink->emitScreenData( std::span<uint8_t const>( lineData + mEmitedScreenBytes, bytesToEmit ) );
+  if ( size_t bytesToEmit = limit - mEmitedScreenBytes )
+  {
+    //NOTICE - pixels are processed in byte pairs, so in this implementation it is not possible to alter color register between nibbles of a screen byte
+    mVideoSink->emitScreenData( std::span<uint8_t const>( std::bit_cast< uint8_t const* >( mDMAData.data() ) + mEmitedScreenBytes, bytesToEmit ) );
+  }
   mEmitedScreenBytes = limit;
-
-  return result;
 }
 
 bool DisplayGenerator::rest() const
