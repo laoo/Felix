@@ -1,5 +1,9 @@
 #pragma once
 
+static constexpr uint32_t ROW_BYTES = 80;
+static constexpr int32_t SCREEN_WIDTH = ROW_BYTES * 2;
+static constexpr int32_t SCREEN_HEIGHT = 102;
+
 class NonCopyable
 {
 public:
@@ -15,6 +19,25 @@ struct AudioSample
 {
   int16_t left;
   int16_t right;
+};
+
+struct Pixel
+{
+  uint8_t b;
+  uint8_t g;
+  uint8_t r;
+  uint8_t x;
+
+  constexpr Pixel( uint32_t color = 0 )
+  {
+    *std::bit_cast<uint32_t*>( this ) = color;
+  }
+};
+
+struct Doublet
+{
+  Pixel left = {};
+  Pixel right = {};
 };
 
 enum class CpuBreakType
@@ -46,5 +69,3 @@ enum class RunMode
 
 std::vector<uint8_t> readFile( std::filesystem::path const& path );
 
-static constexpr int SCREEN_WIDTH = 160;
-static constexpr int SCREEN_HEIGHT = 102;

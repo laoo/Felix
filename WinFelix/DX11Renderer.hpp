@@ -1,6 +1,7 @@
 #pragma once
 #include "Renderer.hpp"
 #include "rational.hpp"
+#include "Utility.hpp"
 
 class WinImgui11;
 struct VideoSink;
@@ -56,7 +57,7 @@ private:
     ComPtr<ID3D11Texture2D>           mSource;
     ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
     ComPtr<ID3D11Buffer>              mPosSizeCB;
-    std::array<uint32_t, 16>          mPalette;
+    std::array<Pixel, 16>             mPalette;
     bool mGeometryChanged = {};
   };
 

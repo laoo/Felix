@@ -528,7 +528,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugDispAdr();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -539,7 +539,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugVidBas();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -550,7 +550,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugCollBas();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -561,7 +561,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = sv.customAddress;
           std::sprintf( buf, "%04x", sv.customAddress );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + sv.customAddress, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + sv.customAddress, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }

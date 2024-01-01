@@ -2,7 +2,6 @@
 #include "DX11Helpers.hpp"
 #include "Log.hpp"
 #include "renderer.hxx"
-#include "ScreenRenderingBuffer.hpp"
 #include "WinImgui11.hpp"
 #include "Manager.hpp"
 #include "VideoSink.hpp"
@@ -248,49 +247,23 @@ bool DX11Renderer::resizeOutput()
 
 void DX11Renderer::updateSourceFromNextFrame()
 {
-  if ( auto frame = mVideoSink->pullNextFrame() )
+  D3D11_MAPPED_SUBRESOURCE d3dmap;
+  gImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+
+  struct MappedTexture
   {
-    D3D11_MAPPED_SUBRESOURCE d3dmap;
-    gImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
+    Doublet* data;
+    uint32_t stride;
+  } dst{ ( Doublet*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( Doublet ) };
 
-    struct MappedTexture
-    {
-      VideoSink::DPixel* data;
-      uint32_t stride;
-    } map{ (VideoSink::DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( VideoSink::DPixel ) };
+  Doublet const* src = mVideoSink->frame.data();
 
-    for ( int i = 0; i < 3; ++i )
-    {
-      auto const& row = frame->row( i );
-      for ( auto v : row )
-      {
-        if ( std::bit_cast< int16_t >( v ) >= 0 )
-        {
-          mVideoSink->updatePalette( v >> 8, (uint8_t)v );
-        }
-      }
-    }
-
-    for ( int i = 3; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
-    {
-      auto const& row = frame->row( i );
-      VideoSink::DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
-
-      for ( auto v : row )
-      {
-        if ( std::bit_cast<int16_t>( v ) < 0 )
-        {
-          *dst++ = mVideoSink->mPalette[(uint8_t)v];
-        }
-        else
-        {
-          mVideoSink->updatePalette( v >> 8, (uint8_t)v );
-        }
-      }
-    }
-
-    gImmediateContext->Unmap( mSource.Get(), 0 );
+  for ( int i = 0; i < SCREEN_HEIGHT; ++i )
+  {
+    std::copy_n( src + i * ROW_BYTES, ROW_BYTES, dst.data + i * dst.stride );
   }
+
+  gImmediateContext->Unmap( mSource.Get(), 0 );
 }
 
 void DX11Renderer::renderGui( UI& ui )
@@ -424,7 +397,7 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
 
   if ( palette.size() != 32 )
   {
-    std::copy_n( gSafePalette.begin(), 16, mPalette.begin() );
+    std::copy_n( (Pixel const*)gSafePalette.data(), gSafePalette.size(), mPalette.begin());
   }
   else
   {
@@ -432,7 +405,7 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
 
     for ( size_t i = 0; i < 16; ++i )
     {
-      VideoSink::Pixel value;
+      Pixel value;
       value.x = 0xff;
       value.r = ( palette[i + 16] & 0x0f );
       value.r |= value.r << 4;
@@ -441,7 +414,7 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
       value.b = ( palette[i + 16] & 0xf0 );
       value.b |= value.r >> 4;
 
-      mPalette[i] = std::bit_cast<uint32_t>( value );
+      mPalette[i] = value;
     }
   }
 
@@ -449,9 +422,15 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
     D3D11_MAPPED_SUBRESOURCE d3dmap;
     gImmediateContext->Map( mSource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3dmap );
 
+    struct MappedTexture
+    {
+      Pixel *data;
+      uint32_t stride;
+    } map{ ( Pixel* )d3dmap.pData, d3dmap.RowPitch / ( uint32_t )sizeof( Pixel ) };
+
     for ( int y = 0; y < 102; ++y )
     {
-      uint32_t* dst = (uint32_t*)( (uint8_t*)d3dmap.pData + y * d3dmap.RowPitch );
+      Pixel* dst = map.data + y * map.stride;
       uint8_t const* src = data.data() + y * 80;
       for ( uint8_t const* limit = src + 80; src < limit; ++src )
       {

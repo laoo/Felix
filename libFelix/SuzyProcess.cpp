@@ -143,8 +143,8 @@ SuzyProcess::ProcessCoroutine SuzyProcess::process()
               break;
             if ( (int16_t)scb.sprvpos < SCREEN_HEIGHT && (int16_t)scb.sprvpos >= 0 )
             {
-              scb.vidadr = scb.vidbas + scb.sprvpos * SCREEN_WIDTH / 2;
-              scb.colladr = scb.collbas + scb.sprvpos * SCREEN_WIDTH / 2;
+              scb.vidadr = scb.vidbas + scb.sprvpos * ROW_BYTES;
+              scb.colladr = scb.collbas + scb.sprvpos * ROW_BYTES;
               vidOp.newLine( scb.vidadr );
               colOp.newLine( scb.colladr );
               scb.hposstrt += (int8_t)scb.tiltacum.h;

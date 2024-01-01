@@ -27,8 +27,6 @@ add_executable( Felix WIN32
   WinFelix/Renderer.hpp
   WinFelix/ScreenGeometry.cpp
   WinFelix/ScreenGeometry.hpp
-  WinFelix/ScreenRenderingBuffer.cpp
-  WinFelix/ScreenRenderingBuffer.hpp
   WinFelix/SysConfig.cpp
   WinFelix/SysConfig.hpp
   WinFelix/SystemDriver.cpp
