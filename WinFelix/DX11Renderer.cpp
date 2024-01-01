@@ -259,15 +259,25 @@ void DX11Renderer::updateSourceFromNextFrame()
       uint32_t stride;
     } map{ (VideoSink::DPixel*)d3dmap.pData, d3dmap.RowPitch / (uint32_t)sizeof( VideoSink::DPixel ) };
 
-    for ( int i = 0; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
+    for ( int i = 0; i < 3; ++i )
     {
-      auto const& row = frame->row(i);
-      int size = frame->size(i);
+      auto const& row = frame->row( i );
+      for ( auto v : row )
+      {
+        if ( std::bit_cast< int16_t >( v ) >= 0 )
+        {
+          mVideoSink->updatePalette( v >> 8, (uint8_t)v );
+        }
+      }
+    }
+
+    for ( int i = 3; i < (int)ScreenRenderingBuffer::ROWS_COUNT; ++i )
+    {
+      auto const& row = frame->row( i );
       VideoSink::DPixel* dst = map.data + std::max( 0, ( i - 3 ) ) * map.stride;
 
-      for ( int j = 0; j < size; ++j )
+      for ( auto v : row )
       {
-        uint16_t v = row[j];
         if ( std::bit_cast<int16_t>( v ) < 0 )
         {
           *dst++ = mVideoSink->mPalette[(uint8_t)v];

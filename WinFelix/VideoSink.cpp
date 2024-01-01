@@ -1,25 +1,28 @@
 #include "VideoSink.hpp"
 #include "ScreenRenderingBuffer.hpp"
 
+
+VideoSink::VideoSink() : mActiveFrame{}, mQueueMutex{}
+{
+  for ( uint32_t i = 0; i < 256; ++i )
+  {
+    mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
+  }
+}
+
 void VideoSink::newFrame()
 {
-  if ( mActiveFrame )
+  if ( !mActiveFrame )
   {
-    std::scoped_lock<std::mutex> lock( mQueueMutex );
-    if ( mFinishedFrames.size() > 1 )
-    {
-      mFinishedFrames.pop();
-    }
-    mFinishedFrames.push( std::move( mActiveFrame ) );
-    mActiveFrame.reset();
+    mActiveFrame = std::make_shared<ScreenRenderingBuffer>();
   }
-  mActiveFrame = std::make_shared<ScreenRenderingBuffer>();
 }
 
 void VideoSink::newRow( int row )
 {
   if ( mActiveFrame )
   {
+    std::scoped_lock<std::mutex> lock( mQueueMutex );
     mActiveFrame->newRow( row );
   }
 }
@@ -70,22 +73,16 @@ void VideoSink::updatePalette( uint16_t reg, uint8_t value )
 
 std::shared_ptr<ScreenRenderingBuffer> VideoSink::pullNextFrame()
 {
-  std::shared_ptr<ScreenRenderingBuffer> result{};
-
   std::scoped_lock<std::mutex> lock( mQueueMutex );
-  if ( !mFinishedFrames.empty() )
-  {
-    result = mFinishedFrames.front();
-    mFinishedFrames.pop();
-  }
-
-  return result;
+  return mActiveFrame;
 }
 
 void VideoSink::emitScreenData( std::span<uint8_t const> data )
 {
   if ( mActiveFrame )
+  {
     mActiveFrame->pushScreenBytes( data );
+  }
 }
 
 void VideoSink::updateColorReg( uint8_t reg, uint8_t value )
@@ -97,13 +94,5 @@ void VideoSink::updateColorReg( uint8_t reg, uint8_t value )
   else
   {
     updatePalette( reg, value );
-  }
-}
-
-VideoSink::VideoSink() : mActiveFrame{}, mFinishedFrames{}, mQueueMutex{}
-{
-  for ( uint32_t i = 0; i < 256; ++i )
-  {
-    mPalette[i] = DPixel{ Pixel{ 0, 0, 0, 255 }, Pixel{ 0, 0, 0, 255 } };
   }
 }

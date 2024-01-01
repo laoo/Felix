@@ -18,13 +18,12 @@ public:
   void pushColorChage( uint8_t reg, uint8_t value );
   void pushScreenBytes( std::span<uint8_t const> data );
 
-  Row const& row( size_t i ) const;
-  int size( size_t i ) const;
+  std::span<uint16_t const> row( size_t i ) const;
 
 private:
   std::array<int, ROWS_COUNT> mSizes;
   std::array<Row, ROWS_COUNT> mRows;
-  Row* mCurrentRow;
-  int* mSize;
+  Row mCurrentRow;
+  int mSize;
 };
 

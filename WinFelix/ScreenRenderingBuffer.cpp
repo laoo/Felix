@@ -1,45 +1,39 @@
 #include "ScreenRenderingBuffer.hpp"
 
-ScreenRenderingBuffer::ScreenRenderingBuffer() : mCurrentRow{}
+ScreenRenderingBuffer::ScreenRenderingBuffer() : mSizes{}, mRows{}, mCurrentRow{}, mSize{}
 {
   std::ranges::fill( mSizes, 0 );
-  newRow( 104 );
+  std::fill_n( mRows.data()->data(), ( sizeof mRows ) / sizeof( uint16_t), 0 );
+  std::fill_n( mCurrentRow.data(), ( sizeof mCurrentRow ) / sizeof(uint16_t), 0);
 }
 
 void ScreenRenderingBuffer::newRow( int row )
 {
-  int idx = 104 - std::clamp( row, 0, 104 );
-  mCurrentRow = &mRows[idx];
-  mSize = &mSizes[idx];
-  *mSize = 0;
+  std::copy_n( mCurrentRow.data(), mSize, mRows[( row + 1 ) % ROWS_COUNT].data() );
+  mSizes[( row + 1 ) % ROWS_COUNT] = mSize;
+  mSize = 0;
 }
 
-ScreenRenderingBuffer::Row const& ScreenRenderingBuffer::row( size_t i ) const
+std::span<uint16_t const> ScreenRenderingBuffer::row( size_t i ) const
 {
   assert( i < ROWS_COUNT );
-  return mRows[i];
-}
-
-int ScreenRenderingBuffer::size( size_t i ) const
-{
-  assert( i < ROWS_COUNT );
-  return mSizes[i];
+  size_t idx = ROWS_COUNT - i - 1;
+  return std::span<uint16_t const>{ mRows[idx].data(), (size_t)mSizes[idx] };
 }
 
 void ScreenRenderingBuffer::pushScreenBytes( std::span<uint8_t const> data )
 {
-  int idx = *mSize;
+  int idx = mSize;
   for ( uint8_t byte : data )
   {
-    mCurrentRow->at( idx++ ) = 0xff00 | (uint16_t)byte;
+    mCurrentRow[idx++] = 0xff00 | ( uint16_t )byte;
   }
-  *mSize = idx & ( LINE_BUFFER_SIZE - 1 );
+  mSize = idx & ( LINE_BUFFER_SIZE - 1 );
 }
 
 void ScreenRenderingBuffer::pushColorChage( uint8_t reg, uint8_t value )
 {
-  int idx = *mSize;
-  mCurrentRow->at(idx++) = ( reg << 8 ) | value;
-
-  *mSize = idx & ( LINE_BUFFER_SIZE - 1 );
+  int idx = mSize;
+  mCurrentRow[idx++] = ( reg << 8 ) | value;
+  mSize = idx & ( LINE_BUFFER_SIZE - 1 );
 }

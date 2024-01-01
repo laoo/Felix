@@ -23,7 +23,6 @@ struct VideoSink : public IVideoSink
 
   std::array<DPixel, 256> mPalette;
   std::shared_ptr<ScreenRenderingBuffer> mActiveFrame;
-  std::queue<std::shared_ptr<ScreenRenderingBuffer>> mFinishedFrames;
   mutable std::mutex mQueueMutex;
 
   void updatePalette( uint16_t reg, uint8_t value );
