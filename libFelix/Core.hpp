@@ -146,4 +146,5 @@ private:
   ISuzyProcess::Request const* mSuzyProcessRequest;
   bool mResetRequestDuringSpriteRendering;
   bool mSuzyRunning;
+  bool mHaltSuzy;
 };

@@ -29,7 +29,7 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mTraceHelper{ std::make_shared<TraceHelper>() }, mCpu{ std::make_shared<CPU>( mTraceHelper ) },
   mCartridge{ std::make_shared<Cartridge>( imageProperties, std::shared_ptr<ImageCart>{}, mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
-  mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}
+  mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mGlobalSamplesEmitted{}, mGlobalSamplesEmittedSnapshot{}, mGlobalSamplesEmittedPerFrame{}, mHaltSuzy{}
 {
   gDebugRAM = &mRAM[0];
 
@@ -244,6 +244,7 @@ void Core::executeSequencedAction( SequencedAction seqAction )
     if ( mSamplesEmitted >= mOutputSamples.size() )
     {
       mCpu->breakNext();
+      mHaltSuzy = true;
     }
     else
     {
@@ -254,6 +255,7 @@ void Core::executeSequencedAction( SequencedAction seqAction )
     break;
   case Action::BATCH_END:
     mCpu->breakNext();
+    mHaltSuzy = true;
     break;
   case Action::NONE:
     //removed element
@@ -266,8 +268,10 @@ void Core::executeSequencedAction( SequencedAction seqAction )
 
 bool Core::executeSuzyAction()
 {
-  if ( !mSuzyProcess || !mSuzyRunning )
+  if ( !mSuzyRunning || mHaltSuzy )
     return false;
+
+  assert( mSuzyProcess );
 
   if ( mCpu->interruptedMask() != 0 )
   {
@@ -457,6 +461,8 @@ void Core::enqueueSampling()
 
 CpuBreakType Core::run( RunMode runMode )
 {
+  mHaltSuzy = false;
+
   switch ( runMode )
   {
   case RunMode::STEP_IN:
