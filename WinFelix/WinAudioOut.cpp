@@ -28,7 +28,11 @@ WinAudioOut::WinAudioOut() : mWav{}, mNormalizer{ 1.0f / 32768.0f }
   if ( FAILED( hr ) )
     throw std::exception{};
 
-  hr = mAudioClient->Initialize( AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, 0, 0, mMixFormat, nullptr );
+  REFERENCE_TIME defaultDevicePeriod;
+
+  mAudioClient->GetDevicePeriod( &defaultDevicePeriod, nullptr );
+
+  hr = mAudioClient->Initialize( AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_NOPERSIST | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, defaultDevicePeriod, 0, mMixFormat, nullptr );
   if ( FAILED( hr ) )
     throw std::exception{};
 
