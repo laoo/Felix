@@ -10,7 +10,7 @@
 
 Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mCore{ core }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
   mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mAttenuationLeft{ 0x3c, 0x3c, 0x3c, 0x3c }, mAttenuationRight{ 0x3c, 0x3c, 0x3c, 0x3c }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( std::move( videoSink ) ) },
-  mParallelPort{ mCore, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}
+  mParallelPort{ mCore, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}, mVGMWriterMutex{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
@@ -280,8 +280,11 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   }
   else if ( address < 0x40 )
   {
-    if ( mVGMWriter )
-      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
+    {
+      std::unique_lock lock( mVGMWriterMutex );
+      if ( mVGMWriter )
+        mVGMWriter->write( mAccessTick, ( uint8_t )address, value );
+    }
     int idx = ( address >> 3 ) & 3;
 
     switch ( address & 0x7 )
@@ -313,18 +316,27 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
     mAttenuation[address & 3] = value;
     mAttenuationRight[address & 3] = ( value & 0x0f ) << 2;
     mAttenuationLeft[address & 3] = ( value & 0xf0 ) >> 2;
-    if ( mVGMWriter )
-      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
+    {
+      std::unique_lock lock( mVGMWriterMutex );
+      if ( mVGMWriter )
+        mVGMWriter->write( mAccessTick, ( uint8_t )address, value );
+    }
     break;
   case MPAN:
     mPan = value;
-    if ( mVGMWriter )
-      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
+    {
+      std::unique_lock lock( mVGMWriterMutex );
+      if ( mVGMWriter )
+        mVGMWriter->write( mAccessTick, ( uint8_t )address, value );
+    }
     break;
   case MSTEREO:
     mStereo = value;
-    if ( mVGMWriter )
-      mVGMWriter->write( mAccessTick, (uint8_t)address, value );
+    {
+      std::unique_lock lock( mVGMWriterMutex );
+      if ( mVGMWriter )
+        mVGMWriter->write( mAccessTick, ( uint8_t )address, value );
+    }
     break;
   case INTRST:
     resetIRQ( value );
@@ -481,11 +493,13 @@ AudioSample Mikey::sampleAudio( uint64_t tick ) const
 
 void Mikey::setVGMWriter( std::shared_ptr<VGMWriter> writer )
 {
+  std::unique_lock lock( mVGMWriterMutex );
   mVGMWriter = std::move( writer );
 }
 
 bool Mikey::isVGMWriter() const
 {
+  std::unique_lock lock( mVGMWriterMutex );
   return (bool)mVGMWriter;
 }
 

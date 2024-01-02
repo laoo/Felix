@@ -32,6 +32,7 @@ private:
   std::shared_ptr<IEncoder> mEncoder;
   WavFile* mWav;
   HANDLE mEvent;
+  mutable std::mutex mMutex;
 
   double mTimeToSamples;
 

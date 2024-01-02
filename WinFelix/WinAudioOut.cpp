@@ -6,7 +6,7 @@
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 
-WinAudioOut::WinAudioOut() : mWav{}, mNormalizer{ 1.0f / 32768.0f }
+WinAudioOut::WinAudioOut() : mWav{}, mNormalizer{ 1.0f / 32768.0f }, mMutex{}
 {
   CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
@@ -104,11 +104,13 @@ WinAudioOut::~WinAudioOut()
 
 void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )
 {
+  std::unique_lock lock{ mMutex };
   mEncoder = std::move( pEncoder );
 }
 
 void WinAudioOut::setWavOut( std::filesystem::path path )
 {
+  std::unique_lock lock{ mMutex };
   if ( path.empty() )
   {
     if ( mWav )
@@ -139,6 +141,7 @@ void WinAudioOut::setWavOut( std::filesystem::path path )
 
 bool WinAudioOut::isWavOut() const
 {
+  std::unique_lock lock{ mMutex };
   return mWav ? true : false;
 }
 
@@ -226,11 +229,16 @@ CpuBreakType WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t re
       pfData[i * mMixFormat->nChannels + 1] = mSamplesBuffer[i].right * mNormalizer;
     }
 
-    if ( mEncoder )
-      mEncoder->pushAudioBuffer( std::span<float const>( pfData, framesAvailable * mMixFormat->nChannels ) );
-
-    if ( mWav )
-      wav_write( mWav, pfData, framesAvailable );
+    {
+      std::unique_lock lock{ mMutex };
+      if ( mEncoder )
+        mEncoder->pushAudioBuffer( std::span<float const>( pfData, framesAvailable * mMixFormat->nChannels ) );
+    }
+    {
+      std::unique_lock lock{ mMutex };
+      if ( mWav )
+        wav_write( mWav, pfData, framesAvailable );
+    }
 
     hr = mRenderClient->ReleaseBuffer( framesAvailable, 0 );
 

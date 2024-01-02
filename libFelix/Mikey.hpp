@@ -107,6 +107,7 @@ private:
 
   std::unique_ptr<DisplayGenerator> mDisplayGenerator;
   std::shared_ptr<VGMWriter> mVGMWriter;
+  mutable std::mutex mVGMWriterMutex;
 
   ParallelPort mParallelPort;
 
