@@ -1,6 +1,8 @@
 #pragma once
 
 #include "IMemoryAccessTrap.hpp"
+#include "generator.hpp"
+
 class Core;
 class ScriptDebuggerEscapes;
 
@@ -47,23 +49,21 @@ public:
   ScriptDebugger() = default;
   ~ScriptDebugger() = default;
 
-  std::vector<std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>> getTraps( IMemoryAccessTrap::Kind kind )
+  cppcoro::generator<std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>> getTraps( IMemoryAccessTrap::Kind kind )
   {
-    std::vector<std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>> traps;
-
     for ( int i = 0; i < 0xffff; ++i )
     {
       if ( mRamReadTraps[i] && mRamReadTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::RAM_READ, i, mRamReadTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::RAM_READ, i, mRamReadTraps[i] );
       }
       if ( mRamWriteTraps[i] && mRamWriteTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::RAM_WRITE, i, mRamWriteTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::RAM_WRITE, i, mRamWriteTraps[i] );
       }
       if ( mRamExecuteTraps[i] && mRamExecuteTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::RAM_EXECUTE, i, mRamExecuteTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::RAM_EXECUTE, i, mRamExecuteTraps[i] );
       }
     }
 
@@ -71,15 +71,15 @@ public:
     {
       if ( mRomReadTraps[i] && mRomReadTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::ROM_READ, i, mRomReadTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::ROM_READ, i, mRomReadTraps[i] );
       }
       if ( mRomWriteTraps[i] && mRomWriteTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::ROM_WRITE, i, mRomWriteTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::ROM_WRITE, i, mRomWriteTraps[i] );
       }
       if ( mRomExecuteTraps[i] && mRomExecuteTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::ROM_EXECUTE, i, mRomExecuteTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::ROM_EXECUTE, i, mRomExecuteTraps[i] );
       }
     }
 
@@ -87,24 +87,22 @@ public:
     {
       if ( mSuzyReadTraps[i] && mSuzyReadTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::SUZY_READ, i, mSuzyReadTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::SUZY_READ, i, mSuzyReadTraps[i] );
       }
       if ( mSuzyWriteTraps[i] && mSuzyWriteTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::SUZY_WRITE, i, mSuzyWriteTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::SUZY_WRITE, i, mSuzyWriteTraps[i] );
       }
 
       if ( mMikeyReadTraps[i] && mMikeyReadTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::MIKEY_READ, i, mMikeyReadTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::MIKEY_READ, i, mMikeyReadTraps[i] );
       }
       if ( mMikeyWriteTraps[i] && mMikeyWriteTraps[i]->getKind() == kind )
       {
-        traps.push_back( std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::MIKEY_WRITE, i, mMikeyWriteTraps[i] ) );
+        co_yield std::tuple<Type, uint16_t, std::shared_ptr<IMemoryAccessTrap>>( Type::MIKEY_WRITE, i, mMikeyWriteTraps[i] );
       }
     }
-
-    return traps;
   }
 
   void deleteTrap( Type type, uint16_t address )

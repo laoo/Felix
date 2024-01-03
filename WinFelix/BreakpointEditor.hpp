@@ -54,7 +54,7 @@ private:
   std::vector<BreakpointItem> mItems;
 
   char mNewItemAddrBuf[6];
-  ScriptDebugger::Type mNewItemBreakpointType;
+  ScriptDebugger::Type mNewItemBreakpointType = ScriptDebugger::Type::RAM_EXECUTE;
 
   bool isReadOnly();
 
