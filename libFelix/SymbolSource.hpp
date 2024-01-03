@@ -14,6 +14,7 @@ class SymbolSource
   };
 
 public:
+  SymbolSource();
   SymbolSource( std::filesystem::path const& labPath );
   ~SymbolSource();
   std::optional<uint16_t> symbol( std::string const& name ) const;

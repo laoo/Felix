@@ -33,6 +33,8 @@ std::wstring getCommandArg()
 
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {
+  Manager manager;
+  std::shared_ptr<ISystemDriver> systemDriver;
   try
   {
 
@@ -40,12 +42,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     std::wstring arg = getCommandArg();
 
-    Manager manager;
-
-    auto systemDriver = createSystemDriver( manager, arg, nCmdShow );
-
+    systemDriver = createSystemDriver( manager, arg, nCmdShow );
     systemDriver->eventLoop();
-
     return 0;
   }
   catch ( sol::error const& err )

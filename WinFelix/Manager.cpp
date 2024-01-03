@@ -133,12 +133,6 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
   mSystemDriver->registerUpdate( std::bind( &Manager::update, this ) );
 }
 
-int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
-{
-  assert( mSystemDriver );
-  return mSystemDriver->wndProcHandler( hWnd, msg, wParam, lParam );
-}
-
 IUserInput& Manager::userInput() const
 {
   return *mSystemDriver->userInput();
@@ -230,6 +224,10 @@ void Manager::processLua( std::filesystem::path const& path )
   if ( std::filesystem::exists( labPath ) )
   {
     mSymbols = std::make_unique<SymbolSource>( labPath );
+  }
+  else
+  {
+    mSymbols = std::make_unique<SymbolSource>();
   }
 
   if ( !std::filesystem::exists( luaPath ) )
