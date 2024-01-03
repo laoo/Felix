@@ -34,6 +34,7 @@ mRunMode{ RunMode::RUN }
   mDebugModeOnBreak = sysConfig->debugModeOnBreak;
   mNormalModeOnRun = sysConfig->normalModeOnRun;
   mBreakOnBrk = sysConfig->breakOnBrk;
+  showMonitor = sysConfig->showMonitor;
   for ( auto const& sv : sysConfig->screenViews )
   {
     mScreenViews.emplace_back( sv.id, (ScreenViewType)sv.type, (uint16_t)sv.customAddress, sv.safePalette );
@@ -54,6 +55,7 @@ Debugger::~Debugger()
   sysConfig->debugModeOnBreak = mDebugModeOnBreak;
   sysConfig->normalModeOnRun = mNormalModeOnRun;
   sysConfig->breakOnBrk = mBreakOnBrk;
+  sysConfig->showMonitor = showMonitor;
   sysConfig->screenViews.clear();
   for ( auto const& sv : mScreenViews )
   {

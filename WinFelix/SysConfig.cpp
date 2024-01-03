@@ -77,6 +77,7 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "debugModeOnBreak = " << ( debugModeOnBreak ? "true;\n" : "false;\n" );
   fout << "normalModeOnRun = " << ( normalModeOnRun ? "true;\n" : "false;\n" );
   fout << "breakOnBrk = " << ( breakOnBrk ? "true;\n" : "false;\n" );
+  fout << "showMonitor = " << ( showMonitor ? "true;\n" : "false;\n" );
   fout << "screenViews = {\n";
   for ( auto const& sv : screenViews )
   {
@@ -133,6 +134,7 @@ SysConfig::SysConfig( sol::state const& lua )
   debugModeOnBreak = lua["debugModeOnBreak"].get_or( debugModeOnBreak );
   normalModeOnRun = lua["normalModeOnRun"].get_or( normalModeOnRun );
   breakOnBrk = lua["breakOnBrk"].get_or( breakOnBrk );
+  showMonitor = lua["showMonitor"].get_or( showMonitor );
   if ( auto optSV = lua.get<sol::optional<sol::table>>( "screenViews" ) )
   {
     for ( auto sv : *optSV )

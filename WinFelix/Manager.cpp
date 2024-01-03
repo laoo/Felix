@@ -373,6 +373,30 @@ void Manager::processLua( std::filesystem::path const& path )
   mLua["trap"] = trap;
   mLua["brk"] = trap;
 
+  auto monitFun = [this]( std::string label, Monitor::Entry::Type type, int size )
+  {
+    if ( auto opt = mSymbols->symbol( label ) )
+    {
+      mMonitor.addEntry( { type, label, *opt, (uint16_t)size } );
+    }
+    else
+    {
+      mMonitor.addEntry( {} );
+    }
+  };
+
+  mLua["monitHByte"] = [=,this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::HEX, 1 ); };
+  mLua["monitUByte"] = [=,this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::UNSIGNED, 1 ); };
+  mLua["monitSByte"] = [=,this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::SIGNED, 1 ); };
+  mLua["monitHWord"] = [=,this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::HEX, 2 ); };
+  mLua["monitUWord"] = [=,this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::UNSIGNED, 2 ); };
+  mLua["monitSWord"] = [=,this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::SIGNED, 2 ); };
+  mLua["monitHLong"] = [=, this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::HEX, 4 ); };
+  mLua["monitULong"] = [=, this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::UNSIGNED, 4 ); };
+  mLua["monitSLong"] = [=, this]( std::string label ) { monitFun( std::move( label ), Monitor::Entry::Type::SIGNED, 4 ); };
+  mLua["monitHex"] = [=, this]( std::string label, int size ) { monitFun( std::move( label ), Monitor::Entry::Type::HEX, size ); };
+
+
   mLua.script_file( luaPath.string() );
 
   if ( sol::optional<std::string> opt = mLua["log"] )

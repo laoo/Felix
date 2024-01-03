@@ -59,6 +59,7 @@ public:
   bool visualizeWatch;
   bool visualizeBreakpoint;
   bool visualizeDisasm;
+  bool showMonitor;
 
 private:
   mutable std::mutex mMutex;
