@@ -50,12 +50,12 @@ static constexpr std::pair<char const*, uint16_t> defaultSymbols[] = {
   { "BLUERED7", 0xfdb7 },
   { "BLUERED8", 0xfdb8 },
   { "BLUERED9", 0xfdb9 },
-  { "BLUEREDa", 0xfdba },
-  { "BLUEREDb", 0xfdbb },
-  { "BLUEREDc", 0xfdbc },
-  { "BLUEREDd", 0xfdbd },
-  { "BLUEREDe", 0xfdbe },
-  { "BLUEREDf", 0xfdbf },
+  { "BLUEREDA", 0xfdba },
+  { "BLUEREDB", 0xfdbb },
+  { "BLUEREDC", 0xfdbc },
+  { "BLUEREDD", 0xfdbd },
+  { "BLUEREDE", 0xfdbe },
+  { "BLUEREDF", 0xfdbf },
   { "COLLADR", 0xfc0e },
   { "COLLBAS", 0xfc0a },
   { "COLLOFF", 0xfc24 },
@@ -183,10 +183,17 @@ static constexpr std::pair<char const*, uint16_t> defaultSymbols[] = {
   { "VSIZACUM", 0xfc26 },
   { "VSIZOFF", 0xfc2a }
 };
-
 }
+
+SymbolSource::SymbolSource() : mSymbols{}
+{
+}
+
 SymbolSource::SymbolSource( std::filesystem::path const& labPath ) : mSymbols{}
 {
+  if ( labPath.empty() )
+    return;
+
   std::ifstream fin{ labPath };
 
   std::string line;

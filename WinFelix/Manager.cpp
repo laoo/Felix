@@ -62,7 +62,7 @@ mDebugWindows{}
         {
           std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
         }
-        while ( !mProcessThreads.load() );
+        while ( !mProcessThreads.load() && !mJoinThreads.load() );
         mThreadsWaiting.fetch_sub( 1 );
       }
     }
@@ -100,7 +100,7 @@ mDebugWindows{}
           {
             std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
           }
-          while ( !mProcessThreads.load() );
+          while ( !mProcessThreads.load() && !mJoinThreads.load() );
           mThreadsWaiting.fetch_sub( 1 );
         }
       }
@@ -142,12 +142,6 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
 
   mSystemDriver->registerDropFiles( std::bind( &Manager::handleFileDrop, this, std::placeholders::_1 ) );
   mSystemDriver->registerUpdate( std::bind( &Manager::update, this ) );
-}
-
-int Manager::win32_WndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
-{
-  assert( mSystemDriver );
-  return mSystemDriver->wndProcHandler( hWnd, msg, wParam, lParam );
 }
 
 IUserInput& Manager::userInput() const
@@ -203,6 +197,10 @@ void Manager::processLua( std::filesystem::path const& path )
   if ( std::filesystem::exists( labPath ) )
   {
     mSymbols = std::make_unique<SymbolSource>( labPath );
+  }
+  else
+  {
+    mSymbols = std::make_unique<SymbolSource>();
   }
 
   if ( !std::filesystem::exists( luaPath ) )
