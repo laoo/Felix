@@ -223,6 +223,7 @@ bool UI::mainMenu( ImGuiIO& io )
         bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
         bool memoryWindow = mManager.mDebugger.visualizeMemory;
         bool disasmWindow = mManager.mDebugger.visualizeDisasm;
+        bool monitorWindow = mManager.mDebugger.showMonitor;
         if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
         {
           mManager.mDebugger.visualizeCPU = cpuWindow;
@@ -238,6 +239,10 @@ bool UI::mainMenu( ImGuiIO& io )
         if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
         {
           mManager.mDebugger.visualizeWatch = watchWindow;
+        }
+        if ( ImGui::MenuItem( "Monitor Window", "Ctrl+T", &monitorWindow ) )
+        {
+          mManager.mDebugger.showMonitor = monitorWindow;
         }
         if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
         {
@@ -466,6 +471,14 @@ void UI::drawDebugWindows( ImGuiIO& io )
   {
     ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2{ 2.0f, 2.0f } );
 
+    if ( mManager.mDebugger.showMonitor )
+    {
+      ImGui::Begin( "Monitor", &mManager.mDebugger.showMonitor );
+      for ( auto sv : mManager.mMonitor.sample( *mManager.mInstance ) )
+        ImGui::Text( sv.data() );
+      ImGui::End();
+    }
+
     if ( mManager.mDebugger.visualizeCPU )
     {
       ImGui::Begin( "CPU", &mManager.mDebugger.visualizeCPU, ImGuiWindowFlags_AlwaysAutoResize );
@@ -610,6 +623,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::Checkbox( "CPU Window", &mManager.mDebugger.visualizeCPU );
       ImGui::Checkbox( "Disassembly Window", &mManager.mDebugger.visualizeDisasm );
       ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory );
+      ImGui::Checkbox( "Monitor Window", &mManager.mDebugger.showMonitor );
       if ( ImGui::Selectable( "New Screen View" ) )
       {
         mManager.mDebugger.newScreenView();

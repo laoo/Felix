@@ -8,6 +8,7 @@
 #include "MemEditor.hpp"
 #include "WatchEditor.hpp"
 #include "DisasmEditor.h"
+#include "Monitor.hpp"
 #include "BreakpointEditor.hpp"
 #include "sol/sol.hpp"
 
@@ -64,10 +65,12 @@ private:
   friend class WatchEditor;
   friend class DisasmEditor;
   friend class BreakpointEditor;
+  friend class Monitor;
 
   bool mDoReset;
 
   Debugger mDebugger;
+  Monitor mMonitor;
 
   struct DebugWindows
   {

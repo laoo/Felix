@@ -58,6 +58,7 @@ struct SysConfig
   bool debugModeOnBreak{};
   bool normalModeOnRun{};
   bool breakOnBrk{};
+  bool showMonitor{};
   struct ScreenView
   {
     int id{};

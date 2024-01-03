@@ -23,6 +23,8 @@ add_executable( Felix WIN32
   WinFelix/LuaProxies.hpp
   WinFelix/Manager.cpp
   WinFelix/Manager.hpp
+  WinFelix/Monitor.cpp
+  WinFelix/Monitor.hpp
   WinFelix/rational.hpp
   WinFelix/Renderer.hpp
   WinFelix/ScreenGeometry.cpp
