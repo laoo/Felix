@@ -2,6 +2,7 @@
 #include "LuaProxies.hpp"
 #include "ScriptDebuggerEscapes.hpp"
 #include "Manager.hpp"
+#include "SymbolSource.hpp"
 #include "Core.hpp"
 #include "CPUState.hpp"
 
@@ -222,4 +223,22 @@ void CPUProxy::set( sol::stack_object key, sol::stack_object value, sol::this_st
       manager.mInstance->debugState().y = value.as<uint8_t>();
     }
   }
+}
+
+sol::object SymbolProxy::get( sol::stack_object key, sol::this_state L )
+{
+  if ( auto optSt = key.as<sol::optional<std::string>>() )
+  {
+    const std::string& k = *optSt;
+
+    if ( manager.mSymbols )
+    {
+      if ( auto opt = manager.mSymbols->symbol( k ) )
+      {
+        return sol::object( L, sol::in_place, *opt );
+      }
+    }
+  }
+
+  return sol::object( L, sol::in_place, sol::lua_nil );
 }
