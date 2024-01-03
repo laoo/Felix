@@ -58,6 +58,7 @@ private:
   friend struct MikeyProxy;
   friend struct SuzyProxy;
   friend struct CPUProxy;
+  friend struct SymbolProxy;
   friend class UI;
   friend class CPUEditor;
   friend class MemEditor;

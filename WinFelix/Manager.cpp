@@ -195,25 +195,21 @@ void Manager::updateDebugWindows()
 void Manager::processLua( std::filesystem::path const& path )
 {
   auto luaPath = path;
-  auto cfgPath = path;
+  auto labPath = path;
 
   luaPath.replace_extension( path.extension().string() + ".lua" );
-  cfgPath.replace_extension( path.extension().string() + ".cfg" );
+  labPath.replace_extension( ".lab" );
 
-  if ( !std::filesystem::exists( luaPath ) && !std::filesystem::exists( cfgPath ) )
-    return;
-
-  mLua = sol::state{};
-  mLua.open_libraries( sol::lib::base, sol::lib::io );
-
-  if ( std::filesystem::exists( cfgPath ) )
+  if ( std::filesystem::exists( labPath ) )
   {
-    mLua.safe_script_file( cfgPath.string(), sol::script_pass_on_error );
-    //ignoring errors
+    mSymbols = std::make_unique<SymbolSource>( labPath );
   }
 
   if ( !std::filesystem::exists( luaPath ) )
     return;
+
+  mLua = sol::state{};
+  mLua.open_libraries( sol::lib::base, sol::lib::io );
 
   mLua.new_usertype<TrapProxy>( "TRAP", sol::meta_function::new_index, &TrapProxy::set );
   mLua.new_usertype<RamProxy>( "RAM", sol::meta_function::index, &RamProxy::get, sol::meta_function::new_index, &RamProxy::set );
@@ -221,12 +217,14 @@ void Manager::processLua( std::filesystem::path const& path )
   mLua.new_usertype<MikeyProxy>( "MIKEY", sol::meta_function::index, &MikeyProxy::get, sol::meta_function::new_index, &MikeyProxy::set );
   mLua.new_usertype<SuzyProxy>( "SUZY", sol::meta_function::index, &SuzyProxy::get, sol::meta_function::new_index, &SuzyProxy::set );
   mLua.new_usertype<CPUProxy>( "CPU", sol::meta_function::index, &CPUProxy::get, sol::meta_function::new_index, &CPUProxy::set );
+  mLua.new_usertype<SymbolProxy>( "SYMBOL", sol::meta_function::index, &SymbolProxy::get );
 
   mLua["ram"] = std::make_unique<RamProxy>( *this );
   mLua["rom"] = std::make_unique<RomProxy>( *this );
   mLua["mikey"] = std::make_unique<MikeyProxy>( *this );
   mLua["suzy"] = std::make_unique<SuzyProxy>( *this );
   mLua["cpu"] = std::make_unique<CPUProxy>( *this );
+  mLua["symbol"] = std::make_unique<SymbolProxy>( *this );
 
   mLua["WavOut"] = [this] ( sol::table const& tab )
   {
@@ -313,10 +311,6 @@ void Manager::processLua( std::filesystem::path const& path )
   if ( sol::optional<std::string> opt = mLua["log"] )
   {
     mLogPath = *opt;
-  }
-  if ( sol::optional<std::string> opt = mLua["lab"] )
-  {
-    mSymbols = std::make_unique<SymbolSource>( *opt );
   }
 }
 
