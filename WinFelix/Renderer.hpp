@@ -46,4 +46,6 @@ public:
   virtual int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) = 0;
 
   virtual std::shared_ptr<ICustomScreenView> makeCustomScreenView() = 0;
+
+  virtual void saveFrame( std::filesystem::path const& path ) = 0;
 };

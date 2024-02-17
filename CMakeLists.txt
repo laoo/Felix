@@ -154,13 +154,21 @@ target_include_directories( Felix PRIVATE libextern/imgui_club )
 target_include_directories( Felix PRIVATE libextern/imgui-filebrowser )
 target_include_directories( Felix PRIVATE libextern/libwav/include )
 target_include_directories( Felix PRIVATE libextern/fmt/include )
-target_include_directories( Felix PRIVATE libextern/multiprecision/include )
+
+set_source_files_properties( libFelix/Encryption.cpp PROPERTIES
+  INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/libextern/multiprecision/include
+)
 
 if (WIN32)
   target_compile_definitions(Felix PRIVATE -D_CRT_SECURE_NO_WARNINGS)
   target_compile_definitions(Felix PRIVATE -D_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS)
   target_compile_definitions(Felix PRIVATE -D_UNICODE)
   target_compile_definitions(Felix PRIVATE -DUNICODE)
+
+  set_source_files_properties( WinFelix/DX11Renderer.cpp PROPERTIES
+    INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/libextern/stb
+  )
+
 endif()
 target_compile_definitions(Felix PRIVATE -DAPP_NAME=\"${PROJECT_NAME}\")
 

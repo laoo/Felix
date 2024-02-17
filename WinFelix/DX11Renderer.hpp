@@ -22,6 +22,8 @@ public:
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
   int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
+  void saveFrame( std::filesystem::path const& path ) override;
+
 private:
 
   void internalRender( UI& ui );

@@ -5,6 +5,8 @@
 #include "WinImgui11.hpp"
 #include "Manager.hpp"
 #include "VideoSink.hpp"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 #define V_THROW(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { throw std::runtime_error{ "DXError" }; } }
 #define V_RETURN_FALSE(x) { HRESULT hr_ = (x); if( FAILED( hr_ ) ) { return false; } }
@@ -472,4 +474,18 @@ int DX11Renderer::wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
   }
 
   return 0;
+}
+
+void DX11Renderer::saveFrame( std::filesystem::path const& path )
+{
+  std::vector<uint32_t> buf;
+  buf.reserve( 160 * 102 );
+
+  for ( auto d : mVideoSink->frame )
+  {
+    buf.push_back( d.left.toRGBA() );
+    buf.push_back( d.right.toRGBA() );
+  }
+
+  stbi_write_png( path.string().c_str(), 160,102, 4, (void const*)buf.data(), 160*4 );
 }

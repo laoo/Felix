@@ -32,6 +32,11 @@ struct Pixel
   {
     *std::bit_cast<uint32_t*>( this ) = color;
   }
+
+  uint32_t toRGBA() const
+  {
+    return 0xff000000 | ( (uint32_t)b << 16 ) | ( (uint32_t)g << 8 ) | (uint32_t)r;
+  }
 };
 
 struct Doublet

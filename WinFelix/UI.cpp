@@ -45,6 +45,7 @@ bool UI::mainMenu( ImGuiIO& io )
     OPEN_BOOTROM,
     SAVE_WAVE,
     SAVE_VGM,
+    SAVE_FRAME,
     SAVE_MEMORY_DUMP
   };
 
@@ -187,6 +188,17 @@ bool UI::mainMenu( ImGuiIO& io )
         }
       }
       ImGui::EndDisabled();
+      ImGui::EndMenu();
+    }
+    if ( ImGui::BeginMenu( "Video" ) )
+    {
+      if ( ImGui::MenuItem( "Save Frame", nullptr ) )
+      {
+        mFileBrowser->SetTitle( "Save Video frame" );
+        mFileBrowser->SetTypeFilters( { ".png" } );
+        mFileBrowser->Open();
+        fileBrowserAction = FileBrowserAction::SAVE_FRAME;
+      }
       ImGui::EndMenu();
     }
     ImGui::BeginDisabled( !(bool)mManager.mInstance );
@@ -460,6 +472,9 @@ bool UI::mainMenu( ImGuiIO& io )
       break;
     case SAVE_VGM:
       mManager.mInstance->setVGMWriter( mFileBrowser->GetSelected() );
+      break;
+    case SAVE_FRAME:
+      mManager.mRenderer->saveFrame( mFileBrowser->GetSelected() );
       break;
     case SAVE_MEMORY_DUMP:
       mManager.mInstance->dumpMemory( mFileBrowser->GetSelected() );

@@ -2,7 +2,6 @@
 
 #include "IVideoSink.hpp"
 #include "ActionQueue.hpp"
-#include "DisplayGenerator.hpp"
 #include "Suzy.hpp"
 #include "Utility.hpp"
 #include "ComLynx.hpp"
