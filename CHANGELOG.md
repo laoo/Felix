@@ -1,7 +1,8 @@
 ## 0.6.3
 
 - icon file as a courtesy of https://retroemu.pl/
-- dumping memory to a file
+- added a command to dump emulated Lynx memory to a file
+- added a command to save currently rendered frame to a PNG file 
 
 ## 0.6.2
 
