@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "imgui.h"
 #include "WinImgui.hpp"
 

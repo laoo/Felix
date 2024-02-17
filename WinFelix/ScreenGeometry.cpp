@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ScreenGeometry.hpp"
 #include "Utility.hpp"
 

@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "EEPROM.hpp"
 #include "ImageProperties.hpp"
 #include "TraceHelper.hpp"

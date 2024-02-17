@@ -1,17 +1,17 @@
 #pragma once
-#include "BaseRenderer.hpp"
+#include "Renderer.hpp"
 #include "rational.hpp"
+#include "Utility.hpp"
 
 class WinImgui11;
-class EncodingRenderer;
 struct VideoSink;
 
-class DX11Renderer : public IBaseRenderer, public IExtendedRenderer
+class DX11Renderer : public IRenderer
 {
   struct Tag{};
 public:
   DX11Renderer( HWND hWnd, std::filesystem::path const& iniPath, Tag );
-  static std::pair<std::shared_ptr<IBaseRenderer>, std::shared_ptr<IExtendedRenderer>> create( HWND hWnd, std::filesystem::path const& iniPath );
+  static std::shared_ptr<IRenderer> create( HWND hWnd, std::filesystem::path const& iniPath );
 
   ~DX11Renderer() override;
 
@@ -19,62 +19,21 @@ public:
   void setRotation( ImageProperties::Rotation rotation ) override;
   std::shared_ptr<IVideoSink> getVideoSink() override;
 
-  void setEncoder( std::shared_ptr<IEncoder> encoder ) override;
-  std::shared_ptr<IBoard> makeBoard( int width, int height ) override;
-
-  std::shared_ptr<IScreenView> makeMainScreenView() override;
   std::shared_ptr<ICustomScreenView> makeCustomScreenView() override;
   int wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
-  struct BoardFont
-  {
-    BoardFont();
-    void initialize();
-
-    int width;
-    int height;
-    ComPtr<ID3D11ShaderResourceView> srv;
-  };
-
 private:
-  class ScreenView;
 
   void internalRender( UI& ui );
   bool resizeOutput();
   void updateSourceFromNextFrame();
   void renderGui( UI& ui );
   void renderScreenView( ScreenGeometry const& geometry, ID3D11ShaderResourceView* sourceSRV, ID3D11UnorderedAccessView* target );
-  bool mainScreenViewDebugRendering( std::shared_ptr<ScreenView> mainScreenView );
   int sizing( RECT& rect );
 
 private:
 
-  class ScreenView : public IScreenView
-  {
-  public:
-    ScreenView();
-    ~ScreenView() override = default;
-
-    void rotate( ImageProperties::Rotation rotation );
-    void resize( int width, int height ) override;
-    void* getTexture() override;
-    ScreenGeometry const& getGeometry() const;
-    ID3D11UnorderedAccessView* getUAV();
-    bool geometryChanged() const;
-
-  protected:
-    void updateBuffers();
-
-  protected:
-    ScreenGeometry mGeometry = {};
-    ComPtr<ID3D11ShaderResourceView> mSrv = {};
-
-  private:
-    ComPtr<ID3D11UnorderedAccessView> mUav = {};
-    bool mGeometryChanged = {};
-  };
-
-  class CustomScreenView : public ScreenView, public ICustomScreenView
+  class CustomScreenView : public ICustomScreenView
   {
   public:
     CustomScreenView();
@@ -82,33 +41,24 @@ private:
     void resize( int width, int height ) override;
 
     void* render( std::span<uint8_t const> data, std::span<uint8_t const> palette ) override;
+    void rotate( ImageProperties::Rotation rotation );
+    void* getTexture() override;
+    ScreenGeometry const& getGeometry() const;
+    ID3D11UnorderedAccessView* getUAV();
+    bool geometryChanged() const;
 
   private:
+    void updateBuffers();
+
+  private:
+    ScreenGeometry                    mGeometry = {};
+    ComPtr<ID3D11ShaderResourceView>  mSrv = {};
+    ComPtr<ID3D11UnorderedAccessView> mUav = {};
     ComPtr<ID3D11Texture2D>           mSource;
     ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
-    ComPtr<ID3D11Texture1D>           mPalette;
-    ComPtr<ID3D11ShaderResourceView>  mPaletteSRV;
     ComPtr<ID3D11Buffer>              mPosSizeCB;
-  };
-
-
-  class Board : public IBoard
-  {
-  public:
-    Board( int width, int height );
-    ~Board() override = default;
-
-    void* render( std::span<uint8_t const> data ) override;
-    void resize( int width, int height ) override;
-
-    int width;
-    int height;
-    ComPtr<ID3D11Texture2D> mSrc;
-    ComPtr<ID3D11ShaderResourceView> mSrcSRV;
-    ComPtr<ID3D11UnorderedAccessView> mUav;
-    ComPtr<ID3D11ShaderResourceView> mSrv;
-
-
+    std::array<Pixel, 16>             mPalette;
+    bool mGeometryChanged = {};
   };
 
   HWND mHWnd;
@@ -124,10 +74,8 @@ private:
   ComPtr<ID3D11ShaderResourceView>  mSourceSRV;
 
   rational::Ratio<int32_t>          mRefreshRate;
-  std::shared_ptr<EncodingRenderer> mEncodingRenderer;
   std::shared_ptr<VideoSink>        mVideoSink;
   mutable std::mutex                mDebugViewMutex;
-  std::weak_ptr<ScreenView>         mMainScreenView;
   int64_t                           mLastRenderTimePoint;
 };
 

@@ -83,9 +83,6 @@ public:
   static bool disasmOp( char* out, Opcode op, CPUState* state = nullptr );
   uint8_t disasmOpr( uint8_t const* ram, char* out, int& pc );
   void disassemblyFromPC( uint8_t const* ram, char * out, int columns, int rows );
-  void enableHistory( int columns, int rows );
-  void disableHistory();
-  void copyHistory( std::span<char> out );
 
 private:
 
@@ -193,22 +190,8 @@ private:
 
 private:
 
-  struct History
-  {
-    int columns;
-    int rows;
-    int cursor;
-    std::vector<char> data;
-
-    std::span<char> nextRow();
-    void copy( std::span<char> out );
-  };
-
   std::array<char, 1024> buf;
   int64_t off;
-  std::unique_ptr<History> mHistory;
-  std::mutex mHistoryMutex;
-  std::atomic_bool mHistoryPresent;
   //true if mStackBreakCondition is valid for CpuBreakType::STEP_OUT
   bool mPostponedStepOut;
   uint16_t mStackBreakCondition;

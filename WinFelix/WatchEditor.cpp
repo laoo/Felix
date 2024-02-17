@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "WatchEditor.hpp"
 #include "Manager.hpp"
 #include "Core.hpp"

@@ -4,20 +4,11 @@
 
 class Manager;
 struct ImGuiIO;
-struct DebugWindow;
 
 namespace ImGui
 {
 class FileBrowser;
 }
-
-struct BoardRendering
-{
-  bool enabled;
-  void* window;
-  float width;
-  float height;
-};
 
 class UI
 {

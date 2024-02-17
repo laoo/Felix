@@ -39,7 +39,6 @@ public:
   bool isVGMWriter() const;
 
   void enterMonitor();
-  int64_t globalSamplesEmittedPerFrame() const;
 
   uint64_t tick() const;
 
@@ -126,9 +125,6 @@ private:
   int mSPS;
   std::span<AudioSample> mOutputSamples;
   uint32_t mSamplesEmitted;
-  uint64_t mGlobalSamplesEmitted;
-  uint64_t mGlobalSamplesEmittedSnapshot;
-  int64_t mGlobalSamplesEmittedPerFrame;
   ActionQueue mActionQueue;
   std::shared_ptr<TraceHelper> mTraceHelper;
   std::shared_ptr<CPU> mCpu;

@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ImageBS93.hpp"
 
 std::shared_ptr<ImageBS93 const> ImageBS93::create( std::vector<uint8_t> & data )

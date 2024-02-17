@@ -1,6 +1,7 @@
 #pragma once
 
-#include "fmt/format.h"
+#define FMT_HEADER_ONLY
+#include <fmt/core.h>
 
 //https://stackoverflow.com/questions/68675303/how-to-create-a-function-that-forwards-its-arguments-to-fmtformat-keeping-the
 template <std::size_t N>

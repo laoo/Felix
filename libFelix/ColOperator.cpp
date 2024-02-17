@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ColOperator.hpp"
 #include "SpriteTemplates.hpp"
 #include "Log.hpp"

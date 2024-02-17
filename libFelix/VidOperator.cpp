@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "VidOperator.hpp"
 #include "SpriteTemplates.hpp"
 

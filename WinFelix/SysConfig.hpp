@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sol/sol.hpp"
+
 struct SysConfig
 {
   struct
@@ -53,7 +55,6 @@ struct SysConfig
   } memoryOptions;
   bool visualizeWatch{};
   bool visualizeBreakpoint{};
-  bool visualizeHistory{};
   bool debugModeOnBreak{};
   bool normalModeOnRun{};
   bool breakOnBrk{};

@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ComLynx.hpp"
 #include "Utility.hpp"
 #include "ComLynxWire.hpp"

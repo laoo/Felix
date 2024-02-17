@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ParallelPort.hpp"
 #include "Cartridge.hpp"
 #include "ComLynx.hpp"

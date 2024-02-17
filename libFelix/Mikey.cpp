@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "Mikey.hpp"
 #include "TimerCore.hpp"
 #include "AudioChannel.hpp"
@@ -8,7 +7,7 @@
 #include "ComLynx.hpp"
 #include "VGMWriter.hpp"
 
-Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mCore{ core }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{}, mPalette{},
+Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mCore{ core }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{},
   mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mAttenuationLeft{ 0x3c, 0x3c, 0x3c, 0x3c }, mAttenuationRight{ 0x3c, 0x3c, 0x3c, 0x3c }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( std::move( videoSink ) ) },
   mParallelPort{ mCore, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}, mVGMWriterMutex{}
 {
@@ -21,11 +20,7 @@ Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoS
       mDisplayGenerator->updateDispAddr( tick, mDisplayRegs.dispAdr );
     }
     mCore.newLine( cnt );
-    if ( cnt == 104 )
-    {
-      mDisplayGenerator->firstHblank( tick, mTimers[0x00]->getBackup( tick ) );
-    }
-    else if ( auto dma = mDisplayGenerator->hblank( tick, cnt ) )
+    if ( auto dma = mDisplayGenerator->hblank( tick, cnt ) )
     {
       mCore.requestDisplayDMA( dma.tick, dma.address );
     }
@@ -114,12 +109,6 @@ Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoS
   mAudioChannels[0x1] = std::make_unique<AudioChannel>( *mTimers[0x9] );
   mAudioChannels[0x2] = std::make_unique<AudioChannel>( *mTimers[0xa] );
   mAudioChannels[0x3] = std::make_unique<AudioChannel>( *mTimers[0xb] );
-
-  std::ranges::fill( mPalette, 0xff );
-  for ( int i = 0; i < 32; ++i )
-  {
-    mDisplayGenerator->updatePalette( 0, i, 0xff );
-  }
 }
 
 Mikey::~Mikey()
@@ -234,7 +223,6 @@ uint8_t Mikey::read( uint16_t address )
   case GREEN + 0x0d:
   case GREEN + 0x0e:
   case GREEN + 0x0f:
-      return mPalette[address - GREEN] & 0x0f;
   case BLUERED + 0x00:
   case BLUERED + 0x01:
   case BLUERED + 0x02:
@@ -251,7 +239,7 @@ uint8_t Mikey::read( uint16_t address )
   case BLUERED + 0x0d:
   case BLUERED + 0x0e:
   case BLUERED + 0x0f:
-    return mPalette[address - GREEN];
+    return mDisplayGenerator->getColorReg( address - GREEN );
   default:
     return (uint8_t)0xff;
     break;
@@ -432,8 +420,7 @@ SequencedAction Mikey::write( uint16_t address, uint8_t value )
   case BLUERED + 0x0d:
   case BLUERED + 0x0e:
   case BLUERED + 0x0f:
-    mPalette[address - GREEN] = value;
-    mDisplayGenerator->updatePalette( mAccessTick, address - GREEN, value );
+    mDisplayGenerator->setColorReg( mAccessTick, address - GREEN, value );
     break;
   default:
 //    assert( false );
@@ -531,5 +518,5 @@ uint16_t Mikey::debugDispAdr() const
 
 std::span<uint8_t const, 32> Mikey::debugPalette() const
 {
-  return std::span<uint8_t const, 32>( mPalette.data(), mPalette.size() );
+  return mDisplayGenerator->debugPalette();
 }

@@ -10,6 +10,7 @@
 #include "DisasmEditor.h"
 #include "Monitor.hpp"
 #include "BreakpointEditor.hpp"
+#include "sol/sol.hpp"
 
 class WinAudioOut;
 class ComLynxWire;
@@ -24,8 +25,7 @@ class KeyNames;
 class ImageProperties;
 class ImageROM;
 struct ImGuiIO;
-class IBaseRenderer;
-class IExtendedRenderer;
+class IRenderer;
 class ISystemDriver;
 
 class Manager
@@ -35,7 +35,7 @@ public:
   ~Manager();
 
   void update();
-  void reset();
+  void machineReset();
   void updateRotation();
   void initialize( std::shared_ptr<ISystemDriver> systemDriver );
   IUserInput & userInput() const;
@@ -49,7 +49,6 @@ private:
   void handleFileDrop( std::filesystem::path path );
 
   void updateDebugWindows();
-  BoardRendering renderHistoryWindow();
   
   static std::shared_ptr<ImageROM const> getOptionalBootROM();
 private:
@@ -75,26 +74,24 @@ private:
 
   struct DebugWindows
   {
-    std::shared_ptr<IScreenView> mainScreenView;
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
     CPUEditor cpuEditor;
     MemEditor memoryEditor;
     WatchEditor watchEditor;
     DisasmEditor disasmEditor;
     BreakpointEditor breakpointEditor;
-    std::shared_ptr<IBoard> historyBoard;
   } mDebugWindows;
 
   UI mUI;
   sol::state mLua;
   std::atomic_bool mProcessThreads;
   std::atomic_bool mJoinThreads;
+  std::atomic_int mThreadsWaiting;
   HMODULE mEncoderMod;
   std::thread mRenderThread;
   std::thread mAudioThread;
   std::shared_ptr<ISystemDriver> mSystemDriver;
-  std::shared_ptr<IBaseRenderer> mRenderer;
-  std::shared_ptr<IExtendedRenderer> mExtendedRenderer;
+  std::shared_ptr<IRenderer> mRenderer;
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
   std::shared_ptr<IEncoder> mEncoder;

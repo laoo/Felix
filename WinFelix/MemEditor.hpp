@@ -2,7 +2,7 @@
 
 #include "Editors.hpp"
 #include <imgui.h>
-#include <imgui_memory_editor.h>
+#include <imgui_memory_editor/imgui_memory_editor.h>
 
 class Manager;
 

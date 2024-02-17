@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "TraceHelper.hpp"
 
 static constexpr int LABEL_SIZE_LIMIT = 20;

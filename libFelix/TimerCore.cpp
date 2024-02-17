@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "TimerCore.hpp"
 
 TimerCore::TimerCore( int number, std::function<void( uint64_t, bool )> trigger ) :

@@ -1,6 +1,8 @@
-#include "pch.hpp"
 #include "Encryption.hpp"
 #include "Log.hpp"
+
+#define BOOST_MP_STANDALONE
+#include <boost/multiprecision/cpp_int.hpp>
 
 uint8_t decrypt( std::span<uint8_t const> encrypted, int& accumulator, std::vector<uint8_t>& result )
 {

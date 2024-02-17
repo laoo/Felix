@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "ImageCart.hpp"
 #include "ImageProperties.hpp"
 #include "Encryption.hpp"

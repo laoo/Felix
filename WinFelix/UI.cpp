@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "UI.hpp"
 #include "imgui.h"
 #include "IInputSource.hpp"
@@ -34,8 +33,7 @@ void UI::drawGui( int left, int top, int right, int bottom )
     mOpenMenu = mainMenu( io );
   }
 
-  if ( mManager.mExtendedRenderer )
-    drawDebugWindows( io );
+  drawDebugWindows( io );
 }
 
 bool UI::mainMenu( ImGuiIO& io )
@@ -86,7 +84,7 @@ bool UI::mainMenu( ImGuiIO& io )
     resetIssued = true;
   }
 
-  if ( ImGui::IsKeyPressed( ImGuiKey_F4 ) && mManager.mExtendedRenderer )
+  if ( ImGui::IsKeyPressed( ImGuiKey_F4 ) )
   {
     debugMode = !debugMode;
   }
@@ -190,115 +188,98 @@ bool UI::mainMenu( ImGuiIO& io )
       ImGui::EndDisabled();
       ImGui::EndMenu();
     }
-    if ( mManager.mExtendedRenderer )
+    ImGui::BeginDisabled( !(bool)mManager.mInstance );
+    if ( ImGui::BeginMenu( "Debug" ) )
     {
-      ImGui::BeginDisabled( !(bool)mManager.mInstance );
-      if ( ImGui::BeginMenu( "Debug" ) )
+      openMenu = true;
+
+      if ( ImGui::MenuItem( "Reset", "F3" ) )
       {
-        openMenu = true;
+        resetIssued = true;
+      }
 
-        if ( ImGui::MenuItem( "Reset", "F3" ) )
-        {
-          resetIssued = true;
-        }
+      ImGui::MenuItem( "Debug Mode", "F4", &debugMode );
 
-        ImGui::MenuItem( "Debug Mode", "F4", &debugMode );
-
-        if ( ImGui::MenuItem( mManager.mDebugger.isPaused() ? "Run" : "Break", "F5" ) )
-        {
-          pauseRunIssued = true;
-        }
-        if ( ImGui::MenuItem( "Step In", "F6" ) )
-        {
-          stepInIssued = true;
-        }
-        if ( ImGui::MenuItem( "Step Over", "F7" ) )
-        {
-          stepOverIssued = true;
-        }
-        if ( ImGui::MenuItem( "Step Out", "F8" ) )
-        {
-          stepOutIssued = true;
-        }
-        if ( ImGui::BeginMenu( "Debug Windows" ) )
-        {
-          bool cpuWindow = mManager.mDebugger.visualizeCPU;
-          bool watchWindow = mManager.mDebugger.visualizeWatch;
-          bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
-          bool memoryWindow = mManager.mDebugger.visualizeMemory;
-          bool disasmWindow = mManager.mDebugger.visualizeDisasm;
-          bool historyWindow = mManager.mDebugger.isHistoryVisualized();
+      if ( ImGui::MenuItem( mManager.mDebugger.isPaused() ? "Run" : "Break", "F5" ) )
+      {
+        pauseRunIssued = true;
+      }
+      if ( ImGui::MenuItem( "Step In", "F6" ) )
+      {
+        stepInIssued = true;
+      }
+      if ( ImGui::MenuItem( "Step Over", "F7" ) )
+      {
+        stepOverIssued = true;
+      }
+      if ( ImGui::MenuItem( "Step Out", "F8" ) )
+      {
+        stepOutIssued = true;
+      }
+      if ( ImGui::BeginMenu( "Debug Windows" ) )
+      {
+        bool cpuWindow = mManager.mDebugger.visualizeCPU;
+        bool watchWindow = mManager.mDebugger.visualizeWatch;
+        bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
+        bool memoryWindow = mManager.mDebugger.visualizeMemory;
+        bool disasmWindow = mManager.mDebugger.visualizeDisasm;
         bool monitorWindow = mManager.mDebugger.showMonitor;
-          if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
-          {
-            mManager.mDebugger.visualizeCPU = cpuWindow;
-          }
-          if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
-          {
-            mManager.mDebugger.visualizeDisasm = disasmWindow;
-          }
-          if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
-          {
-            mManager.mDebugger.visualizeMemory = memoryWindow;
-          }
-          if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
-          {
-            mManager.mDebugger.visualizeWatch = watchWindow;
-          }
+        if ( ImGui::MenuItem( "CPU Window", "Ctrl+C", &cpuWindow ) )
+        {
+          mManager.mDebugger.visualizeCPU = cpuWindow;
+        }
+        if ( ImGui::MenuItem( "Disassembly Window", "Ctrl+D", &disasmWindow ) )
+        {
+          mManager.mDebugger.visualizeDisasm = disasmWindow;
+        }
+        if ( ImGui::MenuItem( "Memory Window", "Ctrl+N", &memoryWindow ) )
+        {
+          mManager.mDebugger.visualizeMemory = memoryWindow;
+        }
+        if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
+        {
+          mManager.mDebugger.visualizeWatch = watchWindow;
+        }
         if ( ImGui::MenuItem( "Monitor Window", "Ctrl+T", &monitorWindow ) )
         {
           mManager.mDebugger.showMonitor = monitorWindow;
         }
-          if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
-          {
-            mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
-          }
-          if ( ImGui::MenuItem( "History Window", "Ctrl+H", &historyWindow ) )
-          {
-            if ( historyWindow )
-            {
-              mManager.mInstance->debugCPU().enableHistory( mManager.mDebugger.historyVisualizer().columns, mManager.mDebugger.historyVisualizer().rows );
-              mManager.mDebugger.visualizeHistory( true );
-            }
-            else
-            {
-              mManager.mInstance->debugCPU().disableHistory();
-              mManager.mDebugger.visualizeHistory( false );
-            }
-          }
-          ImGui::BeginDisabled( !mManager.mDebugger.isDebugMode() );
-          if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
-          {
-            mManager.mDebugger.newScreenView();
-          }
-          ImGui::EndDisabled();
-          ImGui::EndMenu();
-        }
-        if ( ImGui::BeginMenu( "Options" ) )
+        if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
         {
-          bool breakOnBrk = mManager.mDebugger.isBreakOnBrk();
-          bool debugModeOnBreak = mManager.mDebugger.debugModeOnBreak();
-          bool normalModeOnRun = mManager.mDebugger.normalModeOnRun();
+          mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
+        }
+        ImGui::BeginDisabled( !mManager.mDebugger.isDebugMode() );
+        if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
+        {
+          mManager.mDebugger.newScreenView();
+        }
+        ImGui::EndDisabled();
+        ImGui::EndMenu();
+      }
+      if ( ImGui::BeginMenu( "Options" ) )
+      {
+        bool breakOnBrk = mManager.mDebugger.isBreakOnBrk();
+        bool debugModeOnBreak = mManager.mDebugger.debugModeOnBreak();
+        bool normalModeOnRun = mManager.mDebugger.normalModeOnRun();
 
-          if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
-          {
-            mManager.mDebugger.breakOnBrk( breakOnBrk );
-            mManager.mInstance->debugCPU().breakOnBrk( breakOnBrk );
-          }
-          if ( ImGui::MenuItem( "Debug mode on break", nullptr, &debugModeOnBreak ) )
-          {
-            mManager.mDebugger.debugModeOnBreak( debugModeOnBreak );
-          }
-          if ( ImGui::MenuItem( "Normal mode on run", nullptr, &normalModeOnRun ) )
-          {
-            mManager.mDebugger.normalModeOnRun( normalModeOnRun );
-          }
-          ImGui::EndMenu();
+        if ( ImGui::MenuItem( "Break on BRK", nullptr, &breakOnBrk ) )
+        {
+          mManager.mDebugger.breakOnBrk( breakOnBrk );
+          mManager.mInstance->debugCPU().breakOnBrk( breakOnBrk );
+        }
+        if ( ImGui::MenuItem( "Debug mode on break", nullptr, &debugModeOnBreak ) )
+        {
+          mManager.mDebugger.debugModeOnBreak( debugModeOnBreak );
+        }
+        if ( ImGui::MenuItem( "Normal mode on run", nullptr, &normalModeOnRun ) )
+        {
+          mManager.mDebugger.normalModeOnRun( normalModeOnRun );
         }
         ImGui::EndMenu();
       }
-      ImGui::EndDisabled();
+      ImGui::EndMenu();
     }
+    ImGui::EndDisabled();
     if ( ImGui::BeginMenu( "Options" ) )
     {
       openMenu = true;
@@ -401,20 +382,6 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       mManager.mDebugger.visualizeBreakpoint = !mManager.mDebugger.visualizeBreakpoint;
     }
-    if ( ImGui::IsKeyPressed( ImGuiKey_H ) )
-    {
-      bool historyWindow = !mManager.mDebugger.isHistoryVisualized();
-      if ( historyWindow )
-      {
-        mManager.mInstance->debugCPU().enableHistory( mManager.mDebugger.historyVisualizer().columns, mManager.mDebugger.historyVisualizer().rows );
-        mManager.mDebugger.visualizeHistory( true );
-      }
-      else
-      {
-        mManager.mInstance->debugCPU().disableHistory();
-        mManager.mDebugger.visualizeHistory( false );
-      }
-    }
     if ( ImGui::IsKeyPressed( ImGuiKey_S ) && mManager.mDebugger.isDebugMode() )
     {
       mManager.mDebugger.newScreenView();
@@ -429,7 +396,7 @@ bool UI::mainMenu( ImGuiIO& io )
 
   if ( resetIssued )
   {
-    mManager.reset();
+    mManager.mDoReset = true;
     mManager.mDebugger( RunMode::PAUSE );
   }
   if ( stepOutIssued )
@@ -496,11 +463,8 @@ bool UI::mainMenu( ImGuiIO& io )
 
 void UI::drawDebugWindows( ImGuiIO& io )
 {
-  assert( mManager.mExtendedRenderer );
+  std::unique_lock<std::mutex> l{ mManager.mDebugger.lockMutex() };
 
-  std::unique_lock<std::mutex> l = mManager.mDebugger.lockMutex();
-
-  auto historyRendering = mManager.renderHistoryWindow();
   bool debugMode = mManager.mDebugger.isDebugMode();
 
   if ( debugMode )
@@ -550,32 +514,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::End();
     }
 
-    if ( historyRendering.enabled )
-    {
-      ImGui::Begin( "History", &historyRendering.enabled, ImGuiWindowFlags_AlwaysAutoResize );
-      ImGui::Image( historyRendering.window, ImVec2{ historyRendering.width, historyRendering.height } );
-      ImGui::End();
-    }
-
-    if ( auto mainScreenView = mManager.mDebugWindows.mainScreenView )
-    {
-      static const float xpad = 4.0f;
-      static const float ypad = 4.0f + 19.0f;
-      ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2{ SCREEN_WIDTH + xpad, SCREEN_HEIGHT + ypad } );
-
-      ImGui::Begin( "Rendering", &debugMode, ImGuiWindowFlags_NoCollapse );
-      auto size = ImGui::GetWindowSize();
-      size.x = std::max( 0.0f, size.x - xpad );
-      size.y = std::max( 0.0f, size.y - ypad );
-      if ( auto tex = mainScreenView->getTexture() )
-      {
-        ImGui::Image( tex, size );
-      }
-      ImGui::End();
-      ImGui::PopStyleVar();
-      mainScreenView->resize( (int)size.x, (int)size.y );
-    }
-
     std::vector<int> removedIds;
     for ( auto& sv : mManager.mDebugger.screenViews() )
     {
@@ -603,7 +541,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugDispAdr();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -614,7 +552,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugVidBas();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -625,7 +563,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = mManager.mInstance->debugCollBas();
           std::sprintf( buf, "%04x", addr );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + addr, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -636,7 +574,7 @@ void UI::drawDebugWindows( ImGuiIO& io )
         {
           uint16_t addr = sv.customAddress;
           std::sprintf( buf, "%04x", sv.customAddress );
-          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + sv.customAddress, SCREEN_WIDTH * SCREEN_HEIGHT / 2 };
+          data = std::span<uint8_t const>{ mManager.mInstance->debugRAM() + sv.customAddress, ROW_BYTES * SCREEN_HEIGHT };
           if ( !sv.safePalette )
             palette = mManager.mInstance->debugPalette();
         }
@@ -686,25 +624,12 @@ void UI::drawDebugWindows( ImGuiIO& io )
       ImGui::Checkbox( "Disassembly Window", &mManager.mDebugger.visualizeDisasm );
       ImGui::Checkbox( "Memory Window", &mManager.mDebugger.visualizeMemory );
       ImGui::Checkbox( "Monitor Window", &mManager.mDebugger.showMonitor );
-      if ( ImGui::Checkbox( "History Window", &historyRendering.enabled ) )
-      {
-        if ( historyRendering.enabled )
-        {
-          mManager.mInstance->debugCPU().enableHistory( mManager.mDebugger.historyVisualizer().columns, mManager.mDebugger.historyVisualizer().rows );
-        }
-        else
-        {
-          mManager.mInstance->debugCPU().disableHistory();
-        }
-      }
       if ( ImGui::Selectable( "New Screen View" ) )
       {
         mManager.mDebugger.newScreenView();
       }
       ImGui::EndPopup();
     }
-
-    mManager.mDebugger.visualizeHistory( historyRendering.enabled );
   }
 }
 

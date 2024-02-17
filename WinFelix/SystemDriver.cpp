@@ -1,6 +1,4 @@
-#include "pch.hpp"
 #include "SystemDriver.hpp"
-#include "DX9Renderer.hpp"
 #include "DX11Renderer.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
@@ -146,14 +144,7 @@ void SystemDriver::initialize( HWND hWnd )
 
   auto iniPath = gConfigProvider.appDataFolder();
 
-  try
-  {
-    std::tie( mBaseRenderer, mExtendedRenderer ) = DX11Renderer::create( hWnd, iniPath );
-  }
-  catch ( ... )
-  {
-    std::tie( mBaseRenderer, mExtendedRenderer ) = DX9Renderer::create( hWnd, iniPath );
-  }
+  mRenderer = DX11Renderer::create( hWnd, iniPath );
 
   mIntputSource = std::make_shared<UserInput>();
 }
@@ -181,14 +172,9 @@ int SystemDriver::eventLoop()
   return 0;
 }
 
-std::shared_ptr<IBaseRenderer> SystemDriver::baseRenderer() const
+std::shared_ptr<IRenderer> SystemDriver::renderer() const
 {
-  return mBaseRenderer;
-}
-
-std::shared_ptr<IExtendedRenderer> SystemDriver::extendedRenderer() const
-{
-  return mExtendedRenderer;
+  return mRenderer;
 }
 
 int SystemDriver::wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -216,14 +202,14 @@ int SystemDriver::wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
     {
       mIntputSource->keyDown( (int)wParam );
     }
-    return mBaseRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   case WM_KEYUP:
   case WM_SYSKEYUP:
     if ( wParam < 256 )
     {
       mIntputSource->keyUp( (int)wParam );
     }
-    return mBaseRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   case WM_DROPFILES:
     handleFileDrop( (HDROP)wParam );
     SetForegroundWindow( hWnd );
@@ -231,14 +217,14 @@ int SystemDriver::wndProcHandler( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
     return 0;
   case WM_KILLFOCUS:
     mIntputSource->lostFocus();
-    return mBaseRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   case WM_DEVICECHANGE:
     if ( (UINT)wParam == DBT_DEVNODES_CHANGED )
       mIntputSource->recheckGamepad();
     return 0;
   default:
-    assert( mBaseRenderer );
-    return mBaseRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
+    assert( mRenderer );
+    return mRenderer->wndProcHandler( hWnd, msg, wParam, lParam );
   }
 }
 
@@ -278,7 +264,7 @@ std::shared_ptr<IUserInput> SystemDriver::userInput() const
 void SystemDriver::updateRotation( ImageProperties::Rotation rotation )
 {
   mIntputSource->setRotation( rotation );
-  mBaseRenderer->setRotation( rotation );
+  mRenderer->setRotation( rotation );
 }
 
 void SystemDriver::setImageName( std::wstring name )

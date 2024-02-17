@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "DisasmEditor.h"
 #include "Manager.hpp"
 #include "Core.hpp"

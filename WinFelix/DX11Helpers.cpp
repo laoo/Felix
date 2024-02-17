@@ -1,4 +1,3 @@
-#include "pch.hpp"
 #include "DX11Helpers.hpp"
 
 RTVGuard::RTVGuard( ComPtr<ID3D11DeviceContext> const& pImmediateContext, ID3D11RenderTargetView* rtv ) : mImmediateContext{ pImmediateContext }
