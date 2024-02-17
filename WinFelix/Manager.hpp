@@ -17,7 +17,6 @@ class ComLynxWire;
 class Core;
 class SymbolSource;
 class InputFile;
-class IEncoder;
 class WinImgui;
 class ScriptDebuggerEscapes;
 class UserInput;
@@ -94,7 +93,6 @@ private:
   std::shared_ptr<IRenderer> mRenderer;
   std::shared_ptr<WinAudioOut> mAudioOut;
   std::shared_ptr<ComLynxWire> mComLynxWire;
-  std::shared_ptr<IEncoder> mEncoder;
   std::unique_ptr<SymbolSource> mSymbols;
   std::shared_ptr<Core> mInstance;
   std::shared_ptr<ScriptDebuggerEscapes> mScriptDebuggerEscapes;

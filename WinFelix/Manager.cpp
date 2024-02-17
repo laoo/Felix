@@ -9,7 +9,6 @@
 #include "Log.hpp"
 #include "Ex.hpp"
 #include "CPUState.hpp"
-#include "IEncoder.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 #include "ScriptDebuggerEscapes.hpp"

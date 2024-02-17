@@ -1,7 +1,6 @@
 #include "WinAudioOut.hpp"
 #include "Core.hpp"
 #include "Log.hpp"
-#include "IEncoder.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
 
@@ -105,12 +104,6 @@ WinAudioOut::~WinAudioOut()
   sysConfig->audio.mute = mute();
 }
 
-void WinAudioOut::setEncoder( std::shared_ptr<IEncoder> pEncoder )
-{
-  std::unique_lock lock{ mMutex };
-  mEncoder = std::move( pEncoder );
-}
-
 void WinAudioOut::setWavOut( std::filesystem::path path )
 {
   std::unique_lock lock{ mMutex };
@@ -189,11 +182,6 @@ CpuBreakType WinAudioOut::fillBuffer( std::shared_ptr<Core> instance, int64_t re
       pfData[i * mMixFormat->nChannels + 1] = mSamplesBuffer[i].right * mNormalizer;
     }
 
-    {
-      std::unique_lock lock{ mMutex };
-      if ( mEncoder )
-        mEncoder->pushAudioBuffer( std::span<float const>( pfData, framesAvailable * mMixFormat->nChannels ) );
-    }
     {
       std::unique_lock lock{ mMutex };
       if ( mWav )
