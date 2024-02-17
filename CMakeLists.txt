@@ -62,6 +62,9 @@ add_executable( Felix WIN32
   WinFelix/renderer.hxx
   WinFelix/vertex.hxx
 
+  WinFelix/felix.rc
+  WinFelix/felix.ico
+
   libFelix/ActionQueue.cpp
   libFelix/ActionQueue.hpp
   libFelix/AudioChannel.cpp

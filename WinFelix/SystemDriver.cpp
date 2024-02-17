@@ -5,6 +5,7 @@
 #include "UserInput.hpp"
 #include "version.hpp"
 #include "Manager.hpp"
+#include "felix.rc"
 
 static constexpr wchar_t gClassName[] = L"FelixEmulatorWindowClass";
 
@@ -93,12 +94,12 @@ std::shared_ptr<ISystemDriver> createSystemDriver( Manager& manager, std::wstrin
   wc.cbClsExtra = 0;
   wc.cbWndExtra = 0;
   wc.hInstance = (HINSTANCE)&__ImageBase;
-  wc.hIcon = LoadIcon( NULL, IDI_APPLICATION );
+  wc.hIcon = LoadIcon( GetModuleHandle( NULL ), MAKEINTRESOURCE( IDI_ICON1 ) );
   wc.hCursor = LoadCursor( NULL, IDC_ARROW );
   wc.hbrBackground = (HBRUSH)( COLOR_WINDOW + 1 );
   wc.lpszMenuName = NULL;
   wc.lpszClassName = gClassName;
-  wc.hIconSm = LoadIcon( NULL, IDI_APPLICATION );
+  wc.hIconSm = ( HICON )LoadImage( GetModuleHandle( NULL ), MAKEINTRESOURCE( IDI_ICON1 ), IMAGE_ICON, 16, 16, 0 );
 
   if ( !RegisterClassEx( &wc ) )
   {
