@@ -43,8 +43,9 @@ bool UI::mainMenu( ImGuiIO& io )
     NONE,
     OPEN_CARTRIDGE,
     OPEN_BOOTROM,
-    OPEN_WAVE,
-    OPEN_VGM
+    SAVE_WAVE,
+    SAVE_VGM,
+    SAVE_MEMORY_DUMP
   };
 
   enum class ModalWindow
@@ -162,7 +163,7 @@ bool UI::mainMenu( ImGuiIO& io )
           mFileBrowser->SetTitle( "Save audio to wav file" );
           mFileBrowser->SetTypeFilters( { ".wav", ".*" } );
           mFileBrowser->Open();
-          fileBrowserAction = FileBrowserAction::OPEN_WAVE;
+          fileBrowserAction = FileBrowserAction::SAVE_WAVE;
         }
         else
         {
@@ -178,7 +179,7 @@ bool UI::mainMenu( ImGuiIO& io )
           mFileBrowser->SetTitle( "Save VGM 1.72" );
           mFileBrowser->SetTypeFilters( { ".vgm", ".*" } );
           mFileBrowser->Open();
-          fileBrowserAction = FileBrowserAction::OPEN_VGM;
+          fileBrowserAction = FileBrowserAction::SAVE_VGM;
         }
         else
         {
@@ -276,6 +277,13 @@ bool UI::mainMenu( ImGuiIO& io )
           mManager.mDebugger.normalModeOnRun( normalModeOnRun );
         }
         ImGui::EndMenu();
+      }
+      if ( ImGui::MenuItem( "Dump memory", nullptr ) )
+      {
+        mFileBrowser->SetTitle( "Dump Lynx memory to a file" );
+        mFileBrowser->SetTypeFilters( { ".*" } );
+        mFileBrowser->Open();
+        fileBrowserAction = FileBrowserAction::SAVE_MEMORY_DUMP;
       }
       ImGui::EndMenu();
     }
@@ -447,11 +455,14 @@ bool UI::mainMenu( ImGuiIO& io )
     case OPEN_BOOTROM:
       sysConfig->bootROM.path = mFileBrowser->GetSelected();
       break;
-    case OPEN_WAVE:
+    case SAVE_WAVE:
       mManager.mAudioOut->setWavOut( mFileBrowser->GetSelected() );
       break;
-    case OPEN_VGM:
+    case SAVE_VGM:
       mManager.mInstance->setVGMWriter( mFileBrowser->GetSelected() );
+      break;
+    case SAVE_MEMORY_DUMP:
+      mManager.mInstance->dumpMemory( mFileBrowser->GetSelected() );
       break;
     }
     mFileBrowser->ClearSelected();

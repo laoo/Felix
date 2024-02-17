@@ -37,6 +37,7 @@ public:
   void setLog( std::filesystem::path const & path );
   void setVGMWriter( std::filesystem::path const& path );
   bool isVGMWriter() const;
+  void dumpMemory( std::filesystem::path const & path );
 
   void enterMonitor();
 

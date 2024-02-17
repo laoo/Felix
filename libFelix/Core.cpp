@@ -120,6 +120,12 @@ bool Core::isVGMWriter() const
   return mMikey->isVGMWriter();
 }
 
+void Core::dumpMemory( std::filesystem::path const& path )
+{
+  std::ofstream fout{ path, std::ios::binary };
+  fout.write( (char const*)mRAM.data(), mRAM.size() );
+}
+
 void Core::pulseReset( std::optional<uint16_t> resetAddress )
 {
   if ( resetAddress )
