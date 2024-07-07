@@ -135,8 +135,6 @@ private:
   std::shared_ptr<Suzy> mSuzy;
   MAPCTL mMapCtl;
   uint64_t mFastCycleTick;
-  uint64_t mPatchMagickCodeAccumulator;
-  uint32_t mLastAccessPage;
   uint16_t mDMAAddress;
   std::shared_ptr<ISuzyProcess> mSuzyProcess;
   ISuzyProcess::Request const* mSuzyProcessRequest;

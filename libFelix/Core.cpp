@@ -27,7 +27,7 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mTraceHelper{ std::make_shared<TraceHelper>() }, mCpu{ std::make_shared<CPU>( mTraceHelper ) },
   mCartridge{ std::make_shared<Cartridge>( imageProperties, std::shared_ptr<ImageCart>{}, mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
   mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{},
-  mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mHaltSuzy{}
+  mDMAAddress{}, mFastCycleTick{ 4 }, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mHaltSuzy{}
 {
   gDebugRAM = &mRAM[0];
 
