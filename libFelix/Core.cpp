@@ -18,7 +18,6 @@
 uint8_t* gDebugRAM;
 
 static constexpr uint64_t RESET_DURATION = 5 * 10;  //asserting RESET for 10 cycles to make sure none will miss it
-static constexpr uint32_t BAD_LAST_ACCESS_PAGE = ~0;
 
 static constexpr bool ENABLE_TRAPS = true;
 
@@ -27,7 +26,7 @@ Core::Core( ImageProperties const& imageProperties, std::shared_ptr<ComLynxWire>
   std::shared_ptr<ScriptDebuggerEscapes> scriptDebuggerEscapes ) :
   mRAM{}, mROM{}, mPageTypes{}, mScriptDebugger{ std::make_shared<ScriptDebugger>() }, mCurrentTick{}, mSamplesRemainder{}, mActionQueue{}, mTraceHelper{ std::make_shared<TraceHelper>() }, mCpu{ std::make_shared<CPU>( mTraceHelper ) },
   mCartridge{ std::make_shared<Cartridge>( imageProperties, std::shared_ptr<ImageCart>{}, mTraceHelper ) }, mComLynx{ std::make_shared<ComLynx>( comLynxWire ) }, mComLynxWire{ comLynxWire },
-  mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{}, mLastAccessPage{ BAD_LAST_ACCESS_PAGE },
+  mMikey{ std::make_shared<Mikey>( *this, *mComLynx, videoSink ) }, mSuzy{ std::make_shared<Suzy>( *this, inputSource ) }, mMapCtl{},
   mDMAAddress{}, mFastCycleTick{ 4 }, mPatchMagickCodeAccumulator{}, mResetRequestDuringSpriteRendering{}, mSuzyRunning{}, mHaltSuzy{}
 {
   gDebugRAM = &mRAM[0];
@@ -422,12 +421,10 @@ CpuBreakType Core::executeCPUAction()
   case CPUAction::READ_SUZY:
     mCurrentTick = mSuzy->requestRead( mCurrentTick, req.address );
     mCpu->respond( readSuzy( req.address ) );
-    mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   case CPUAction::WRITE_SUZY:
     mCurrentTick = mSuzy->requestWrite( mCurrentTick, req.address );
     writeSuzy( req.address, req.value );
-    mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   case CPUAction::FETCH_OPCODE_MIKEY:
     //no code in Suzy napespace. Should trigger emulation break
@@ -438,12 +435,10 @@ CpuBreakType Core::executeCPUAction()
   case CPUAction::READ_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     mCpu->respond( readMikey( req.address ) );
-    mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   case CPUAction::WRITE_MIKEY:
     mCurrentTick = mMikey->requestAccess( mCurrentTick, req.address );
     writeMikey( req.address, req.value );
-    mLastAccessPage = BAD_LAST_ACCESS_PAGE;
     break;
   }
 
@@ -553,33 +548,22 @@ std::shared_ptr<ScriptDebugger> Core::getScriptDebugger() const
 
 uint64_t Core::fetchRAMTiming( uint16_t address )
 {
-  uint32_t page = ( address >> 8 );
-  if ( page == mLastAccessPage )
-  {
-    return mFastCycleTick;
-  }
-  else
-  {
-    mLastAccessPage = page;
-    return 5;
-  }
+  return mFastCycleTick;
 }
 
 uint64_t Core::fetchROMTiming( uint16_t address )
 {
-  //Reset handler must burd at least as many cycles as needed to dessert RESET
+  //Reset handler must burn at least as many cycles as needed to dessert RESET
   return address == 0xff80 ? RESET_DURATION : 5;
 }
 
 uint64_t Core::readTiming( uint16_t address )
 {
-  mLastAccessPage = BAD_LAST_ACCESS_PAGE;
   return 5;
 }
 
 uint64_t Core::writeTiming( uint16_t address )
 {
-  mLastAccessPage = BAD_LAST_ACCESS_PAGE;
   return 5;
 }
 

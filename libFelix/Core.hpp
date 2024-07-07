@@ -106,10 +106,10 @@ private:
   void runSuzy();
   Cartridge & getCartridge();
   void newLine( int rowNr );  
-  uint64_t fetchRAMTiming( uint16_t address );
-  uint64_t fetchROMTiming( uint16_t address );
-  uint64_t readTiming( uint16_t address );
-  uint64_t writeTiming( uint16_t address );
+  inline uint64_t fetchRAMTiming( uint16_t address );
+  inline uint64_t fetchROMTiming( uint16_t address );
+  inline uint64_t readTiming( uint16_t address );
+  inline uint64_t writeTiming( uint16_t address );
 
   friend class Mikey;
   friend class Suzy;
