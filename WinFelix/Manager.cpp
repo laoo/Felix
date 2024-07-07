@@ -256,7 +256,7 @@ void Manager::processLua( std::filesystem::path const& path )
       mInstance->debugCPU().enableTrace();
     }
   };
-  mLua["traceOf"] = [this] ()
+  mLua["traceOff"] = [this] ()
   {
     if ( mInstance )
     {
@@ -319,7 +319,15 @@ void Manager::processLua( std::filesystem::path const& path )
 
   if ( sol::optional<std::string> opt = mLua["log"] )
   {
-    mLogPath = *opt;
+    std::filesystem::path path{ *opt };
+    if ( path.is_absolute() )
+    {
+      mLogPath = path;
+    }
+    else
+    {
+      mLogPath = luaPath.parent_path() / path;
+    }
   }
 }
 
