@@ -2,7 +2,10 @@
 
 - icon file as a courtesy of https://retroemu.pl/
 - added a command to dump emulated Lynx memory to a file
-- added a command to save currently rendered frame to a PNG file 
+- added a command to save currently rendered frame to a PNG file
+- removing buggy watch editor and breakpoint editor
+- fixing a script typo (traceOf -> traceOff)
+- making trace log set in lua script relative to the script file, not an emulator executable
 
 ## 0.6.2
 
