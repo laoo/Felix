@@ -52,9 +52,11 @@ bool UI::mainMenu( ImGuiIO& io )
   enum class ModalWindow
   {
     NONE,
-    PROPERTIES
+    PROPERTIES,
+    SAVE
   };
 
+  static bool oldModalWindow = false;
   static ModalWindow modalWindow = ModalWindow::NONE;
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
   static std::optional<KeyInput::Key> keyToConfigure;
@@ -127,7 +129,7 @@ bool UI::mainMenu( ImGuiIO& io )
         mFileBrowser->Open();
         fileBrowserAction = FileBrowserAction::OPEN_CARTRIDGE;
       }
-      if (ImGui::MenuItem("Re-Open", "Ctrl+R"))
+      if ( ImGui::MenuItem("Re-Open", "Ctrl+R") )
       {
           mManager.mDoReset = true;
       }
@@ -232,8 +234,6 @@ bool UI::mainMenu( ImGuiIO& io )
       if ( ImGui::BeginMenu( "Debug Windows" ) )
       {
         bool cpuWindow = mManager.mDebugger.visualizeCPU;
-        bool watchWindow = mManager.mDebugger.visualizeWatch;
-        bool breakpointWindow = mManager.mDebugger.visualizeBreakpoint;
         bool memoryWindow = mManager.mDebugger.visualizeMemory;
         bool disasmWindow = mManager.mDebugger.visualizeDisasm;
         bool monitorWindow = mManager.mDebugger.showMonitor;
@@ -249,17 +249,9 @@ bool UI::mainMenu( ImGuiIO& io )
         {
           mManager.mDebugger.visualizeMemory = memoryWindow;
         }
-        if ( ImGui::MenuItem( "Watch Window", "Ctrl+W", &watchWindow ) )
-        {
-          mManager.mDebugger.visualizeWatch = watchWindow;
-        }
         if ( ImGui::MenuItem( "Monitor Window", "Ctrl+T", &monitorWindow ) )
         {
           mManager.mDebugger.showMonitor = monitorWindow;
-        }
-        if ( ImGui::MenuItem( "Breakpoint Window", "Ctrl+B", &breakpointWindow ) )
-        {
-          mManager.mDebugger.visualizeBreakpoint = breakpointWindow;
         }
         ImGui::BeginDisabled( !mManager.mDebugger.isDebugMode() );
         if ( ImGui::MenuItem( "New Screen View", "Ctrl+S" ) )
@@ -394,14 +386,6 @@ bool UI::mainMenu( ImGuiIO& io )
     {
       mManager.mDebugger.visualizeMemory = !mManager.mDebugger.visualizeMemory;
     }
-    if ( ImGui::IsKeyPressed( ImGuiKey_W ) )
-    {
-      mManager.mDebugger.visualizeWatch = !mManager.mDebugger.visualizeWatch;
-    }
-    if ( ImGui::IsKeyPressed( ImGuiKey_B ) )
-    {
-      mManager.mDebugger.visualizeBreakpoint = !mManager.mDebugger.visualizeBreakpoint;
-    }
     if ( ImGui::IsKeyPressed( ImGuiKey_S ) && mManager.mDebugger.isDebugMode() )
     {
       mManager.mDebugger.newScreenView();
@@ -436,18 +420,46 @@ bool UI::mainMenu( ImGuiIO& io )
     mManager.mDebugger.togglePause();
   }
 
-  switch ( modalWindow )
+  if ( oldModalWindow )
   {
-  case ModalWindow::PROPERTIES:
-    ImGui::OpenPopup( "Image properties" );
-    break;
-  default:
-    break;
+    switch ( modalWindow )
+    {
+    case ModalWindow::PROPERTIES:
+      if ( imagePropertiesWindow( false ) )
+      {
+        modalWindow = ModalWindow::NONE;
+        oldModalWindow = false;
+      }
+      break;
+    case ModalWindow::SAVE:
+      if ( saveImageWindow( false ) )
+      {
+        modalWindow = ModalWindow::NONE;
+        oldModalWindow = false;
+      }
+      break;
+    default:
+      break;
+    }
   }
-
-  imagePropertiesWindow( modalWindow == ModalWindow::PROPERTIES );
-
-  modalWindow = ModalWindow::NONE;
+  else
+  {
+    switch ( modalWindow )
+    {
+    case ModalWindow::PROPERTIES:
+      ImGui::OpenPopup( "Image properties" );
+      imagePropertiesWindow( true );
+      oldModalWindow = true;
+      break;
+    case ModalWindow::SAVE:
+      ImGui::OpenPopup( "Save image file" );
+      saveImageWindow( true );
+      oldModalWindow = true;
+      break;
+    default:
+      break;
+    }
+  }
 
 
   mFileBrowser->Display();
@@ -516,20 +528,6 @@ void UI::drawDebugWindows( ImGuiIO& io )
     {
       ImGui::Begin( "Memory", &mManager.mDebugger.visualizeMemory, ImGuiWindowFlags_None );
       mManager.mDebugWindows.memoryEditor.drawContents();
-      ImGui::End();
-    }
-
-    if ( mManager.mDebugger.visualizeWatch )
-    {
-      ImGui::Begin( "Watch", &mManager.mDebugger.visualizeWatch, ImGuiWindowFlags_None );
-      mManager.mDebugWindows.watchEditor.drawContents();
-      ImGui::End();
-    }
-
-    if ( mManager.mDebugger.visualizeBreakpoint )
-    {
-      ImGui::Begin( "Breakpoint", &mManager.mDebugger.visualizeBreakpoint, ImGuiWindowFlags_None );
-      mManager.mDebugWindows.breakpointEditor.drawContents();
       ImGui::End();
     }
 
@@ -709,8 +707,10 @@ void UI::configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure )
   }
 }
 
-void UI::imagePropertiesWindow( bool init )
+bool UI::imagePropertiesWindow( bool init )
 {
+  bool close = false;
+
   if ( ImGui::BeginPopupModal( "Image properties", NULL, ImGuiWindowFlags_AlwaysAutoResize ) )
   {
     static int rotation;
@@ -816,6 +816,7 @@ void UI::imagePropertiesWindow( bool init )
         mManager.mDoReset = true;
       }
       ImGui::CloseCurrentPopup();
+      close = true;
     }
     ImGui::EndDisabled();
     ImGui::SameLine();
@@ -823,9 +824,19 @@ void UI::imagePropertiesWindow( bool init )
     if ( ImGui::Button( "Cancel", ImVec2( 60, 0 ) ) )
     {
       ImGui::CloseCurrentPopup();
+      close = true;
     }
     ImGui::EndPopup();
   }
+
+  return close;
+}
+
+bool UI::saveImageWindow( bool init )
+{
+  bool close = false;
+
+  return close;
 }
 
 

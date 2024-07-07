@@ -70,8 +70,6 @@ void SysConfig::serialize( std::filesystem::path path )
   fout << "\tOptAddrDigitsCount   = " << memoryOptions.OptAddrDigitsCount << ";\n";
   fout << "\tOptFooterExtraHeight = " << memoryOptions.OptFooterExtraHeight << ";\n";
   fout << "};\n";
-  fout << "visualizeWatch = " << ( visualizeWatch ? "true;\n" : "false;\n" );
-  fout << "visualizeBreakpoint = " << ( visualizeBreakpoint ? "true;\n" : "false;\n" );
   fout << "debugModeOnBreak = " << ( debugModeOnBreak ? "true;\n" : "false;\n" );
   fout << "normalModeOnRun = " << ( normalModeOnRun ? "true;\n" : "false;\n" );
   fout << "breakOnBrk = " << ( breakOnBrk ? "true;\n" : "false;\n" );
@@ -126,8 +124,6 @@ SysConfig::SysConfig( sol::state const& lua )
   disasmOptions.followPC = lua["disasmOptions"]["FollowPC"].get_or( disasmOptions.followPC );
   disasmOptions.ShowLabelsInAddrCol = lua["disasmOptions"]["ShowLabelsInAddrCol"].get_or( disasmOptions.ShowLabelsInAddrCol );
   disasmOptions.tablePC = lua["disasmOptions"]["tablePC"].get_or( disasmOptions.tablePC );
-  visualizeWatch= lua["visualizeWatch"].get_or( visualizeWatch);
-  visualizeBreakpoint = lua["visualizeBreakpoint"].get_or( visualizeBreakpoint );
   debugModeOnBreak = lua["debugModeOnBreak"].get_or( debugModeOnBreak );
   normalModeOnRun = lua["normalModeOnRun"].get_or( normalModeOnRun );
   breakOnBrk = lua["breakOnBrk"].get_or( breakOnBrk );

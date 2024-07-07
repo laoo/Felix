@@ -6,10 +6,8 @@
 #include "Debugger.hpp"
 #include "CPUEditor.hpp"
 #include "MemEditor.hpp"
-#include "WatchEditor.hpp"
 #include "DisasmEditor.h"
 #include "Monitor.hpp"
-#include "BreakpointEditor.hpp"
 #include "sol/sol.hpp"
 
 class WinAudioOut;
@@ -76,9 +74,7 @@ private:
     std::vector<std::pair<int, std::shared_ptr<ICustomScreenView>>> customScreenViews;
     CPUEditor cpuEditor;
     MemEditor memoryEditor;
-    WatchEditor watchEditor;
     DisasmEditor disasmEditor;
-    BreakpointEditor breakpointEditor;
   } mDebugWindows;
 
   UI mUI;

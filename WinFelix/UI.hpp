@@ -22,7 +22,8 @@ private:
   bool mainMenu( ImGuiIO& io );
   void drawDebugWindows( ImGuiIO& io );
   void configureKeyWindow( std::optional<KeyInput::Key>& keyToConfigure );
-  void imagePropertiesWindow( bool init );
+  bool imagePropertiesWindow( bool init );
+  bool saveImageWindow( bool init );
 
 private:
   Manager& mManager;

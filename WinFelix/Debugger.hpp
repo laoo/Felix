@@ -40,8 +40,6 @@ public:
 
   bool visualizeCPU;
   bool visualizeMemory;
-  bool visualizeWatch;
-  bool visualizeBreakpoint;
   bool visualizeDisasm;
   bool showMonitor;
 

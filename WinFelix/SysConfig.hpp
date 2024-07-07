@@ -53,8 +53,6 @@ struct SysConfig
     int   OptAddrDigitsCount{};
     float OptFooterExtraHeight{};
   } memoryOptions;
-  bool visualizeWatch{};
-  bool visualizeBreakpoint{};
   bool debugModeOnBreak{};
   bool normalModeOnRun{};
   bool breakOnBrk{};

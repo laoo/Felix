@@ -6,7 +6,6 @@
 #include "TraceHelper.hpp"
 #include "ConfigProvider.hpp"
 #include "SysConfig.hpp"
-#include "BreakpointEditor.hpp"
 
 DisasmEditor::DisasmEditor() : mPC{ 0 }, mFollowPC { 0 }
 {
@@ -102,11 +101,7 @@ void DisasmEditor::drawTable()
   {
     ImGui::TableNextRow();
 
-    if ( mManager->mDebugWindows.breakpointEditor.hasBreapoint( workingPc ) )
-    {
-      ImGui::TableSetBgColor( ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32( ImVec4( 255, 0, 0, 255 ) ) );
-    }
-    else if ( workingPc == mPC )
+    if ( workingPc == mPC )
     {
       ImGui::TableSetBgColor( ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32( ImGuiCol_Button ) );
     }
@@ -126,10 +121,6 @@ void DisasmEditor::drawTable()
     {
       sprintf( buf, "$%04X", (uint16_t)workingPc );
       ImGui::Text( buf );
-    }
-    if ( ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked( 0 ) )
-    {
-      mManager->mDebugWindows.breakpointEditor.toggleBreapoint( workingPc );
     }
 
     memset( buf, 0, sizeof(buf) );

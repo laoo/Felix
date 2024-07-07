@@ -35,7 +35,7 @@ mThreadsWaiting{},
 mRenderThread{},
 mAudioThread{},
 mRenderingTime{},
-mScriptDebuggerEscapes{ std::make_shared<ScriptDebuggerEscapes>() },
+mScriptDebuggerEscapes{},
 mImageProperties{},
 mRenderer{},
 mDebugWindows{}
@@ -132,9 +132,7 @@ void Manager::initialize( std::shared_ptr<ISystemDriver> systemDriver )
 
   mDebugWindows.cpuEditor.setManager( this );
   mDebugWindows.memoryEditor.setManager( this );
-  mDebugWindows.watchEditor.setManager( this );
   mDebugWindows.disasmEditor.setManager( this );
-  mDebugWindows.breakpointEditor.setManager( this );
 
   mSystemDriver = std::move( systemDriver );
   mRenderer = mSystemDriver->renderer();
@@ -274,23 +272,13 @@ void Manager::processLua( std::filesystem::path const& path )
     }
   };
 
-  mLua.set_function("add_watch", [this] (std::string label, uint16_t addr, std::string datatype )
+  mLua.set_function( "setLabel", [this] ( uint16_t addr, std::string label )
+  {
+    if ( mInstance )
     {
-      mDebugWindows.watchEditor.addWatch( label.c_str(), datatype.c_str(), addr );
-    } );
-
-  mLua.set_function( "del_watch", [this] ( std::string label )
-    {
-      mDebugWindows.watchEditor.deleteWatch( label.c_str() );
-    } );
-
-  mLua.set_function( "set_label", [this] ( uint16_t addr, std::string label )
-    {
-      if ( mInstance )
-      {
-        mInstance->getTraceHelper()->updateLabel( addr, label.c_str() );
-      }
-    } );
+      mInstance->getTraceHelper()->updateLabel( addr, label.c_str() );
+    }
+  } );
 
   auto trap = [this] ()
   {
@@ -370,6 +358,8 @@ void Manager::machineReset()
   }
   std::unique_lock<std::mutex> l{ mDebugger.lockMutex() };
   mInstance.reset();
+
+  mScriptDebuggerEscapes = std::make_shared<ScriptDebuggerEscapes>();
 
   if ( auto input = computeInputFile() )
   {

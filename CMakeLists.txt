@@ -47,16 +47,12 @@ add_executable( Felix WIN32
   WinFelix/WinImgui11.hpp
   WinFelix/WinMain.cpp
 
-  WinFelix/BreakpointEditor.cpp
-  WinFelix/BreakpointEditor.hpp
   WinFelix/CPUEditor.hpp
   WinFelix/DisasmEditor.cpp
   WinFelix/DisasmEditor.h
   WinFelix/Editors.hpp
   WinFelix/MemEditor.cpp
   WinFelix/MemEditor.hpp
-  WinFelix/WatchEditor.cpp
-  WinFelix/WatchEditor.hpp
 
   WinFelix/pixel.hxx
   WinFelix/renderer.hxx
