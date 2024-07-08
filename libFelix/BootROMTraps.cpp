@@ -67,10 +67,13 @@ public:
     state.debugState().a = 0x00;
     state.debugState().x = 0x00;
     state.debugState().y = 0x02;
-    state.debugState().i.set();
+    state.debugState().n.clear();
+    state.debugState().v.clear();
     state.debugState().d.clear();
-    //assumed SP=0x100 at startup
-    state.debugState().sl = 0x01;
+    state.debugState().i.set();
+    state.debugState().z.set();
+    state.debugState().c.clear();
+    //stack is random at this point
     //jumps to 0x200 held in two next bytes after trap hander address
     return (uint8_t)Opcode::JMA_JMP;
   }
@@ -132,6 +135,11 @@ public:
       state.debugWriteMikey( 0x87, 3 );  //SYSCTL1
       state.debugWriteMikey( 0x87, 2 );  //SYSCTL1
     }
+    state.debugState().a = 0x00;
+    state.debugState().x = 0x00;
+    state.debugState().y = 0x02;
+    state.debugState().z.set();
+    state.debugState().c.set();
     //shift handler returns to caller
     return (uint8_t)Opcode::RTS_RTS;
   }
