@@ -4,7 +4,7 @@
 #include "Cartridge.hpp"
 #include "Log.hpp"
 
-Suzy::Suzy( Core & core, std::shared_ptr<IInputSource> inputSource ) : mCore{ core }, mSCB{}, mMath{ mCore.getTraceHelper() }, mInputSource{ inputSource }, mAccessTick{},
+Suzy::Suzy( Core& core, std::shared_ptr<IInputSource> inputSource ) : mCore{ core }, mSCB{}, mMath{ mCore.getTraceHelper() }, mInputSource{ inputSource }, mSpriteDumper{}, mSpriteDumperPath{}, mSpriteDumperMutex{}, mAccessTick{},
   mPalette{}, mBusEnable{}, mNoCollide{}, mVStretch{}, mLeftHand{ true }, mUnsafeAccess{}, mSpriteStop{},
   mSpriteWorking{}, mHFlip{}, mVFlip{}, mLiteral{}, mAlgo3{}, mReusePalette{}, mSkipSprite{}, mStartingQuadrant{}, mEveron{},
   mBpp{}, mSpriteType{}, mReload{}, mSprColl{}, mSprInit{}
@@ -446,6 +446,18 @@ uint16_t Suzy::debugCollBas() const
   return mSCB.collbas;
 }
 
+bool Suzy::isSpriteDumping() const
+{
+  std::scoped_lock<std::mutex> lock{ mSpriteDumperMutex };
+  return (bool)mSpriteDumper;
+}
+
+void Suzy::dumpSprites( std::filesystem::path path )
+{
+  std::scoped_lock<std::mutex> lock{ mSpriteDumperMutex };
+  mSpriteDumperPath = std::move( path );
+}
+
 void Suzy::writeSPRCTL0( uint8_t value )
 {
   mBpp = (BPP)( value & SPRCTL0::BITS_MASK );
@@ -490,5 +502,25 @@ uint8_t Suzy::noice( uint64_t tick )
 
 std::shared_ptr<ISuzyProcess> Suzy::suzyProcess()
 {
-  return std::make_shared<SuzyProcess>( *this );
+  std::scoped_lock<std::mutex> lock{ mSpriteDumperMutex };
+
+  if ( mSpriteDumper && mSpriteDumperPath.empty() )
+  {
+    mSpriteDumper.reset();
+  }
+  else if ( !mSpriteDumper && !mSpriteDumperPath.empty() )
+  {
+    mSpriteDumper = std::make_unique<SpriteDumper>( mSpriteDumperPath );
+  }
+
+  if ( mSpriteDumper )
+  {
+    mSpriteDumper->setPalette( mCore.debugPalette() );
+    return std::make_shared<SuzyProcess<SpriteDumper>>( *this, *mSpriteDumper );
+  }
+  else
+  {
+    DummyDumper sink;
+    return std::make_shared<SuzyProcess<DummyDumper>>( *this, sink );
+  }
 }

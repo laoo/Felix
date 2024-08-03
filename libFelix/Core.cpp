@@ -125,6 +125,16 @@ void Core::dumpMemory( std::filesystem::path const& path )
   fout.write( (char const*)mRAM.data(), mRAM.size() );
 }
 
+bool Core::isSpriteDumping() const
+{
+  return mSuzy->isSpriteDumping();
+}
+
+void Core::dumpSprites( std::filesystem::path path )
+{
+  mSuzy->dumpSprites( std::move( path ) );
+}
+
 void Core::pulseReset( std::optional<uint16_t> resetAddress )
 {
   if ( resetAddress )
@@ -336,7 +346,7 @@ bool Core::executeSuzyAction()
     {
       auto value = mRAM[mSuzyProcessRequest->addr] & mSuzyProcessRequest->mask | mSuzyProcessRequest->value;
       mRAM[mSuzyProcessRequest->addr] = (uint8_t)value;
-    }
+  }
     mCurrentTick += 5ull + mFastCycleTick;  //read & write byte
     break;
   case ISuzyProcess::Request::XOR:

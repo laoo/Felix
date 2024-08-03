@@ -29,4 +29,5 @@ private:
   Manager& mManager;
   bool mOpenMenu;
   std::unique_ptr<ImGui::FileBrowser> mFileBrowser;
+  std::unique_ptr<ImGui::FileBrowser> mDirectoryBrowser;
 };

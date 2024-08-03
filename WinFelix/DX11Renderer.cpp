@@ -414,7 +414,7 @@ void* DX11Renderer::CustomScreenView::render( std::span<uint8_t const> data, std
       value.g = ( palette[i] & 0x0f );
       value.g |= value.g << 4;
       value.b = ( palette[i + 16] & 0xf0 );
-      value.b |= value.r >> 4;
+      value.b |= value.b >> 4;
 
       mPalette[i] = value;
     }

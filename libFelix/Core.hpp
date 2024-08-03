@@ -37,6 +37,8 @@ public:
   void setVGMWriter( std::filesystem::path const& path );
   bool isVGMWriter() const;
   void dumpMemory( std::filesystem::path const & path );
+  bool isSpriteDumping() const;
+  void dumpSprites( std::filesystem::path path );
 
   void enterMonitor();
 

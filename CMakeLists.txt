@@ -121,7 +121,6 @@ add_executable( Felix WIN32
   libFelix/Suzy.hpp
   libFelix/SuzyMath.cpp
   libFelix/SuzyMath.hpp
-  libFelix/SuzyProcess.cpp
   libFelix/SuzyProcess.hpp
   libFelix/SymbolSource.cpp
   libFelix/SymbolSource.hpp
@@ -135,6 +134,8 @@ add_executable( Felix WIN32
   libFelix/VGMWriter.hpp
   libFelix/VidOperator.cpp
   libFelix/VidOperator.hpp
+  libFelix/SpriteDumper.cpp
+  libFelix/SpriteDumper.hpp
 )
 
 include( cmake/version.cmake )
@@ -162,6 +163,9 @@ if (WIN32)
   target_compile_definitions(Felix PRIVATE -DUNICODE)
 
   set_source_files_properties( WinFelix/DX11Renderer.cpp PROPERTIES
+    INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/libextern/stb
+  )
+  set_source_files_properties( libFelix/SpriteDumper.cpp PROPERTIES
     INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/libextern/stb
   )
 

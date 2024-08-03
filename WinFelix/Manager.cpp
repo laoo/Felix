@@ -241,6 +241,20 @@ void Manager::processLua( std::filesystem::path const& path )
     else throw Ex{} << "path = \"path/to/file.vgm\" required";
   };
 
+  mLua["dumpSprites"] = [this]( sol::table const& tab )
+  {
+    if ( sol::optional<std::string> opt = tab["path"] )
+    {
+      if ( mInstance )
+        mInstance->dumpSprites( *opt );
+    }
+    else
+    {
+      if ( mInstance )
+        mInstance->dumpSprites( {} );
+    }
+  };
+
   mLua["traceCurrent"] = [this] ()
   {
     if ( mInstance )

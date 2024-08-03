@@ -2,6 +2,7 @@
 #include "ActionQueue.hpp"
 #include "IInputSource.hpp"
 #include "SuzyMath.hpp"
+#include "SpriteDumper.hpp"
 
 class Core;
 
@@ -50,9 +51,12 @@ public:
   void write( uint16_t address, uint8_t value );
   uint16_t debugVidBas() const;
   uint16_t debugCollBas() const;
+  bool isSpriteDumping() const;
+  void dumpSprites( std::filesystem::path path );
 
   std::shared_ptr<ISuzyProcess> suzyProcess();
 
+  template<typename DMASINK>
   friend class SuzyProcess;
 
   static constexpr uint16_t TMPADR    = 0x00;
@@ -317,6 +321,9 @@ private:
 
   SuzyMath mMath;
   std::shared_ptr<IInputSource> mInputSource;
+  std::unique_ptr<SpriteDumper> mSpriteDumper;
+  std::filesystem::path mSpriteDumperPath;
+  mutable std::mutex mSpriteDumperMutex;
   uint64_t mAccessTick;
 
   std::array<uint8_t, 16> mPalette;

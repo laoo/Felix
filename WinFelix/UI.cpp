@@ -14,7 +14,8 @@
 UI::UI( Manager& manager ) :
   mManager{ manager },
   mOpenMenu{},
-  mFileBrowser{ std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_EnterNewFilename) }
+  mFileBrowser{ std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_EnterNewFilename) },
+  mDirectoryBrowser{ std::make_unique<ImGui::FileBrowser>(ImGuiFileBrowserFlags_SelectDirectory) }
 {
 }
 
@@ -49,6 +50,12 @@ bool UI::mainMenu( ImGuiIO& io )
     SAVE_MEMORY_DUMP
   };
 
+  enum class DirectoryBrowserAction
+  {
+    NONE,
+    DUMP_SPRITES
+  };
+
   enum class ModalWindow
   {
     NONE,
@@ -59,6 +66,7 @@ bool UI::mainMenu( ImGuiIO& io )
   static bool oldModalWindow = false;
   static ModalWindow modalWindow = ModalWindow::NONE;
   static FileBrowserAction fileBrowserAction = FileBrowserAction::NONE;
+  static DirectoryBrowserAction directoryBrowserAction = DirectoryBrowserAction::NONE;
   static std::optional<KeyInput::Key> keyToConfigure;
 
   auto configureKeyItem = [&] ( char const* name, KeyInput::Key k )
@@ -289,6 +297,20 @@ bool UI::mainMenu( ImGuiIO& io )
         mFileBrowser->Open();
         fileBrowserAction = FileBrowserAction::SAVE_MEMORY_DUMP;
       }
+      bool spriteDump = mManager.mInstance->isSpriteDumping();
+      if ( ImGui::MenuItem( "Sprite Dump", nullptr, &spriteDump ) )
+      {
+        if ( spriteDump )
+        {
+          mDirectoryBrowser->SetTitle( "Folder where dump sprites" );
+          mDirectoryBrowser->Open();
+          directoryBrowserAction = DirectoryBrowserAction::DUMP_SPRITES;
+        }
+        else
+        {
+          mManager.mInstance->dumpSprites( {} );
+        }
+      }
       ImGui::EndMenu();
     }
     ImGui::EndDisabled();
@@ -494,6 +516,24 @@ bool UI::mainMenu( ImGuiIO& io )
     }
     mFileBrowser->ClearSelected();
     fileBrowserAction = NONE;
+  }
+
+  if ( directoryBrowserAction != DirectoryBrowserAction::NONE )
+  {
+    mDirectoryBrowser->Display();
+    if ( mDirectoryBrowser->HasSelected() )
+    {
+      switch ( directoryBrowserAction )
+      {
+      case DirectoryBrowserAction::DUMP_SPRITES:
+        mManager.mInstance->dumpSprites( mDirectoryBrowser->GetSelected() );
+        break;
+      default:
+        break;
+      }
+      mDirectoryBrowser->ClearSelected();
+      directoryBrowserAction = DirectoryBrowserAction::NONE;
+    }
   }
 
   return openMenu;
