@@ -6,7 +6,7 @@ Atari Lynx emulator
 Currently build only under windows, but it supposed to work in Wine, Parallels and other such environment.
 
 Requirements:
-- Visual studio 2022 
+- Visual studio 2022 (any version including Community)
 - Git
 - CMake
 
