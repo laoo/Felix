@@ -3,7 +3,7 @@ Atari Lynx emulator
 
 ## Building
 
-Currently build only under windows, but it supposed to work in Wine, Parallels and other such environment.
+Currently builds only under windows, but it supposed to work in Wine, Parallels and other such environment.
 
 Requirements:
 - Visual studio 2022 (any version including Community)

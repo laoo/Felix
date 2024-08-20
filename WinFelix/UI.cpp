@@ -297,7 +297,7 @@ bool UI::mainMenu( ImGuiIO& io )
         mFileBrowser->Open();
         fileBrowserAction = FileBrowserAction::SAVE_MEMORY_DUMP;
       }
-      bool spriteDump = mManager.mInstance->isSpriteDumping();
+      bool spriteDump = mManager.mInstance ? mManager.mInstance->isSpriteDumping() : false;
       if ( ImGui::MenuItem( "Sprite Dump", nullptr, &spriteDump ) )
       {
         if ( spriteDump )
