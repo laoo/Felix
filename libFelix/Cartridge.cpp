@@ -4,7 +4,7 @@
 #include "TraceHelper.hpp"
 
 Cartridge::Cartridge( ImageProperties const& imageProperties, std::shared_ptr<ImageCart const> cart, std::shared_ptr<TraceHelper> traceHelper ) :
-  mTraceHelper{ std::move( traceHelper ) }, mCart{ std::move( cart ) }, mGameDrive{ GameDrive::create( imageProperties ) },
+  mTraceHelper{ std::move( traceHelper ) }, mCart{ std::move( cart ) }, mCustomCart{ GameDrive::create( imageProperties ) },
   mEEPROM{ EEPROM::create( imageProperties, mTraceHelper ) }, mShiftRegister{}, mCounter{}, mAudIn{}, mCurrentStrobe{}, mAddressData{},
   mBank0{}, mBank1{}
 {
@@ -21,7 +21,7 @@ Cartridge::~Cartridge()
 
 bool Cartridge::getAudIn( uint64_t tick ) const
 {
-  if ( mGameDrive && mGameDrive->hasOutput( tick ) )
+  if ( mCustomCart && mCustomCart->hasOutput( tick ) )
   {
     return true;
   }
@@ -94,15 +94,15 @@ void Cartridge::setPower( bool value )
 
 uint8_t Cartridge::peekRCART0( uint64_t tick )
 {
-  if ( mGameDrive )
+  if ( mCustomCart )
   {
-    if ( mGameDrive->hasOutput( tick ) )
+    if ( mCustomCart->hasOutput( tick ) )
     {
-      auto result = mGameDrive->get( tick );
+      auto result = mCustomCart->get( tick );
       incrementCounter( tick );
       return result;
     }
-    else if ( auto bank = mGameDrive->getBank( tick ) )
+    else if ( auto bank = mCustomCart->getBank( tick ) )
     {
       auto result = peek( *bank );
       incrementCounter( tick );
@@ -131,9 +131,9 @@ void Cartridge::pokeRCART0( uint64_t tick, uint8_t value )
 void Cartridge::pokeRCART1( uint64_t tick, uint8_t value )
 {
   incrementCounter( tick );
-  if ( mGameDrive )
+  if ( mCustomCart )
   {
-    return mGameDrive->put( tick, value );
+    return mCustomCart->put( tick, value );
   }
 }
 

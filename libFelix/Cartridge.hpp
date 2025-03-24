@@ -2,7 +2,7 @@
 
 #include "ImageCart.hpp"
 
-class GameDrive;
+class CustomCart;
 class EEPROM;
 class TraceHelper;
 class ImageProperties;
@@ -37,7 +37,7 @@ private:
 
   std::shared_ptr<TraceHelper> mTraceHelper;
   std::shared_ptr<ImageCart const> mCart;
-  std::unique_ptr<GameDrive> mGameDrive;
+  std::unique_ptr<CustomCart> mCustomCart;
   std::unique_ptr<EEPROM> mEEPROM;
   uint32_t mShiftRegister;
   uint16_t mCounter;

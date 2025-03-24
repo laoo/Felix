@@ -1,10 +1,11 @@
 #pragma once
+#include "CustomCart.hpp"
 #include "Utility.hpp"
 
 class CartBank;
 class ImageProperties;
 
-class GameDrive
+class GameDrive : public CustomCart
 {
 public:
 
@@ -35,14 +36,14 @@ public:
     NO_FILESYSTEM	/* 6 */
   };
 
-  bool hasOutput( uint64_t tick ) const;
+  bool hasOutput( uint64_t tick ) const override;
 
-  void put( uint64_t tick, uint8_t value );
-  uint8_t get( uint64_t tick );
-  CartBank* getBank( uint64_t tick ) const;
+  void put( uint64_t tick, uint8_t value ) override;
+  uint8_t get( uint64_t tick ) override;
+  CartBank* getBank( uint64_t tick ) const override;
 
   GameDrive( std::filesystem::path const& imagePath );
-  ~GameDrive();
+  ~GameDrive() override;
 
   static std::unique_ptr<GameDrive> create( ImageProperties const& imageProperties );
 
