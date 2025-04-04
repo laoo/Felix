@@ -8,8 +8,8 @@
 #include "VGMWriter.hpp"
 
 Mikey::Mikey( Core & core, ComLynx & comLynx, std::shared_ptr<IVideoSink> videoSink ) : mCore{ core }, mComLynx{ comLynx }, mAccessTick{}, mTimers{}, mAudioChannels{},
-  mAttenuation{ 0xff, 0xff, 0xff, 0xff }, mAttenuationLeft{ 0x3c, 0x3c, 0x3c, 0x3c }, mAttenuationRight{ 0x3c, 0x3c, 0x3c, 0x3c }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( std::move( videoSink ) ) },
-  mParallelPort{ mCore, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0xff }, mStereo{}, mSerDat{}, mIRQ{}, mVGMWriterMutex{}
+  mAttenuation{ 0x00, 0x00, 0x00, 0x00 }, mAttenuationLeft{ 0x00, 0x00, 0x00, 0x00 }, mAttenuationRight{ 0x00, 0x00, 0x00, 0x00 }, mDisplayGenerator{ std::make_unique<DisplayGenerator>( std::move( videoSink ) ) },
+  mParallelPort{ mCore, mComLynx, *mDisplayGenerator }, mDisplayRegs{}, mSuzyDone{}, mPan{ 0x00 }, mStereo{ 0x00 }, mSerDat{}, mIRQ{}, mVGMWriterMutex{}
 {
   mTimers[0x0] = std::make_unique<TimerCore>( 0x0, [this]( uint64_t tick, bool interrupt )
   {
