@@ -152,7 +152,7 @@ bool Cartridge::isCart1Inactive() const
 
 uint8_t Cartridge::peek( CartBank const & bank )
 {
-  mTraceHelper->comment<"Cart read from ${:02x}:${:03x}.">( mShiftRegister, mCounter );
+  mTraceHelper->comment<"Cart read from ${:02x}:${:03x}.">( mShiftRegister, mCounter & 2047 );
   return bank( mShiftRegister, mCounter );
 }
 
