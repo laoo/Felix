@@ -1,3 +1,11 @@
+## 0.6.4
+- more accurate opcode/operand fetch timing
+- making bootrom HLE emulation more compatible
+- new feature: sprite dumper (Debug->Sprite Dump, and 'dumpSprites' lua command)
+- corrected default values for the attenuation and panning registers.
+- adding lua libraries of string, os, math and table 
+- stability fixes
+
 ## 0.6.3
 
 - icon file as a courtesy of https://retroemu.pl/
