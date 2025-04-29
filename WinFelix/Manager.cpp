@@ -204,7 +204,7 @@ void Manager::processLua( std::filesystem::path const& path )
     return;
 
   mLua = sol::state{};
-  mLua.open_libraries( sol::lib::base, sol::lib::io );
+  mLua.open_libraries( sol::lib::base, sol::lib::io, sol::lib::string );
 
   mLua.new_usertype<TrapProxy>( "TRAP", sol::meta_function::new_index, &TrapProxy::set );
   mLua.new_usertype<RamProxy>( "RAM", sol::meta_function::index, &RamProxy::get, sol::meta_function::new_index, &RamProxy::set );
